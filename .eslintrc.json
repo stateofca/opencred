@@ -1,0 +1,17 @@
+{
+    "env": {
+        "node": true,
+        "commonjs": true,
+        "es2021": true
+    },
+    "extends": ["airbnb", "prettier", "plugin:node/recommended"],
+    "plugins": ["prettier"],
+    "parserOptions": {
+        "ecmaVersiosn": "latest"
+    },
+    "rules": {
+        "no-underscore-dangle": "off",
+        "no-console": "off"
+    }
+  }
+  
