@@ -4,9 +4,16 @@
   "main": "index.js",
   "license": "BSD-3-Clause",
   "dependencies": {
+    "body-parser": "^1.20.2",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.0.1",
-    "express": "^4.17.1"
+    "errorhandler": "^1.5.1",
+    "express": "^4.17.1",
+    "express-session": "^1.17.3",
+    "method-override": "^3.0.0",
+    "morgan": "^1.10.0"
   },
   "devDependencies": {
     "eslint-config-digitalbazaar": "^5.0.1",
