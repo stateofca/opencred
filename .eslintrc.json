@@ -4,14 +4,12 @@
         "commonjs": true,
         "es2021": true
     },
-    "extends": ["airbnb", "prettier", "plugin:node/recommended"],
+    "extends": ["eslint-config-digitalbazaar"],
     "plugins": ["prettier"],
     "parserOptions": {
         "ecmaVersiosn": "latest"
     },
     "rules": {
-        "no-underscore-dangle": "off",
-        "no-console": "off"
+      "unicorn/prefer-node-protocol": "error"
     }
-  }
-  
+}

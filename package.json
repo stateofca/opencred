@@ -8,5 +8,9 @@
     "dotenv": "^16.0.1",
     "express": "^4.17.1",
     "mongoose": "^6.0.9"
+  },
+  "devDependencies": {
+    "eslint-config-digitalbazaar": "^5.0.1",
+    "eslint-plugin-unicorn": "^48.0.1"
   }
 }
