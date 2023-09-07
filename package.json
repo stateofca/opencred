@@ -1,6 +1,6 @@
 {
   "name": "opencred-platform",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "main": "index.js",
   "license": "BSD-3-Clause",
   "dependencies": {
