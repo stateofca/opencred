@@ -1,0 +1,54 @@
+name: Packaging
+
+on:
+  push:
+    branches:
+      - pkg-*
+    tags:
+      - v*
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    env:
+      CONTAINER_OWNER: veres-containers
+      CONTAINER_IMAGE_NAME: veres-exchanger
+    timeout-minutes: 10
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+    - name: Get npm package version
+      id: version
+      uses: martinbeentjes/npm-get-version-action@v1.0.0
+    - name: Generate next release candidate number
+      id: rc
+      uses: zyborg/gh-action-buildnum@v1.1.0
+      with:
+        gist_token: ${{ secrets.VERES_BUILDER_CI_TOKEN }}
+        version_key: ${{ steps.version.outputs.current-version }}
+
+    - name: Compute Docker Image Tag
+      id: compute-tag
+      run: echo "tag=us.gcr.io/${{ env.CONTAINER_OWNER }}/${{ env.CONTAINER_IMAGE_NAME }}:${{ steps.version.outputs.current-version }}-${{ github.ref_name }}-${{ github.sha }}-rc${{ steps.rc.outputs.version_build_number }}" >> "$GITHUB_OUTPUT"
+
+    - id: 'auth'
+      uses: 'google-github-actions/auth@v1'
+      with:
+        credentials_json: '${{ secrets.CLOUD_BUILD_GITHUB_ACTION_SA_KEY }}'
+
+    # Setup gcloud CLI
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+
+    # Build and push image to Google Container Registry
+    # the --tag argument cannot be used when --config is used
+    # therefore TAG_NAME is passed in via --substitutions
+    - name: Build
+      run: |-
+        gcloud builds submit \
+          --quiet \
+          --config=cloudbuild.yaml \
+          --substitutions=TAG_NAME="${{ steps.compute-tag.outputs.tag }}",_NODE_AUTH_TOKEN="${{ secrets.VERES_BUILDER_CI_TOKEN }}",_VULNZ_ATTESTOR="projects/db-cloud-build/attestors/db-attestor",_VULNZ_KMS_KEY_VERSION="1",_VULNZ_KMS_KEY="db-binauthz-kms-key",_KMS_LOCATION="global",_KMS_KEYRING="db-binauthz-keyring"
+
+    - name: Display Docker Image
+      run: echo "${{ steps.compute-tag.outputs.tag }}"

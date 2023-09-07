@@ -1,0 +1,29 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [ 'build',
+          '--build-arg',
+          'NODE_AUTH_TOKEN=${_NODE_AUTH_TOKEN}',
+          '-t',
+          '$TAG_NAME',
+          '.' ]
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Push Docker Image to Repository'
+    args: [ 'push', '$TAG_NAME']
+
+  - name: 'gcr.io/$PROJECT_ID/cloudbuild-attestor'
+    id: 'Attest Image (Binary Auth)'
+    entrypoint: 'sh'
+    args:
+      - -xe
+      - -c
+      - |-
+        FQ_DIGEST=$(gcloud container images describe --format 'value(image_summary.fully_qualified_digest)' $TAG_NAME)
+        /scripts/create_attestation.sh \
+        -p "$PROJECT_ID" \
+        -i "$${FQ_DIGEST}" \
+        -a "$_VULNZ_ATTESTOR" \
+        -v "$_VULNZ_KMS_KEY_VERSION" \
+        -k "$_VULNZ_KMS_KEY" \
+        -l "$_KMS_LOCATION" \
+        -r "$_KMS_KEYRING" \
