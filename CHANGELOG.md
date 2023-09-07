@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 1.0.1 - 2023-09-07
+
+### Fixed
+- Fix container image name.
+
 ## 1.0.0 - 2023-09-07
 
 ### Added
