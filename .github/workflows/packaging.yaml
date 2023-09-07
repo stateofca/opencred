@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CONTAINER_OWNER: veres-containers
-      CONTAINER_IMAGE_NAME: veres-exchanger
+      CONTAINER_IMAGE_NAME: opencred-platform
     timeout-minutes: 10
     steps:
     - name: Check out repository
