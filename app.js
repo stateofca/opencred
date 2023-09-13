@@ -1,5 +1,7 @@
-const express = require('express');
-const cors = require('cors');
+import express from 'express';
+import cors from 'cors';
+
+import './config/config.js';
 
 const app = express();
 
@@ -26,7 +28,7 @@ app.use('/health', (req, res) => {
 });
 
 const PORT = process.env.PORT || '8080';
-module.exports = {
+export {
   app,
   PORT,
 };

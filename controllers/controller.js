@@ -1,8 +1,8 @@
-const service = require('../services/service');
+import { create, read, update, delete } from '../services/service.js';
 
-exports.insertOne = async (req, res) => {
+const insertOne = async (req, res) => {
   try {
-    const results = await service();
+    const results = await create();
     if (results.success != true) throw new Error(results.error);
     return res.send('{result}').status(200);
   } catch (error) {
@@ -10,9 +10,9 @@ exports.insertOne = async (req, res) => {
   }
 };
 
-exports.deleteOne = async (req, res) => {
+const deleteOne = async (req, res) => {
   try {
-    const results = await service();
+    const results = await delete();
     if (results.success != true) throw new Error(results.error);
     return res.send('{result}').status(200);
   } catch (error) {
@@ -20,9 +20,9 @@ exports.deleteOne = async (req, res) => {
   }
 };
 
-exports.updateOne = async (req, res) => {
+const updateOne = async (req, res) => {
   try {
-    const results = await service();
+    const results = await update();
     if (results.success != true) throw new Error(results.error);
     return res.send('{result}').status(200);
   } catch (error) {
@@ -30,12 +30,19 @@ exports.updateOne = async (req, res) => {
   }
 };
 
-exports.getOne = async (req, res) => {
+const getOne = async (req, res) => {
   try {
-    const results = await service();
+    const results = await read();
     if (results.success != true) throw new Error(results.error);
     return res.send('{result}').status(200);
   } catch (error) {
     res.status(500).send(error.message);
   }
+};
+
+export {
+  insertOne,
+  deleteOne,
+  updateOne,
+  getOne,
 };

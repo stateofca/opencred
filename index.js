@@ -1,4 +1,4 @@
-const { app, PORT } = require('./app');
+import { app, PORT } from './app.js';
 
 const bootstrap = () => {
   app.listen(PORT, () => {

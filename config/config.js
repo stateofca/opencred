@@ -1,7 +1,3 @@
-require('dotenv').config();
+import 'dotenv/config';
 
-const DB_URI = process.env.DB_URI;
-
-module.exports = {
-  DB_URI,
-};
+// export any globals, etc. here as needed
