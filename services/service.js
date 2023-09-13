@@ -1,8 +1,6 @@
-const Model = require('../models/model');
-
 exports.create = async () => {
   try {
-    const results = await Model.create();
+    const results = {};
     return { success: true, body: results };
   } catch (error) {
     return { success: false, error: error };
@@ -11,7 +9,7 @@ exports.create = async () => {
 
 exports.read = async () => {
   try {
-    const results = await Model.find();
+    const results = {};
     return { success: true, body: results };
   } catch (error) {
     return { success: false, error: error };
@@ -20,7 +18,7 @@ exports.read = async () => {
 
 exports.update = async () => {
   try {
-    const results = await Model.update();
+    const results = {};
     return { success: true, body: results };
   } catch (error) {
     return { success: false, error: error };
@@ -29,7 +27,7 @@ exports.update = async () => {
 
 exports.delete = async () => {
   try {
-    const results = await Model.delete();
+    const results = {};
     return { success: true, body: results };
   } catch (error) {
     return { success: false, error: error };
