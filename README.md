@@ -14,10 +14,6 @@ the relying party service or an error.
 
 ### Directly via node
 
-Configure environment variables in `.env`
-
-- `DB_URI` the MongoDB connection string
-
 Install dependencies and run the server:
 
 ```sh
