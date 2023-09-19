@@ -1,5 +1,5 @@
-import express from 'express';
 import cors from 'cors';
+import express from 'express';
 
 import './config/config.js';
 
@@ -21,9 +21,10 @@ app.use('/health', (req, res) => {
   };
   try {
     res.send(healthCheck);
-  } catch (error) {
+  } catch(error) {
     healthCheck.message = error;
-    res.status(503), send();
+    res.status(503);
+    res.send(healthCheck);
   }
 });
 

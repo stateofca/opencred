@@ -1,41 +1,49 @@
-import { create, read, update, delete } from '../services/service.js';
+import {create, del, read, update} from '../services/service.js';
 
-export async function insertOne (req, res) {
+export async function insertOne(req, res) {
   try {
     const results = await create();
-    if (results.success != true) throw new Error(results.error);
+    if(results.success != true) {
+      throw new Error(results.error);
+    }
     return res.send('{result}').status(200);
-  } catch (error) {
+  } catch(error) {
     res.status(500).send(error.message);
   }
-};
+}
 
 export async function deleteOne(req, res) {
   try {
-    const results = await delete();
-    if (results.success != true) throw new Error(results.error);
+    const results = await del();
+    if(results.success != true) {
+      throw new Error(results.error);
+    }
     return res.send('{result}').status(200);
-  } catch (error) {
+  } catch(error) {
     res.status(500).send(error.message);
   }
-};
+}
 
 export async function updateOne(req, res) {
   try {
     const results = await update();
-    if (results.success != true) throw new Error(results.error);
+    if(results.success != true) {
+      throw new Error(results.error);
+    }
     return res.send('{result}').status(200);
-  } catch (error) {
+  } catch(error) {
     res.status(500).send(error.message);
   }
-};
+}
 
 export async function getOne(req, res) {
   try {
     const results = await read();
-    if (results.success != true) throw new Error(results.error);
+    if(results.success != true) {
+      throw new Error(results.error);
+    }
     return res.send('{result}').status(200);
-  } catch (error) {
+  } catch(error) {
     res.status(500).send(error.message);
   }
-};
+}

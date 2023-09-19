@@ -1,4 +1,4 @@
-import { app, PORT } from './app.js';
+import {app, PORT} from './app.js';
 
 const bootstrap = () => {
   app.listen(PORT, () => {
