@@ -4,6 +4,9 @@
   "main": "index.js",
   "type": "module",
   "license": "BSD-3-Clause",
+  "scripts": {
+    "lint": "eslint ."
+  },
   "dependencies": {
     "body-parser": "^1.20.2",
     "compression": "^1.7.4",
@@ -17,6 +20,7 @@
     "morgan": "^1.10.0"
   },
   "devDependencies": {
+    "eslint": "^8.49.0",
     "eslint-config-digitalbazaar": "^5.0.1",
     "eslint-plugin-unicorn": "^48.0.1"
   }
