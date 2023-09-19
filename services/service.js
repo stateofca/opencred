@@ -1,4 +1,4 @@
-const create = async () => {
+export async function create() {
   try {
     const results = {};
     return { success: true, body: results };
@@ -7,7 +7,7 @@ const create = async () => {
   }
 };
 
-const read = async () => {
+export async function read() {
   try {
     const results = {};
     return { success: true, body: results };
@@ -16,7 +16,7 @@ const read = async () => {
   }
 };
 
-const update = async () => {
+export async function update() {
   try {
     const results = {};
     return { success: true, body: results };
@@ -25,18 +25,11 @@ const update = async () => {
   }
 };
 
-const delete = async () => {
+export async function delete() {
   try {
     const results = {};
     return { success: true, body: results };
   } catch (error) {
     return { success: false, error: error };
   }
-};
-
-export {
-  create,
-  read,
-  update,
-  delete,
 };

@@ -27,8 +27,4 @@ app.use('/health', (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || '8080';
-export {
-  app,
-  PORT,
-};
+export const PORT = process.env.PORT || '8080';

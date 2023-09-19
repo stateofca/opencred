@@ -1,6 +1,6 @@
 import { create, read, update, delete } from '../services/service.js';
 
-const insertOne = async (req, res) => {
+export async function insertOne (req, res) {
   try {
     const results = await create();
     if (results.success != true) throw new Error(results.error);
@@ -10,7 +10,7 @@ const insertOne = async (req, res) => {
   }
 };
 
-const deleteOne = async (req, res) => {
+export async function deleteOne(req, res) {
   try {
     const results = await delete();
     if (results.success != true) throw new Error(results.error);
@@ -20,7 +20,7 @@ const deleteOne = async (req, res) => {
   }
 };
 
-const updateOne = async (req, res) => {
+export async function updateOne(req, res) {
   try {
     const results = await update();
     if (results.success != true) throw new Error(results.error);
@@ -30,7 +30,7 @@ const updateOne = async (req, res) => {
   }
 };
 
-const getOne = async (req, res) => {
+export async function getOne(req, res) {
   try {
     const results = await read();
     if (results.success != true) throw new Error(results.error);
@@ -38,11 +38,4 @@ const getOne = async (req, res) => {
   } catch (error) {
     res.status(500).send(error.message);
   }
-};
-
-export {
-  insertOne,
-  deleteOne,
-  updateOne,
-  getOne,
 };
