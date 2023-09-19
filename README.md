@@ -1,4 +1,4 @@
-# OpenCred, the Open Credentials Platform
+# OpenCred: The Open Credentials Platform
 
 OpenCred is an open source credential verification platform that allows relying party 
 services to request claims about users over an OpenID Connect-style redirection
