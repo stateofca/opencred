@@ -5,7 +5,8 @@
   "type": "module",
   "license": "BSD-3-Clause",
   "scripts": {
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "NODE_ENV=test mocha tests"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
@@ -22,6 +23,8 @@
   "devDependencies": {
     "eslint": "^8.49.0",
     "eslint-config-digitalbazaar": "^5.0.1",
-    "eslint-plugin-unicorn": "^48.0.1"
+    "eslint-plugin-unicorn": "^48.0.1",
+    "mocha": "^10.2.0",
+    "supertest": "^6.3.3"
   }
 }
