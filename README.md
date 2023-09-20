@@ -14,6 +14,8 @@ the relying party service or an error.
 
 ### Directly via node
 
+Node v20 is used for this project.
+
 Install dependencies and run the server:
 
 ```sh
