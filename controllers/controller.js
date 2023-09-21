@@ -1,49 +1,14 @@
-import {create, del, read, update} from '../services/service.js';
+import {client_id} from '../config/config.js';
 
-export async function insertOne(req, res) {
-  try {
-    const results = await create();
-    if(results.success != true) {
-      throw new Error(results.error);
-    }
-    return res.send('{result}').status(200);
-  } catch(error) {
-    res.status(500).send(error.message);
-  }
+export async function exchangeCodeForToken(req, res) {
+  res.status(500).send('Not implemented');
 }
 
-export async function deleteOne(req, res) {
-  try {
-    const results = await del();
-    if(results.success != true) {
-      throw new Error(results.error);
-    }
-    return res.send('{result}').status(200);
-  } catch(error) {
-    res.status(500).send(error.message);
+export async function login(req, res) {
+  // Validate the client_id parameter from the request
+  if(req.query.client_id != client_id) {
+    res.status(400).send({message: 'Unknown client_id'});
   }
-}
 
-export async function updateOne(req, res) {
-  try {
-    const results = await update();
-    if(results.success != true) {
-      throw new Error(results.error);
-    }
-    return res.send('{result}').status(200);
-  } catch(error) {
-    res.status(500).send(error.message);
-  }
-}
-
-export async function getOne(req, res) {
-  try {
-    const results = await read();
-    if(results.success != true) {
-      throw new Error(results.error);
-    }
-    return res.send('{result}').status(200);
-  } catch(error) {
-    res.status(500).send(error.message);
-  }
+  res.status(500).send({message: 'Not implemented'});
 }

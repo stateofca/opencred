@@ -3,7 +3,6 @@ import express from 'express';
 
 export const router = express.Router();
 
-router.post('/', [ controller.insertOne ]);
-router.get('/:id', [ controller.getOne ]);
-router.patch('/:id', [ controller.updateOne ]);
-router.delete('/:id', [ controller.deleteOne ]);
+router.get('/login', [ controller.login ]);
+router.post('/token', [ controller.exchangeCodeForToken ]);
+

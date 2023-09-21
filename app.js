@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 
+import {exchangeCodeForToken, login} from './controllers/controller.js';
 import './config/config.js';
 
 export const app = express();
@@ -27,5 +28,8 @@ app.use('/health', (req, res) => {
     res.send(healthCheck);
   }
 });
+
+app.use('/login', login);
+app.use('/token', exchangeCodeForToken);
 
 export const PORT = process.env.PORT || '8080';
