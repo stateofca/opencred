@@ -1,4 +1,6 @@
-import {relyingParties} from '../config/config.js';
+import * as fetch from 'node-fetch';
+
+import {exchanger, relyingParties} from '../config/config.js';
 
 export async function exchangeCodeForToken(req, res) {
   res.status(500).send('Not implemented');
@@ -11,6 +13,86 @@ export async function login(req, res) {
   if(!relyingParties.map(rp => rp.client_id).includes(req.query.client_id)) {
     res.status(400).send({message: 'Unknown client_id'});
   }
+  const rp = relyingParties.find(rp => rp.client_id === req.query.client_id);
 
-  res.status(500).send({message: 'Not implemented'});
+  // Validate Redirect URI is permitted
+  if(!req.query.redirect_uri) {
+    res.status(400).send({message: 'redirect_uri is required'});
+    return;
+  } else if(rp.redirect_uri != req.query.redirect_uri) {
+    res.status(400).send({message: 'Unknown redirect_uri'});
+    return;
+  }
+
+  // Validate scope is openid only.
+  if(!req.query.scope) {
+    res.status(400).send({message: 'scope is required'});
+    return;
+  } else if(req.query.scope !== 'openid') {
+    res.status(400).send({message: 'Invalid scope'});
+    return;
+  }
+
+  // Generate exchange initiation request payload
+  const expectedContext = [
+    'https://www.w3.org/2018/credentials/v1',
+    rp.credential_context
+  ];
+  const expectedType = ['VerifiableCredential', rp.credential_type];
+  const vcApiExchangeinitiationPayload = {
+    type: 'VerifiablePresentationRequest',
+    credentialQuery: [{
+      type: 'QueryByExample',
+      reason: `Login to ${rp.name}`,
+      example: {
+        '@context': expectedContext,
+        type: expectedType,
+        issuer: rp.credential_issuer
+      }
+    }]
+  };
+
+  // TODO: Implement calling actual exchanger, and update tests
+  // const response = await fetch(exchanger, {
+  //   method: 'POST',
+  //   body: JSON.stringify(vcApiExchangeinitiationPayload),
+  //   headers: {'Content-Type': 'application/json'}
+  // });
+
+  // if(!response.ok) {
+  //   res.status(500).send({
+  //     message: 'Error initiating exchange',
+  //     details: await response.json()
+  //   });
+  //   return;
+  // }
+
+  // const exchangeResponse = await response.json();
+  console.log('HEUWEOURIELJ');
+  const exchangeId = 'z19pEANL8bzMFJMTkuhhkAPWy';
+  const exchangerSession = `${exchanger}/exchanges/${exchangeId}`;
+  const unencodedOffer = {
+    credential_issuer: exchangerSession,
+    credentials: [{
+      format: 'ldp_vc',
+      credential_definition: {
+        '@context': expectedContext,
+        type: expectedType,
+      }
+    }],
+    grants: {
+      'urn:ietf:params:oauth:grant-type:pre-authorized_code': {
+        'pre-authorized_code': 'db011b91-cd1c-481f-a34c-eb45ee39be3a'
+      }
+    }
+  };
+  const exchangeResponse = {
+    vcapi: exchangerSession,
+    OID4VCI: 'openid-verification-request://?credential_offer=' +
+    encodeURIComponent(JSON.stringify(unencodedOffer))
+  };
+
+  // Redirect the user to the exchange page
+  res.status(200).send(exchangeResponse);
+  return;
 }
