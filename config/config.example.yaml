@@ -1,0 +1,31 @@
+relying_parties:
+  - name: "Test App"
+    client_id: "rp1"
+    client_secret: "DeepestAndDarkest"
+    description: "Relying Party Test App"
+    icon: "https://placekitten.com/200/200"
+    background_image: "https://placekitten.com/800/300"
+    redirect_uri: "http://localhost:3000"
+    scopes:
+      - name: "openid"
+        description: "Open ID Connect"
+    credential_context: "https://example.com/context/v1"
+    credential_type: "EmailCredential"
+    credential_issuer: "did:example.com"
+    claims:
+      - name: "email"
+        description: "Your email address"
+        claim_iri: "https://schema.org/email"
+        claim_value: "string"
+exchanger:
+  base_url: https://example.org/exchanges/123
+default_language: en
+translations:
+  en: 
+    login_cta: "Login with your credential wallet"
+    login_explain: "To login with your credential wallet, you will need to have the credential wallet app <with configurable URL to app stores> installed"
+    app_install_explain: "If you don't have a credential wallet yet, you can get one by downloading the credential wallet app <with configurable URL to app stores>"
+    app_cta: "Open wallet app"
+    qr_explain: "Looking for a QR Code to scan with you wallet app instead?"
+    qr_cta: "Scan the following QR Code with your wallet app"
+    copyright: "Powered by OpenCred"

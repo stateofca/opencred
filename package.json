@@ -26,6 +26,7 @@
     "eslint": "^8.49.0",
     "eslint-config-digitalbazaar": "^5.0.1",
     "eslint-plugin-unicorn": "^48.0.1",
+    "js-yaml": "^4.1.0",
     "mocha": "^10.2.0",
     "supertest": "^6.3.3"
   }
