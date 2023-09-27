@@ -75,7 +75,7 @@ export async function login(req, res) {
   // const exchangeResponse = await response.json();
 
   const exchangeId = 'z19pEANL8bzMFJMTkuhhkAPWy';
-  const exchangerSession = `${exchanger}/exchanges/${exchangeId}`;
+  const exchangerSession = `${exchanger.base_url}/exchanges/${exchangeId}`;
   const unencodedOffer = {
     credential_issuer: exchangerSession,
     credentials: [{

@@ -29,3 +29,11 @@ translations:
     qr_explain: "Looking for a QR Code to scan with you wallet app instead?"
     qr_cta: "Scan the following QR Code with your wallet app"
     copyright: "Powered by OpenCred"
+  fr:
+    login_cta: "Se connecter avec son portefeuille de titres"
+    login_explain: "Pour vous connecter avec votre credential wallet, vous devez avoir installé l'application credential wallet <avec une URL configurable vers les app stores>"
+    app_install_explain: "Si vous n'avez pas encore de porte-monnaie électronique, vous pouvez en obtenir un en téléchargeant l'application credential wallet <avec une URL configurable vers les magasins d'applications>"
+    app_cta: "Ouvrir l'application portefeuille"
+    qr_explain: "Vous cherchez un code QR à scanner avec l'application de votre portefeuille?"
+    qr_cta: "Scannez le code QR suivant avec l'application de votre portefeuille"
+    copyright: "Développé par OpenCred"

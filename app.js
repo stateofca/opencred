@@ -13,6 +13,7 @@ app.use(
     extended: true,
   })
 );
+app.use('/static', express.static('public'));
 
 app.use('/health', (req, res) => {
   const healthCheck = {
