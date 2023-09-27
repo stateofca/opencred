@@ -1,6 +1,11 @@
 import * as fetch from 'node-fetch';
 
-import {exchanger, relyingParties} from '../config/config.js';
+import {renderToString} from 'vue/server-renderer';
+
+import {
+  defaultLanguage, exchanger, relyingParties, translations
+} from '../config/config.js';
+import {createApp} from '../ui/app.js';
 
 export async function exchangeCodeForToken(req, res) {
   res.status(500).send('Not implemented');
@@ -13,7 +18,7 @@ export async function login(req, res) {
   if(!relyingParties.map(rp => rp.client_id).includes(req.query.client_id)) {
     res.status(400).send({message: 'Unknown client_id'});
   }
-  const rp = relyingParties.find(rp => rp.client_id === req.query.client_id);
+  const rp = relyingParties.find(rp => rp.client_id == req.query.client_id);
 
   // Validate Redirect URI is permitted
   if(!req.query.redirect_uri) {
@@ -68,7 +73,7 @@ export async function login(req, res) {
   // }
 
   // const exchangeResponse = await response.json();
-  console.log('HEUWEOURIELJ');
+
   const exchangeId = 'z19pEANL8bzMFJMTkuhhkAPWy';
   const exchangerSession = `${exchanger}/exchanges/${exchangeId}`;
   const unencodedOffer = {
@@ -92,7 +97,23 @@ export async function login(req, res) {
     encodeURIComponent(JSON.stringify(unencodedOffer))
   };
 
-  // Redirect the user to the exchange page
-  res.status(200).send(exchangeResponse);
+  const vueApp = createApp({
+    step: 'login',
+    rp,
+    translations,
+    defaultLanguage,
+    exchangeData: exchangeResponse
+  });
+  const rendered = await renderToString(vueApp);
+
+  res.status(200).send(`<!DOCTYPE html>
+<html>
+  <head>
+    <title>Login to ${rp.name}</title>
+  </head>
+  <body>
+    <div id="app">${rendered}</div>
+  </body>
+</html>`);
   return;
 }

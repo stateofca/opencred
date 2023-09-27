@@ -64,13 +64,13 @@ describe('App', async () => {
     const response = await request(app)
       .get('/login?client_id=test&redirect_uri=https%3A%2F%2F' +
         'example.com&scope=openid')
-      .set('Accept', 'application/json');
+      .set('Accept', 'text/html');
 
-    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.headers['content-type']).to.match(/text\/html/);
     expect(response.status).to.equal(200);
-    expect(response.body.vcapi).to.be.a('string');
+    expect(response.text).to.be.a('string');
     expect(
-      response.body.OID4VCI.startsWith('openid-verification-request://'))
+      response.text.includes('openid-verification-request://'))
       .to.be(true);
 
     relyingParties.splice(0, originalRPs.length, ...originalRPs);
