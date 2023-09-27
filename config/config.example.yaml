@@ -19,6 +19,10 @@ relying_parties:
         claim_value: "string"
 exchanger:
   base_url: https://example.org/exchanges/123
+colors:
+  cta: "#0B669D"
+  primary: "#045199"
+  header: "#0979c4"
 default_language: en
 translations:
   en: 

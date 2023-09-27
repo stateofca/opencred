@@ -1,0 +1,13 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4&family=Source+Sans+3&display=swap");
+
+body {
+  font-family: "Source Sans 3", sans-serif;
+}
+
+h1 {
+  font-family: "Source Serif 4", sans-serif;
+}

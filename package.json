@@ -7,8 +7,7 @@
   "scripts": {
     "lint": "eslint .",
     "test": "NODE_ENV=test mocha tests",
-    "start": "vite",
-    "build": "vite build"
+    "tailwind": "npx tailwindcss build --watch -i ui/styles.css -o ./public/styles.css"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
@@ -26,7 +25,6 @@
     "vue-server-renderer": "^2.7.14"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^4.3.4",
     "autoprefixer": "^10.4.16",
     "eslint": "^8.49.0",
     "eslint-config-digitalbazaar": "^5.0.1",
@@ -36,6 +34,7 @@
     "node-fetch": "^3.3.2",
     "postcss": "^8.4.30",
     "supertest": "^6.3.3",
+    "tailwind-clip-path": "^1.0.0",
     "tailwindcss": "^3.3.3",
     "vue": "^3.3.4"
   }

@@ -3,7 +3,7 @@ import * as fetch from 'node-fetch';
 import {renderToString} from 'vue/server-renderer';
 
 import {
-  defaultLanguage, exchanger, relyingParties, translations
+  defaultLanguage, exchanger, relyingParties, translations, theme
 } from '../config/config.js';
 import {createApp} from '../ui/app.js';
 
@@ -102,6 +102,7 @@ export async function login(req, res) {
     rp,
     translations,
     defaultLanguage,
+    theme,
     exchangeData: exchangeResponse
   });
   const rendered = await renderToString(vueApp);
