@@ -14,6 +14,8 @@ export const createApp = function(data) {
 </nav>
 
 <section style="max-width: 800px; margin: 1em auto;">
+  <img v-bind:src="rp.background_image" 
+    alt="Background Image representing the vibe of the site" />
   <div>
     <h1>{{translations[defaultLanguage].login_cta}}</h1>
     <p>{{translations[defaultLanguage].login_explain}}</p>
