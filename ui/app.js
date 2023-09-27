@@ -1,4 +1,3 @@
-// import App from './App.vue';
 import {createSSRApp} from 'vue';
 
 export const createApp = function(data) {
@@ -33,7 +32,8 @@ export const createApp = function(data) {
       &nbsp
     </div>
   </div>
-  <div class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl px-32 relative">
+  <div class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl px-32
+              relative">
     <h1 class="text-3xl mb-12 text-center" 
       style="color: ${data.theme.primary}">
       {{translations[defaultLanguage].login_cta}}

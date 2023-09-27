@@ -9,6 +9,7 @@ relying_parties:
     scopes:
       - name: "openid"
         description: "Open ID Connect"
+    vpr: '{"type":"QueryByExample","credentialQuery":{"reason":"Please present your Verifiable Credential to complete the verification process.","example":{"@context":["https://www.w3.org/2018/credentials/v1","https://example.com/context/v1"],"type":["Email"],"issuer":"did:example.com"}}}}}'
     credential_context: "https://example.com/context/v1"
     credential_type: "EmailCredential"
     credential_issuer: "did:example.com"
@@ -19,6 +20,8 @@ relying_parties:
         claim_value: "string"
 exchanger:
   base_url: https://example.org/exchanges/123
+  capability: "TODO"
+  clientSecret: "TODO"
 colors:
   cta: "#0B669D"
   primary: "#045199"

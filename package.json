@@ -10,6 +10,12 @@
     "tailwind": "npx tailwindcss build --watch -i ui/styles.css -o ./public/styles.css"
   },
   "dependencies": {
+    "@digitalbazaar/did-method-key": "^5.1.0",
+    "@digitalbazaar/ed25519-signature-2020": "^5.2.0",
+    "@digitalbazaar/ed25519-verification-key-2020": "^4.1.0",
+    "@digitalbazaar/ezcap": "^4.0.0",
+    "@digitalbazaar/http-client": "^4.0.0",
+    "bnid": "^3.0.0",
     "body-parser": "^1.20.2",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.6",
