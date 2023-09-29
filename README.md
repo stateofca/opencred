@@ -1,8 +1,8 @@
 # OpenCred: The Open Credentials Platform
 
-OpenCred is an open source credential verification platform that allows relying party 
+OpenCred is an open source credential verification platform that allows relying party
 services to request claims about users over an OpenID Connect-style redirection
-workflow where the claims are verified via a user presenting them within a 
+workflow where the claims are verified via a user presenting them within a
 credential that meets certain requirements.
 
 An OIDC4CVP workflow is embedded within a OIDC authentication workflow. This app
@@ -37,11 +37,28 @@ sequenceDiagram
 
 # Architecture
 
-This app uses a node express server to render a Vue 3 app first in SSR mode on the server and then hydrated on the client. The Vue app is compiled with Vite into server and client-side entry points. The methodology is based on this [example](https://github.com/vitejs/vite-plugin-vue/tree/main/playground/ssr-vue).
+This app uses a node express server to render a Vue 3 app first in SSR mode on
+the server and then hydrated on the client. The Vue app is compiled with Vite
+into server and client-side entry points. The methodology is based on this
+[example](https://github.com/vitejs/vite-plugin-vue/tree/main/playground/ssr-vue).
 
-It doesn't yet support hot-reloading for UI component changes integrated with the express app. (Example [isProd](https://github.com/vitejs/vite-plugin-vue/blob/main/playground/ssr-vue/server.js#L36) checks could be added to set up a vite server). To see changes, you must stop the server, rebuild the UI, and restart the server, as with `npm run build && npm run start`.
+It doesn't yet support hot-reloading for UI component changes integrated with
+the express app. (Example
+[isProd](https://github.com/vitejs/vite-plugin-vue/blob/main/playground/ssr-vue/server.js#L36)
+checks could be added to set up a vite server). To see changes, you must stop
+the server, rebuild the UI, and restart the server, as with `npm run build &&
+npm run start`.
 
 ## Usage
+
+### Configuration
+
+The app is configured via a YAML file. See
+[config/config.example.yaml](config/config.example.yaml) for an example.
+
+Copy the example to the ignored location `cp config/config.example.yaml
+config/config.yaml` and edit the file. Configure the details of your relying
+party, and connection details for a VC-API exchanger endpoint
 
 ### Directly via node
 
@@ -57,9 +74,13 @@ $ npm run start
 
 ### via Docker
 
+You can build and run the server via Docker mounting your local configuration
+file with the following commands. Substitute your actual project root path for
+`PROJECT_ROOT_PATH`.
+
 ```sh
 $ docker build . -t opencred-platform
-$ docker run -p 8080:8080 -d opencred-platform
+$ docker run --rm -p 8080:8080 -v /PROJECT_ROOT_PATH/config:/etc/app-config opencred-platform
 $ curl http://localhost:8080/health
 ```
 

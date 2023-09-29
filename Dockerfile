@@ -9,14 +9,15 @@ FROM build-setup AS build
 ARG NODE_AUTH_TOKEN
 USER node
 COPY --chown=node:node . .
-RUN npm i --omit=optional --omit=dev
+RUN npm i --omit=optional
+RUN "npm run build
 
 FROM build AS test
-#RUN cd test && npm t
+# RUN cd test && npm t
 # RUN rm -rf test#
 
 FROM base AS release
 COPY --from=test --chown=node:node /home/node/app ./
 EXPOSE 10443
 ENV NODE_ENV=production
-CMD [ "node", "index"]
+CMD ["npm", "run", "start"]

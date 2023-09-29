@@ -4,7 +4,7 @@ import * as yaml from 'js-yaml';
 
 // Environment variables
 dotenv.config();
-const config_path = process.env.CONFIG_PATH || './config/config.yaml';
+const config_path = process.env.CONFIG_PATH || '/etc/app-config/config.yaml';
 
 // Load config doc and parse YAML.
 const configDoc = yaml.load(fs.readFileSync(config_path, 'utf8'));
