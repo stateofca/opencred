@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./ui/**/*.html', './src/**/*.vue', './ui/**/*.js'],
+  content: ['./ui/**/*.html', './ui/**/*.vue', './ui/**/*.js'],
   theme: {
     extend: {},
     clipPath: {

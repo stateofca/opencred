@@ -40,9 +40,9 @@
       <h2 class="font-bold">Home</h2>
     </div>
     <div class="bg-no-repeat bg-cover clip-path-bg z-0 min-h-[460px]" 
-    :style="{ 'background-image': `url(${rp.background_image})` }">
+      :style="{ 'background-image': `url(${rp.background_image})` }">
       <div class="text-center text-6xl py-10">
-        &nbsp
+        &nbsp;
       </div>
     </div>
     <div class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl px-32 relative">
@@ -68,7 +68,8 @@
       </p>
     </div>
   </div>
-  <footer class="text-left p-6" v-html="translations[defaultLanguage].copyright">
+  <footer class="text-left p-6"
+    v-html="translations[defaultLanguage].copyright">
   </footer>
 </template>
 

@@ -6,14 +6,13 @@
   "license": "BSD-3-Clause",
   "scripts": {
     "build": "npm run build:client && npm run build:server",
-    "build:client": "vite build --ssrManifest .vite/ssr-manifest.json --outDir dist/client",
+    "build:client": "vite build --ssrManifest --outDir dist/client",
     "build:server": "vite build --ssr ui/entry-server.js --outDir dist/server",
     "dev": "vite dev",
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "node index.js",
-    "test": "NODE_ENV=test mocha tests",
-    "tailwind": "npx tailwindcss build --watch -i ui/styles.css -o ./public/styles.css"
+    "test": "NODE_ENV=test mocha tests"
   },
   "dependencies": {
     "@digitalbazaar/did-method-key": "^5.1.0",
@@ -34,9 +33,11 @@
     "method-override": "^3.0.0",
     "morgan": "^1.10.0",
     "oidc-provider": "^8.4.0",
+    "vue-router": "^4.2.5",
     "vue-server-renderer": "^2.7.14"
   },
   "devDependencies": {
+    "@vitejs/plugin-vue": "^4.2.3",
     "autoprefixer": "^10.4.16",
     "eslint": "^8.49.0",
     "eslint-config-digitalbazaar": "^5.0.1",
@@ -48,7 +49,6 @@
     "supertest": "^6.3.3",
     "tailwind-clip-path": "^1.0.0",
     "tailwindcss": "^3.3.3",
-    "@vitejs/plugin-vue": "^4.2.3",
     "vite": "^4.4.5",
     "vue": "^3.3.4"
   }

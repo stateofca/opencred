@@ -1,7 +1,9 @@
 import cors from 'cors';
 import express from 'express';
 
-import {exchangeCodeForToken, login} from './controllers/controller.js';
+import {
+  exchangeCodeForToken, health, login
+} from './controllers/controller.js';
 import './config/config.js';
 
 export const app = express();
@@ -13,23 +15,8 @@ app.use(
     extended: true,
   })
 );
-app.use('/static', express.static('dist/client', {index: false}));
-
-app.use('/health', (req, res) => {
-  const healthCheck = {
-    uptime: process.uptime(),
-    message: 'OK',
-    timestamp: Date.now(),
-  };
-  try {
-    res.send(healthCheck);
-  } catch(error) {
-    healthCheck.message = error;
-    res.status(503);
-    res.send(healthCheck);
-  }
-});
-
+app.use('/assets', express.static('dist/client/assets', {index: false}));
+app.use('/health', health);
 app.use('/login', login);
 app.use('/token', exchangeCodeForToken);
 

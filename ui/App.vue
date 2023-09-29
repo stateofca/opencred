@@ -1,10 +1,10 @@
 <template>
-  <link rel="stylesheet" href="/static/styles.css">
   <AppMain :step="ctx.step" :rp="ctx.rp" :translations="ctx.translations" :defaultLanguage="ctx.defaultLanguage" :theme="ctx.theme" />
 </template>
 
 <script setup>
   import { useSSRContext } from 'vue'
+  import './styles.css';
 
   // Populate data from SSR on server side or from script in <head> on client.
   let ctx = {};

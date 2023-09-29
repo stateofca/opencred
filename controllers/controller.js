@@ -1,6 +1,6 @@
-import * as fetch from 'node-fetch';
-
+import manifest from '../dist/client/ssr-manifest.json' assert { type: 'json' };
 import {zcapWriteRequest} from '../services/http.js';
+import fs from 'node:fs'
 
 import {
   defaultLanguage, exchanger, relyingParties, theme, translations
@@ -106,25 +106,29 @@ export async function login(req, res) {
     theme,
     exchangeData: exchangeResponse
   };
-  const manifest = {};
+  const template = fs.readFileSync('./dist/client/index.html', 'utf-8')
   const render = (await import('../dist/server/entry-server.js')).render;
   const [rendered, preloadLinks] = await render(manifest, safeContext);
+  const html = template
+        .replace(`<!--preload-links-->`, preloadLinks)
+        .replace(`<!--app-html-->`, rendered)
+        .replace(`<!--app-context-->`, `<script>window.ctx = ${JSON.stringify(safeContext)};</script>`)
 
-  const completeHtml = `<!DOCTYPE html>
-  <html>
-    <head>
-      <title>Login to ${rp.name}</title>
-      ${preloadLinks}
-      <script type="module" src="/ui/entry-client.js"></script>
-      <script>
-        window.ctx = ${JSON.stringify(safeContext)};
-      </script>
-    </head>
-    <body>
-      <div id="app">${rendered}</div>
-    </body>
-  </html>`;
-
-  res.status(200).send(completeHtml);
+  res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
   return;
+}
+
+export const health = (req, res) => {
+  const healthCheck = {
+    uptime: process.uptime(),
+    message: 'OK',
+    timestamp: Date.now(),
+  };
+  try {
+    res.send(healthCheck);
+  } catch(error) {
+    healthCheck.message = error;
+    res.status(503);
+    res.send(healthCheck);
+  }
 }

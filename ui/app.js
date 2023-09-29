@@ -5,5 +5,5 @@ import {createSSRApp} from 'vue';
 export const createApp = function() {
   const app = createSSRApp(App);
   app.component('AppMain', AppMain);
-  return app;
+  return {app};
 };

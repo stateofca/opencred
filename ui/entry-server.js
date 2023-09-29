@@ -3,7 +3,7 @@ import {createApp} from './app.js';
 import {renderToString} from 'vue/server-renderer';
 
 export async function render(manifest, ctx) {
-  const app = createApp();
+  const {app} = createApp();
 
   // @vitejs/plugin-vue injects code into a component's setup() that registers
   // itself on ctx.modules. After the render, ctx.modules would contain all the
