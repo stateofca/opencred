@@ -1,13 +1,11 @@
 module.exports = {
   root: true,
-  parserOptions: {
-    ecmaVersiosn: 2020
-  },
   env: {
     node: true
   },
   extends: [
-    'digitalbazaar'
+    'digitalbazaar',
+    'digitalbazaar/module'
   ],
   ignorePatterns: [
     'node_modules/'
@@ -16,6 +14,7 @@ module.exports = {
     'linebreak-style': [
       'error',
       (process.platform === 'win32' ? 'windows' : 'unix')
-    ]
+    ],
+    'unicorn/prefer-node-protocol': 'error'
   }
 };
