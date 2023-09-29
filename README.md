@@ -81,7 +81,7 @@ path for other systems.
 
 ```sh
 $ docker build . -t opencred-platform
-$ docker run --rm -p 8080:8080 -v $PWD/config:/etc/app-config opencred-platform
+$ docker run -d -p 8080:8080 -v $PWD/config:/etc/app-config opencred-platform
 $ curl http://localhost:8080/health
 ```
 
