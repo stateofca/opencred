@@ -1,9 +1,9 @@
 # OpenCred: The Open Credentials Platform
 
-OpenCred is an open source credential verification platform that allows relying party
-services to request claims about users over an OpenID Connect-style redirection
-workflow where the claims are verified via a user presenting them within a
-credential that meets certain requirements.
+OpenCred is an open source credential verification platform that allows relying
+party services to request claims about users over an OpenID Connect-style
+redirection workflow where the claims are verified via a user presenting them
+within a credential that meets certain requirements.
 
 An OIDC4CVP workflow is embedded within a OIDC authentication workflow. This app
 is responsible for the inner OIDC4CVP workflow. It returns an OIDC ID token to
@@ -75,12 +75,13 @@ $ npm run start
 ### via Docker
 
 You can build and run the server via Docker mounting your local configuration
-file with the following commands. Substitute your actual project root path for
-`PROJECT_ROOT_PATH`.
+file with the following commands. `$PWD` substitution is the expected format for
+current working directory unix/bash/zsh, Substitute your actual project root
+path for other systems.
 
 ```sh
 $ docker build . -t opencred-platform
-$ docker run --rm -p 8080:8080 -v /PROJECT_ROOT_PATH/config:/etc/app-config opencred-platform
+$ docker run --rm -p 8080:8080 -v $PWD/config:/etc/app-config opencred-platform
 $ curl http://localhost:8080/health
 ```
 
