@@ -89,7 +89,7 @@ export async function login(req, res) {
   };
   const exchangeResponse = {
     vcapi: exchangeId,
-    OID4VCI: 'openid-verification-request://?credential_offer=' +
+    OID4VP: 'openid-verification-request://?credential_offer=' +
     encodeURIComponent(JSON.stringify(unencodedOffer))
   };
 
@@ -113,6 +113,7 @@ export async function login(req, res) {
         .replace(`<!--preload-links-->`, preloadLinks)
         .replace(`<!--app-html-->`, rendered)
         .replace(`<!--app-context-->`, `<script>window.ctx = ${JSON.stringify(safeContext)};</script>`)
+        .replace(`<!--app-title-->`, `<title>${rp.name} Login</title>`)
 
   res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
   return;

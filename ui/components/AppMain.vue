@@ -1,4 +1,6 @@
 <script setup>
+  import {reactive} from 'vue';
+
   defineProps({
     step: String,
     rp: {
@@ -13,12 +15,24 @@
       cta: String,
       primary: String,
       header: String
+    },
+    exchangeData: {
+      vcapi: String,
+      OID4VP: String
     }
   })
+
+  const state = reactive({
+    isQROpen: false
+  });
+
+  const switchView = () => {
+    state.isQROpen = !state.isQROpen;
+  }
 </script>
 
 <template>
-  <header class="w-screen" :style="{background: theme.header}">
+  <header class="" :style="{background: theme.header}">
     <div class="mx-auto flex justify-between items-center p-6 max-w-3xl">
       <a :href="rp.redirect_uri"
         class="flex items-center gap-3">
@@ -35,7 +49,7 @@
     </div>
   </header>
   <div
-    class="w-screen relative">
+    class="relative">
     <div class="bg-white w-full text-center py-4">
       <h2 class="font-bold">Home</h2>
     </div>
@@ -45,36 +59,28 @@
         &nbsp;
       </div>
     </div>
-    <div class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl px-32 relative">
-      <h1 class="text-3xl mb-12 text-center" 
-        :style="{color: theme.primary}">
-        {{translations[defaultLanguage].login_cta}}
-      </h1>
-      <p class="mb-4">{{translations[defaultLanguage].login_explain}}</p>
-      <p class="mb-6">{{translations[defaultLanguage].app_install_explain}}</p>
-      <div class="flex justify-center">
-        <button class="text-white py-2 px-6 rounded-xl my-8"
-          :style="{background: theme.cta}">
-          {{translations[defaultLanguage].app_cta}}
-        </button>
-      </div>
-      <p class="text-center mb-2">
-        {{translations[defaultLanguage].qr_explain}}
-      </p>
-      <p class="text-center">
-        <a href="#" :style="{color: theme.primary}">
-          {{translations[defaultLanguage].qr_cta}}
-        </a>
-      </p>
-    </div>
+    <MainView
+      v-if="!state.isQROpen"
+      :translations="translations"
+      :theme="theme"
+      :defaultLanguage="defaultLanguage"
+      :exchangeData="exchangeData"
+      @switchView="switchView"/>
+    <QRView
+      v-else
+      :translations="translations"
+      :theme="theme"
+      :defaultLanguage="defaultLanguage"
+      :exchangeData="exchangeData"
+      @switchView="switchView"/>
   </div>
-  <footer class="text-left p-6"
+  <footer class="text-left p-3"
     v-html="translations[defaultLanguage].copyright">
   </footer>
 </template>
 
-<style scoped>
-.read-the-docs {
-  color: #888;
+<style>
+a {
+  color: v-bind('theme.primary')
 }
 </style>

@@ -1,0 +1,42 @@
+<script setup>
+  import {defineEmits} from 'vue';
+  import QrcodeVue from 'qrcode.vue'
+  defineProps({
+    step: String,
+    translations: Object,
+    defaultLanguage: String,
+    theme: {
+      cta: String,
+      primary: String,
+      header: String
+    },
+    exchangeData: {
+      vcapi: String,
+      OID4VP: String
+    }
+  })
+  const emit = defineEmits(['switchView']);
+  const switchView = () => {
+    emit('switchView');
+  }
+</script>
+
+<template>
+  <div class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl px-32
+              relative">
+    <h1 class="text-3xl mb-12 text-center" :style="{color: theme.primary}">
+      {{translations[defaultLanguage].qr_page_cta}}
+    </h1>
+    <p class="mb-4" v-html="translations[defaultLanguage].qr_page_explain"></p>
+    <div class="mb-4 flex justify-center">
+      <qrcode-vue :value="exchangeData.OID4VP" size="300" />
+    </div>
+    <p class="text-center mb-2" v-html="translations[defaultLanguage].qr_page_another_way">
+    </p>
+    <p class="text-center">
+      <button @click="switchView" :style="{color: theme.primary}">
+        {{translations[defaultLanguage].qr_page_another_way_link}}
+      </button>
+    </p>
+  </div>
+</template>
