@@ -1,6 +1,6 @@
 import * as fetch from 'node-fetch';
 
-// import {render} from '../ui/entry-server.js';
+import {zcapWriteRequest} from '../services/http.js';
 
 import {
   defaultLanguage, exchanger, relyingParties, theme, translations
@@ -43,40 +43,37 @@ export async function login(req, res) {
     rp.credential_context
   ];
   const expectedType = ['VerifiableCredential', rp.credential_type];
-  const vcApiExchangeinitiationPayload = {
-    type: 'VerifiablePresentationRequest',
-    credentialQuery: [{
-      type: 'QueryByExample',
-      reason: `Login to ${rp.name}`,
-      example: {
-        '@context': expectedContext,
-        type: expectedType,
-        issuer: rp.credential_issuer
+
+  // TODO: update tests
+  const {result} = await zcapWriteRequest({
+    endpoint: exchanger.base_url,
+    zcap: {
+      capability: exchanger.capability,
+      clientSecret: exchanger.clientSecret
+    },
+    json: {
+      ttl: 60 * 15,
+      variables: {
+        verifiablePresentationRequest: rp.vpr
       }
-    }]
-  };
+    }
+  });
+  if(!result) {
+    res.status(500).send({
+      message: 'Error initiating exchange: check exchanger configuration.'
+    });
+    return;
+  } else if(result.status !== 204) {
+    res.status(500).send({
+      message: 'Error initiating exchange'
+    });
+    return;
+  }
 
-  // TODO: Implement calling actual exchanger, and update tests
-  // const response = await fetch(exchanger, {
-  //   method: 'POST',
-  //   body: JSON.stringify(vcApiExchangeinitiationPayload),
-  //   headers: {'Content-Type': 'application/json'}
-  // });
+  const exchangeId = result.headers.get('location');
 
-  // if(!response.ok) {
-  //   res.status(500).send({
-  //     message: 'Error initiating exchange',
-  //     details: await response.json()
-  //   });
-  //   return;
-  // }
-
-  // const exchangeResponse = await response.json();
-
-  const exchangeId = 'z19pEANL8bzMFJMTkuhhkAPWy';
-  const exchangerSession = `${exchanger.base_url}/exchanges/${exchangeId}`;
   const unencodedOffer = {
-    credential_issuer: exchangerSession,
+    credential_issuer: exchangeId,
     credentials: [{
       format: 'ldp_vc',
       credential_definition: {
@@ -91,7 +88,7 @@ export async function login(req, res) {
     }
   };
   const exchangeResponse = {
-    vcapi: exchangerSession,
+    vcapi: exchangeId,
     OID4VCI: 'openid-verification-request://?credential_offer=' +
     encodeURIComponent(JSON.stringify(unencodedOffer))
   };
