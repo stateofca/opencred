@@ -1,5 +1,11 @@
 <template>
-  <AppMain :step="ctx.step" :rp="ctx.rp" :translations="ctx.translations" :defaultLanguage="ctx.defaultLanguage" :theme="ctx.theme" />
+  <AppMain
+    :step="ctx.step"
+    :rp="ctx.rp"
+    :translations="ctx.translations"
+    :defaultLanguage="ctx.defaultLanguage"
+    :theme="ctx.theme"
+    :exchangeData="ctx.exchangeData"/>
 </template>
 
 <script setup>

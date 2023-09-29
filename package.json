@@ -33,6 +33,7 @@
     "method-override": "^3.0.0",
     "morgan": "^1.10.0",
     "oidc-provider": "^8.4.0",
+    "qrcode.vue": "^3.4.1",
     "vue-server-renderer": "^2.7.14"
   },
   "devDependencies": {
