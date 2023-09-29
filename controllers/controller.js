@@ -1,5 +1,5 @@
 import manifest from '../dist/client/ssr-manifest.json' assert { type: 'json' };
-import {zcapWriteRequest} from '../services/http.js';
+import {zcapWriteRequest} from '../common/zcap.js';
 import fs from 'node:fs'
 
 import {
