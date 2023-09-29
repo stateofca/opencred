@@ -35,6 +35,11 @@ sequenceDiagram
     note over User: Views authenticated webpage
 ```
 
+# Architecture
+
+This app uses a node express server to render a Vue 3 app first in SSR mode on the server and then hydrated on the client. The Vue app is compiled with Vite into server and client-side entry points. The methodology is based on this [example](https://github.com/vitejs/vite-plugin-vue/tree/main/playground/ssr-vue).
+
+It doesn't yet support hot-reloading for UI component changes integrated with the express app. (Example [isProd](https://github.com/vitejs/vite-plugin-vue/blob/main/playground/ssr-vue/server.js#L36) checks could be added to set up a vite server). To see changes, you must stop the server, rebuild the UI, and restart the server, as with `npm run build && npm run start`.
 
 ## Usage
 
@@ -42,11 +47,12 @@ sequenceDiagram
 
 Node v20 is used for this project.
 
-Install dependencies and run the server:
+Install dependencies, compile the UI, and run the server:
 
 ```sh
 $ npm i
-$ node index.js
+$ npm run build
+$ npm run start
 ```
 
 ### via Docker

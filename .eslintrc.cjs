@@ -10,7 +10,8 @@ module.exports = {
     'digitalbazaar'
   ],
   ignorePatterns: [
-    'node_modules/'
+    'node_modules/',
+    'dist/'
   ],
   rules: {
     'linebreak-style': [

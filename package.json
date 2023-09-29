@@ -5,7 +5,13 @@
   "type": "module",
   "license": "BSD-3-Clause",
   "scripts": {
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "vite build --ssrManifest .vite/ssr-manifest.json --outDir dist/client",
+    "build:server": "vite build --ssr ui/entry-server.js --outDir dist/server",
+    "dev": "vite dev",
     "lint": "eslint .",
+    "preview": "vite preview",
+    "start": "node index.js",
     "test": "NODE_ENV=test mocha tests",
     "tailwind": "npx tailwindcss build --watch -i ui/styles.css -o ./public/styles.css"
   },
@@ -36,6 +42,8 @@
     "supertest": "^6.3.3",
     "tailwind-clip-path": "^1.0.0",
     "tailwindcss": "^3.3.3",
+    "@vitejs/plugin-vue": "^4.2.3",
+    "vite": "^4.4.5",
     "vue": "^3.3.4"
   }
 }

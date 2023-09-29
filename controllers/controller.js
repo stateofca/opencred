@@ -1,11 +1,10 @@
 import * as fetch from 'node-fetch';
 
-import {renderToString} from 'vue/server-renderer';
+// import {render} from '../ui/entry-server.js';
 
 import {
-  defaultLanguage, exchanger, relyingParties, translations, theme
+  defaultLanguage, exchanger, relyingParties, theme, translations
 } from '../config/config.js';
-import {createApp} from '../ui/app.js';
 
 export async function exchangeCodeForToken(req, res) {
   res.status(500).send('Not implemented');
@@ -97,24 +96,38 @@ export async function login(req, res) {
     encodeURIComponent(JSON.stringify(unencodedOffer))
   };
 
-  const vueApp = createApp({
+  const safeContext = {
     step: 'login',
-    rp,
+    rp: {
+      redirect_uri: rp.redirect_uri,
+      name: rp.name,
+      icon: rp.icon,
+      background_image: rp.background_image
+    },
     translations,
     defaultLanguage,
     theme,
     exchangeData: exchangeResponse
-  });
-  const rendered = await renderToString(vueApp);
+  };
+  const manifest = {};
+  const render = (await import('../dist/server/entry-server.js')).render;
+  const [rendered, preloadLinks] = await render(manifest, safeContext);
 
-  res.status(200).send(`<!DOCTYPE html>
-<html>
-  <head>
-    <title>Login to ${rp.name}</title>
-  </head>
-  <body>
-    <div id="app">${rendered}</div>
-  </body>
-</html>`);
+  const completeHtml = `<!DOCTYPE html>
+  <html>
+    <head>
+      <title>Login to ${rp.name}</title>
+      ${preloadLinks}
+      <script type="module" src="/ui/entry-client.js"></script>
+      <script>
+        window.ctx = ${JSON.stringify(safeContext)};
+      </script>
+    </head>
+    <body>
+      <div id="app">${rendered}</div>
+    </body>
+  </html>`;
+
+  res.status(200).send(completeHtml);
   return;
 }
