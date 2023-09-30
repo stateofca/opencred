@@ -2,6 +2,8 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
 
+import {combineTranslations} from './translation.js';
+
 // Environment variables
 dotenv.config();
 const config_path = process.env.CONFIG_PATH || '/etc/app-config/config.yaml';
@@ -77,23 +79,7 @@ relyingParties.forEach(validateRelyingParty);
 export const exchanger = configDoc.exchanger;
 export const defaultLanguage = configDoc.default_language || 'en';
 
-const defaultTranslations = {
-  en: {
-    translate: 'Translate',
-    login_cta: 'Login with your credential wallet',
-    login_explain: 'To login with your credential wallet, you will need ' +
-    'to have the credential wallet app <with configurable URL to app ' +
-    'stores> installed',
-    app_install_explain: 'If you don\'t have a credential wallet yet, ' +
-    'you can get one by downloading the credential wallet app ' +
-    '<with configurable URL to app stores>',
-    app_cta: 'Open wallet app',
-    qr_explain: 'Looking for a QR Code to scan with you wallet app instead?',
-    qr_cta: 'Scan the following QR Code with your wallet app',
-    copyright: 'Powered by OpenCred'
-  }
-};
-export const translations = configDoc.translations || defaultTranslations;
+export const translations = combineTranslations(configDoc.translations || {});
 
 const defaultTheme = {
   cta: '#006847',

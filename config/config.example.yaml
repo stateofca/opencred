@@ -34,6 +34,7 @@ translations:
     app_install_explain: "If you don't have a credential wallet yet, you can get one by downloading the credential wallet app <with configurable URL to app stores>"
     app_cta: "Open wallet app"
     qr_explain: "Looking for a QR Code to scan with you wallet app instead?"
+    qr_page_explain: "Scan the following QR Code with your wallet app."
     qr_cta: "Scan the following QR Code with your wallet app"
     copyright: "Powered by OpenCred"
   fr:
