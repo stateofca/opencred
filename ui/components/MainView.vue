@@ -21,8 +21,8 @@
   }
 </script>
 <template>
-  <div class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl px-32 relative">
-      <h1 class="text-3xl mb-12 text-center" :style="{color: theme.primary}">
+  <div class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl px-16 lg:px-24 relative">
+      <h1 class="text-3xl mb-12 text-center font-semibold" :style="{color: theme.primary}">
         {{translations[defaultLanguage].login_cta}}
       </h1>
       <p class="mb-4" v-html="translations[defaultLanguage].login_explain"></p>

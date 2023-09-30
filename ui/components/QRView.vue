@@ -22,7 +22,7 @@
 </script>
 
 <template>
-  <div class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl px-32
+  <div class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl px-16 lg:px-24
               relative">
     <h1 class="text-3xl mb-12 text-center" :style="{color: theme.primary}">
       {{translations[defaultLanguage].qr_page_cta}}
