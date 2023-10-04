@@ -60,7 +60,7 @@
           &nbsp;
         </div>
       </div>
-      <MainView
+      <ButtonView
         v-if="!state.isQROpen"
         :translations="translations"
         :theme="theme"

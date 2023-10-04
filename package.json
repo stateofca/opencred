@@ -11,7 +11,7 @@
     "dev": "vite dev",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "node index.js",
+    "start": "npm run build && node index.js",
     "test": "NODE_ENV=test mocha tests"
   },
   "dependencies": {
@@ -25,6 +25,7 @@
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
+    "credential-handler-polyfill": "^3.2.0",
     "dotenv": "^16.0.1",
     "errorhandler": "^1.5.1",
     "expect.js": "^0.3.1",
@@ -45,6 +46,7 @@
     "js-yaml": "^4.1.0",
     "mocha": "^10.2.0",
     "node-fetch": "^3.3.2",
+    "patch-package": "^8.0.0",
     "postcss": "^8.4.30",
     "supertest": "^6.3.3",
     "tailwind-clip-path": "^1.0.0",

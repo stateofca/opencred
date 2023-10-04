@@ -1,11 +1,10 @@
-import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
+import 'dotenv/config';
 
 import {combineTranslations} from './translation.js';
 
 // Environment variables
-dotenv.config();
 const config_path = process.env.CONFIG_PATH || '/etc/app-config/config.yaml';
 
 // Load config doc and parse YAML.

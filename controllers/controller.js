@@ -1,5 +1,5 @@
 import manifest from '../dist/client/ssr-manifest.json' assert { type: 'json' };
-import {zcapWriteRequest} from '../common/zcap.js';
+import {makeHttpsRequest, zcapReadRequest, zcapWriteRequest} from '../common/zcap.js';
 import fs from 'node:fs'
 
 import {
@@ -54,7 +54,10 @@ export async function login(req, res) {
     json: {
       ttl: 60 * 15,
       variables: {
-        verifiablePresentationRequest: rp.vpr
+        verifiablePresentationRequest: {
+          query: JSON.parse(rp.vpr_query),
+          domain: rp.domain
+        }
       }
     }
   });
@@ -116,6 +119,22 @@ export async function login(req, res) {
         .replace(`<!--app-title-->`, `<title>${rp.name} Login</title>`)
 
   res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
+  return;
+}
+
+export const getExchangeStatus = async (req, res) => {
+  const {data, error} = await zcapReadRequest({
+    endpoint: req.query.exchangeId,
+    zcap: {
+      capability: exchanger.capability,
+      clientSecret: exchanger.clientSecret
+    }
+  });
+  if(error) {
+    res.sendStatus(404);
+  } else {
+    res.send(data);
+  }
   return;
 }
 
