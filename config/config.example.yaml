@@ -9,7 +9,22 @@ relying_parties:
     scopes:
       - name: "openid"
         description: "Open ID Connect"
-    vpr_query: '{type: "VerifiablePresentationRequest", query: [{"type":"QueryByExample","credentialQuery":{"reason":"Please present your Verifiable Credential to login.","example":{"@context":["https://www.w3.org/2018/credentials/v1","https://example.com/context/v1"],"type":["EmailCredential"],"issuer":"did:example.com"}}}}}, {"type: "DIDAuthentication", "acceptedMethods": [{"method": "key"}]}], "domain": "example.com"'
+    vpr_query: >
+      {
+        "type": "QueryByExample",
+        "credentialQuery": {
+          "reason": "Please present your Verifiable Credential to complete the verification process.",
+          "example": {
+            "@context": [
+              "https://www.w3.org/2018/credentials/v1",
+              "https://w3id.org/citizenship/v1"
+            ],
+            "type": [
+              "PermanentResidentCard"
+            ]
+          }
+        }
+      }
     domain: 'http://example.com'
     credential_context: "https://example.com/context/v1"
     credential_type: "EmailCredential"
