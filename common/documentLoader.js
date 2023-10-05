@@ -88,8 +88,16 @@ const VDL_CONTEXT = {
 const cryptoLd = new CryptoLD();
 cryptoLd.use(Ed25519VerificationKey2020);
 cryptoLd.use(X25519KeyAgreementKey2020);
+
 const didWebDriver = DidWeb.driver({cryptoLd});
 const didKeyDriver = DidKey.driver();
+didKeyDriver.use({
+  name: 'Ed25519',
+  handler: Ed25519VerificationKey2020,
+  multibaseMultikeyHeader: 'z6Mk',
+  fromMultibase: DidKey.createFromMultibase(Ed25519VerificationKey2020)
+});
+
 const didResolver = new CachedResolver();
 didResolver.use(didWebDriver);
 didResolver.use(didKeyDriver);
