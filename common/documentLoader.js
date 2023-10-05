@@ -94,7 +94,7 @@ const didResolver = new CachedResolver();
 didResolver.use(didWebDriver);
 didResolver.use(didKeyDriver);
 
-const getDocumentLoader = ({dynamic = false}) => {
+const getDocumentLoader = ({dynamic = false} = {}) => {
   const jsonLdDocLoader = new JsonLdDocumentLoader();
 
   jsonLdDocLoader.addStatic(ED_SIG_2020_CONTEXT_URL, ED_SIG_2020_CONTEXT);
