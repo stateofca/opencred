@@ -2,9 +2,6 @@ import manifest from '../dist/client/ssr-manifest.json' assert { type: 'json' };
 import {zcapReadRequest, zcapWriteRequest} from '../common/zcap.js';
 import fs from 'node:fs'
 
-const manifest = JSON.parse(fs.readFileSync(
-  '../dist/client/ssr-manifest.json'));
-
 import {
   defaultLanguage, exchanger, relyingParties, theme, translations
 } from '../config/config.js';
