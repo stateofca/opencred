@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 2.0.0 - 2023-10-16
+
+### Changed
+- Add basic flows.
+
 ## 1.0.1 - 2023-09-07
 
 ### Fixed
