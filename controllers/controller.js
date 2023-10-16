@@ -37,12 +37,9 @@ export async function login(req, res) {
     return;
   }
 
-  // Generate exchange initiation request payload
-  const expectedContext = [
-    'https://www.w3.org/2018/credentials/v1',
-    rp.credential_context
-  ];
-  const expectedType = ['VerifiableCredential', rp.credential_type];
+  const query = JSON.parse(rp.vpr_query);
+  const expectedType = query.credentialQuery.type;
+  const expectedContext = query.credentialQuery['@context'];
 
   // TODO: update tests
   const {result} = await zcapWriteRequest({
@@ -55,7 +52,7 @@ export async function login(req, res) {
       ttl: 60 * 15,
       variables: {
         verifiablePresentationRequest: {
-          query: JSON.parse(rp.vpr_query),
+          query,
           domain: rp.domain
         }
       }

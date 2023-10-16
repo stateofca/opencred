@@ -34,36 +34,12 @@ const validateRelyingParty = rp => {
     throw new Error(`scopes in client ${rp.client_id} must include openid`);
   }
 
-  // If credential_context is not a string, throw an error
+  // If there is no Presentation Request, throw an error
   if(
-    !rp.credential_context ||
-    typeof rp.credential_context !== 'string' ||
-    !rp.credential_context.match(/^https?:\/\//)
-  ) {
+    !rp.vpr_query ||
+    typeof rp.vpr_query !== 'string') {
     throw new Error(
-      `credential_context must be a URL in client ${rp.client_id}`
-    );
-  }
-
-  // If credential_type is not a string throw an error
-  if(
-    !rp.credential_type ||
-    typeof rp.credential_type !== 'string' ||
-    rp.credential_type.length === 0
-  ) {
-    throw new Error(
-      `credential_type must be defined in client ${rp.client_id}`
-    );
-  }
-
-  // Credential issuer must be a string
-  if(
-    !rp.credential_issuer ||
-    typeof rp.credential_issuer !== 'string' ||
-    rp.credential_issuer.length === 0
-  ) {
-    throw new Error(
-      `credential_issuer must be defined in client ${rp.client_id}`
+      `Presentation Request vpr_query must appear in client ${rp.client_id}`
     );
   }
 

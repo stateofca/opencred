@@ -25,10 +25,7 @@ relying_parties:
           }
         }
       }
-    domain: 'http://example.com'
-    credential_context: "https://example.com/context/v1"
-    credential_type: "EmailCredential"
-    credential_issuer: "did:example.com"
+    domain: "https://localhost:3000"
     claims:
       - name: "email"
         description: "Your email address"
