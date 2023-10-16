@@ -10,7 +10,7 @@ ARG NODE_AUTH_TOKEN
 USER node
 COPY --chown=node:node . .
 RUN npm i --omit=optional
-RUN "npm run build
+RUN npm run build
 
 FROM build AS test
 # RUN cd test && npm t
