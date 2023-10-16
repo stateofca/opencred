@@ -1,6 +1,9 @@
-import manifest from '../dist/client/ssr-manifest.json' assert { type: 'json' };
-import {makeHttpsRequest, zcapReadRequest, zcapWriteRequest} from '../common/zcap.js';
-import fs from 'node:fs'
+import {zcapReadRequest, zcapWriteRequest}
+  from '../common/zcap.js';
+import fs from 'node:fs';
+
+const manifest = JSON.parse(fs.readFileSync(
+  '../dist/client/ssr-manifest.json'));
 
 import {
   defaultLanguage, exchanger, relyingParties, theme, translations
@@ -106,16 +109,17 @@ export async function login(req, res) {
     theme,
     exchangeData: exchangeResponse
   };
-  const template = fs.readFileSync('./dist/client/index.html', 'utf-8')
+  const template = fs.readFileSync('./dist/client/index.html', 'utf-8');
   const render = (await import('../dist/server/entry-server.js')).render;
   const [rendered, preloadLinks] = await render(manifest, safeContext);
   const html = template
-        .replace(`<!--preload-links-->`, preloadLinks)
-        .replace(`<!--app-html-->`, rendered)
-        .replace(`<!--app-context-->`, `<script>window.ctx = ${JSON.stringify(safeContext)};</script>`)
-        .replace(`<!--app-title-->`, `<title>${rp.name} Login</title>`)
+    .replace(`<!--preload-links-->`, preloadLinks)
+    .replace(`<!--app-html-->`, rendered)
+    .replace(`<!--app-context-->`, `<script>window.ctx =
+      ${JSON.stringify(safeContext)};</script>`)
+    .replace(`<!--app-title-->`, `<title>${rp.name} Login</title>`);
 
-  res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
+  res.status(200).set({'Content-Type': 'text/html'}).end(html);
   return;
 }
 
@@ -133,7 +137,7 @@ export const getExchangeStatus = async (req, res) => {
     res.send(data);
   }
   return;
-}
+};
 
 export const health = (req, res) => {
   const healthCheck = {
@@ -148,4 +152,4 @@ export const health = (req, res) => {
     res.status(503);
     res.send(healthCheck);
   }
-}
+};
