@@ -1,5 +1,17 @@
+*.log
+*.sw[nop]
+*~
+.DS_Store
+.cache
 .env
-node_modules/
+.nyc_output
+.project
+.settings
+.vscode
+TAGS
+coverage
+dist
+node_modules
 package-lock.json
 config/config.yaml
 
