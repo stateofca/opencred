@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 2.0.3 - 2023-10-xx
+## 2.0.3 - 2023-10-17
 
 ### Fixed
 - Add error logging.
