@@ -51,7 +51,20 @@ if(!Array.isArray(relyingParties)) {
 }
 
 relyingParties.forEach(validateRelyingParty);
+
+// Validate exchanger connection configuration
 export const exchanger = configDoc.exchanger;
+if(!exchanger || !exchanger.base_url?.startsWith('http')) {
+  throw new Error(
+    'Exchanger base_url must be defined. This tool uses a VC-API ' +
+    'exchange endpoint to communicate with wallets.'
+  );
+} else if(typeof exchanger.capability !== 'string') {
+  throw new Error('Exchanger capability must be defined.');
+} else if(typeof exchanger.clientSecret !== 'string') {
+  throw new Error('Exchanger clientSecret must be defined.');
+}
+
 export const defaultLanguage = configDoc.default_language || 'en';
 
 export const translations = combineTranslations(configDoc.translations || {});
