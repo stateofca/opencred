@@ -31,10 +31,14 @@ const _getZcapClient = async ({secretKeySeed}) => {
   const keyPair = await Ed25519VerificationKey2020.generate({
     seed
   });
-  const {methodFor} = await didKeyDriver.fromKeyPair({
+  const didKey = await didKeyDriver.fromKeyPair({
     verificationKeyPair: keyPair
   });
-  const capabilityInvocationKeyPair = methodFor({
+
+  console.log('Exchanger Key DID Document:',
+    JSON.stringify(didKey.didDocument, null, 2));
+
+  const capabilityInvocationKeyPair = didKey.methodFor({
     purpose: 'capabilityInvocation'
   });
   // enable signing by adding the private key material
@@ -60,6 +64,10 @@ export async function zcapWriteRequest({
   if(typeof capability === 'string') {
     capability = JSON.parse(capability);
   }
+
+  console.log('zcapWriteRequest capability',
+    JSON.stringify(capability, null, 2));
+
   try {
     const zcapClient = await _getZcapClient({secretKeySeed: clientSecret});
     result = await zcapClient.write({
@@ -92,6 +100,10 @@ export async function zcapReadRequest({
   if(typeof capability === 'string') {
     capability = JSON.parse(capability);
   }
+
+  console.log('zcapReadRequest capability',
+    JSON.stringify(capability, null, 2));
+
   try {
     const zcapClient = await _getZcapClient({secretKeySeed: clientSecret});
     result = await zcapClient.read({
