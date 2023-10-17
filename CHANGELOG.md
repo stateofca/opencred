@@ -1,5 +1,11 @@
 # opencred-platform Changelog
 
+## 2.0.5 - 2023-10-xx
+
+### Fixed
+- Pin to `node:20.8.0-alpine3.18`.
+- Revert to `ezcap@4`.
+
 ## 2.0.4 - 2023-10-17
 
 ### Fixed
