@@ -61,7 +61,11 @@ if(!exchanger || !exchanger.base_url?.startsWith('http')) {
   );
 } else if(typeof exchanger.capability !== 'string') {
   throw new Error('Exchanger capability must be defined.');
-} else if(typeof exchanger.clientSecret !== 'string') {
+} else if(
+  !exchanger.clientSecret ||
+  typeof exchanger.clientSecret !== 'string' ||
+  exchanger.clientSecret.length < 1
+) {
   throw new Error('Exchanger clientSecret must be defined.');
 }
 
