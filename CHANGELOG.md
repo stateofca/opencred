@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 2.0.4 - 2023-10-xx
+
+### Fixed
+- Use debug branch of `ezcap`.
+
 ## 2.0.3 - 2023-10-17
 
 ### Fixed
