@@ -20,4 +20,4 @@ FROM base AS release
 COPY --from=test --chown=node:node /home/node/app ./
 EXPOSE 10443
 ENV NODE_ENV=production
-CMD ["npm", "run", "start"]
+CMD ["node", "index.js"]
