@@ -82,6 +82,7 @@ export async function zcapWriteRequest({
     });
   } catch(e) {
     error = e;
+    console.error('Error in zcapWriteRequest:', error);
   }
   const {data, statusCode} = _getDataAndStatus({result, error});
   return {result, error, data, statusCode};
@@ -115,6 +116,7 @@ export async function zcapReadRequest({
     });
   } catch(e) {
     error = e;
+    console.error('Error in zcapReadRequest:', error);
   }
   const {data, statusCode} = _getDataAndStatus({result, error});
   return {result, error, data, statusCode};
