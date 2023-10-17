@@ -1,10 +1,21 @@
-import manifest from '../dist/client/ssr-manifest.json' assert { type: 'json' };
 import {zcapReadRequest, zcapWriteRequest} from '../common/zcap.js';
-import fs from 'node:fs'
+import {fileURLToPath} from 'node:url';
+import fs from 'node:fs';
+import path from 'node:path';
 
 import {
   defaultLanguage, exchanger, relyingParties, theme, translations
 } from '../config/config.js';
+
+import {render} from '../dist/server/entry-server.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const manifest = JSON.parse(fs.readFileSync(
+  path.join(__dirname, '../dist/client/ssr-manifest.json'), 'utf-8'));
+const template = fs.readFileSync(
+  path.join(__dirname, '../dist/client/index.html'), 'utf-8');
 
 export async function exchangeCodeForToken(req, res) {
   res.status(500).send('Not implemented');
@@ -16,6 +27,7 @@ export async function login(req, res) {
   // If the client_id is not in the relyingParties array, throw an error
   if(!relyingParties.map(rp => rp.client_id).includes(req.query.client_id)) {
     res.status(400).send({message: 'Unknown client_id'});
+    return;
   }
   const rp = relyingParties.find(rp => rp.client_id == req.query.client_id);
 
@@ -106,8 +118,6 @@ export async function login(req, res) {
     theme,
     exchangeData: exchangeResponse
   };
-  const template = fs.readFileSync('./dist/client/index.html', 'utf-8');
-  const render = (await import('../dist/server/entry-server.js')).render;
   const [rendered, preloadLinks] = await render(manifest, safeContext);
   const html = template
     .replace(`<!--preload-links-->`, preloadLinks)
