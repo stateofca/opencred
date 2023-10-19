@@ -17,21 +17,21 @@ sequenceDiagram
     participant Exchanger as Exchanger
     participant Wallet as Wallet
     note over User: Views unauthenticated webpage
-    RP->>OpenCred: Auth request w/client_id
-    OpenCred->>Exchanger: Generate OID4VP presentation request
-    Exchanger->>OpenCred: Success response
-    OpenCred->>User: Present URL & QR Code
-    User-->>Wallet: Scan QR Code from wallet app
+    RP->>OpenCred: 1. Auth request w/client_id
+    OpenCred->>Exchanger: 2. Generate OID4VP presentation request
+    Exchanger->>OpenCred: 3. Success response
+    OpenCred->>User: 4. Present URL & QR Code
+    User-->>Wallet: 5. Scan QR Code from wallet app
     note over Wallet: Display request & credential(s)
-    Wallet->>Exchanger: Post Verifiable Presentation
-    Exchanger->>Wallet: Success response
-    Wallet->>OpenCred: User redirected to OpenCred
-    OpenCred->>Exchanger: Request exchange result
-    Exchanger->>OpenCred: Verified presentation w/credential
-    OpenCred->>RP: Redirect w/Code
-    RP->>OpenCred: Exchange code for id_token
-    OpenCred->>RP: id_token response
-    RP->>User: Display authenticated webpage
+    Wallet->>Exchanger: 6. Post Verifiable Presentation
+    Exchanger->>Wallet: 7. Success response
+    Wallet->>OpenCred: 8. User redirected to OpenCred
+    OpenCred->>Exchanger: 9. Request exchange result
+    Exchanger->>OpenCred: 10. Verified presentation w/credential
+    OpenCred->>RP: 11. Redirect w/Code
+    RP->>OpenCred: 12. Exchange code for id_token
+    OpenCred->>RP: 13. id_token response
+    RP->>User: 14. Display authenticated webpage
     note over User: Views authenticated webpage
 ```
 
