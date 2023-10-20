@@ -22,72 +22,20 @@ import {
   CONTEXT_URL as DID_CONTEXT_URL
 } from 'did-context';
 import {
-  CONTEXT as ED_SIG_2020_CONTEXT,
-  CONTEXT_URL as ED_SIG_2020_CONTEXT_URL
+  CONTEXT as VDL_AAMVA_CONTEXT,
+  CONTEXT_URL as VDL_AAMVA_CONTEXT_URL
+} from '@digitalbazaar/vdl-aamva-context';
+import {
+  CONTEXT as VDL_BASE_CONTEXT,
+  CONTEXT_URL as VDL_BASE_CONTEXT_URL
 } from '@digitalbazaar/vdl-context';
 import {
-  CONTEXT as VDL_CONTEXT,
-  CONTEXT_URL as VDL_CONTEXT_URL
+  CONTEXT as ED_SIG_2020_CONTEXT,
+  CONTEXT_URL as ED_SIG_2020_CONTEXT_URL
 } from 'ed25519-signature-2020-context';
 import {CryptoLD} from 'crypto-ld';
 import {JsonLdDocumentLoader} from 'jsonld-document-loader';
 import X25519KeyAgreement2020Context from 'x25519-key-agreement-2020-context';
-
-// TODO: create a vdl context repo in digitalbazaar github?
-const VDL_CONTEXT_URL = 'https://w3id.org/vdl/aamva/v1';
-const VDL_CONTEXT = {
-  '@context': {
-    '@protected': true,
-    aamva_aka_family_name_v2: 'https://w3id.org/vdl/aamva#akaFamilyNameV2',
-    aamva_aka_given_name_v2: 'https://w3id.org/vdl/aamva#akaGivenNameV2',
-    aamva_aka_suffix: 'https://w3id.org/vdl/aamva#akaSuffix',
-    aamva_cdl_indicator: {
-      '@id': 'https://w3id.org/vdl/aamva#cdlIndicator',
-      '@type': 'http://www.w3.org/2001/XMLSchema#unsignedInt'
-    },
-    aamva_dhs_compliance: 'https://w3id.org/vdl/aamva#dhsCompliance',
-    aamva_dhs_compliance_text: 'https://w3id.org/vdl/aamva#dhsCompliance_text',
-    aamva_dhs_temporary_lawful_status: {
-      '@id': 'https://w3id.org/vdl/aamva#dhsTemporaryLawfulStatus',
-      '@type': 'http://www.w3.org/2001/XMLSchema#unsignedInt'
-    },
-    aamva_domestic_driving_privileges: {
-      '@id': 'https://w3id.org/vdl/aamva#domesticDrivingPrivileges',
-      '@type': '@json'
-    },
-    aamva_edl_credential: {
-      '@id': 'https://w3id.org/vdl/aamva#edlCredential',
-      '@type': 'http://www.w3.org/2001/XMLSchema#unsignedInt'
-    },
-    aamva_family_name_truncation:
-      'https://w3id.org/vdl/aamva#familyNameTruncation',
-    aamva_given_name_truncation:
-      'https://w3id.org/vdl/aamva#givenNameTruncation',
-    aamva_hazmat_endorsement_expiration_date: {
-      '@id': 'https://w3id.org/vdl/aamva#hazmatEndorsementExpirationDate',
-      '@type': 'https://www.rfc-editor.org/rfc/rfc3339#full-date'
-    },
-    aamva_name_suffix: 'https://w3id.org/vdl/aamva#nameSuffix',
-    aamva_organ_donor: {
-      '@id': 'https://w3id.org/vdl/aamva#organDonor',
-      '@type': 'http://www.w3.org/2001/XMLSchema#unsignedInt'
-    },
-    aamva_race_ethnicity: 'https://w3id.org/vdl/aamva#raceEthnicity',
-    aamva_resident_county: 'https://w3id.org/vdl/aamva#residentCounty',
-    aamva_sex: {
-      '@id': 'https://w3id.org/vdl/aamva#sex',
-      '@type': 'http://www.w3.org/2001/XMLSchema#unsignedInt'
-    },
-    aamva_veteran: {
-      '@id': 'https://w3id.org/vdl/aamva#veteran',
-      '@type': 'http://www.w3.org/2001/XMLSchema#unsignedInt'
-    },
-    aamva_weight_range: {
-      '@id': 'https://w3id.org/vdl/aamva#weightRange',
-      '@type': 'http://www.w3.org/2001/XMLSchema#unsignedInt'
-    }
-  }
-};
 
 const cryptoLd = new CryptoLD();
 cryptoLd.use(Ed25519VerificationKey2020);
@@ -119,7 +67,8 @@ const getDocumentLoader = () => {
   jsonLdDocLoader.addStatic(DID_CONTEXT_URL, DID_CONTEXT);
   jsonLdDocLoader.addStatic(CRED_CONTEXT_URL, CRED_CONTEXT);
   jsonLdDocLoader.addStatic(SL_V1_CONTEXT_URL, SL_V1_CONTEXT);
-  jsonLdDocLoader.addStatic(VDL_CONTEXT_URL, VDL_CONTEXT);
+  jsonLdDocLoader.addStatic(VDL_BASE_CONTEXT_URL, VDL_BASE_CONTEXT);
+  jsonLdDocLoader.addStatic(VDL_AAMVA_CONTEXT_URL, VDL_AAMVA_CONTEXT);
 
   // handle DIDs
   jsonLdDocLoader.setDidResolver(didResolver);
