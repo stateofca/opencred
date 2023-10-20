@@ -24,6 +24,10 @@ import {
 import {
   CONTEXT as ED_SIG_2020_CONTEXT,
   CONTEXT_URL as ED_SIG_2020_CONTEXT_URL
+} from '@digitalbazaar/vdl-context';
+import {
+  CONTEXT as VDL_CONTEXT,
+  CONTEXT_URL as VDL_CONTEXT_URL
 } from 'ed25519-signature-2020-context';
 import {CryptoLD} from 'crypto-ld';
 import {JsonLdDocumentLoader} from 'jsonld-document-loader';
@@ -102,9 +106,10 @@ const didResolver = new CachedResolver();
 didResolver.use(didWebDriver);
 didResolver.use(didKeyDriver);
 
-const getDocumentLoader = ({dynamic = false} = {}) => {
+const getDocumentLoader = () => {
   const jsonLdDocLoader = new JsonLdDocumentLoader();
 
+  // handle static contexts
   jsonLdDocLoader.addStatic(ED_SIG_2020_CONTEXT_URL, ED_SIG_2020_CONTEXT);
   jsonLdDocLoader.addStatic(
     X25519KeyAgreement2020Context.constants.CONTEXT_URL,
@@ -116,32 +121,34 @@ const getDocumentLoader = ({dynamic = false} = {}) => {
   jsonLdDocLoader.addStatic(SL_V1_CONTEXT_URL, SL_V1_CONTEXT);
   jsonLdDocLoader.addStatic(VDL_CONTEXT_URL, VDL_CONTEXT);
 
+  // handle DIDs
   jsonLdDocLoader.setDidResolver(didResolver);
-  if(dynamic) {
-    const webHandler = {
-      get: async ({url}) => {
-        const getConfig = {
-          headers: {
-            'Cache-Control': 'no-cache',
-            Pragma: 'no-cache'
-          },
-          // max size for any JSON doc (in bytes, ~8 KiB)
-          size: 8192,
-          // timeout in ms for fetching any document
-          timeout: 5000
-        };
-        return (await fetch(url, getConfig)).json();
-      }
-    };
-    jsonLdDocLoader.setProtocolHandler({
-      protocol: 'http',
-      handler: webHandler
-    });
-    jsonLdDocLoader.setProtocolHandler({
-      protocol: 'https',
-      handler: webHandler
-    });
-  }
+
+  // automatically handle all http(s) contexts that are not handled above
+  const webHandler = {
+    get: async ({url}) => {
+      const getConfig = {
+        headers: {
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache'
+        },
+        // max size for any JSON doc (in bytes, ~8 KiB)
+        size: 8192,
+        // timeout in ms for fetching any document
+        timeout: 5000
+      };
+      return (await fetch(url, getConfig)).json();
+    }
+  };
+  jsonLdDocLoader.setProtocolHandler({
+    protocol: 'http',
+    handler: webHandler
+  });
+  jsonLdDocLoader.setProtocolHandler({
+    protocol: 'https',
+    handler: webHandler
+  });
+
   return jsonLdDocLoader;
 };
 
