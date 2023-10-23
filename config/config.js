@@ -69,6 +69,7 @@ if(!exchanger || !exchanger.base_url?.startsWith('http')) {
   throw new Error('Exchanger clientSecret must be defined.');
 }
 
+export const workflow = configDoc.workflow;
 export const defaultLanguage = configDoc.default_language || 'en';
 
 export const translations = combineTranslations(configDoc.translations || {});

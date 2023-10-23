@@ -35,9 +35,6 @@ const _getZcapClient = async ({secretKeySeed}) => {
     verificationKeyPair: keyPair
   });
 
-  console.log('Exchanger Key DID Document:',
-    JSON.stringify(didKey.didDocument, null, 2));
-
   const capabilityInvocationKeyPair = didKey.methodFor({
     purpose: 'capabilityInvocation'
   });
@@ -64,9 +61,6 @@ export async function zcapWriteRequest({
   if(typeof capability === 'string') {
     capability = JSON.parse(capability);
   }
-
-  console.log('zcapWriteRequest capability',
-    JSON.stringify(capability, null, 2));
 
   try {
     const zcapClient = await _getZcapClient({secretKeySeed: clientSecret});
@@ -101,9 +95,6 @@ export async function zcapReadRequest({
   if(typeof capability === 'string') {
     capability = JSON.parse(capability);
   }
-
-  console.log('zcapReadRequest capability',
-    JSON.stringify(capability, null, 2));
 
   try {
     const zcapClient = await _getZcapClient({secretKeySeed: clientSecret});

@@ -31,7 +31,8 @@ relying_parties:
         description: "Your email address"
         claim_iri: "https://schema.org/email"
         claim_value: "string"
-exchanger:
+workflow:
+  type: vc-api
   base_url: https://example.org/exchanges/123
   capability: "TODO"
   clientSecret: "TODO"
