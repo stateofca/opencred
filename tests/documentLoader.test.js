@@ -1,9 +1,12 @@
-import {getDocumentLoader} from '../common/documentLoader.js';
+import {describe, it} from 'mocha';
+
 import expect from 'expect.js';
+import {getDocumentLoader} from '../common/documentLoader.js';
 
 const documentLoader = getDocumentLoader().build();
 
-const exampleDidKeyId = 'did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH';
+const exampleDidKeyId =
+  'did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH';
 
 describe('Document Loader', async () => {
   it('load did:key document', async function() {
