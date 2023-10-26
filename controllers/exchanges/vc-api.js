@@ -1,7 +1,7 @@
 import {zcapReadRequest, zcapWriteRequest} from '../../common/zcap.js';
 
 import {
-  defaultLanguage, relyingParties, theme, translations, workflow
+  relyingParties, workflow
 } from '../../config/config.js';
 
 export default function(app) {
@@ -12,25 +12,6 @@ export default function(app) {
       return;
     }
     const rp = relyingParties.find(rp => rp.client_id == req.query.client_id);
-
-    // Validate Redirect URI is permitted
-    if(!req.query.redirect_uri) {
-      res.status(400).send({message: 'redirect_uri is required'});
-      return;
-    } else if(rp.redirect_uri != req.query.redirect_uri) {
-      res.status(400).send({message: 'Unknown redirect_uri'});
-      return;
-    }
-
-    // Validate scope is openid only.
-    if(!req.query.scope) {
-      res.status(400).send({message: 'scope is required'});
-      return;
-    } else if(req.query.scope !== 'openid') {
-      res.status(400).send({message: 'Invalid scope'});
-      return;
-    }
-
     const query = JSON.parse(rp.vpr_query);
     const expectedType = query.credentialQuery.type;
     const expectedContext = query.credentialQuery['@context'];
@@ -87,21 +68,9 @@ export default function(app) {
       encodeURIComponent(JSON.stringify(unencodedOffer))
     };
 
-    const context = {
-      step: 'login',
-      rp: {
-        redirect_uri: rp.redirect_uri,
-        name: rp.name,
-        icon: rp.icon,
-        background_image: rp.background_image
-      },
-      translations,
-      defaultLanguage,
-      theme,
-      exchangeData: exchangeResponse
+    req.exchange = {
+      protocols: exchangeResponse
     };
-
-    req.context = context;
     next();
   });
 

@@ -46,6 +46,7 @@
     "express-session": "^1.17.3",
     "jsonld-document-loader": "^2.0.0",
     "method-override": "^3.0.0",
+    "mongodb": "^6.2.0",
     "morgan": "^1.10.0",
     "oidc-provider": "^8.4.0",
     "qrcode.vue": "^3.4.1",

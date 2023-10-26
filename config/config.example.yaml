@@ -1,3 +1,4 @@
+db_connection_uri: TODO
 relying_parties:
   - name: "Test App"
     client_id: "rp1"

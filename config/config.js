@@ -33,16 +33,6 @@ const validateRelyingParty = rp => {
   if(!rp.scopes.map(s => s.name).includes('openid')) {
     throw new Error(`scopes in client ${rp.client_id} must include openid`);
   }
-
-  // If there is no Presentation Request, throw an error
-  if(
-    !rp.vpr_query ||
-    typeof rp.vpr_query !== 'string') {
-    throw new Error(
-      `Presentation Request vpr_query must appear in client ${rp.client_id}`
-    );
-  }
-
 };
 
 // If relyingParties is not an array, throw an error
@@ -52,24 +42,40 @@ if(!Array.isArray(relyingParties)) {
 
 relyingParties.forEach(validateRelyingParty);
 
-// Validate exchanger connection configuration
-export const exchanger = configDoc.exchanger;
-if(!exchanger || !exchanger.base_url?.startsWith('http')) {
-  throw new Error(
-    'Exchanger base_url must be defined. This tool uses a VC-API ' +
-    'exchange endpoint to communicate with wallets.'
-  );
-} else if(typeof exchanger.capability !== 'string') {
-  throw new Error('Exchanger capability must be defined.');
-} else if(
-  !exchanger.clientSecret ||
-  typeof exchanger.clientSecret !== 'string' ||
-  exchanger.clientSecret.length < 1
-) {
-  throw new Error('Exchanger clientSecret must be defined.');
+// Validate workflow connection configuration
+export const workflow = configDoc.workflow;
+if(!workflow) {
+  throw new Error('workflow must be defined.');
+}
+if(workflow.type === 'vc-api') {
+  if(!workflow.base_url?.startsWith('http')) {
+    throw new Error(
+      'workflow base_url must be defined. This tool uses a VC-API ' +
+      'exchange endpoint to communicate with wallets.'
+    );
+  } else if(typeof workflow.capability !== 'string') {
+    throw new Error('workflow capability must be defined.');
+  } else if(
+    !workflow.clientSecret ||
+    typeof workflow.clientSecret !== 'string' ||
+    workflow.clientSecret.length < 1
+  ) {
+    throw new Error('workflow clientSecret must be defined.');
+  }
+} else if(workflow.type === 'native') {
+  if(!workflow.steps.length) {
+    throw new Error('workflow must have at least 1 step.');
+  }
+  if(!workflow.initialStep) {
+    throw new Error('workflow initialStep must be set.');
+  }
 }
 
-export const workflow = configDoc.workflow;
+export const databaseConnectionUri = configDoc.db_connection_uri;
+if(!databaseConnectionUri) {
+  throw new Error('Database connection uri not found.');
+}
+
 export const defaultLanguage = configDoc.default_language || 'en';
 
 export const translations = combineTranslations(configDoc.translations || {});

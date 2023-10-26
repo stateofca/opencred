@@ -28,6 +28,7 @@
 
 
   const openChapi = async () => {
+    console.log(props.exchangeData)
     const req = await getCredentials({
       queries: {},
       protocols: props.exchangeData
