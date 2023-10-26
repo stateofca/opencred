@@ -1,3 +1,4 @@
+import * as DidJwk from '@digitalbazaar/did-method-jwk';
 import * as DidKey from '@digitalbazaar/did-method-key';
 import * as DidWeb from '@interop/did-web-resolver';
 import {
@@ -49,10 +50,16 @@ didKeyDriver.use({
   multibaseMultikeyHeader: 'z6Mk',
   fromMultibase: DidKey.createFromMultibase(Ed25519VerificationKey2020)
 });
+const didJwkDriver = DidJwk.driver();
+didJwkDriver.use({
+  algorithm: 'EdDSA',
+  handler: Ed25519VerificationKey2020.from
+});
 
 const didResolver = new CachedResolver();
 didResolver.use(didWebDriver);
 didResolver.use(didKeyDriver);
+didResolver.use(didJwkDriver);
 
 const getDocumentLoader = () => {
   const jsonLdDocLoader = new JsonLdDocumentLoader();
