@@ -2,26 +2,25 @@ import * as DidJwk from '@digitalbazaar/did-method-jwk';
 import * as DidKey from '@digitalbazaar/did-method-key';
 import * as DidWeb from '@interop/did-web-resolver';
 import {
-  CONTEXT as DI_CONTEXT,
-  CONTEXT_URL as DI_CONTEXT_URL
-} from '@digitalbazaar/data-integrity-context';
-import {
-  CONTEXT_V1 as SL_V1_CONTEXT,
-  CONTEXT_URL_V1 as SL_V1_CONTEXT_URL
-} from '@digitalbazaar/vc-status-list-context';
-import {CachedResolver} from '@digitalbazaar/did-io';
-import {Ed25519VerificationKey2020}
-  from '@digitalbazaar/ed25519-verification-key-2020';
-import {X25519KeyAgreementKey2020}
-  from '@digitalbazaar/x25519-key-agreement-key-2020';
-import {
   CONTEXT as CRED_CONTEXT,
   CONTEXT_URL as CRED_CONTEXT_URL
 } from 'credentials-context';
 import {
+  CONTEXT as DI_CONTEXT,
+  CONTEXT_URL as DI_CONTEXT_URL
+} from '@digitalbazaar/data-integrity-context';
+import {
   CONTEXT as DID_CONTEXT,
   CONTEXT_URL as DID_CONTEXT_URL
 } from 'did-context';
+import {
+  CONTEXT as ED_SIG_2020_CONTEXT,
+  CONTEXT_URL as ED_SIG_2020_CONTEXT_URL
+} from 'ed25519-signature-2020-context';
+import {
+  CONTEXT_V1 as SL_V1_CONTEXT,
+  CONTEXT_URL_V1 as SL_V1_CONTEXT_URL
+} from '@digitalbazaar/vc-status-list-context';
 import {
   CONTEXT as VDL_AAMVA_CONTEXT,
   CONTEXT_URL as VDL_AAMVA_CONTEXT_URL
@@ -30,13 +29,14 @@ import {
   CONTEXT as VDL_BASE_CONTEXT,
   CONTEXT_URL as VDL_BASE_CONTEXT_URL
 } from '@digitalbazaar/vdl-context';
-import {
-  CONTEXT as ED_SIG_2020_CONTEXT,
-  CONTEXT_URL as ED_SIG_2020_CONTEXT_URL
-} from 'ed25519-signature-2020-context';
+import {CachedResolver} from '@digitalbazaar/did-io';
 import {CryptoLD} from 'crypto-ld';
+import {Ed25519VerificationKey2020}
+  from '@digitalbazaar/ed25519-verification-key-2020';
 import {JsonLdDocumentLoader} from 'jsonld-document-loader';
 import X25519KeyAgreement2020Context from 'x25519-key-agreement-2020-context';
+import {X25519KeyAgreementKey2020}
+  from '@digitalbazaar/x25519-key-agreement-key-2020';
 
 const cryptoLd = new CryptoLD();
 cryptoLd.use(Ed25519VerificationKey2020);
