@@ -1,17 +1,12 @@
-import {
-  createExchange as createExchangeNative,
-  getExchangeStatusNative as getExchangeStatusNative
-} from './controllers/plugins/native.js';
-import {
-  createExchange as createExchangeVCAPI,
-  getExchangeStatus as getExchangeStatusVCAPI
-} from './controllers/plugins/vc-api.js';
 import cors from 'cors';
 import express from 'express';
 
 import {
-  exchangeCodeForToken, health, login
+  exchangeCodeForToken, getExchangeStatus, health, login
 } from './controllers/controller.js';
+import CustomExchangeMiddleware from './controllers/exchanges/custom.js';
+import NativeMiddleware from './controllers/exchanges/native.js';
+import VCAPIExchangeMiddleware from './controllers/exchanges/vc-api.js';
 import {workflow} from './config/config.js';
 
 export const app = express();
@@ -26,13 +21,18 @@ app.use(
 
 app.use('/assets', express.static('dist/client/assets', {index: false}));
 app.use('/health', health);
+
+// Install the proper exchange middleware
 if(workflow.type === 'vc-api') {
-  app.use('/login', createExchangeVCAPI, login);
-  app.use('/exchange', getExchangeStatusVCAPI);
+  VCAPIExchangeMiddleware(app);
+} else if(workflow.type === 'custom') {
+  CustomExchangeMiddleware(app);
 } else {
-  app.use('/login', createExchangeNative, login);
-  app.use('/exchange', getExchangeStatusNative);
+  NativeMiddleware(app);
 }
+
+app.use('/login', login);
+app.use('/exchange', getExchangeStatus);
 app.use('/token', exchangeCodeForToken);
 
 export const PORT = process.env.PORT || '8080';

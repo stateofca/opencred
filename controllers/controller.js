@@ -17,17 +17,22 @@ export async function exchangeCodeForToken(req, res) {
 }
 
 export async function login(req, res) {
-  const [rendered, preloadLinks] = await render(manifest, req.safeContext);
+  const [rendered, preloadLinks] = await render(manifest, req.context);
   const html = template
     .replace(`<!--preload-links-->`, preloadLinks)
     .replace(`<!--app-html-->`, rendered)
     .replace(`<!--app-context-->`, `<script>window.ctx =
-      ${JSON.stringify(req.safeContext)};</script>`)
+      ${JSON.stringify(req.context)};</script>`)
     .replace(`<!--app-title-->`,
-      `<title>${req.safeContext.rp.name} Login</title>`);
+      `<title>${req.context.rp.name} Login</title>`);
   res.status(200).set({'Content-Type': 'text/html'}).end(html);
   return;
 }
+
+export const getExchangeStatus = async (req, res) => {
+  res.send(req.exchange);
+  return;
+};
 
 export const health = (req, res) => {
   const healthCheck = {
