@@ -22,9 +22,9 @@ export default function(app) {
         json: {
           ttl: 60 * 15,
           variables: {
-            verifiablePresentationRequest
-          },
-          // openId: {createAuthorizationRequest: 'authorizationRequest'}
+            verifiablePresentationRequest,
+            openId: {createAuthorizationRequest: 'authorizationRequest'}
+          }
         }
       });
       if(!result) {
