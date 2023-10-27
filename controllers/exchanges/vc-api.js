@@ -11,67 +11,51 @@ export default function(app) {
       res.status(400).send({message: 'Unknown client_id'});
       return;
     }
-    const rp = relyingParties.find(rp => rp.client_id == req.query.client_id);
-    const query = JSON.parse(rp.vpr_query);
-    const expectedType = query.credentialQuery.type;
-    const expectedContext = query.credentialQuery['@context'];
-
-    // TODO: update tests
-    const {result} = await zcapWriteRequest({
-      endpoint: workflow.base_url,
-      zcap: {
-        capability: workflow.capability,
-        clientSecret: workflow.clientSecret
-      },
-      json: {
-        ttl: 60 * 15,
-        variables: {
-          verifiablePresentationRequest: {
-            query,
-            domain: rp.domain
-          }
+    try {
+      const verifiablePresentationRequest = JSON.parse(workflow.vpr);
+      const {result} = await zcapWriteRequest({
+        endpoint: workflow.base_url,
+        zcap: {
+          capability: workflow.capability,
+          clientSecret: workflow.clientSecret
+        },
+        json: {
+          ttl: 60 * 15,
+          variables: {
+            verifiablePresentationRequest
+          },
+          // openId: {createAuthorizationRequest: 'authorizationRequest'}
         }
+      });
+      if(!result) {
+        res.status(500).send({
+          message: 'Error initiating exchange: check workflow configuration.'
+        });
+        return;
+      } else if(result.status !== 204) {
+        res.status(500).send({
+          message: 'Error initiating exchange'
+        });
+        return;
       }
-    });
-    if(!result) {
-      res.status(500).send({
-        message: 'Error initiating exchange: check workflow configuration.'
+
+      const exchangeId = result.headers.get('location');
+      const authzReqUrl = `${exchangeId}/openid/client/authorization/request`;
+      const searchParams = new URLSearchParams({
+        client_id: `${exchangeId}/openid/client/authorization/response`,
+        request_uri: authzReqUrl
       });
-      return;
-    } else if(result.status !== 204) {
-      res.status(500).send({
-        message: 'Error initiating exchange'
-      });
-      return;
+      const OID4VP = 'openid4vp://authorize?' + searchParams.toString();
+
+      req.exchange = {
+        vcapi: exchangeId,
+        OID4VP
+      };
+      next();
+    } catch(e) {
+      console.error(e);
+      res.status(500).send({message: 'Internal Server Error'});
     }
-
-    const exchangeId = result.headers.get('location');
-
-    const unencodedOffer = {
-      credential_issuer: exchangeId,
-      credentials: [{
-        format: 'ldp_vc',
-        credential_definition: {
-          '@context': expectedContext,
-          type: expectedType,
-        }
-      }],
-      grants: {
-        'urn:ietf:params:oauth:grant-type:pre-authorized_code': {
-          'pre-authorized_code': 'db011b91-cd1c-481f-a34c-eb45ee39be3a'
-        }
-      }
-    };
-    const exchangeResponse = {
-      vcapi: exchangeId,
-      OID4VP: 'openid-verification-request://?credential_offer=' +
-      encodeURIComponent(JSON.stringify(unencodedOffer))
-    };
-
-    req.exchange = {
-      protocols: exchangeResponse
-    };
-    next();
   });
 
   app.use('/exchange', async (req, res, next) => {
