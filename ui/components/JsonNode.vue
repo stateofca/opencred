@@ -1,0 +1,32 @@
+<template>
+  <span v-if="!state.expanded && value.length > 130">
+    {{value.slice(0, 128)}}
+    <span
+      class="cursor-pointer bg-grey-3 q-px-xs"
+      @click="expand">...</span>
+    "
+  </span>
+  <span v-else>
+    {{value}}
+  </span>
+</template>
+
+<script setup>
+/*!
+ * Copyright (c) 2022-2023 Digital Bazaar, Inc. All rights reserved.
+ */
+import {defineProps, reactive} from 'vue';
+
+const state = reactive({expanded: false});
+
+defineProps({
+  value: {
+    type: String,
+    required: true
+  }
+});
+
+const expand = () => {
+  state.expanded = true;
+};
+</script>

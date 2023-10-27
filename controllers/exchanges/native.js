@@ -46,6 +46,18 @@ export default function(app) {
     next();
   });
 
+  // eslint-disable-next-line max-len
+  app.get('/workflows/:workflowId/exchanges/:exchangeId/openid/client/authorization/request', async (req, res) => {
+    // TODO
+    // fetch exchange state
+    // create authorization request
+    // presentation definition?
+    // nonce = exchangeId?
+    // 
+    res.send('True');
+    return;
+  });
+
   app.post('/workflows/:workflowId/exchanges/:exchangeId', async (req, res) => {
     if(workflow.id !== req.params.workflowId) {
       res.status(400).send({message: 'Incorrect workflowId'});
