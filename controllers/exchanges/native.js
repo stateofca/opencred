@@ -64,12 +64,12 @@ export default function(app) {
       return;
     }
     const exchange = await exchanges.findOne({id: req.params.exchangeId});
-    const step = workflow.steps.find(s => s.hasOwnProperty(exchange.step));
+    const step = workflow.steps[exchange.step];
     if(exchange) {
       res.send({
         verifiablePresentationRequest:
           {
-            ...JSON.parse(step[exchange.step].verifiablePresentationRequest),
+            ...JSON.parse(step.verifiablePresentationRequest),
             challenge: exchange.challenge
           }
       });
