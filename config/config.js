@@ -63,7 +63,7 @@ if(workflow.type === 'vc-api') {
     throw new Error('workflow clientSecret must be defined.');
   }
 } else if(workflow.type === 'native') {
-  if(!workflow.steps.length) {
+  if(!workflow.steps || Object.keys(workflow.steps).length === 0) {
     throw new Error('workflow must have at least 1 step.');
   }
   if(!workflow.initialStep) {

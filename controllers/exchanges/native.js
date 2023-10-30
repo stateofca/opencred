@@ -3,6 +3,8 @@ import {
 } from '../../config/config.js';
 import {createId} from '../../common/utils.js';
 import {exchanges} from '../../common/database.js';
+import {oid4vp} from '@digitalbazaar/oid4-client';
+import {UnsecuredJWT} from 'jose';
 
 export const createExchange = async domain => {
   const id = await createId();
@@ -43,13 +45,28 @@ export default function(app) {
 
   // eslint-disable-next-line max-len
   app.get('/workflows/:workflowId/exchanges/:exchangeId/openid/client/authorization/request', async (req, res) => {
-    // TODO
-    // fetch exchange state
-    // create authorization request
-    // presentation definition?
-    // nonce = exchangeId?
-    //
-    res.send('True');
+    const exchange = await exchanges.findOne({id: req.params.exchangeId});
+    if(!exchange) {
+      res.sendStatus(404);
+      return;
+    }
+    if(exchange.state !== 'pending') {
+      res.status(400).send(`Exchange in state ${exchange.state}`);
+      return;
+    }
+    const step = workflow.steps[exchange.step];
+    const verifiablePresentationRequest =
+      JSON.parse(step.verifiablePresentationRequest);
+    verifiablePresentationRequest.domain =
+      `${req.protocol}://${req.get('host')}${req.originalUrl.replace('request',
+        'response')}`;
+    const authRequest = {
+      ...oid4vp.fromVpr({verifiablePresentationRequest}),
+      client_id: verifiablePresentationRequest.domain,
+    };
+    const jwt = new UnsecuredJWT(authRequest).encode();
+    res.set('Content-Type', 'application/oauth-authz-req+jwt');
+    res.send(jwt);
     return;
   });
 
