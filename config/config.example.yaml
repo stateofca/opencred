@@ -37,10 +37,11 @@ workflow:
   base_url: https://example.org/exchanges/123
   capability: "TODO"
   clientSecret: "TODO"
-colors:
+theme:
   cta: "#0B669D"
   primary: "#045199"
   header: "#0979c4"
+database_connection_url: "mongodb://localhost:27017/"
 default_language: en
 translations:
   en: 

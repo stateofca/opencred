@@ -1,13 +1,8 @@
-import {createId} from '../../common/utils.js';
-import {MongoClient} from 'mongodb';
-
 import {
-  databaseConnectionUri, relyingParties, workflow
+  relyingParties, workflow
 } from '../../config/config.js';
-
-const client = new MongoClient(databaseConnectionUri);
-const db = client.db('OpenCred');
-const exchanges = db.collection('Exchanges');
+import {createId} from '../../common/utils.js';
+import {exchanges} from '../../common/database.js';
 
 export const createExchange = async domain => {
   const id = await createId();
@@ -53,7 +48,7 @@ export default function(app) {
     // create authorization request
     // presentation definition?
     // nonce = exchangeId?
-    // 
+    //
     res.send('True');
     return;
   });
