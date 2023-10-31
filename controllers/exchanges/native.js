@@ -1,12 +1,13 @@
-import {createId, getSuite} from '../../common/utils.js';
 import {
   relyingParties, workflow
 } from '../../config/config.js';
 import {verify, verifyCredential} from '@digitalbazaar/vc';
+import {createId} from '../../common/utils.js';
 import {exchanges} from '../../common/database.js';
 import {getDocumentLoader} from '../../common/documentLoader.js';
 import jp from 'jsonpath';
 import {oid4vp} from '@digitalbazaar/oid4-client';
+import {SUITES} from '../../common/suites.js';
 import {UnsecuredJWT} from 'jose';
 
 export const createExchange = async domain => {
@@ -102,12 +103,10 @@ export default function(app) {
       for(const descriptor of submission.descriptor_map) {
         if(descriptor.format === 'ldp_vp') {
           if(!vpVerified) {
-            const {document: vpVm} = await documentLoader(
-              vp_token.proof.verificationMethod);
             const result = await verify({
               presentation: vp_token,
               documentLoader,
-              suite: await getSuite(vpVm),
+              suite: SUITES,
               challenge: vp_token.proof.challenge
             });
             if(!result.verified) {
@@ -118,13 +117,10 @@ export default function(app) {
             }
           }
           const vc = jp.query(vp_token, descriptor.path_nested.path)[0];
-          const {document: vm} = await documentLoader(
-            vc.proof.verificationMethod);
-          const suite = getSuite(vm);
           const result = await verifyCredential({
             credential: vc,
             documentLoader,
-            suite,
+            suite: SUITES,
           });
           if(!result.verified) {
             console.log('TODO get proper error from', result);
