@@ -1,4 +1,0 @@
-POST http://localhost:8080/workflows/default/exchanges/z19n3XRUSTopG4X5QLHxpYMBs
-Content-Type: application/json
-
-{}

@@ -35,6 +35,7 @@ const openChapi = async () => {
   });
   if (req.dataType === "OutOfBand") {
     loading.value = true;
+    await checkStatus();
     intervalId = setInterval(checkStatus, 5000);
   }
 };
