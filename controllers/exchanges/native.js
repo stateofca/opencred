@@ -1,16 +1,13 @@
+import {createId, getSuite} from '../../common/utils.js';
 import {
   relyingParties, workflow
 } from '../../config/config.js';
-import {createId} from '../../common/utils.js';
-import {Ed25519Signature2020} from '@digitalbazaar/ed25519-signature-2020';
-import {Ed25519VerificationKey2020} from
-  '@digitalbazaar/ed25519-verification-key-2020';
+import {verify, verifyCredential} from '@digitalbazaar/vc';
 import {exchanges} from '../../common/database.js';
 import {getDocumentLoader} from '../../common/documentLoader.js';
 import jp from 'jsonpath';
 import {oid4vp} from '@digitalbazaar/oid4-client';
 import {UnsecuredJWT} from 'jose';
-import {verifyCredential} from '@digitalbazaar/vc';
 
 export const createExchange = async domain => {
   const id = await createId();
@@ -91,69 +88,88 @@ export default function(app) {
       res.status(400).send(`Exchange in state ${exchange.state}`);
       return;
     }
-
-    const vp_token = JSON.parse(req.body.vp_token);
-    const submission = JSON.parse(req.body.presentation_submission);
-    if(vp_token.proof.challenge !== exchange.id) {
-      res.status(400).send(`Invalid nonce`);
-      return;
-    }
-    const errors = [];
-    const documentLoader = getDocumentLoader().build();
-    for(const descriptor of submission.descriptor_map) {
-      if(descriptor.format === 'ldp_vp') {
-        const vc = jp.query(vp_token, descriptor.path_nested.path)[0];
-        const {document: vm} = await documentLoader(
-          vc.proof.verificationMethod);
-        // TODO don't assume this key type
-        const key = await Ed25519VerificationKey2020.from(vm);
-        const suite = new Ed25519Signature2020({key});
-        const result = await verifyCredential({
-          credential: vc,
-          documentLoader,
-          suite,
-        });
-        if(!result.verified) {
-          console.log('TODO get proper error from', result);
-          errors.push(result.errors);
-        }
-      } else {
-        errors.push(`Format ${descriptor.format} not yet supported.`);
+    try {
+      const vp_token = JSON.parse(req.body.vp_token);
+      const submission = JSON.parse(req.body.presentation_submission);
+      if(vp_token.proof.challenge !== exchange.id) {
+        res.status(400).send(`Invalid nonce`);
+        return;
       }
-      // TODO ^^ use the actual descriptor to find the vc
-      // TODO verify VP as well (can't verify v1 right now)
-      //      (6.5. VP Token Validation)
-      // TODO make sure presentation_submission matches authorization request
-    }
-    if(errors.length > 0) {
-      console.error('errors: ', errors);
-      res.status(400).send('invalid_vp');
-      return;
-    }
-    const update = {
-      $inc: {sequence: 1},
-      $set: {
-        updatedAt: Date.now(),
-        state: 'complete',
-        variables: {
-          results: {
-            'templated-vpr': {
-              verifiablePresentation: vp_token
+      const errors = [];
+      let vpVerified = false;
+      const documentLoader = getDocumentLoader().build();
+
+      for(const descriptor of submission.descriptor_map) {
+        if(descriptor.format === 'ldp_vp') {
+          if(!vpVerified) {
+            const {document: vpVm} = await documentLoader(
+              vp_token.proof.verificationMethod);
+            const result = await verify({
+              presentation: vp_token,
+              documentLoader,
+              suite: await getSuite(vpVm),
+              challenge: vp_token.proof.challenge
+            });
+            if(!result.verified) {
+              console.log('TODO get proper error from', result);
+              errors.push(result.error);
+            } else {
+              vpVerified = true;
+            }
+          }
+          const vc = jp.query(vp_token, descriptor.path_nested.path)[0];
+          const {document: vm} = await documentLoader(
+            vc.proof.verificationMethod);
+          const suite = getSuite(vm);
+          const result = await verifyCredential({
+            credential: vc,
+            documentLoader,
+            suite,
+          });
+          if(!result.verified) {
+            console.log('TODO get proper error from', result);
+            errors.push(result.error);
+          }
+        } else {
+          errors.push(`Format ${descriptor.format} not yet supported.`);
+        }
+        //      (6.5. VP Token Validation)
+        // TODO make sure presentation_submission matches authorization request
+      }
+      if(errors.length > 0) {
+        console.error('errors: ', errors);
+        res.status(400).send({errors});
+        return;
+      }
+      const update = {
+        $inc: {sequence: 1},
+        $set: {
+          updatedAt: Date.now(),
+          state: 'complete',
+          variables: {
+            results: {
+              'templated-vpr': {
+                verifiablePresentation: vp_token
+              }
             }
           }
         }
+      };
+      try {
+        await exchanges.updateOne({
+          id: exchange.id,
+          state: 'pending'
+        }, update);
+      } catch(e) {
+        console.error('failed to update state', e);
       }
-    };
-    try {
-      await exchanges.updateOne({
-        id: exchange.id,
-        state: 'pending'
-      }, update);
+      res.sendStatus(204);
+      return;
     } catch(e) {
-      console.error('failed to update state', e);
+      console.error(e);
+      res.sendStatus(500);
+      return;
     }
-    res.sendStatus(204);
-    return;
   });
 
   app.post('/workflows/:workflowId/exchanges/:exchangeId', async (req, res) => {
