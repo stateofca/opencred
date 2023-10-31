@@ -96,7 +96,8 @@ export default function(app) {
     }
     const errors = [];
     for(const descriptor of submission.descriptor_map) {
-      // TODO use the actual descriptor to find the vc
+      descriptor;
+      // TODO ^^ use the actual descriptor to find the vc
       // TODO fork for vc_ldp / vc_jwt
       // TODO verify VP as well (can't verify v1 right now)
       //      (6.5. VP Token Validation)
