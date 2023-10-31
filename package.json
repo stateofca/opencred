@@ -48,6 +48,7 @@
     "express-session": "^1.17.3",
     "jose": "^5.0.1",
     "jsonld-document-loader": "^2.0.0",
+    "jsonpath": "^1.1.1",
     "method-override": "^3.0.0",
     "mongodb": "^6.2.0",
     "morgan": "^1.10.0",

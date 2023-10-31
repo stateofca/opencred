@@ -7,6 +7,7 @@ import {Ed25519VerificationKey2020} from
   '@digitalbazaar/ed25519-verification-key-2020';
 import {exchanges} from '../../common/database.js';
 import {getDocumentLoader} from '../../common/documentLoader.js';
+import jp from 'jsonpath';
 import {oid4vp} from '@digitalbazaar/oid4-client';
 import {UnsecuredJWT} from 'jose';
 import {verifyCredential} from '@digitalbazaar/vc';
@@ -84,6 +85,9 @@ export default function(app) {
       return;
     }
     if(exchange.state !== 'pending') {
+      await exchanges.updateOne({
+        id: exchange.id
+      }, {$set: {state: 'invalid', updatedAt: Date.now()}});
       res.status(400).send(`Exchange in state ${exchange.state}`);
       return;
     }
@@ -95,29 +99,34 @@ export default function(app) {
       return;
     }
     const errors = [];
+    const documentLoader = getDocumentLoader().build();
     for(const descriptor of submission.descriptor_map) {
-      descriptor;
+      if(descriptor.format === 'ldp_vp') {
+        const vc = jp.query(vp_token, descriptor.path_nested.path)[0];
+        const {document: vm} = await documentLoader(
+          vc.proof.verificationMethod);
+        // TODO don't assume this key type
+        const key = await Ed25519VerificationKey2020.from(vm);
+        const suite = new Ed25519Signature2020({key});
+        const result = await verifyCredential({
+          credential: vc,
+          documentLoader,
+          suite,
+        });
+        if(!result.verified) {
+          console.log('TODO get proper error from', result);
+          errors.push(result.errors);
+        }
+      } else {
+        errors.push(`Format ${descriptor.format} not yet supported.`);
+      }
       // TODO ^^ use the actual descriptor to find the vc
-      // TODO fork for vc_ldp / vc_jwt
       // TODO verify VP as well (can't verify v1 right now)
       //      (6.5. VP Token Validation)
       // TODO make sure presentation_submission matches authorization request
-      const documentLoader = getDocumentLoader().build();
-      const {document: vm} = await documentLoader(
-        vp_token.verifiableCredential[0].proof.verificationMethod);
-      const key = await Ed25519VerificationKey2020.from(vm);
-      const suite = new Ed25519Signature2020({key});
-      const result = await verifyCredential({
-        credential: vp_token.verifiableCredential[0],
-        documentLoader,
-        suite,
-      });
-      if(!result.verified) {
-        console.log('TODO get proper error from', result);
-        errors.push(result.errors);
-      }
     }
     if(errors.length > 0) {
+      console.error('errors: ', errors);
       res.status(400).send('invalid_vp');
       return;
     }
