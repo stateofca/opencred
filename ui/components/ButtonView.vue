@@ -55,7 +55,7 @@ const checkStatus = async () => {
     } = await httpClient.get("/exchange", {
       searchParams: {
         exchangeId: props.exchangeData.vcapi,
-        clientId: 
+        clientId: props.rp.client_id
       },
     }));
     if (Object.keys(exchange).length > 0) {
