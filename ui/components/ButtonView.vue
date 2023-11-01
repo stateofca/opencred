@@ -12,7 +12,11 @@ const props = defineProps({
       redirect_uri: String,
       name: String,
       icon: String,
-      background_image: String
+      background_image: String,
+      workflow: {
+        id: String,
+        type: String
+      }
     },
   theme: {
     cta: String,

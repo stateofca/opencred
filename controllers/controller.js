@@ -29,7 +29,11 @@ export async function login(req, res) {
       redirect_uri: rp.redirect_uri,
       name: rp.name,
       icon: rp.icon,
-      background_image: rp.background_image
+      background_image: rp.background_image,
+      workflow: {
+        type: rp.workflow.type,
+        id: rp.workflow.id
+      }
     },
     translations,
     defaultLanguage,
