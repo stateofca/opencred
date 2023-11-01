@@ -45,12 +45,22 @@ export async function login(req, res) {
     .replace(`<!--app-title-->`,
       `<title>${context.rp.name} Login</title>`);
   res.status(200).set({'Content-Type': 'text/html'}).end(html);
-  return;
+}
+
+export async function initiateExchange(req, res) {
+  const exchangeData = req.exchange;
+  if(!exchangeData) {
+    res.status(500).send(
+      {message: 'Unexpected server error: no exchange data initiated'}
+    );
+    return;
+  }
+
+  res.send(exchangeData);
 }
 
 export const getExchangeStatus = async (req, res) => {
   res.send(req.exchange);
-  return;
 };
 
 export const health = (req, res) => {

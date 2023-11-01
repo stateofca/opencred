@@ -20,42 +20,41 @@ export const createExchange = async (domain, workflow) => {
     step: workflow.initialStep,
     challenge
   });
-  return {exchangeId: `${domain}/workflows/${workflow.id}/exchanges/${id}`};
+  const vcapi = `${domain}/workflows/${workflow.id}/exchanges/${id}`;
+  const authzReqUrl = `${vcapi}/openid/client/authorization/request`;
+  const searchParams = new URLSearchParams({
+    client_id: `${vcapi}/openid/client/authorization/response`,
+    request_uri: authzReqUrl
+  });
+  const OID4VP = 'openid4vp://authorize?' + searchParams.toString();
+  return {exchangeId: id, vcapi, OID4VP};
+};
+
+export const createNativeExchange = async (req, res, next) => {
+  const rp = req.rp;
+  if(!rp || !rp.workflow || rp.workflow.type !== 'native') {
+    next();
+    return;
+  }
+  req.exchange = await createExchange(rp.domain, rp.workflow);
+  next();
 };
 
 export default function(app) {
-  app.use('/login', async (req, res, next) => {
+  app.post('/workflows/:workflowId/exchanges', createNativeExchange);
+
+  app.get('/login', createNativeExchange);
+
+  app.get('/workflows/:workflowId/exchanges/:exchangeId', async (req, res,
+    next) => {
     const rp = req.rp;
     if(!rp || !rp.workflow || rp.workflow.type !== 'native') {
       next();
       return;
     }
 
-    const {exchangeId} = await createExchange(rp.domain, rp.workflow);
-    const authzReqUrl = `${exchangeId}/openid/client/authorization/request`;
-    const searchParams = new URLSearchParams({
-      client_id: `${exchangeId}/openid/client/authorization/response`,
-      request_uri: authzReqUrl
-    });
-    const openid4vpUrl = 'openid4vp://authorize?' + searchParams.toString();
-    req.exchange = {
-      vcapi: exchangeId,
-      OID4VP: openid4vpUrl
-    };
+    req.exchange = await exchanges.findOne({id: req.params.exchangeId});
     next();
-  });
-
-  app.use('/exchange', async (req, res, next) => {
-    const rp = req.rp;
-    if(!rp || !rp.workflow || rp.workflow.type !== 'native') {
-      next();
-      return;
-    }
-
-    const exchangeId = req.query.exchangeId;
-    const match = exchangeId.match(/\/exchanges\/([^\/]+)$/);
-    res.send({exchange: await exchanges.findOne({id: match[1]})});
-    return;
   });
 
   // eslint-disable-next-line max-len

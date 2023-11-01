@@ -52,12 +52,9 @@ const checkStatus = async () => {
     let exchange = {};
     ({
       data: { exchange },
-    } = await httpClient.get("/exchange", {
-      searchParams: {
-        exchangeId: props.exchangeData.vcapi,
-        clientId: props.rp.client_id
-      },
-    }));
+    } = await httpClient.get(
+      `/workflows/${props.rp.workflow.id}/exchanges/${encodeURIComponent(props.exchangeData.vcapi)}`, 
+    ));
     if (Object.keys(exchange).length > 0) {
       if (exchange.state === "complete") {
         const { verifiablePresentation } =

@@ -2,7 +2,7 @@ import cors from 'cors';
 import express from 'express';
 
 import {
-  exchangeCodeForToken, getExchangeStatus, health, login
+  exchangeCodeForToken, getExchangeStatus, health, initiateExchange, login
 } from './controllers/controller.js';
 
 import CustomExchangeMiddleware from './controllers/exchanges/custom.js';
@@ -39,11 +39,78 @@ NativeMiddleware(app);
 VCAPIExchangeMiddleware(app);
 CustomExchangeMiddleware(app);
 
-// Login request requires rp and exchange to be set on req
-app.use('/login', login);
+// Endpoints that initiate an exchange
+app.use('/login', login); // returns HTML app
+
+/**
+ * @openapi
+ * /:
+ *   post:
+ *    summary: Initiates an exchange of information.
+ *    tags:
+ *     - Exchanges
+ *    security:
+ *     - networkAuth: []
+ *     - oAuth2: []
+ *     - zCap: []
+ *    operationId: initiateExchange
+ *    description:
+ *      A client can use this endpoint to initiate an exchange of a particular
+ *      type. The client can include HTTP POST information related to the
+ *      details of exchange it would like to initiate. If the server understands
+ *      the request, it returns a Verifiable Presentation Request. A request
+ *      that the server cannot understand results in an error.
+ *    parameters:
+ *      - name: exchange-id
+ *        description: A potentially human-readable identifier for an exchange.
+ *        in: path
+ *        required: true
+ *        schema:
+ *          type: string
+ *          minimum: 3
+ *          pattern: "[a-z0-9][a-z0-9\\-]{2,}"
+ *    requestBody:
+ *      description:
+ *        Information related to the type of exchange the client would like
+ *        to start.
+ *      content:
+ *        application/json:
+ *          schema:
+ *            anyOf:
+ *              - "type": "object",
+ *                "description": "Data necessary to initiate the exchange."
+ *              - type: object
+ *                properties:
+ *                  query:
+ *                    type: object
+ *                    description: See vp-request-spec for details.
+ *                    properties:
+ *                      type:
+ *                        type: string
+ *                        description: "The type of query for reply"
+ *                      credentialQuery:
+ *                        type: object
+ *                        description: "Details of the client's presentation"
+ *    responses:
+ *      "200":
+ *        description: Proceed with exchange.
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: "#/components/schemas/VerifiablePresentationRequestBody"
+ *      "400":
+ *        description: Request is malformed.
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: "#/components/schemas/ErrorResponse"
+ *      "500":
+ *        description: Internal server error.
+ */
+app.post('/workflows/:workflowId/exchanges', initiateExchange); // Returns JSON
 
 // Exchange requires exchange to be set on req
-app.use('/exchange', getExchangeStatus);
+app.get('/workflows/:workflowId/exchanges/:exchangeId', getExchangeStatus);
 
 // Token exchange requires rp to be set on req
 app.use('/token', exchangeCodeForToken);
