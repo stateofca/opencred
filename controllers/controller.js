@@ -1,6 +1,7 @@
 import {fileURLToPath} from 'node:url';
 import fs from 'node:fs';
 import path from 'node:path';
+import QRCode from 'qrcode';
 
 import {
   defaultLanguage, theme, translations
@@ -38,7 +39,10 @@ export async function login(req, res) {
     translations,
     defaultLanguage,
     theme,
-    exchangeData: req.exchange
+    exchangeData: {
+      ...req.exchange,
+      QR: await QRCode.toDataURL(req.exchange.OID4VP)
+    }
   };
   const [rendered, preloadLinks] = await render(manifest, context);
   const html = template
@@ -65,7 +69,7 @@ export async function initiateExchange(req, res) {
     return;
   }
 
-  res.send(exchangeData);
+  res.send({...exchangeData, QR: await QRCode.toDataURL(exchangeData.OID4VP)});
 }
 
 export const getExchangeStatus = async (req, res) => {

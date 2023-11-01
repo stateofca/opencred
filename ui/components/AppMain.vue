@@ -23,6 +23,7 @@
     },
     exchangeData: {
       id: String,
+      QR: String,
       vcapi: String,
       OID4VP: String,
       accessToken: String

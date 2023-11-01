@@ -59,7 +59,7 @@
     "mongodb": "^6.2.0",
     "morgan": "^1.10.0",
     "oidc-provider": "^8.4.0",
-    "qrcode.vue": "^3.4.1",
+    "qrcode": "^1.5.3",
     "quasar": "^2.13.0",
     "sinon": "^17.0.0",
     "swagger-jsdoc": "^6.2.8",
