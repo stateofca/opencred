@@ -64,7 +64,7 @@ export async function initiateExchange(req, res) {
 }
 
 export const getExchangeStatus = async (req, res) => {
-  res.send(req.exchange);
+  res.send({exchange: req.exchange});
 };
 
 export const health = (req, res) => {

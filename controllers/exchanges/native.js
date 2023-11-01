@@ -53,7 +53,8 @@ export default function(app) {
       return;
     }
 
-    req.exchange = await exchanges.findOne({id: req.params.exchangeId});
+    req.exchange = await exchanges.findOne(
+      {id: req.params.exchangeId}, {projection: {_id: 0}});
     next();
   });
 

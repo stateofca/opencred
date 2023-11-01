@@ -8,22 +8,23 @@ const props = defineProps({
   translations: Object,
   defaultLanguage: String,
   rp: {
-      client_id: String,
-      redirect_uri: String,
-      name: String,
-      icon: String,
-      background_image: String,
-      workflow: {
-        id: String,
-        type: String
-      }
+    client_id: String,
+    redirect_uri: String,
+    name: String,
+    icon: String,
+    background_image: String,
+    workflow: {
+      id: String,
+      type: String,
     },
+  },
   theme: {
     cta: String,
     primary: String,
     header: String,
   },
   exchangeData: {
+    exchangeId: String,
     vcapi: String,
     OID4VP: String,
   },
@@ -57,7 +58,9 @@ const checkStatus = async () => {
     ({
       data: { exchange },
     } = await httpClient.get(
-      `/workflows/${props.rp.workflow.id}/exchanges/${encodeURIComponent(props.exchangeData.vcapi)}`, 
+      `/workflows/${props.rp.workflow.id}/exchanges/${encodeURIComponent(
+        props.exchangeData.exchangeId
+      )}`
     ));
     if (Object.keys(exchange).length > 0) {
       if (exchange.state === "complete") {
