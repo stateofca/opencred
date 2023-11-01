@@ -1,5 +1,9 @@
 import cors from 'cors';
+import {dirname} from 'node:path';
 import express from 'express';
+import {fileURLToPath} from 'node:url';
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
 
 import {
   exchangeCodeForToken, getExchangeStatus, health, initiateExchange, login
@@ -11,6 +15,20 @@ import OidcMiddleware from './controllers/oidc.js';
 import ResolveClientMiddleware from './controllers/resolveClient.js';
 import VCAPIExchangeMiddleware from './controllers/exchanges/vc-api.js';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Hello World',
+      version: '1.0.0',
+    },
+  },
+  apis: [`${__dirname}/app.js`], // files containing annotations as above
+};
+const openapiSpecification = swaggerJsdoc(options);
+
 export const app = express();
 
 app.use(cors());
@@ -20,11 +38,12 @@ app.use(
     extended: true,
   })
 );
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiSpecification));
 
 app.use('/assets', express.static('dist/client/assets', {index: false}));
 app.use('/health', health);
 
-// Midleware that attaches the RP configuration to the request object, usually
+// Middleware that attaches the RP configuration to the request object, usually
 // by inspecting the request for a client_id query parameter.
 ResolveClientMiddleware(app);
 OidcMiddleware(app);
@@ -44,72 +63,108 @@ app.use('/login', login); // returns HTML app
 
 /**
  * @openapi
- * /:
+ * /workflows/{workflowId}/exchanges:
  *   post:
- *    summary: Initiates an exchange of information.
+ *    summary: Initiates an exchange.
  *    tags:
  *     - Exchanges
  *    security:
- *     - networkAuth: []
- *     - oAuth2: []
- *     - zCap: []
+ *     - basic: []
  *    operationId: initiateExchange
  *    description:
  *      A client can use this endpoint to initiate an exchange of a particular
- *      type. The client can include HTTP POST information related to the
- *      details of exchange it would like to initiate. If the server understands
- *      the request, it returns a Verifiable Presentation Request. A request
- *      that the server cannot understand results in an error.
+ *      workflow.
  *    parameters:
- *      - name: exchange-id
- *        description: A potentially human-readable identifier for an exchange.
+ *      - name: workflowId
+ *        description: An identifier for a workflow.
  *        in: path
  *        required: true
  *        schema:
  *          type: string
  *          minimum: 3
  *          pattern: "[a-z0-9][a-z0-9\\-]{2,}"
- *    requestBody:
- *      description:
- *        Information related to the type of exchange the client would like
- *        to start.
- *      content:
- *        application/json:
- *          schema:
- *            anyOf:
- *              - "type": "object",
- *                "description": "Data necessary to initiate the exchange."
- *              - type: object
- *                properties:
- *                  query:
- *                    type: object
- *                    description: See vp-request-spec for details.
- *                    properties:
- *                      type:
- *                        type: string
- *                        description: "The type of query for reply"
- *                      credentialQuery:
- *                        type: object
- *                        description: "Details of the client's presentation"
  *    responses:
  *      "200":
- *        description: Proceed with exchange.
+ *        description: Information about the exchange.
  *        content:
  *          application/json:
  *            schema:
- *              $ref: "#/components/schemas/VerifiablePresentationRequestBody"
+ *              type: object
+ *              properties:
+ *               exchangeId:
+ *                type: string
+ *               OID4VP:
+ *                type: string
+ *               QR:
+ *                type: string
+ *               vcapi:
+ *                type: string
  *      "400":
  *        description: Request is malformed.
  *        content:
  *          application/json:
  *            schema:
- *              $ref: "#/components/schemas/ErrorResponse"
+ *             type: object
+ *             properties:
+ *              message:
+ *               type: string
  *      "500":
  *        description: Internal server error.
  */
 app.post('/workflows/:workflowId/exchanges', initiateExchange); // Returns JSON
 
-// Exchange requires exchange to be set on req
+/**
+ * @openapi
+ * /workflows/{workflowId}/exchanges/{exchangeId}:
+ *   get:
+ *    summary: Retrieves an exchange.
+ *    tags:
+ *     - Exchanges
+ *    security:
+ *     - basic: []
+ *    operationId: getExchange
+ *    description:
+ *      A client can use this endpoint to retrieve the state and relevant data
+ *      of an exchange of a particular workflow.
+ *    parameters:
+ *      - name: workflowId
+ *        description: An identifier for a workflow.
+ *        in: path
+ *        required: true
+ *        schema:
+ *          type: string
+ *          minimum: 3
+ *          pattern: "[a-z0-9][a-z0-9\\-]{2,}"
+ *      - name: exchangeId
+ *        description: An identifier for an exchange.
+ *        in: path
+ *        required: true
+ *        schema:
+ *          type: string
+ *          minimum: 3
+ *          pattern: "[a-z0-9][a-z0-9\\-]{2,}"
+ *    responses:
+ *      "200":
+ *        description: Information about the exchange.
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *               exchange:
+ *                type: object
+ *      "400":
+ *        description: Request is malformed.
+ *        content:
+ *          application/json:
+ *            schema:
+ *             type: object
+ *             properties:
+ *              message:
+ *               type: string
+ *      "500":
+ *        description: Internal server error.
+ */
 app.get('/workflows/:workflowId/exchanges/:exchangeId', getExchangeStatus);
 
 // Token exchange requires rp to be set on req

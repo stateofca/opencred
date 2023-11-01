@@ -73,7 +73,7 @@ export default function(app) {
       const workflow = rp.workflow;
 
       const {data, error} = await zcapReadRequest({
-        endpoint: req.params.exchangeId,
+        endpoint: decodeURIComponent(req.params.exchangeId),
         zcap: {
           capability: workflow.capability,
           clientSecret: workflow.clientSecret
