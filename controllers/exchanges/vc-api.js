@@ -47,7 +47,8 @@ const createVcApiExchange = async (req, res, next) => {
 
     req.exchange = {
       vcapi: exchangeId,
-      OID4VP
+      OID4VP,
+      exchangeId: encodeURIComponent(exchangeId)
     };
     next();
   } catch(e) {

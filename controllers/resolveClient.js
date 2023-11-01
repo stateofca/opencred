@@ -32,7 +32,7 @@ export default function(app) {
   app.use('/exchange', attachClient);
   app.use('/token', attachClient);
 
-  app.post('/workflow/:workflowId/exchanges', attachClientByWorkflowId);
+  app.post('/workflows/:workflowId/exchanges', attachClientByWorkflowId);
   app.get(
     '/workflows/:workflowId/exchanges/:exchangeId', attachClientByWorkflowId
   );
