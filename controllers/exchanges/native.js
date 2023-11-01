@@ -1,6 +1,4 @@
-import {
-  relyingParties, workflow
-} from '../../config/config.js';
+
 import {verify, verifyCredential} from '@digitalbazaar/vc';
 import {createId} from '../../common/utils.js';
 import {exchanges} from '../../common/database.js';
@@ -10,7 +8,7 @@ import {oid4vp} from '@digitalbazaar/oid4-client';
 import {SUITES} from '../../common/suites.js';
 import {UnsecuredJWT} from 'jose';
 
-export const createExchange = async domain => {
+export const createExchange = async (domain, workflow) => {
   const id = await createId();
   const challenge = await createId();
   await exchanges.insertOne({
@@ -27,13 +25,12 @@ export const createExchange = async domain => {
 
 export default function(app) {
   app.use('/login', async (req, res, next) => {
-    // If the client_id is not in the relyingParties array, throw an error
-    if(!relyingParties.map(rp => rp.client_id).includes(req.query.client_id)) {
-      res.status(400).send({message: 'Unknown client_id'});
-      return;
+    const rp = req.rp;
+    if(!rp || !rp.workflow || rp.workflow.type !== 'native') {
+      next();
     }
-    const rp = relyingParties.find(rp => rp.client_id == req.query.client_id);
-    const {exchangeId} = await createExchange(rp.domain);
+
+    const {exchangeId} = await createExchange(rp.domain, rp.workflow);
     const authzReqUrl = `${exchangeId}/openid/client/authorization/request`;
     const searchParams = new URLSearchParams({
       client_id: `${exchangeId}/openid/client/authorization/response`,
@@ -47,6 +44,18 @@ export default function(app) {
     next();
   });
 
+  app.use('/exchange', async (req, res, next) => {
+    const rp = req.rp;
+    if(!rp || !rp.workflow || rp.workflow.type !== 'native') {
+      next();
+    }
+
+    const exchangeId = req.query.exchangeId;
+    const match = exchangeId.match(/\/exchanges\/([^\/]+)$/);
+    res.send({exchange: await exchanges.findOne({id: match[1]})});
+    return;
+  });
+
   // eslint-disable-next-line max-len
   app.get('/workflows/:workflowId/exchanges/:exchangeId/openid/client/authorization/request', async (req, res) => {
     const exchange = await exchanges.findOne({id: req.params.exchangeId});
@@ -58,7 +67,7 @@ export default function(app) {
       res.status(400).send(`Exchange in state ${exchange.state}`);
       return;
     }
-    const step = workflow.steps[exchange.step];
+    const step = req.rp.workflow.steps[exchange.step];
 
     const vpr = JSON.parse(step.verifiablePresentationRequest);
     vpr.domain = `${req.protocol}://${req.get('host')}${
@@ -169,12 +178,12 @@ export default function(app) {
   });
 
   app.post('/workflows/:workflowId/exchanges/:exchangeId', async (req, res) => {
-    if(workflow.id !== req.params.workflowId) {
+    if(req.rp.workflow.id !== req.params.workflowId) {
       res.status(400).send({message: 'Incorrect workflowId'});
       return;
     }
     const exchange = await exchanges.findOne({id: req.params.exchangeId});
-    const step = workflow.steps[exchange.step];
+    const step = req.rp.workflow.steps[exchange.step];
     if(exchange) {
       res.send({
         verifiablePresentationRequest:
@@ -186,13 +195,6 @@ export default function(app) {
       return;
     }
     res.sendStatus(404);
-    return;
-  });
-
-  app.use('/exchange', async (req, res) => {
-    const exchangeId = req.query.exchangeId;
-    const match = exchangeId.match(/\/exchanges\/([^\/]+)$/);
-    res.send({exchange: await exchanges.findOne({id: match[1]})});
     return;
   });
 }

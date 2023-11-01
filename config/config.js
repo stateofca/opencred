@@ -35,6 +35,43 @@ const validateRelyingParty = rp => {
   }
 };
 
+const validateWorkflow = rp => {
+  if(!rp.workflow) {
+    throw new Error('workflow must be defined.');
+  }
+  if(rp.workflow.type === 'vc-api') {
+    if(!rp.workflow.base_url?.startsWith('http')) {
+      throw new Error(
+        'workflow base_url must be defined. This tool uses a VC-API exchange' +
+        ` endpoint to communicate with wallets. (client: ${rp.client_id})`
+      );
+    } else if(typeof rp.workflow.capability !== 'string') {
+      throw new Error(
+        `workflow capability must be defined. (client: ${rp.client_id})`
+      );
+    } else if(
+      !rp.workflow.clientSecret ||
+      typeof rp.workflow.clientSecret !== 'string' ||
+      rp.workflow.clientSecret.length < 1
+    ) {
+      throw new Error(
+        `workflow clientSecret must be defined. (client: ${rp.client_id})`
+      );
+    }
+  } else if(rp.workflow.type === 'native') {
+    if(!rp.workflow.steps || Object.keys(rp.workflow.steps).length === 0) {
+      throw new Error(
+        `workflow must have at least 1 step. (client: ${rp.client_id})`
+      );
+    }
+    if(!rp.workflow.initialStep) {
+      throw new Error(
+        `workflow initialStep must be set. (client: ${rp.client_id})`
+      );
+    }
+  }
+};
+
 // If relyingParties is not an array, throw an error
 if(!Array.isArray(relyingParties)) {
   throw new Error('Configuration relying_parties must be an array.');
@@ -43,37 +80,11 @@ if(!Array.isArray(relyingParties)) {
 relyingParties.forEach(validateRelyingParty);
 
 // Validate workflow connection configuration
-export const workflow = configDoc.workflow;
-if(!workflow) {
-  throw new Error('workflow must be defined.');
-}
-if(workflow.type === 'vc-api') {
-  if(!workflow.base_url?.startsWith('http')) {
-    throw new Error(
-      'workflow base_url must be defined. This tool uses a VC-API ' +
-      'exchange endpoint to communicate with wallets.'
-    );
-  } else if(typeof workflow.capability !== 'string') {
-    throw new Error('workflow capability must be defined.');
-  } else if(
-    !workflow.clientSecret ||
-    typeof workflow.clientSecret !== 'string' ||
-    workflow.clientSecret.length < 1
-  ) {
-    throw new Error('workflow clientSecret must be defined.');
-  }
-} else if(workflow.type === 'native') {
-  if(!workflow.steps || Object.keys(workflow.steps).length === 0) {
-    throw new Error('workflow must have at least 1 step.');
-  }
-  if(!workflow.initialStep) {
-    throw new Error('workflow initialStep must be set.');
-  }
-}
+relyingParties.forEach(validateWorkflow);
 
 export const databaseConnectionUri = configDoc.db_connection_uri;
 if(!databaseConnectionUri) {
-  throw new Error('Database connection uri not found.');
+  throw new Error('database_connection_uri not found in config.');
 }
 
 export const defaultLanguage = configDoc.default_language || 'en';

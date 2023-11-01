@@ -1,16 +1,14 @@
 import {zcapReadRequest, zcapWriteRequest} from '../../common/zcap.js';
 
-import {
-  relyingParties, workflow
-} from '../../config/config.js';
-
 export default function(app) {
   app.use('/login', async (req, res, next) => {
-    // If the client_id is not in the relyingParties array, throw an error
-    if(!relyingParties.map(rp => rp.client_id).includes(req.query.client_id)) {
-      res.status(400).send({message: 'Unknown client_id'});
-      return;
+    const rp = req.rp;
+    if(!rp || !rp.workflow || rp.workflow.type !== 'vc-api') {
+      next();
     }
+
+    const workflow = rp.workflow;
+
     try {
       const verifiablePresentationRequest = JSON.parse(workflow.vpr);
       const {result} = await zcapWriteRequest({
@@ -59,6 +57,13 @@ export default function(app) {
   });
 
   app.use('/exchange', async (req, res, next) => {
+    const rp = req.rp;
+    if(!rp || !rp.workflow || rp.workflow.type !== 'vc-api') {
+      next();
+    }
+
+    const workflow = rp.workflow;
+
     const {data, error} = await zcapReadRequest({
       endpoint: req.query.exchangeId,
       zcap: {

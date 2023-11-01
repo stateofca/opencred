@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import {
-  defaultLanguage, relyingParties, theme, translations
+  defaultLanguage, theme, translations
 } from '../config/config.js';
 import {render} from '../dist/server/entry-server.js';
 
@@ -20,7 +20,7 @@ export async function exchangeCodeForToken(req, res) {
 }
 
 export async function login(req, res) {
-  const rp = relyingParties.find(rp => rp.client_id == req.query.client_id);
+  const rp = req.rp;
 
   // Validate Redirect URI is permitted
   if(!req.query.redirect_uri) {
@@ -43,6 +43,7 @@ export async function login(req, res) {
   const context = {
     step: 'login',
     rp: {
+      client_id: rp.client_id,
       redirect_uri: rp.redirect_uri,
       name: rp.name,
       icon: rp.icon,

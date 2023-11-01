@@ -4,6 +4,7 @@
   defineProps({
     step: String,
     rp: {
+      client_id: String,
       redirect_uri: String,
       name: String,
       icon: String,
@@ -62,6 +63,7 @@
       </div>
       <ButtonView
         v-if="!state.isQROpen"
+        :rp="rp"
         :translations="translations"
         :theme="theme"
         :defaultLanguage="defaultLanguage"

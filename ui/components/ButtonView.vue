@@ -7,6 +7,13 @@ const props = defineProps({
   step: String,
   translations: Object,
   defaultLanguage: String,
+  rp: {
+      client_id: String,
+      redirect_uri: String,
+      name: String,
+      icon: String,
+      background_image: String
+    },
   theme: {
     cta: String,
     primary: String,
@@ -48,6 +55,7 @@ const checkStatus = async () => {
     } = await httpClient.get("/exchange", {
       searchParams: {
         exchangeId: props.exchangeData.vcapi,
+        clientId: 
       },
     }));
     if (Object.keys(exchange).length > 0) {
