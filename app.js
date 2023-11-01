@@ -2,6 +2,7 @@ import cors from 'cors';
 import {dirname} from 'node:path';
 import express from 'express';
 import {fileURLToPath} from 'node:url';
+import fs from 'node:fs';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 
@@ -17,12 +18,14 @@ import VCAPIExchangeMiddleware from './controllers/exchanges/vc-api.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+const pkg = JSON.parse(fs.readFileSync(`${__dirname}/package.json`));
+
 const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Hello World',
-      version: '1.0.0',
+      title: 'OpenCred',
+      version: pkg.version,
     },
   },
   apis: [`${__dirname}/app.js`], // files containing annotations as above
