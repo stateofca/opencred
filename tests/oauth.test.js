@@ -71,7 +71,7 @@ describe('OAuth Login Workflow', () => {
     dbStub.restore();
   });
 
-  it.skip('should return mocked exchange metadata', async function() {
+  it('should return mocked exchange metadata', async function() {
     const originalRPs = [...relyingParties];
     relyingParties.splice(0, 1, ...[exampleRelyingParty]);
 
@@ -87,7 +87,7 @@ describe('OAuth Login Workflow', () => {
     expect(response.status).to.equal(200);
     expect(response.text).to.be.a('string');
     expect(
-      response.text.includes('openid-verification-request://'))
+      response.text.includes('openid4vp://authorize?'))
       .to.be(true);
 
     relyingParties.splice(0, originalRPs.length, ...originalRPs);

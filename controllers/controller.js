@@ -22,24 +22,6 @@ export async function exchangeCodeForToken(req, res) {
 export async function login(req, res) {
   const rp = req.rp;
 
-  // Validate Redirect URI is permitted
-  if(!req.query.redirect_uri) {
-    res.status(400).send({message: 'redirect_uri is required'});
-    return;
-  } else if(rp.redirect_uri != req.query.redirect_uri) {
-    res.status(400).send({message: 'Unknown redirect_uri'});
-    return;
-  }
-
-  // Validate scope is openid only.
-  if(!req.query.scope) {
-    res.status(400).send({message: 'scope is required'});
-    return;
-  } else if(req.query.scope !== 'openid') {
-    res.status(400).send({message: 'Invalid scope'});
-    return;
-  }
-
   const context = {
     step: 'login',
     rp: {

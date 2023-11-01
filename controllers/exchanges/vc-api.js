@@ -5,6 +5,7 @@ export default function(app) {
     const rp = req.rp;
     if(!rp || !rp.workflow || rp.workflow.type !== 'vc-api') {
       next();
+      return;
     }
 
     const workflow = rp.workflow;
@@ -60,6 +61,7 @@ export default function(app) {
     const rp = req.rp;
     if(!rp || !rp.workflow || rp.workflow.type !== 'vc-api') {
       next();
+      return;
     }
 
     const workflow = rp.workflow;

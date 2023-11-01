@@ -3,6 +3,7 @@ export default function(app) {
     const rp = req.rp;
     if(!rp || !rp.workflow || rp.workflow.type !== 'custom') {
       next();
+      return;
     }
 
     res.sendStatus(501);
@@ -13,6 +14,7 @@ export default function(app) {
     const rp = req.rp;
     if(!rp || !rp.workflow || rp.workflow.type !== 'custom') {
       next();
+      return;
     }
 
     res.sendStatus(501);

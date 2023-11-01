@@ -28,6 +28,7 @@ export default function(app) {
     const rp = req.rp;
     if(!rp || !rp.workflow || rp.workflow.type !== 'native') {
       next();
+      return;
     }
 
     const {exchangeId} = await createExchange(rp.domain, rp.workflow);
@@ -48,6 +49,7 @@ export default function(app) {
     const rp = req.rp;
     if(!rp || !rp.workflow || rp.workflow.type !== 'native') {
       next();
+      return;
     }
 
     const exchangeId = req.query.exchangeId;

@@ -7,6 +7,7 @@ import {
 
 import CustomExchangeMiddleware from './controllers/exchanges/custom.js';
 import NativeMiddleware from './controllers/exchanges/native.js';
+import OidcMiddleware from './controllers/oidc.js';
 import ResolveClientMiddleware from './controllers/resolveClient.js';
 import VCAPIExchangeMiddleware from './controllers/exchanges/vc-api.js';
 
@@ -26,6 +27,7 @@ app.use('/health', health);
 // Midleware that attaches the RP configuration to the request object, usually
 // by inspecting the request for a client_id query parameter.
 ResolveClientMiddleware(app);
+OidcMiddleware(app);
 
 /**
  * Middleware attaches exchange type-specific handlers to /login /exchange,
