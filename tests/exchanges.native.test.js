@@ -1,4 +1,4 @@
-import {afterEach, beforeEach, describe, it} from 'mocha';
+import {after, before, describe, it} from 'mocha';
 
 import * as sinon from 'sinon';
 import expect from 'expect.js';
@@ -27,7 +27,7 @@ describe('Exchanges (Native)', async () => {
   let verifyCredentialStub;
   let dbStub;
 
-  beforeEach(() => {
+  before(() => {
     vp_token = JSON.parse(fs.readFileSync(
       './tests/fixtures/vp_token.json'));
     submission = JSON.parse(fs.readFileSync(
@@ -45,7 +45,7 @@ describe('Exchanges (Native)', async () => {
       .resolves({verified: true});
   });
 
-  afterEach(() => {
+  after(() => {
     sinon.restore();
   });
 
@@ -59,7 +59,7 @@ describe('Exchanges (Native)', async () => {
       expect(req).to.have.property('exchange');
       expect(req.exchange).to.have.property('vcapi');
       expect(req.exchange).to.have.property('OID4VP');
-      expect(req.exchange).to.have.property('exchangeId');
+      expect(req.exchange).to.have.property('id');
       expect(dbStub.called).to.be.true;
     });
   it('should not set req.exchange for vc-api workflow in createNativeExchange',
@@ -80,7 +80,7 @@ describe('Exchanges (Native)', async () => {
     expect(req).to.have.property('exchange');
     expect(req.exchange).to.have.property('vcapi');
     expect(req.exchange).to.have.property('OID4VP');
-    expect(req.exchange).to.have.property('exchangeId');
+    expect(req.exchange).to.have.property('id');
   });
 
   it('should verify a submission and return verified true', async () => {
