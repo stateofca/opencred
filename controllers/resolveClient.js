@@ -20,7 +20,7 @@ const attachClientByWorkflowId = async (req, res, next) => {
     r => r.workflow?.id == req.params.workflowId
   );
   if(!rp) {
-    res.status(400).send({message: 'Unknown workflow id'});
+    res.status(404).send({message: 'Unknown workflow id'});
     return;
   }
   req.rp = rp;
@@ -28,9 +28,9 @@ const attachClientByWorkflowId = async (req, res, next) => {
 };
 
 export default function(app) {
-  app.use('/login', attachClient);
-  app.use('/exchange', attachClient);
-  app.use('/token', attachClient);
+  app.get('/login', attachClient);
+  app.get('/workflows/:workflowId/exchanges/:exchangeId', attachClient);
+  app.post('/token', attachClient);
 
   app.post('/workflows/:workflowId/exchanges', attachClientByWorkflowId);
   app.get(

@@ -7,8 +7,8 @@ import {
 const client = new MongoClient(databaseConnectionUri);
 const db = client.db('OpenCred');
 
-/*
-Exchange document structure draft:
+/**
+ * Exchange document structure:
 {
   id,
   sequence: 0,
@@ -17,6 +17,8 @@ Exchange document structure draft:
   variables: {}, // each step name in the workflow is a key in variables
   step: {string}, the name of the current step in the workflow
   challenge: {string}
+  workflowId: {string}
+  accessToken?: {string}
 }
  */
 export const exchanges = db.collection('Exchanges');

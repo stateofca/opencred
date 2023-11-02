@@ -10,6 +10,44 @@ const config_path = process.env.CONFIG_PATH || '/etc/app-config/config.yaml';
 // Load config doc and parse YAML.
 const configDoc = yaml.load(fs.readFileSync(config_path, 'utf8'));
 
+/**
+ * @typedef {Object} Workflow
+ * @property {string} type - The type of the workflow.
+ * @property {string} id - The ID of the workflow.
+ * @property {string} base_url - The base URL of the workflow.
+ * @property {string} capability - The capability of the workflow.
+ * @property {string} clientSecret - The client secret of the workflow.
+ * @property {Object} vpr - Verifiable Presentation Request JSON
+ */
+
+/**
+ * @typedef {Object} RelyingParty
+ * @property {string} name - The name of the relying party.
+ * @property {string} client_id - The client ID, urlsafe.
+ * @property {string} client_secret - The client secret, urlsafe.
+ * @property {string} redirect_uri - The redirect URI of the relying party.
+ * @property {string} description - The description of the relying party.
+ * @property {string} icon - The icon URL of the relying party.
+ * @property {string} background_image - Background image URL.
+ * @property {Object} theme - The theme of the relying party.
+ * @property {string} theme.cta - The call to action color, hex like "#6A5ACD"
+ * @property {string} theme.primary - The primary color hex.
+ * @property {string} theme.header - The header color hex.
+ * @property {Array<Object>} scopes - OAuth2 scopes
+ * @property {string} scopes[].name - The name of the scope.
+ * @property {string} scopes[].description - The description of the scope.
+ * @property {Workflow} workflow - VC Exchange Workflow
+ * @property {Array<Object>} [claims] - Claims to extract into id_token.
+ * @property {string} claims[].name - id_token property destination
+ * @property {string} claims[].description - Extra description, justification
+ * @property {string} claims[].claim_iri - The property IRI in credentialSubject
+ * @property {Object.<string, Object.<string, string>>} translations - Strings
+ */
+
+/**
+ * An list of relying parties (connected apps or workflows) in use by OpenCred
+ * @type {RelyingParty[]}
+ */
 export const relyingParties = configDoc.relying_parties;
 
 const validateRelyingParty = rp => {

@@ -27,6 +27,7 @@ const props = defineProps({
     exchangeId: String,
     vcapi: String,
     OID4VP: String,
+    accessToken: String
   },
 });
 
@@ -58,9 +59,8 @@ const checkStatus = async () => {
     ({
       data: { exchange },
     } = await httpClient.get(
-      `/workflows/${props.rp.workflow.id}/exchanges/${encodeURIComponent(
-        props.exchangeData.exchangeId
-      )}`
+      `/workflows/${props.rp.workflow.id}/exchanges/${encodeURIComponent(props.exchangeData.vcapi)}`, 
+      { headers: { Authorization: `Bearer ${props.exchangeData.accessToken}` } }
     ));
     if (Object.keys(exchange).length > 0) {
       if (exchange.state === "complete") {

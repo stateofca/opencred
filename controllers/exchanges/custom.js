@@ -1,5 +1,5 @@
 export default function(app) {
-  app.use('/login', async (req, res, next) => {
+  app.get('/login', async (req, res, next) => {
     const rp = req.rp;
     if(!rp || !rp.workflow || rp.workflow.type !== 'custom') {
       next();
@@ -10,14 +10,16 @@ export default function(app) {
     return;
   });
 
-  app.use('/exchange', async (req, res, next) => {
-    const rp = req.rp;
-    if(!rp || !rp.workflow || rp.workflow.type !== 'custom') {
-      next();
-      return;
-    }
+  app.get(
+    '/workflows/:workflowId/exchanges/:exchangeId',
+    async (req, res, next) => {
+      const rp = req.rp;
+      if(!rp || !rp.workflow || rp.workflow.type !== 'custom') {
+        next();
+        return;
+      }
 
-    res.sendStatus(501);
-    return;
-  });
+      res.sendStatus(501);
+      return;
+    });
 }

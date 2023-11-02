@@ -4,7 +4,7 @@
  * @param {Express} app - Express app instance
  */
 export default function(app) {
-  app.use('/login', async (req, res, next) => {
+  app.get('/login', async (req, res, next) => {
     // Validate Redirect URI is permitted
     if(!req.query.redirect_uri) {
       res.status(400).send({message: 'redirect_uri is required'});

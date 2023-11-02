@@ -10,6 +10,7 @@ import {
   exchangeCodeForToken, getExchangeStatus, health, initiateExchange, login
 } from './controllers/controller.js';
 
+import AuthenticationMiddleware from './controllers/auth.js';
 import CustomExchangeMiddleware from './controllers/exchanges/custom.js';
 import NativeMiddleware from './controllers/exchanges/native.js';
 import OidcMiddleware from './controllers/oidc.js';
@@ -44,11 +45,12 @@ app.use(
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiSpecification));
 
 app.use('/assets', express.static('dist/client/assets', {index: false}));
-app.use('/health', health);
+app.get('/health', health);
 
 // Middleware that attaches the RP configuration to the request object, usually
 // by inspecting the request for a client_id query parameter.
 ResolveClientMiddleware(app);
+AuthenticationMiddleware(app);
 OidcMiddleware(app);
 
 /**
@@ -62,7 +64,7 @@ VCAPIExchangeMiddleware(app);
 CustomExchangeMiddleware(app);
 
 // Endpoints that initiate an exchange
-app.use('/login', login); // returns HTML app
+app.get('/login', login); // returns HTML app
 
 /**
  * @openapi
@@ -171,6 +173,6 @@ app.post('/workflows/:workflowId/exchanges', initiateExchange); // Returns JSON
 app.get('/workflows/:workflowId/exchanges/:exchangeId', getExchangeStatus);
 
 // Token exchange requires rp to be set on req
-app.use('/token', exchangeCodeForToken);
+app.post('/token', exchangeCodeForToken);
 
 export const PORT = process.env.PORT || '8080';

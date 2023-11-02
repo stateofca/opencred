@@ -24,7 +24,8 @@
     exchangeData: {
       exchangeId: String,
       vcapi: String,
-      OID4VP: String
+      OID4VP: String,
+      accessToken: String
     }
   })
 

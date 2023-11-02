@@ -51,6 +51,11 @@ export async function login(req, res) {
   res.status(200).set({'Content-Type': 'text/html'}).end(html);
 }
 
+/**
+ * The middleware for the exchange type will initiate the exchange
+ * or return an error response. If successful, the exchange data will
+ * be available on the request object `req.exchange`.
+ */
 export async function initiateExchange(req, res) {
   const exchangeData = req.exchange;
   if(!exchangeData) {
