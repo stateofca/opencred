@@ -19,7 +19,7 @@ const rp = {
   domain: 'http://example.test.com'
 };
 
-describe.only('Exchanges (Native)', async () => {
+describe('Exchanges (Native)', async () => {
   let vp_token;
   let submission;
   let exchange;
