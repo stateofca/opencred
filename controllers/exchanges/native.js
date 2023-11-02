@@ -10,10 +10,12 @@ import {UnsecuredJWT} from 'jose';
 
 export const createExchange = async (domain, workflow) => {
   const id = await createId();
+  const workflowId = workflow.id;
   const accessToken = await createId();
   const challenge = await createId();
   await exchanges.insertOne({
     id,
+    workflowId,
     sequence: 0,
     ttl: 900,
     state: 'pending',
@@ -29,7 +31,7 @@ export const createExchange = async (domain, workflow) => {
     request_uri: authzReqUrl
   });
   const OID4VP = 'openid4vp://authorize?' + searchParams.toString();
-  return {exchangeId: id, vcapi, OID4VP, accessToken};
+  return {exchangeId: id, vcapi, OID4VP, accessToken, workflowId};
 };
 
 export const createNativeExchange = async (req, res, next) => {

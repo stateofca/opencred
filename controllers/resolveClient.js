@@ -29,7 +29,10 @@ const attachClientByWorkflowId = async (req, res, next) => {
 
 export default function(app) {
   app.get('/login', attachClient);
-  app.get('/workflows/:workflowId/exchanges/:exchangeId', attachClient);
+  app.get(
+    '/workflows/:workflowId/exchanges/:exchangeId',
+    attachClientByWorkflowId
+  );
   app.post('/token', attachClient);
 
   app.post('/workflows/:workflowId/exchanges', attachClientByWorkflowId);

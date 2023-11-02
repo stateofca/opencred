@@ -4,7 +4,6 @@ import expect from 'expect.js';
 import request from 'supertest';
 
 import {app} from '../app.js';
-import {createId} from '../common/utils.js';
 import {exchanges} from '../common/database.js';
 import {relyingParties} from '../config/config.js';
 
@@ -22,8 +21,8 @@ const testRP = {
   credential_type: 'Credential',
   credential_issuer: 'https://example.com',
 };
-const testExchangeInstance = {
-  id: createId(),
+const testEx = {
+  id: 'abc123456',
   sequence: 0,
   ttl: 900,
   state: 'pending',
@@ -46,7 +45,7 @@ describe('OpenCred API - Native Workflow', function() {
 
   it('should return 404 for unknown workflow id', async function() {
     const findStub = sinon.stub(exchanges, 'findOne').resolves(
-      testExchangeInstance
+      testEx
     );
     const response = await request(app)
       .post(`/workflows/not-the-${testRP.workflow.id}/exchanges`)
@@ -73,9 +72,24 @@ describe('OpenCred API - Native Workflow', function() {
 
     expect(response.headers['content-type']).to.match(/json/);
     expect(response.status).to.equal(200);
-    const jsonData = JSON.parse(response.text);
-    expect(jsonData.exchangeId).to.not.be(undefined);
-    expect(jsonData.vcapi).to.not.be(undefined);
+    expect(response.body.exchangeId).to.not.be(undefined);
+    expect(response.body.vcapi).to.not.be(undefined);
     insertStub.restore();
+  });
+
+  it('should return status on exchange', async function() {
+    const findStub = sinon.stub(exchanges, 'findOne').resolves(
+      testEx
+    );
+    const response = await request(app)
+      .get(`/workflows/${testRP.workflow.id}/exchanges/${testEx.id}`)
+      .set(
+        'Authorization', `Basic ${Buffer.from('test:shhh').toString('base64')}`
+      );
+
+    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.status).to.equal(200);
+    expect(response.body.exchange.id).to.equal(testEx.id);
+    findStub.restore();
   });
 });
