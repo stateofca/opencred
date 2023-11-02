@@ -1,4 +1,6 @@
-import {zcapReadRequest, zcapWriteRequest} from '../../common/zcap.js';
+import {createId} from '../../common/utils.js';
+import {exchanges} from '../../common/database.js';
+import {zcapClient} from '../../common/zcap.js';
 
 const createVcApiExchange = async (req, res, next) => {
   const rp = req.rp;
@@ -11,7 +13,7 @@ const createVcApiExchange = async (req, res, next) => {
 
   try {
     const verifiablePresentationRequest = JSON.parse(workflow.vpr);
-    const {result} = await zcapWriteRequest({
+    const {result} = await zcapClient.zcapWriteRequest({
       endpoint: workflow.base_url,
       zcap: {
         capability: workflow.capability,
@@ -46,10 +48,13 @@ const createVcApiExchange = async (req, res, next) => {
     const OID4VP = 'openid4vp://authorize?' + searchParams.toString();
 
     req.exchange = {
+      id: encodeURIComponent(exchangeId),
+      workflowId: workflow.id,
       vcapi: exchangeId,
       OID4VP,
-      exchangeId: encodeURIComponent(exchangeId)
+      accessToken: await createId()
     };
+    await exchanges.insertOne(req.exchange);
     next();
   } catch(e) {
     console.error(e);
@@ -69,11 +74,17 @@ export default function(app) {
         next();
         return;
       }
+      if(!req.exchange || req.exchange.workflowId !== rp.workflow.id) {
+        res.status(500).send({
+          message: 'Unexpected server error: no exchange data found on request.'
+        });
+        return;
+      }
 
       const workflow = rp.workflow;
 
-      const {data, error} = await zcapReadRequest({
-        endpoint: decodeURIComponent(req.params.exchangeId),
+      const {data, error} = await zcapClient.zcapReadRequest({
+        endpoint: decodeURIComponent(req.exchange.vcapi),
         zcap: {
           capability: workflow.capability,
           clientSecret: workflow.clientSecret

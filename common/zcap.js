@@ -47,7 +47,7 @@ const _getZcapClient = async ({secretKeySeed}) => {
   });
 };
 
-export async function zcapWriteRequest({
+async function zcapWriteRequest({
   endpoint,
   json,
   zcap,
@@ -82,7 +82,7 @@ export async function zcapWriteRequest({
   return {result, error, data, statusCode};
 }
 
-export async function zcapReadRequest({
+async function zcapReadRequest({
   endpoint,
   zcap,
   headers = defaultHeaders
@@ -137,7 +137,7 @@ function _getDataAndStatus({result = {}, error = {}}) {
  *
  * @returns {object} The results from the request.
  */
-export async function makeHttpsRequest({
+async function makeHttpsRequest({
   url,
   json,
   headers,
@@ -160,3 +160,9 @@ export async function makeHttpsRequest({
   const {data, statusCode} = _getDataAndStatus({result, error});
   return {result, error, data, statusCode};
 }
+
+export const zcapClient = {
+  zcapReadRequest,
+  zcapWriteRequest,
+  makeHttpsRequest
+};

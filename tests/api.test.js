@@ -6,6 +6,7 @@ import request from 'supertest';
 import {app} from '../app.js';
 import {exchanges} from '../common/database.js';
 import {relyingParties} from '../config/config.js';
+import {zcapClient} from '../common/zcap.js';
 
 const testRP = {
   workflow: {
@@ -72,8 +73,9 @@ describe('OpenCred API - Native Workflow', function() {
 
     expect(response.headers['content-type']).to.match(/json/);
     expect(response.status).to.equal(200);
-    expect(response.body.exchangeId).to.not.be(undefined);
+    expect(response.body.id).to.not.be(undefined);
     expect(response.body.vcapi).to.not.be(undefined);
+    expect(insertStub.called).to.be(true);
     insertStub.restore();
   });
 
@@ -91,5 +93,70 @@ describe('OpenCred API - Native Workflow', function() {
     expect(response.status).to.equal(200);
     expect(response.body.exchange.id).to.equal(testEx.id);
     findStub.restore();
+  });
+});
+
+describe('OpenCred API - VC-API Workflow', function() {
+  this.beforeEach(() => {
+    this.originalRPs = [...relyingParties];
+    relyingParties.splice(0, 1, ...[{
+      ...testRP,
+      workflow: {
+        id: testRP.workflow.id,
+        type: 'vc-api',
+        capability: '{}',
+        clientSecret: 'vcapiclientsecret',
+        vpr: '{}'
+      }
+    }]);
+  });
+
+  this.afterEach(() => {
+    relyingParties.splice(0, this.originalRPs.length, ...this.originalRPs);
+  });
+
+  it('should create a new exchange with the workflow', async function() {
+    const insertStub = sinon.stub(exchanges, 'insertOne').resolves();
+    const zcapStub = sinon.stub(zcapClient, 'zcapWriteRequest').resolves({
+      result: {
+        headers: new Headers({location: 'https://someexchanges.com/123'}),
+        status: 204
+      }
+    });
+    const response = await request(app)
+      .post(`/workflows/${testRP.workflow.id}/exchanges`)
+      .set(
+        'Authorization', `Basic ${Buffer.from('test:shhh').toString('base64')}`
+      )
+      .send()
+      .set('Accept', 'application/json');
+
+    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.status).to.equal(200);
+    expect(response.body.id).to.not.be(undefined);
+    expect(response.body.vcapi).to.not.be(undefined);
+    expect(insertStub.called).to.be(true);
+    expect(zcapStub.called).to.be(true);
+    insertStub.restore();
+    zcapStub.restore();
+  });
+
+  it('should return status on exchange', async function() {
+    const findStub = sinon.stub(exchanges, 'findOne').resolves(
+      testEx
+    );
+    const zcapStub = sinon.stub(zcapClient, 'zcapReadRequest')
+      .resolves({data: testEx});
+    const response = await request(app)
+      .get(`/workflows/${testRP.workflow.id}/exchanges/${testEx.id}`)
+      .set(
+        'Authorization', `Bearer ${testEx.accessToken}`
+      );
+
+    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.status).to.equal(200);
+    expect(response.body.exchange.id).to.equal(testEx.id);
+    findStub.restore();
+    zcapStub.restore();
   });
 });

@@ -31,7 +31,7 @@ export const createExchange = async (domain, workflow) => {
     request_uri: authzReqUrl
   });
   const OID4VP = 'openid4vp://authorize?' + searchParams.toString();
-  return {exchangeId: id, vcapi, OID4VP, accessToken, workflowId};
+  return {id, vcapi, OID4VP, accessToken, workflowId};
 };
 
 export const createNativeExchange = async (req, res, next) => {

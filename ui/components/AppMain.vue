@@ -22,7 +22,7 @@
       header: String
     },
     exchangeData: {
-      exchangeId: String,
+      id: String,
       vcapi: String,
       OID4VP: String,
       accessToken: String
