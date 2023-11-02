@@ -1,4 +1,4 @@
-db_connection_uri: TODO
+db_connection_uri: "mongodb://localhost:27017/"
 relying_parties:
   - name: "Test App"
     client_id: "rp1"
@@ -6,42 +6,43 @@ relying_parties:
     description: "Relying Party Test App"
     icon: "https://placekitten.com/200/200"
     background_image: "https://placekitten.com/800/300"
+    theme:
+      cta: "#0B669D"
+      primary: "#045199"
+      header: "#0979c4"
     redirect_uri: "http://localhost:3000"
     scopes:
       - name: "openid"
         description: "Open ID Connect"
     vpr_query: >
       {
-        "type": "QueryByExample",
-        "credentialQuery": {
-          "reason": "Please present your Verifiable Credential to complete the verification process.",
-          "example": {
-            "@context": [
-              "https://www.w3.org/2018/credentials/v1",
-              "https://w3id.org/citizenship/v1"
-            ],
-            "type": [
-              "PermanentResidentCard"
-            ]
+        "query": {
+          "type": "QueryByExample",
+          "credentialQuery": {
+            "reason": "Please present your Verifiable Credential to complete the verification process.",
+            "example": {
+              "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/citizenship/v1"
+              ],
+              "type": [
+                "PermanentResidentCard"
+              ]
+            }
           }
-        }
+        },
+        "domain": "http://example.com"
       }
-    domain: "https://localhost:3000"
     claims:
       - name: "email"
         description: "Your email address"
         claim_iri: "https://schema.org/email"
         claim_value: "string"
-workflow:
-  type: vc-api
-  base_url: https://example.org/exchanges/123
-  capability: "TODO"
-  clientSecret: "TODO"
-theme:
-  cta: "#0B669D"
-  primary: "#045199"
-  header: "#0979c4"
-database_connection_url: "mongodb://localhost:27017/"
+    workflow:
+      type: vc-api
+      base_url: https://example.org/exchanges/123
+      capability: "example"
+      clientSecret: "example"
 default_language: en
 translations:
   en: 

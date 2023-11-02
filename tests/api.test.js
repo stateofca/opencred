@@ -18,9 +18,6 @@ const testRP = {
   domain: 'http://localhost:8080',
   redirect_uri: 'https://example.com',
   scopes: [{name: 'openid'}],
-  credential_context: 'https://example.com',
-  credential_type: 'Credential',
-  credential_issuer: 'https://example.com',
 };
 const testEx = {
   id: 'abc123456',
