@@ -86,7 +86,7 @@ describe('OpenCred API - Native Workflow', function() {
     const response = await request(app)
       .get(`/workflows/${testRP.workflow.id}/exchanges/${testEx.id}`)
       .set(
-        'Authorization', `Basic ${Buffer.from('test:shhh').toString('base64')}`
+        'Authorization', `Bearer ${testEx.accessToken}`
       );
 
     expect(response.headers['content-type']).to.match(/json/);
