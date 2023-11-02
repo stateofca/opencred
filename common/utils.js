@@ -1,3 +1,4 @@
+import {verify, verifyCredential} from '@digitalbazaar/vc';
 import {generateId} from 'bnid';
 
 export const createId = async () => {
@@ -8,4 +9,9 @@ export const createId = async () => {
     multihash: true
   });
   return id;
+};
+
+export const verifyUtils = {
+  verify: async args => verify(args),
+  verifyCredential: async args => verifyCredential(args)
 };

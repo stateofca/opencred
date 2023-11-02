@@ -1,5 +1,4 @@
 
-import {verify, verifyCredential} from '@digitalbazaar/vc';
 import {createId} from '../../common/utils.js';
 import {exchanges} from '../../common/database.js';
 import {getDocumentLoader} from '../../common/documentLoader.js';
@@ -7,6 +6,7 @@ import jp from 'jsonpath';
 import {oid4vp} from '@digitalbazaar/oid4-client';
 import {SUITES} from '../../common/suites.js';
 import {UnsecuredJWT} from 'jose';
+import {verifyUtils} from '../../common/utils.js';
 
 export const createExchange = async (domain, workflow) => {
   const id = await createId();
@@ -44,6 +44,59 @@ export const createNativeExchange = async (req, res, next) => {
   next();
 };
 
+export const verifySubmission = async (vp_token, submission, exchange) => {
+  const errors = [];
+  let vpVerified = false;
+  const documentLoader = getDocumentLoader().build();
+  const {presentation_definition} = exchange.variables.authorizationRequest;
+  if(submission.definition_id !== presentation_definition.id) {
+    errors.push(`Presentation Definition doesn't match Submission`);
+  } else if(submission.descriptor_map.length !==
+    presentation_definition.input_descriptors.length) {
+    errors.push(`${presentation_definition.input_descriptors.length} ` +
+      `Presentation Definition descriptors found and ` +
+      `${submission.descriptor_map.length} Presentation Submission ` +
+      `descriptors found`);
+  } else {
+    for(const descriptor of presentation_definition.input_descriptors) {
+      const submitted = submission.descriptor_map
+        .find(d => d.id === descriptor.id);
+      if(!submitted) {
+        errors.push(`Submission not found for input descriptor`);
+      } else if(submitted.format === 'ldp_vp') {
+        if(!vpVerified) {
+          const result = await verifyUtils.verify({
+            presentation: vp_token,
+            documentLoader,
+            suite: SUITES,
+            challenge: vp_token.proof.challenge
+          });
+          if(!result.verified) {
+            errors.push(result.error);
+          }
+          vpVerified = true;
+        }
+        const vc = jp.query(vp_token, submitted.path_nested.path)[0];
+        const result = await verifyUtils.verifyCredential({
+          credential: vc,
+          documentLoader,
+          suite: SUITES,
+        });
+        if(!result.verified) {
+          errors.push(result.error);
+        }
+      } else {
+        errors.push(`Format ${submitted.format} not yet supported.`);
+      }
+    }
+  }
+  if(errors.length > 0) {
+    console.error('errors: ', errors);
+    return {errors, verified: false};
+  }
+  return {errors, verified: true};
+};
+
 export default function(app) {
   app.post('/workflows/:workflowId/exchanges', createNativeExchange);
 
@@ -62,8 +115,8 @@ export default function(app) {
     next();
   });
 
-  // eslint-disable-next-line max-len
-  app.get('/workflows/:workflowId/exchanges/:exchangeId/openid/client/authorization/request', async (req, res) => {
+  app.get('/workflows/:workflowId/exchanges/:exchangeId/openid/client/' +
+    'authorization/request', async (req, res) => {
     const exchange = await exchanges.findOne({id: req.params.exchangeId});
     if(!exchange) {
       res.sendStatus(404);
@@ -80,18 +133,21 @@ export default function(app) {
       req.originalUrl.replace('request', 'response')}`;
     vpr.challenge = exchange.id;
 
-    const authRequest = {
+    const authorizationRequest = {
       ...oid4vp.fromVpr({verifiablePresentationRequest: vpr}),
       client_id: vpr.domain,
     };
-    const jwt = new UnsecuredJWT(authRequest).encode();
+    await exchanges.updateOne({id: exchange.id}, {
+      $set: {'variables.authorizationRequest': authorizationRequest}
+    });
+    const jwt = new UnsecuredJWT(authorizationRequest).encode();
     res.set('Content-Type', 'application/oauth-authz-req+jwt');
     res.send(jwt);
     return;
   });
 
-  // eslint-disable-next-line max-len
-  app.post('/workflows/:workflowId/exchanges/:exchangeId/openid/client/authorization/response', async (req, res) => {
+  app.post('/workflows/:workflowId/exchanges/:exchangeId/openid/client/' +
+    'authorization/response', async (req, res) => {
     const exchange = await exchanges.findOne({id: req.params.exchangeId});
     if(!exchange) {
       res.sendStatus(404);
@@ -111,70 +167,32 @@ export default function(app) {
         res.status(400).send(`Invalid nonce`);
         return;
       }
-      const errors = [];
-      let vpVerified = false;
-      const documentLoader = getDocumentLoader().build();
-
-      for(const descriptor of submission.descriptor_map) {
-        if(descriptor.format === 'ldp_vp') {
-          if(!vpVerified) {
-            const result = await verify({
-              presentation: vp_token,
-              documentLoader,
-              suite: SUITES,
-              challenge: vp_token.proof.challenge
-            });
-            if(!result.verified) {
-              console.log('TODO get proper error from', result);
-              errors.push(result.error);
-            } else {
-              vpVerified = true;
-            }
-          }
-          const vc = jp.query(vp_token, descriptor.path_nested.path)[0];
-          const result = await verifyCredential({
-            credential: vc,
-            documentLoader,
-            suite: SUITES,
-          });
-          if(!result.verified) {
-            console.log('TODO get proper error from', result);
-            errors.push(result.error);
-          }
-        } else {
-          errors.push(`Format ${descriptor.format} not yet supported.`);
-        }
-        //      (6.5. VP Token Validation)
-        // TODO make sure presentation_submission matches authorization request
-      }
-      if(errors.length > 0) {
-        console.error('errors: ', errors);
-        res.status(400).send({errors});
-        return;
-      }
-      const update = {
-        $inc: {sequence: 1},
-        $set: {
-          updatedAt: Date.now(),
-          state: 'complete',
-          variables: {
-            results: {
-              'templated-vpr': {
-                verifiablePresentation: vp_token
+      const {verified, errors} = await verifySubmission(
+        vp_token, submission, exchange
+      );
+      if(verified) {
+        const update = {
+          $inc: {sequence: 1},
+          $set: {
+            updatedAt: Date.now(),
+            state: 'complete',
+            variables: {
+              results: {
+                'templated-vpr': {
+                  verifiablePresentation: vp_token
+                }
               }
             }
           }
-        }
-      };
-      try {
+        };
         await exchanges.updateOne({
           id: exchange.id,
           state: 'pending'
         }, update);
-      } catch(e) {
-        console.error('failed to update state', e);
+        res.sendStatus(204);
+        return;
       }
-      res.sendStatus(204);
+      res.status(400).send({errors});
       return;
     } catch(e) {
       console.error(e);

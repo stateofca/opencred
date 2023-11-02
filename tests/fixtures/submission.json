@@ -1,0 +1,15 @@
+{
+  "id": "018815e8-358c-40f2-9648-2edee6908ac4",
+  "definition_id": "ac1ced75-e910-440d-9c00-a3c0d1dfe379",
+  "descriptor_map": [
+    {
+      "id": "c65236cb-89a3-4177-8a56-23d239b4f9a8",
+      "path": "$",
+      "format": "ldp_vp",
+      "path_nested": {
+        "format": "ldp_vc",
+        "path": "$.verifiableCredential[0]"
+      }
+    }
+  ]
+}
