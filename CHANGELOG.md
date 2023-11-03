@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 3.0.1 - 2023-11-03
+
+### Fixed
+- Resolves an error with new npm installs related to an old version of `ky`.
+
 ## 3.0.0 - 2023-11-03
 
 ### Added
