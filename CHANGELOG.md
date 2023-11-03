@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 3.0.0 - 2023-11-03
+## 3.0.0 - 2023-11-XX
 
 ### Added
 - Native OID4VP exchanges
