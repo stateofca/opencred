@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 3.0.2 - 2023-11-03
+
+### Fixed
+- Use the MongoDB database name specified in the URL connect string.
+
 ## 3.0.1 - 2023-11-03
 
 ### Fixed
