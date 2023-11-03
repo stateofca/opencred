@@ -1,5 +1,16 @@
 # opencred-platform Changelog
 
+## 3.0.0 - 2023-11-03
+
+### Added
+- Native OID4VP exchanges
+- Mongo database
+- Document loader
+- did:jwk support
+- API endpoints
+- API authentication
+- API documentation with OpenAPI
+
 ## 2.0.5 - 2023-10-17
 
 ### Fixed
