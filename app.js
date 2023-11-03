@@ -28,6 +28,18 @@ const options = {
       title: 'OpenCred',
       version: pkg.version,
     },
+    components: {
+      securitySchemes: {
+        basic: {
+          type: 'http',
+          scheme: 'basic'
+        },
+        bearer: {
+          type: 'http',
+          scheme: 'bearer'
+        }
+      }
+    }
   },
   apis: [`${__dirname}/app.js`], // files containing annotations as above
 };
@@ -126,7 +138,7 @@ app.post('/workflows/:workflowId/exchanges', initiateExchange); // Returns JSON
  *    tags:
  *     - Exchanges
  *    security:
- *     - basic: []
+ *     - bearer: []
  *    operationId: getExchange
  *    description:
  *      A client can use this endpoint to retrieve the state and relevant data

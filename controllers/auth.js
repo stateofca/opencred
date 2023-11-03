@@ -37,8 +37,13 @@ const getAuthFunction = (basicEnabled, bearerEnabled) => {
       }
     } else if(bearerEnabled && parts[0] == 'Bearer') {
       const exchange = await exchanges.findOne(
-        {accessToken: parts[1]}, {projection: {_id: 0}}
+        {accessToken: parts[1], id: req.params.exchangeId},
+        {projection: {_id: 0}}
       );
+      if(!exchange) {
+        res.status(404).send({message: 'Exchange not found'});
+        return;
+      }
       if(!exchange?.challenge || exchange.workflowId !== req.rp.workflow.id) {
         res.status(401).send({message: 'Invalid token'});
         return;
