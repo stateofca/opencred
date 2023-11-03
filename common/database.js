@@ -5,7 +5,7 @@ import {
 } from '../config/config.js';
 
 const client = new MongoClient(databaseConnectionUri);
-const db = client.db('OpenCred');
+const db = client.db();
 
 /**
  * Exchange document structure:

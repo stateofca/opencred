@@ -1,4 +1,4 @@
-db_connection_uri: "mongodb://localhost:27017/"
+db_connection_uri: "mongodb://localhost:27017/databaseName"
 relying_parties:
   - name: "Test App"
     client_id: "rp1"
