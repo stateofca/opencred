@@ -1,5 +1,11 @@
 # opencred-platform Changelog
 
+## 3.0.3 - 2023-11-XX
+
+### Fixed
+- Use client-specific theme information in the UI to enable multiple clients to
+  use the same install of OpenCred.
+
 ## 3.0.2 - 2023-11-03
 
 ### Fixed

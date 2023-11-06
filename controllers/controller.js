@@ -4,7 +4,7 @@ import path from 'node:path';
 import QRCode from 'qrcode';
 
 import {
-  defaultLanguage, theme, translations
+  defaultLanguage, translations
 } from '../config/config.js';
 import {render} from '../dist/server/entry-server.js';
 
@@ -30,6 +30,7 @@ export async function login(req, res) {
       redirect_uri: rp.redirect_uri,
       name: rp.name,
       icon: rp.icon,
+      theme: rp.theme,
       background_image: rp.background_image,
       workflow: {
         type: rp.workflow.type,
@@ -38,7 +39,6 @@ export async function login(req, res) {
     },
     translations,
     defaultLanguage,
-    theme,
     exchangeData: {
       ...req.exchange,
       QR: await QRCode.toDataURL(req.exchange.OID4VP)

@@ -12,15 +12,16 @@
       workflow: {
         id: String,
         type: String
-      }
+      },
+      theme: {
+        cta: String,
+        primary: String,
+        header: String
+      },
     },
     translations: Object,
     defaultLanguage: String,
-    theme: {
-      cta: String,
-      primary: String,
-      header: String
-    },
+    
     exchangeData: {
       id: String,
       QR: String,
@@ -41,7 +42,7 @@
 
 <template>
   <div class="flex flex-col min-h-screen">
-    <header class="" :style="{background: theme.header}">
+    <header class="" :style="{background: rp.theme.header}">
       <div class="mx-auto flex justify-between items-center px-6 py-3 max-w-3xl">
         <a :href="rp.redirect_uri"
           class="flex items-center gap-3">
@@ -72,14 +73,13 @@
         v-if="!state.isQROpen"
         :rp="rp"
         :translations="translations"
-        :theme="theme"
         :defaultLanguage="defaultLanguage"
         :exchangeData="exchangeData"
         @switchView="switchView"/>
       <QRView
         v-else
         :translations="translations"
-        :theme="theme"
+        :theme="rp.theme"
         :defaultLanguage="defaultLanguage"
         :exchangeData="exchangeData"
         @switchView="switchView"/>
@@ -92,6 +92,6 @@
 
 <style>
 a {
-  color: v-bind('theme.primary')
+  color: v-bind('rp.theme.primary')
 }
 </style>

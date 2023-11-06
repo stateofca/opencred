@@ -4,7 +4,6 @@
     :rp="ctx.rp"
     :translations="ctx.translations"
     :defaultLanguage="ctx.defaultLanguage"
-    :theme="ctx.theme"
     :exchangeData="ctx.exchangeData"/>
 </template>
 

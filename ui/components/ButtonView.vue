@@ -17,11 +17,11 @@ const props = defineProps({
       id: String,
       type: String,
     },
-  },
-  theme: {
-    cta: String,
-    primary: String,
-    header: String,
+    theme: {
+      cta: String,
+      primary: String,
+      header: String,
+    },
   },
   exchangeData: {
     id: String,
@@ -84,7 +84,7 @@ const checkStatus = async () => {
   >
     <h1
       class="text-3xl mb-12 text-center font-semibold"
-      :style="{ color: theme.primary }"
+      :style="{ color: rp.theme.primary }"
     >
       {{ translations[defaultLanguage].login_cta }}
     </h1>
@@ -98,7 +98,7 @@ const checkStatus = async () => {
         v-if="!loading && !vp"
         @click="openChapi"
         class="text-white py-2 px-6 rounded-xl my-8"
-        :style="{ background: theme.cta }"
+        :style="{ background: rp.theme.cta }"
       >
         {{ translations[defaultLanguage].app_cta }}
       </button>
@@ -108,7 +108,7 @@ const checkStatus = async () => {
       <div
         v-else
         class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] py-2 my-8 motion-reduce:animate-[spin_1.5s_linear_infinite]"
-        :style="{ color: theme.primary }"
+        :style="{ color: rp.theme.primary }"
         role="status"
       >
         <span
@@ -122,7 +122,7 @@ const checkStatus = async () => {
       v-html="translations[defaultLanguage].qr_explain"
     ></p>
     <p class="text-center">
-      <button @click="switchView" :style="{ color: theme.primary }">
+      <button @click="switchView" :style="{ color: rp.theme.primary }">
         {{ translations[defaultLanguage].qr_cta }}
       </button>
     </p>

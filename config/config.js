@@ -48,7 +48,7 @@ const configDoc = yaml.load(fs.readFileSync(config_path, 'utf8'));
  * An list of relying parties (connected apps or workflows) in use by OpenCred
  * @type {RelyingParty[]}
  */
-export const relyingParties = configDoc.relying_parties;
+const configRPs = configDoc.relying_parties;
 
 const validateRelyingParty = rp => {
   if(!rp.client_id) {
@@ -111,14 +111,14 @@ const validateWorkflow = rp => {
 };
 
 // If relyingParties is not an array, throw an error
-if(!Array.isArray(relyingParties)) {
+if(!Array.isArray(configRPs)) {
   throw new Error('Configuration relying_parties must be an array.');
 }
 
-relyingParties.forEach(validateRelyingParty);
+configRPs.forEach(validateRelyingParty);
 
 // Validate workflow connection configuration
-relyingParties.forEach(validateWorkflow);
+configRPs.forEach(validateWorkflow);
 
 export const databaseConnectionUri = configDoc.db_connection_uri;
 if(!databaseConnectionUri) {
@@ -129,9 +129,23 @@ export const defaultLanguage = configDoc.default_language || 'en';
 
 export const translations = combineTranslations(configDoc.translations || {});
 
-const defaultTheme = {
+const defaultTheme = configDoc.theme ?? {
   cta: '#006847',
   primary: '#008f5a',
   header: '#004225'
 };
-export const theme = configDoc.theme || defaultTheme;
+
+/**
+ * An list of relying parties (connected apps or workflows) in use by OpenCred
+ * @type {RelyingParty[]}
+ */
+export const relyingParties = configRPs.map(rp => {
+  const theme = {
+    ...defaultTheme,
+    ...(rp.theme ? rp.theme : {})
+  };
+  return {
+    ...rp,
+    theme
+  };
+});
