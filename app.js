@@ -99,7 +99,7 @@ app.get('/login', login); // returns HTML app
  *        schema:
  *          type: string
  *          minimum: 3
- *          pattern: "[a-z0-9][a-z0-9\\-]{2,}"
+ *          pattern: "^[a-zA-Z0-9-]+$"
  *    responses:
  *      "200":
  *        description: Information about the exchange.
@@ -151,7 +151,7 @@ app.post('/workflows/:workflowId/exchanges', initiateExchange); // Returns JSON
  *        schema:
  *          type: string
  *          minimum: 3
- *          pattern: "[a-z0-9][a-z0-9\\-]{2,}"
+ *          pattern: "^[a-zA-Z0-9-]+$"
  *      - name: exchangeId
  *        description: An identifier for an exchange.
  *        in: path
@@ -159,7 +159,7 @@ app.post('/workflows/:workflowId/exchanges', initiateExchange); // Returns JSON
  *        schema:
  *          type: string
  *          minimum: 3
- *          pattern: "[a-z0-9][a-z0-9\\-]{2,}"
+ *          pattern: "^[a-zA-Z0-9-]+$"
  *    responses:
  *      "200":
  *        description: Information about the exchange.

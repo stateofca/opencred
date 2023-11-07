@@ -5,6 +5,7 @@
 ### Fixed
 - Use client-specific theme information in the UI to enable multiple clients to
   use the same install of OpenCred.
+- Made ID Regex in endpoints less restrictive.
 
 ## 3.0.2 - 2023-11-03
 
