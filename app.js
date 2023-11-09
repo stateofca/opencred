@@ -12,6 +12,7 @@ import {
 
 import AuthenticationMiddleware from './controllers/auth.js';
 import CustomExchangeMiddleware from './controllers/exchanges/custom.js';
+import {exchanges} from './common/database.js';
 import NativeMiddleware from './controllers/exchanges/native.js';
 import OidcMiddleware from './controllers/oidc.js';
 import ResolveClientMiddleware from './controllers/resolveClient.js';
@@ -186,5 +187,10 @@ app.get('/workflows/:workflowId/exchanges/:exchangeId', getExchangeStatus);
 
 // Token exchange requires rp to be set on req
 app.post('/token', exchangeCodeForToken);
+
+app.on('listening', async function() {
+  await exchanges.createIndex({createdAt: 1}, {expireAfterSeconds: 86400});
+  console.log('Created 24hr TTL index');
+});
 
 export const PORT = process.env.PORT || '8080';

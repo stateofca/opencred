@@ -17,7 +17,7 @@ export const createExchange = async (domain, workflow) => {
     id,
     workflowId,
     sequence: 0,
-    ttl: 1,
+    ttl: 900,
     state: 'pending',
     variables: {},
     step: workflow.initialStep,
