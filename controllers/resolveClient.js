@@ -39,6 +39,9 @@ export default function(app) {
   app.get(
     '/workflows/:workflowId/exchanges/:exchangeId', attachClientByWorkflowId
   );
+  app.post(
+    '/workflows/:workflowId/exchanges/:exchangeId', attachClientByWorkflowId
+  );
   // eslint-disable-next-line max-len
   app.get('/workflows/:workflowId/exchanges/:exchangeId/openid/client/authorization/request', attachClientByWorkflowId);
   // eslint-disable-next-line max-len

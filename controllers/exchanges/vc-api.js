@@ -74,17 +74,18 @@ export default function(app) {
         next();
         return;
       }
-      if(!req.exchange || req.exchange.workflowId !== rp.workflow.id) {
-        res.status(500).send({
-          message: 'Unexpected server error: no exchange data found on request.'
-        });
+      const exchange = await exchanges.findOne({
+        id: encodeURIComponent(req.params.exchangeId)
+      });
+      if(!exchange) {
+        res.sendStatus(404);
         return;
       }
 
       const workflow = rp.workflow;
 
       const {data, error} = await zcapClient.zcapReadRequest({
-        endpoint: decodeURIComponent(req.exchange.vcapi),
+        endpoint: decodeURIComponent(exchange.vcapi),
         zcap: {
           capability: workflow.capability,
           clientSecret: workflow.clientSecret
@@ -92,6 +93,7 @@ export default function(app) {
       });
       if(error) {
         res.sendStatus(404);
+        return;
       } else {
         req.exchange = data;
       }

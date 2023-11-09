@@ -17,12 +17,13 @@ export const createExchange = async (domain, workflow) => {
     id,
     workflowId,
     sequence: 0,
-    ttl: 900,
+    ttl: 1,
     state: 'pending',
     variables: {},
     step: workflow.initialStep,
     challenge,
-    accessToken
+    accessToken,
+    createdAt: new Date(),
   });
   const vcapi = `${domain}/workflows/${workflow.id}/exchanges/${id}`;
   const authzReqUrl = `${vcapi}/openid/client/authorization/request`;
@@ -32,6 +33,19 @@ export const createExchange = async (domain, workflow) => {
   });
   const OID4VP = 'openid4vp://authorize?' + searchParams.toString();
   return {id, vcapi, OID4VP, accessToken, workflowId};
+};
+
+export const getExchange = async (id, others = {}, allowExpired = false) => {
+  const exchange = await exchanges.findOne({id, ...others}, {
+    projection: {_id: 0}
+  });
+  if(!allowExpired) {
+    const expiry = new Date(exchange.createdAt.getTime() + exchange.ttl * 1000);
+    if(new Date() > expiry) {
+      return null;
+    }
+  }
+  return exchange;
 };
 
 export const createNativeExchange = async (req, res, next) => {
@@ -110,14 +124,14 @@ export default function(app) {
       return;
     }
     if(!req.exchange) {
-      req.exchange = await exchanges.findOne({id: req.params.exchangeId});
+      req.exchange = await getExchange(req.params.exchangeId, {}, true);
     }
     next();
   });
 
   app.get('/workflows/:workflowId/exchanges/:exchangeId/openid/client/' +
     'authorization/request', async (req, res) => {
-    const exchange = await exchanges.findOne({id: req.params.exchangeId});
+    const exchange = await getExchange(req.params.exchangeId);
     if(!exchange) {
       res.sendStatus(404);
       return;
@@ -138,7 +152,10 @@ export default function(app) {
       client_id: vpr.domain,
     };
     await exchanges.updateOne({id: exchange.id}, {
-      $set: {'variables.authorizationRequest': authorizationRequest}
+      $set: {
+        'variables.authorizationRequest': authorizationRequest,
+        updatedAt: Date.now()
+      }
     });
     const jwt = new UnsecuredJWT(authorizationRequest).encode();
     res.set('Content-Type', 'application/oauth-authz-req+jwt');
@@ -148,7 +165,7 @@ export default function(app) {
 
   app.post('/workflows/:workflowId/exchanges/:exchangeId/openid/client/' +
     'authorization/response', async (req, res) => {
-    const exchange = await exchanges.findOne({id: req.params.exchangeId});
+    const exchange = await getExchange(req.params.exchangeId);
     if(!exchange) {
       res.sendStatus(404);
       return;
@@ -206,13 +223,22 @@ export default function(app) {
       res.status(400).send({message: 'Incorrect workflowId'});
       return;
     }
-    const exchange = await exchanges.findOne({id: req.params.exchangeId});
-    const step = req.rp.workflow.steps[exchange.step];
+    const exchange = await getExchange(req.params.exchangeId);
+
     if(exchange) {
+      const step = req.rp.workflow.steps[exchange.step];
+      let vpr;
+      try {
+        vpr = JSON.parse(step.verifiablePresentationRequest);
+      } catch(e) {
+        console.error(e);
+        res.sendStatus(404);
+        return;
+      }
       res.send({
         verifiablePresentationRequest:
           {
-            ...JSON.parse(step.verifiablePresentationRequest),
+            ...vpr,
             challenge: exchange.challenge
           }
       });

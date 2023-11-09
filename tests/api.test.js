@@ -11,7 +11,12 @@ import {zcapClient} from '../common/zcap.js';
 const testRP = {
   workflow: {
     type: 'native',
-    id: 'testworkflow'
+    id: 'testworkflow',
+    steps: {
+      waiting: {
+        verifiablePresentationRequest: '{}'
+      }
+    }
   },
   clientId: 'test',
   clientSecret: 'shhh',
@@ -27,7 +32,8 @@ const testEx = {
   step: 'waiting',
   challenge: 'parkour',
   workflowId: testRP.workflow.id,
-  accessToken: 'opensesame2023'
+  accessToken: 'opensesame2023',
+  createdAt: new Date()
 };
 
 describe('OpenCred API - Native Workflow', function() {
@@ -87,6 +93,32 @@ describe('OpenCred API - Native Workflow', function() {
     expect(response.headers['content-type']).to.match(/json/);
     expect(response.status).to.equal(200);
     expect(response.body.exchange.id).to.equal(testEx.id);
+    findStub.restore();
+  });
+
+  it('should allow POST to exchange endpoint', async function() {
+    const findStub = sinon.stub(exchanges, 'findOne').resolves(testEx);
+    // console.error(`/workflows/${testRP.workflow.id}/exchanges/${testEx.id}`)
+    const response = await request(app)
+      .post(`/workflows/${testRP.workflow.id}/exchanges/${testEx.id}`)
+      .send()
+      .set('Accept', 'application/json');
+
+    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.status).to.equal(200);
+    findStub.restore();
+  });
+
+  it('should 404 on POST to exchange endpoint if expired', async function() {
+    const findStub = sinon.stub(exchanges, 'findOne').resolves({
+      ...testEx, createdAt: new Date(new Date().getTime() - 1000 * 1000)
+    });
+    const response = await request(app)
+      .post(`/workflows/${testRP.workflow.id}/exchanges/${testEx.id}`)
+      .send()
+      .set('Accept', 'application/json');
+
+    expect(response.status).to.equal(404);
     findStub.restore();
   });
 });
