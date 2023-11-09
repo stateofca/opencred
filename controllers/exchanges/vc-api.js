@@ -47,12 +47,17 @@ const createVcApiExchange = async (req, res, next) => {
     });
     const OID4VP = 'openid4vp://authorize?' + searchParams.toString();
 
+    const createdAt = new Date();
+    const ttl = 60 * 15;
     req.exchange = {
       id: encodeURIComponent(exchangeId),
       workflowId: workflow.id,
       vcapi: exchangeId,
       OID4VP,
-      accessToken: await createId()
+      accessToken: await createId(),
+      ttl,
+      createdAt,
+      recordExpiresAt: new Date(createdAt.getTime() + 86400000 + (ttl * 1000))
     };
     await exchanges.insertOne(req.exchange);
     next();

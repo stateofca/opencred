@@ -37,8 +37,8 @@ const getAuthFunction = (basicEnabled, bearerEnabled) => {
       }
     } else if(bearerEnabled && parts[0] == 'Bearer') {
       const exchange = await getExchange(req.params.exchangeId, {
-        accessToken: parts[1]
-      }, true);
+        others: {accessToken: parts[1]}, allowExpired: true
+      });
       if(!exchange) {
         res.status(404).send({message: 'Exchange not found'});
         return;

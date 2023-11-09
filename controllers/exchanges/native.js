@@ -13,17 +13,20 @@ export const createExchange = async (domain, workflow) => {
   const workflowId = workflow.id;
   const accessToken = await createId();
   const challenge = await createId();
+  const createdAt = new Date();
+  const ttl = 60 * 15;
   await exchanges.insertOne({
     id,
     workflowId,
     sequence: 0,
-    ttl: 900,
+    ttl,
     state: 'pending',
     variables: {},
     step: workflow.initialStep,
     challenge,
     accessToken,
-    createdAt: new Date(),
+    createdAt,
+    recordExpiresAt: new Date(createdAt.getTime() - 86400000 + (ttl * 1000))
   });
   const vcapi = `${domain}/workflows/${workflow.id}/exchanges/${id}`;
   const authzReqUrl = `${vcapi}/openid/client/authorization/request`;
@@ -35,7 +38,9 @@ export const createExchange = async (domain, workflow) => {
   return {id, vcapi, OID4VP, accessToken, workflowId};
 };
 
-export const getExchange = async (id, others = {}, allowExpired = false) => {
+export const getExchange = async (id, {others, allowExpired} = {
+  others: {}, allowExpired: false
+}) => {
   const exchange = await exchanges.findOne({id, ...others}, {
     projection: {_id: 0}
   });
@@ -124,7 +129,9 @@ export default function(app) {
       return;
     }
     if(!req.exchange) {
-      req.exchange = await getExchange(req.params.exchangeId, {}, true);
+      req.exchange = await getExchange(req.params.exchangeId, {
+        allowExpired: true
+      });
     }
     next();
   });

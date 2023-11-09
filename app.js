@@ -188,8 +188,8 @@ app.get('/workflows/:workflowId/exchanges/:exchangeId', getExchangeStatus);
 // Token exchange requires rp to be set on req
 app.post('/token', exchangeCodeForToken);
 
-app.on('listening', async function() {
-  await exchanges.createIndex({createdAt: 1}, {expireAfterSeconds: 86400});
+app.on('init', async function() {
+  await exchanges.createIndex({recordExpiresAt: 1}, {expireAfterSeconds: 0});
   console.log('Created 24hr TTL index');
 });
 
