@@ -6,7 +6,7 @@ import expect from 'expect.js';
 import request from 'supertest';
 
 import {app} from '../app.js';
-import {relyingParties} from '../config/config.js';
+import {config} from '../config/config.js';
 
 const exampleRelyingParty = {
   workflow: {
@@ -21,7 +21,16 @@ const exampleRelyingParty = {
   credential_issuer: 'https://example.com',
 };
 
-describe('OAuth Login Workflow', () => {
+describe('OAuth Login Workflow', function() {
+  this.beforeEach(() => {
+    this.rpStub = sinon.stub(config, 'relyingParties').value(
+      [exampleRelyingParty]
+    );
+  });
+
+  this.afterEach(() => {
+    this.rpStub.restore();
+  });
   it('should fail for unregistered client ids', async function() {
     const response = await request(app)
       .get('/login?client_id=unknown')
@@ -33,9 +42,6 @@ describe('OAuth Login Workflow', () => {
   });
 
   it('should fail for unregistered redirect_uri', async function() {
-    const originalRPs = [...relyingParties];
-    relyingParties.splice(0, 1, ...[exampleRelyingParty]);
-
     const dbStub = sinon.stub(exchanges, 'insertOne');
     dbStub.resolves({insertedId: 'test'});
 
@@ -47,14 +53,10 @@ describe('OAuth Login Workflow', () => {
     expect(response.status).to.equal(400);
     expect(response.body.message).to.equal('Unknown redirect_uri');
 
-    relyingParties.splice(0, originalRPs.length, ...originalRPs);
     dbStub.restore();
   });
 
   it('should fail for incorrect scopes', async function() {
-    const originalRPs = [...relyingParties];
-    relyingParties.splice(0, 1, ...[exampleRelyingParty]);
-
     const dbStub = sinon.stub(exchanges, 'insertOne');
     dbStub.resolves({insertedId: 'test'});
 
@@ -67,14 +69,10 @@ describe('OAuth Login Workflow', () => {
     expect(response.status).to.equal(400);
     expect(response.body.message).to.equal('Invalid scope');
 
-    relyingParties.splice(0, originalRPs.length, ...originalRPs);
     dbStub.restore();
   });
 
   it('should return mocked exchange metadata', async function() {
-    const originalRPs = [...relyingParties];
-    relyingParties.splice(0, 1, ...[exampleRelyingParty]);
-
     const dbStub = sinon.stub(exchanges, 'insertOne');
     dbStub.resolves({insertedId: 'test'});
 
@@ -89,8 +87,6 @@ describe('OAuth Login Workflow', () => {
     expect(
       response.text.includes('openid4vp://authorize?'))
       .to.be(true);
-
-    relyingParties.splice(0, originalRPs.length, ...originalRPs);
 
     dbStub.restore();
   });

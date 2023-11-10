@@ -120,14 +120,14 @@ configRPs.forEach(validateRelyingParty);
 // Validate workflow connection configuration
 configRPs.forEach(validateWorkflow);
 
-export const databaseConnectionUri = configDoc.db_connection_uri;
+const databaseConnectionUri = configDoc.db_connection_uri;
 if(!databaseConnectionUri) {
   throw new Error('database_connection_uri not found in config.');
 }
 
-export const defaultLanguage = configDoc.default_language || 'en';
+const defaultLanguage = configDoc.default_language || 'en';
 
-export const translations = combineTranslations(configDoc.translations || {});
+const translations = combineTranslations(configDoc.translations || {});
 
 const defaultTheme = configDoc.theme ?? {
   cta: '#006847',
@@ -135,11 +135,45 @@ const defaultTheme = configDoc.theme ?? {
   header: '#004225'
 };
 
+const domain = configDoc.domain ?? 'http://localhost:8080';
+
+const validateDidWeb = () => {
+  if(!configDoc.didWeb) {
+    return {
+      enabled: false
+    };
+  }
+
+  return {
+    enabled: true,
+    services: configDoc.didWeb.services.map(s => {
+      if(!s.id) {
+        throw new Error('Each service in didWeb.services must have an id.');
+      }
+      if(!s.type) {
+        throw new Error('Each service in didWeb.services must have a type.');
+      }
+      if(!s.serviceEndpoint) {
+        throw new Error(
+          'Each service in didWeb.services must have a serviceEndpoint.'
+        );
+      }
+      return {
+        id: s.id,
+        type: s.type,
+        serviceEndpoint: s.serviceEndpoint
+      };
+
+    })
+  };
+};
+const didWeb = validateDidWeb();
+
 /**
  * An list of relying parties (connected apps or workflows) in use by OpenCred
  * @type {RelyingParty[]}
  */
-export const relyingParties = configRPs.map(rp => {
+const relyingParties = configRPs.map(rp => {
   const theme = {
     ...defaultTheme,
     ...(rp.theme ? rp.theme : {})
@@ -149,3 +183,12 @@ export const relyingParties = configRPs.map(rp => {
     theme
   };
 });
+
+export const config = {
+  databaseConnectionUri,
+  didWeb,
+  defaultLanguage,
+  domain,
+  relyingParties,
+  translations,
+};

@@ -4,8 +4,8 @@ import expect from 'expect.js';
 import request from 'supertest';
 
 import {app} from '../app.js';
+import {config} from '../config/config.js';
 import {exchanges} from '../common/database.js';
-import {relyingParties} from '../config/config.js';
 import {zcapClient} from '../common/zcap.js';
 
 const testRP = {
@@ -15,7 +15,6 @@ const testRP = {
   },
   client_id: 'test',
   client_secret: 'shhh',
-  domain: 'http://localhost:8080',
   redirect_uri: 'https://example.com',
   scopes: [{name: 'openid'}],
 };
@@ -33,12 +32,11 @@ const testEx = {
 
 describe('OpenCred API - Native Workflow', function() {
   this.beforeEach(() => {
-    this.originalRPs = [...relyingParties];
-    relyingParties.splice(0, 1, ...[testRP]);
+    this.rpStub = sinon.stub(config, 'relyingParties').value([testRP]);
   });
 
   this.afterEach(() => {
-    relyingParties.splice(0, this.originalRPs.length, ...this.originalRPs);
+    this.rpStub.restore();
   });
 
   it('should return 404 for unknown workflow id', async function() {
@@ -95,8 +93,7 @@ describe('OpenCred API - Native Workflow', function() {
 
 describe('OpenCred API - VC-API Workflow', function() {
   this.beforeEach(() => {
-    this.originalRPs = [...relyingParties];
-    relyingParties.splice(0, 1, ...[{
+    this.rpStub = sinon.stub(config, 'relyingParties').value([{
       ...testRP,
       workflow: {
         id: testRP.workflow.id,
@@ -109,7 +106,7 @@ describe('OpenCred API - VC-API Workflow', function() {
   });
 
   this.afterEach(() => {
-    relyingParties.splice(0, this.originalRPs.length, ...this.originalRPs);
+    this.rpStub.restore();
   });
 
   it('should create a new exchange with the workflow', async function() {

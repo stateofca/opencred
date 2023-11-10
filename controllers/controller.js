@@ -3,9 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import QRCode from 'qrcode';
 
-import {
-  defaultLanguage, translations
-} from '../config/config.js';
+import {config} from '../config/config.js';
 import {render} from '../dist/server/entry-server.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -37,8 +35,8 @@ export async function login(req, res) {
         id: rp.workflow.id
       }
     },
-    translations,
-    defaultLanguage,
+    translations: config.translations,
+    defaultLanguage: config.defaultLanguage,
     exchangeData: {
       ...req.exchange,
       QR: await QRCode.toDataURL(req.exchange.OID4VP)

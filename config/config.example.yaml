@@ -1,4 +1,5 @@
 db_connection_uri: "mongodb://localhost:27017/databaseName"
+domain: "http://localhost:8080"
 relying_parties:
   - name: "Test App"
     client_id: "rp1"
@@ -30,8 +31,7 @@ relying_parties:
               ]
             }
           }
-        },
-        "domain": "http://example.com"
+        }
       }
     claims:
       - name: "email"

@@ -1,5 +1,6 @@
 
 import {createId} from '../../common/utils.js';
+import {config} from '../../config/config.js';
 import {exchanges} from '../../common/database.js';
 import {getDocumentLoader} from '../../common/documentLoader.js';
 import jp from 'jsonpath';
@@ -40,7 +41,7 @@ export const createNativeExchange = async (req, res, next) => {
     next();
     return;
   }
-  req.exchange = await createExchange(rp.domain, rp.workflow);
+  req.exchange = await createExchange(config.domain, rp.workflow);
   next();
 };
 

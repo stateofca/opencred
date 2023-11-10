@@ -142,7 +142,7 @@ app.post('/workflows/:workflowId/exchanges', initiateExchange); // Returns JSON
  *    operationId: getExchange
  *    description:
  *      A client can use this endpoint to retrieve the state and relevant data
- *      of an exchange of a particular workflow.
+ *      of an exchange of a p articular workflow.
  *    parameters:
  *      - name: workflowId
  *        description: An identifier for a workflow.
