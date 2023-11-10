@@ -14,7 +14,7 @@ const createVcApiExchange = async (req, res, next) => {
   try {
     const verifiablePresentationRequest = JSON.parse(workflow.vpr);
     const {result} = await zcapClient.zcapWriteRequest({
-      endpoint: workflow.base_url,
+      endpoint: workflow.baseUrl,
       zcap: {
         capability: workflow.capability,
         clientSecret: workflow.clientSecret

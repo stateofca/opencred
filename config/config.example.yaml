@@ -1,21 +1,21 @@
-db_connection_uri: "mongodb://localhost:27017/databaseName"
+dbConnectionUri: "mongodb://localhost:27017/databaseName"
 domain: "http://localhost:8080"
-relying_parties:
+relyingParties:
   - name: "Test App"
-    client_id: "rp1"
-    client_secret: "DeepestAndDarkest"
+    clientId: "rp1"
+    clientSecret: "DeepestAndDarkest"
     description: "Relying Party Test App"
     icon: "https://placekitten.com/200/200"
-    background_image: "https://placekitten.com/800/300"
+    backgroundImage: "https://placekitten.com/800/300"
     theme:
       cta: "#0B669D"
       primary: "#045199"
       header: "#0979c4"
-    redirect_uri: "http://localhost:3000"
+    redirectUri: "http://localhost:3000"
     scopes:
       - name: "openid"
         description: "Open ID Connect"
-    vpr_query: >
+    vprQuery: >
       {
         "query": {
           "type": "QueryByExample",
@@ -36,29 +36,28 @@ relying_parties:
     claims:
       - name: "email"
         description: "Your email address"
-        claim_iri: "https://schema.org/email"
-        claim_value: "string"
+        claimIri: "https://schema.org/email"
     workflow:
       type: vc-api
-      base_url: https://example.org/exchanges/123
+      baseUrl: https://example.org/exchanges/123
       capability: "example"
       clientSecret: "example"
-default_language: en
+defaultLanguage: en
 translations:
   en: 
-    login_cta: "Login with your credential wallet"
-    login_explain: "To login with your credential wallet, you will need to have the credential wallet app <with configurable URL to app stores> installed"
-    app_install_explain: "If you don't have a credential wallet yet, you can get one by downloading the credential wallet app <with configurable URL to app stores>"
-    app_cta: "Open wallet app"
-    qr_explain: "Looking for a QR Code to scan with you wallet app instead?"
-    qr_page_explain: "Scan the following QR Code with your wallet app."
-    qr_cta: "Scan the following QR Code with your wallet app"
+    loginCta: "Login with your credential wallet"
+    loginExplain: "To login with your credential wallet, you will need to have the credential wallet app <with configurable URL to app stores> installed"
+    appInstallExplain: "If you don't have a credential wallet yet, you can get one by downloading the credential wallet app <with configurable URL to app stores>"
+    appCta: "Open wallet app"
+    qrExplain: "Looking for a QR Code to scan with you wallet app instead?"
+    qrPageExplain: "Scan the following QR Code with your wallet app."
+    qrCta: "Scan the following QR Code with your wallet app"
     copyright: "Powered by OpenCred"
   fr:
-    login_cta: "Se connecter avec son portefeuille de titres"
-    login_explain: "Pour vous connecter avec votre credential wallet, vous devez avoir installé l'application credential wallet <avec une URL configurable vers les app stores>"
-    app_install_explain: "Si vous n'avez pas encore de porte-monnaie électronique, vous pouvez en obtenir un en téléchargeant l'application credential wallet <avec une URL configurable vers les magasins d'applications>"
-    app_cta: "Ouvrir l'application portefeuille"
-    qr_explain: "Vous cherchez un code QR à scanner avec l'application de votre portefeuille?"
-    qr_cta: "Scannez le code QR suivant avec l'application de votre portefeuille"
+    loginCta: "Se connecter avec son portefeuille de titres"
+    loginExplain: "Pour vous connecter avec votre credential wallet, vous devez avoir installé l'application credential wallet <avec une URL configurable vers les app stores>"
+    appInstallExplain: "Si vous n'avez pas encore de porte-monnaie électronique, vous pouvez en obtenir un en téléchargeant l'application credential wallet <avec une URL configurable vers les magasins d'applications>"
+    appCta: "Ouvrir l'application portefeuille"
+    qrExplain: "Vous cherchez un code QR à scanner avec l'application de votre portefeuille?"
+    qrCta: "Scannez le code QR suivant avec l'application de votre portefeuille"
     copyright: "Développé par OpenCred"

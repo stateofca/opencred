@@ -1,11 +1,12 @@
 # opencred-platform Changelog
 
-## 3.0.3 - 2023-11-XX
+## 4.0.0 - 2023-11-XX
 
 ### Fixed
 - Use client-specific theme information in the UI to enable multiple clients to
   use the same install of OpenCred.
 - Made ID Regex in endpoints less restrictive.
+- Config change to use consistent property casing. Requires config update!
 
 ## 3.0.2 - 2023-11-03
 

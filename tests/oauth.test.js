@@ -12,13 +12,15 @@ const exampleRelyingParty = {
   workflow: {
     type: 'native'
   },
-  client_id: 'test',
-  client_secret: 'testsecret',
-  redirect_uri: 'https://example.com',
+  clientId: 'test',
+  clientSecret: 'testsecret',
+  redirectUri: 'https://example.com',
   scopes: [{name: 'openid'}],
-  credential_context: 'https://example.com',
-  credential_type: 'Credential',
-  credential_issuer: 'https://example.com',
+  theme: {
+    cta: '#8A2BE2',
+    primary: '#6A5ACD',
+    header: '#9370DB',
+  }
 };
 
 describe('OAuth Login Workflow', function() {
@@ -31,6 +33,7 @@ describe('OAuth Login Workflow', function() {
   this.afterEach(() => {
     this.rpStub.restore();
   });
+
   it('should fail for unregistered client ids', async function() {
     const response = await request(app)
       .get('/login?client_id=unknown')
@@ -41,7 +44,7 @@ describe('OAuth Login Workflow', function() {
     expect(response.body.message).to.equal('Unknown client_id');
   });
 
-  it('should fail for unregistered redirect_uri', async function() {
+  it('should fail for unregistered redirectUri', async function() {
     const dbStub = sinon.stub(exchanges, 'insertOne');
     dbStub.resolves({insertedId: 'test'});
 

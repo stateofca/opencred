@@ -24,12 +24,12 @@ export async function login(req, res) {
   const context = {
     step: 'login',
     rp: {
-      client_id: rp.client_id,
-      redirect_uri: rp.redirect_uri,
+      clientId: rp.clientId,
+      redirectUri: rp.redirectUri,
       name: rp.name,
       icon: rp.icon,
       theme: rp.theme,
-      background_image: rp.background_image,
+      backgroundImage: rp.backgroundImage,
       workflow: {
         type: rp.workflow.type,
         id: rp.workflow.id
@@ -42,15 +42,22 @@ export async function login(req, res) {
       QR: await QRCode.toDataURL(req.exchange.OID4VP)
     }
   };
-  const [rendered, preloadLinks] = await render(manifest, context);
-  const html = template
-    .replace(`<!--preload-links-->`, preloadLinks)
-    .replace(`<!--app-html-->`, rendered)
-    .replace(`<!--app-context-->`, `<script>window.ctx =
+  try {
+    const [rendered, preloadLinks] = await render(manifest, context);
+    const html = template
+      .replace(`<!--preload-links-->`, preloadLinks)
+      .replace(`<!--app-html-->`, rendered)
+      .replace(`<!--app-context-->`, `<script>window.ctx =
       ${JSON.stringify(context)};</script>`)
-    .replace(`<!--app-title-->`,
-      `<title>${context.rp.name} Login</title>`);
-  res.status(200).set({'Content-Type': 'text/html'}).end(html);
+      .replace(`<!--app-title-->`,
+        `<title>${context.rp.name} Login</title>`);
+    res.status(200).set({'Content-Type': 'text/html'}).end(html);
+  } catch(e) {
+    console.error(e);
+    res.status(500).send('Error rendering page');
+    return;
+  }
+
 }
 
 /**

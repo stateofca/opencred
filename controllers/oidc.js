@@ -9,7 +9,7 @@ export default function(app) {
     if(!req.query.redirect_uri) {
       res.status(400).send({message: 'redirect_uri is required'});
       return;
-    } else if(req.rp?.redirect_uri != req.query.redirect_uri) {
+    } else if(req.rp?.redirectUri != req.query.redirect_uri) {
       res.status(400).send({message: 'Unknown redirect_uri'});
       return;
     }

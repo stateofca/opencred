@@ -7,19 +7,19 @@ describe('Translations', async () => {
   it('should combine default and custom translations', () => {
     const exampleDefaults = {
       en: {
-        turnips_available: 'Turnips are available for 99 bells each',
-        turnips_not_available: 'Turnips are not available right now',
+        turnipsAvailable: 'Turnips are available for 99 bells each',
+        turnipsNotAvailable: 'Turnips are not available right now',
       }
     };
 
     const customTranslations = {
       en: {
-        turnips_not_available: 'We are out of turnips'
+        turnipsNotAvailable: 'We are out of turnips'
       }
     };
 
     const combined = combineTranslations(customTranslations, exampleDefaults);
-    expect(combined.en.turnips_available)
+    expect(combined.en.turnipsAvailable)
       .to.equal('Turnips are available for 99 bells each');
 
   });
@@ -27,43 +27,43 @@ describe('Translations', async () => {
   it('should add a language defined custom if not in defaults', () => {
     const exampleDefaults = {
       en: {
-        turnips_available: 'Turnips are available for 99 bells each',
-        turnips_not_available: 'Turnips are not available right now',
+        turnipsAvailable: 'Turnips are available for 99 bells each',
+        turnipsNotAvailable: 'Turnips are not available right now',
       }
     };
 
     const customTranslations = {
       en: {
-        turnips_not_available: 'We are out of turnips'
+        turnipsNotAvailable: 'We are out of turnips'
       },
       fr: {
-        turnips_available: 'Les navets sont disponibles pour 99 cloches chacun',
-        turnips_not_available:
+        turnipsAvailable: 'Les navets sont disponibles pour 99 cloches chacun',
+        turnipsNotAvailable:
           'Les navets ne sont pas disponibles en ce moment',
       }
     };
 
     const combined = combineTranslations(customTranslations, exampleDefaults);
-    expect(combined.fr.turnips_available)
+    expect(combined.fr.turnipsAvailable)
       .to.equal('Les navets sont disponibles pour 99 cloches chacun');
   });
 
   it('should backfill from en if not in custom lang', () => {
     const exampleDefaults = {
       en: {
-        turnips_available: 'Turnips are available for 99 bells each',
-        turnips_not_available: 'Turnips are not available right now',
+        turnipsAvailable: 'Turnips are available for 99 bells each',
+        turnipsNotAvailable: 'Turnips are not available right now',
       }
     };
 
     const customTranslations = {
       fr: {
-        turnips_available: 'Les navets sont disponibles pour 99 cloches chacun',
+        turnipsAvailable: 'Les navets sont disponibles pour 99 cloches chacun',
       }
     };
 
     const combined = combineTranslations(customTranslations, exampleDefaults);
-    expect(combined.fr.turnips_not_available)
+    expect(combined.fr.turnipsNotAvailable)
       .to.equal('Turnips are not available right now');
   });
 });

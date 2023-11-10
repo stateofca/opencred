@@ -4,11 +4,11 @@
   defineProps({
     step: String,
     rp: {
-      client_id: String,
-      redirect_uri: String,
+      clientId: String,
+      redirectUri: String,
       name: String,
       icon: String,
-      background_image: String,
+      backgroundImage: String,
       workflow: {
         id: String,
         type: String
@@ -44,7 +44,7 @@
   <div class="flex flex-col min-h-screen">
     <header class="" :style="{background: rp.theme.header}">
       <div class="mx-auto flex justify-between items-center px-6 py-3 max-w-3xl">
-        <a :href="rp.redirect_uri"
+        <a :href="rp.redirectUri"
           class="flex items-center gap-3">
           <img :src="rp.icon" :alt="rp.name + 'Logo'" />
         </a>
@@ -64,7 +64,7 @@
         <h2 class="font-bold">Home</h2>
       </div>
       <div class="bg-no-repeat bg-cover clip-path-bg z-0 min-h-[360px]" 
-        :style="{ 'background-image': `url(${rp.background_image})` }">
+        :style="{ 'background-image': `url(${rp.backgroundImage})` }">
         <div class="text-center text-6xl py-10">
           &nbsp;
         </div>

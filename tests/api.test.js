@@ -13,9 +13,9 @@ const testRP = {
     type: 'native',
     id: 'testworkflow'
   },
-  client_id: 'test',
-  client_secret: 'shhh',
-  redirect_uri: 'https://example.com',
+  clientId: 'test',
+  clientSecret: 'shhh',
+  redirectUri: 'https://example.com',
   scopes: [{name: 'openid'}],
 };
 const testEx = {

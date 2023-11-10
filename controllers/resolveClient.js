@@ -6,7 +6,7 @@ const attachClient = async (req, res, next) => {
     return;
   }
   const rp = config.relyingParties.find(
-    r => r.client_id == req.query.client_id
+    r => r.clientId == req.query.client_id
   );
   if(!rp) {
     res.status(400).send({message: 'Unknown client_id'});

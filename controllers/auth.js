@@ -4,7 +4,7 @@ const getAuthFunction = (basicEnabled, bearerEnabled) => {
   const ensureAuth = async (req, res, next) => {
     if(!req.rp) {
       res.status(500).send(
-        {message: 'Unexpected server error: client_id was not resolved'}
+        {message: 'Unexpected server error: clientId was not resolved'}
       );
     }
     if(!req.headers.authorization) {
@@ -12,8 +12,8 @@ const getAuthFunction = (basicEnabled, bearerEnabled) => {
       return;
     }
 
-    const client_id = req.rp.client_id;
-    const client_secret = req.rp.client_secret;
+    const clientId = req.rp.clientId;
+    const clientSecret = req.rp.clientSecret;
 
     const authHeader = req.headers.authorization;
     const parts = authHeader.split(' ');
@@ -27,11 +27,11 @@ const getAuthFunction = (basicEnabled, bearerEnabled) => {
       const authValueParts = val.split(':');
       if(
         authValueParts.length !== 2 ||
-        authValueParts[0] !== client_id ||
-        authValueParts[1] !== client_secret
+        authValueParts[0] !== clientId ||
+        authValueParts[1] !== clientSecret
       ) {
         res.status(401).send(
-          {message: 'Malformed token or invalid client_id or client_secret'}
+          {message: 'Malformed token or invalid clientId or clientSecret'}
         );
         return;
       }
@@ -65,7 +65,7 @@ const getAuthFunction = (basicEnabled, bearerEnabled) => {
 /**
  * Augments the app to verify an authentication header is present for
  * protected routes. The header must contain a valid Aurhorization header
- * that encodes the client_id and client_secret with HTTP Basic Auth
+ * that encodes the client_id and clientSecret with HTTP Basic Auth
  * @param {Express} app - Express app instance
  */
 export default function(app) {

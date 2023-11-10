@@ -8,11 +8,11 @@ const props = defineProps({
   translations: Object,
   defaultLanguage: String,
   rp: {
-    client_id: String,
-    redirect_uri: String,
+    clientId: String,
+    redirectUri: String,
     name: String,
     icon: String,
-    background_image: String,
+    backgroundImage: String,
     workflow: {
       id: String,
       type: String,
@@ -86,12 +86,12 @@ const checkStatus = async () => {
       class="text-3xl mb-12 text-center font-semibold"
       :style="{ color: rp.theme.primary }"
     >
-      {{ translations[defaultLanguage].login_cta }}
+      {{ translations[defaultLanguage].loginCta }}
     </h1>
-    <p class="mb-4" v-html="translations[defaultLanguage].login_explain"></p>
+    <p class="mb-4" v-html="translations[defaultLanguage].loginExplain"></p>
     <p
       class="mb-6"
-      v-html="translations[defaultLanguage].app_install_explain"
+      v-html="translations[defaultLanguage].appInstallExplain"
     ></p>
     <div class="flex justify-center">
       <button
@@ -100,7 +100,7 @@ const checkStatus = async () => {
         class="text-white py-2 px-6 rounded-xl my-8"
         :style="{ background: rp.theme.cta }"
       >
-        {{ translations[defaultLanguage].app_cta }}
+        {{ translations[defaultLanguage].appCta }}
       </button>
       <div v-else-if="vp">
         <JsonView :data="{ vp }" title="Verified Credential" />
@@ -119,11 +119,11 @@ const checkStatus = async () => {
     </div>
     <p
       class="text-center mb-2"
-      v-html="translations[defaultLanguage].qr_explain"
+      v-html="translations[defaultLanguage].qrExplain"
     ></p>
     <p class="text-center">
       <button @click="switchView" :style="{ color: rp.theme.primary }">
-        {{ translations[defaultLanguage].qr_cta }}
+        {{ translations[defaultLanguage].qrCta }}
       </button>
     </p>
   </div>
