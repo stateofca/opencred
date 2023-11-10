@@ -12,7 +12,7 @@ import {
 
 import AuthenticationMiddleware from './controllers/auth.js';
 import CustomExchangeMiddleware from './controllers/exchanges/custom.js';
-import {exchanges} from './common/database.js';
+import {didWebDocument} from './controllers/didWeb.js';
 import NativeMiddleware from './controllers/exchanges/native.js';
 import OidcMiddleware from './controllers/oidc.js';
 import ResolveClientMiddleware from './controllers/resolveClient.js';
@@ -59,6 +59,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiSpecification));
 
 app.use('/assets', express.static('dist/client/assets', {index: false}));
 app.get('/health', health);
+
+app.get('/.well-known/did.json', didWebDocument);
 
 // Middleware that attaches the RP configuration to the request object, usually
 // by inspecting the request for a client_id query parameter.
