@@ -26,7 +26,7 @@ export const createExchange = async (domain, workflow) => {
     challenge,
     accessToken,
     createdAt,
-    recordExpiresAt: new Date(createdAt.getTime() - 86400000 + (ttl * 1000))
+    recordExpiresAt: new Date(createdAt.getTime() + 86400000 + (ttl * 1000))
   });
   const vcapi = `${domain}/workflows/${workflow.id}/exchanges/${id}`;
   const authzReqUrl = `${vcapi}/openid/client/authorization/request`;
