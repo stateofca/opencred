@@ -65,7 +65,7 @@ const checkStatus = async () => {
     if (Object.keys(exchange).length > 0) {
       if (exchange.state === "complete") {
         const { verifiablePresentation } =
-          exchange.variables.results["templated-vpr"];
+          exchange.variables.results[exchange.step];
         vp.value = verifiablePresentation;
         clearInterval(intervalId);
         loading.value = false;

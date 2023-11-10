@@ -202,7 +202,7 @@ export default function(app) {
             state: 'complete',
             variables: {
               results: {
-                'templated-vpr': {
+                [exchange.step]: {
                   verifiablePresentation: vp_token
                 }
               }

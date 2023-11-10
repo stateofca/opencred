@@ -7,6 +7,7 @@
   use the same install of OpenCred.
 - Made ID Regex in endpoints less restrictive.
 - Config change to use consistent property casing. Requires config update!
+- Moved results into proper step.
 
 ## 3.0.2 - 2023-11-03
 
