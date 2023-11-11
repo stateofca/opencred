@@ -9,6 +9,7 @@
     "build:client": "vite build --ssrManifest --outDir dist/client",
     "build:server": "vite build --ssr ui/entry-server.js --outDir dist/server",
     "dev": "vite dev",
+    "generate:ed25519": "node ./common/generateEd25519Seed.js",
     "lint": "eslint .",
     "postinstall": "patch-package",
     "preview": "vite preview",

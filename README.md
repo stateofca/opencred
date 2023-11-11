@@ -60,9 +60,52 @@ Copy the example to the ignored location `cp config/config.example.yaml
 config/config.yaml` and edit the file. Configure the details of your relying
 party, and connection details for a VC-API exchanger endpoint
 
-### Directly via node
+#### Configuring a Native workflow
 
-Node v20 is used for this project.
+Update the `relyingParties` section of the config file to include a relying
+party with a workflow of type `native`. The `native` workflow type is used to
+implement a VC-API exchange on this instance of OpenCred. This results in a QR
+code being displayed to the user or returned through the initiate exchange API 
+endpoint that can be scanned by a wallet app. The wallet app will then present
+the user with a list of credentials that can be used to satisfy the request.
+
+#### Configuring did:web endpoint
+You can use OpenCred as a did:web endpoint by configuring the `didWeb` section
+of the config file. The following would result in a DID document being
+published for the did `did:web:example.com`. The document would be available
+from OpenCred at `/.well-known/did.json`. 
+
+```yaml
+didWeb:
+  enabled: true
+domain: https://example.com
+```
+
+You may enter key information in the `signingKeys` section
+of the config, and the public keys will be published at the did:web endpoint if
+you include the `assertionMethod` purpose in the key configuration. If you enable signingKeys, you may also want to enable the `linkedDomain` purpose. If any keys
+have the `linkedDomain` purpose, the `/.well-known/did-configuration.json` 
+endpoint will be include a LinkedDomainCredential signed with the key.
+
+Supported key types include: 
+
+`Ed25519VerificationKey2020`: generate a seed with `npm run generate:ed25519`.
+
+```yaml
+signingKeys: 
+  - type: Ed25519VerificationKey2020
+    seed: z1AkD6Wv5tKQdCTFJMEmF9vDJaa4V6f44jUasJPyn6RqdFZ
+    purpose: 
+      - assertionMethod
+      - DomainLinkageCredential
+```
+
+### Run via node
+
+Prerequisites: 
+
+* Node v20
+* MongoDB: configure e.g. `dbConnectionUri: mongodb://localhost:27017`
 
 Install dependencies, compile the UI, and run the server:
 
@@ -72,7 +115,7 @@ $ npm run build
 $ npm run start
 ```
 
-### via Docker
+### Run via Docker
 
 You can build and run the server via Docker mounting your local configuration
 file with the following commands. `$PWD` substitution is the expected format for

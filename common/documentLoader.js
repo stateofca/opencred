@@ -38,6 +38,22 @@ import X25519KeyAgreement2020Context from 'x25519-key-agreement-2020-context';
 import {X25519KeyAgreementKey2020}
   from '@digitalbazaar/x25519-key-agreement-key-2020';
 
+// TODO: switch to a purpose-built module when available.
+const DC_BASE = 'https://identity.foundation/.well-known/did-configuration';
+const DID_CONFIGURATION_URL = `${DC_BASE}/v1`;
+const DID_CONFIGURATION_CONTEXT = {
+  '@context': [
+    {
+      '@version': 1.1,
+      '@protected': true,
+      LinkedDomains: `${DC_BASE}/#LinkedDomains`,
+      DomainLinkageCredential: `${DC_BASE}/#DomainLinkageCredential`,
+      origin: `${DC_BASE}/#origin`,
+      linked_dids: `${DC_BASE}/#linked_dids`
+    }
+  ]
+};
+
 const cryptoLd = new CryptoLD();
 cryptoLd.use(Ed25519VerificationKey2020);
 cryptoLd.use(X25519KeyAgreementKey2020);
@@ -76,6 +92,7 @@ const getDocumentLoader = () => {
   jsonLdDocLoader.addStatic(SL_V1_CONTEXT_URL, SL_V1_CONTEXT);
   jsonLdDocLoader.addStatic(VDL_BASE_CONTEXT_URL, VDL_BASE_CONTEXT);
   jsonLdDocLoader.addStatic(VDL_AAMVA_CONTEXT_URL, VDL_AAMVA_CONTEXT);
+  jsonLdDocLoader.addStatic(DID_CONFIGURATION_URL, DID_CONFIGURATION_CONTEXT);
 
   // handle DIDs
   jsonLdDocLoader.setDidResolver(didResolver);

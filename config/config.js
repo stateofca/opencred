@@ -138,7 +138,7 @@ const defaultTheme = configDoc.theme ?? {
 const domain = configDoc.domain ?? 'http://localhost:8080';
 
 const validateDidWeb = () => {
-  if(!configDoc.didWeb) {
+  if(!configDoc.didWeb?.enabled) {
     return {
       enabled: false
     };
@@ -169,6 +169,25 @@ const validateDidWeb = () => {
 };
 const didWeb = validateDidWeb();
 
+const validateSigningKeys = () => {
+  if(!configDoc.signingKeys) {
+    return [];
+  }
+  configDoc.signingKeys.forEach(sk => {
+    if(!sk.type) {
+      throw new Error('Each signingKey must have a type.');
+    }
+    if(!Array.isArray(sk.purpose) || !sk.purpose?.length) {
+      throw new Error('Each signingKey must have at least one purpose.');
+    }
+    if(!sk.seed) {
+      throw new Error('Each signingKey must have a seed.');
+    }
+  });
+};
+const signingKeys = configDoc.signingKeys ?? [];
+validateSigningKeys();
+
 /**
  * An list of relying parties (connected apps or workflows) in use by OpenCred
  * @type {RelyingParty[]}
@@ -190,5 +209,6 @@ export const config = {
   defaultLanguage,
   domain,
   relyingParties,
+  signingKeys,
   translations,
 };

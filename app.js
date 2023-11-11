@@ -7,12 +7,14 @@ import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 
 import {
+  didConfigurationDocument, didWebDocument
+} from './controllers/didWeb.js';
+import {
   exchangeCodeForToken, getExchangeStatus, health, initiateExchange, login
 } from './controllers/controller.js';
-
 import AuthenticationMiddleware from './controllers/auth.js';
 import CustomExchangeMiddleware from './controllers/exchanges/custom.js';
-import {didWebDocument} from './controllers/didWeb.js';
+
 import NativeMiddleware from './controllers/exchanges/native.js';
 import OidcMiddleware from './controllers/oidc.js';
 import ResolveClientMiddleware from './controllers/resolveClient.js';
@@ -61,6 +63,7 @@ app.use('/assets', express.static('dist/client/assets', {index: false}));
 app.get('/health', health);
 
 app.get('/.well-known/did.json', didWebDocument);
+app.get('/.well-known/did-configuration.json', didConfigurationDocument);
 
 // Middleware that attaches the RP configuration to the request object, usually
 // by inspecting the request for a client_id query parameter.
