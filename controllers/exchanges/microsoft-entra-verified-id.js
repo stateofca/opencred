@@ -1,7 +1,7 @@
 import {createId, ensureValue} from '../../common/utils.js';
+import {config} from '../../config/config.js';
 import {exchanges} from '../../common/database.js';
 import {msalUtils} from '../../common/utils.js';
-import {config} from '../../config/config.js';
 
 // Microsoft Entra Verified ID Workflow Middleware
 
