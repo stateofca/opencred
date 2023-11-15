@@ -2,6 +2,10 @@
 
 ## 4.0.0 - 2023-11-XX
 
+### Added
+- Optionally serve a did:web DID document
+- Optionally serve a did-configuration document with DomainLinkageCredentials.
+
 ### Fixed
 - Use client-specific theme information in the UI to enable multiple clients to
   use the same install of OpenCred.
