@@ -61,7 +61,7 @@ const getAuthFunction = (basicEnabled, bearerEnabled) => {
 
 /**
  * Augments the app to verify an authentication header is present for
- * protected routes. The header must contain a valid Aurhorization header
+ * protected routes. The header must contain a valid Authorization header
  * that encodes the client_id and clientSecret with HTTP Basic Auth
  * @param {Express} app - Express app instance
  */

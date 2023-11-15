@@ -42,9 +42,31 @@ relyingParties:
       baseUrl: https://example.org/exchanges/123
       capability: "example"
       clientSecret: "example"
+
+      # Microsoft Entra Verified Id workflow config
+      # Many of these config fields map to request fields in the APIs linked below:
+      # https://learn.microsoft.com/en-us/entra/verified-id/get-started-request-api
+      # https://learn.microsoft.com/en-us/entra/verified-id/presentation-request-api
+      # type: microsoft-entra-verified-id # required
+      # apiBaseUrl: https://entra.microsoft.example.com/123 # required
+      # apiClientId: "TODO" # required
+      # apiClientSecret: "TODO" # required
+      # apiTenantId: "TODO" # required
+      # verifierDid: "TODO" # required
+      # verifierName: "TODO" # required
+      # acceptedCredentialType: "TODO" # required
+      # # The suffix of this URL must match a valid path that handles the verification callback middleware
+      # credentialVerificationCallbackUrl: https://example.com/verification/callback # required
+      # credentialVerificationCallbackAuthEnabled: true # optional (default populated in middleware unless overridden here)
+      # acceptedCredentialIssuers: [] # optional (default populated in middleware unless overridden here)
+      # credentialVerificationPurpose: "So that we can evaluate your permission to access the requested resource" # optional (default populated in middleware unless overridden here)
+      # allowRevokedCredentials: false # optional (default populated in middleware unless overridden here)
+      # validateLinkedDomain: true # optional (default populated in middleware unless overridden here)
+      # includeQrCode: false # optional (default populated in middleware unless overridden here)
+      # includeReceipt: false # optional (default populated in middleware unless overridden here)
 defaultLanguage: en
 translations:
-  en: 
+  en:
     loginCta: "Login with your credential wallet"
     loginExplain: "To login with your credential wallet, you will need to have the credential wallet app <with configurable URL to app stores> installed"
     appInstallExplain: "If you don't have a credential wallet yet, you can get one by downloading the credential wallet app <with configurable URL to app stores>"

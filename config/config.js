@@ -50,6 +50,15 @@ const configDoc = yaml.load(fs.readFileSync(configPath, 'utf8'));
  */
 const configRPs = configDoc.relyingParties;
 
+// Workflow types
+const WorkflowType = {
+  VcApi: 'vc-api',
+  Native: 'native',
+  MicrosoftEntraVerifiedId: 'microsoft-entra-verified-id'
+};
+
+const WorkFlowTypes = Object.values(WorkflowType);
+
 const validateRelyingParty = rp => {
   if(!rp.clientId) {
     throw new Error('clientId is required for each configured relyingParty');
@@ -77,7 +86,7 @@ const validateWorkflow = rp => {
   if(!rp.workflow) {
     throw new Error('workflow must be defined.');
   }
-  if(rp.workflow.type === 'vc-api') {
+  if(rp.workflow.type === WorkflowType.VcApi) {
     if(!rp.workflow.baseUrl?.startsWith('http')) {
       throw new Error(
         'workflow baseUrl must be defined. This tool uses a VC-API exchange' +
@@ -96,7 +105,7 @@ const validateWorkflow = rp => {
         `workflow clientSecret must be defined. (client: ${rp.clientId})`
       );
     }
-  } else if(rp.workflow.type === 'native') {
+  } else if(rp.workflow.type === WorkflowType.Native) {
     if(!rp.workflow.steps || Object.keys(rp.workflow.steps).length === 0) {
       throw new Error(
         `workflow must have at least 1 step. (client: ${rp.clientId})`
@@ -107,6 +116,46 @@ const validateWorkflow = rp => {
         `workflow initialStep must be set. (client: ${rp.clientId})`
       );
     }
+  } else if(rp.workflow.type === WorkflowType.MicrosoftEntraVerifiedId) {
+    const {
+      apiBaseUrl,
+      apiClientId,
+      apiClientSecret,
+      apiTenantId,
+      verifierDid,
+      verifierName,
+      acceptedCredentialType,
+      credentialVerificationCallbackUrl
+    } = rp.workflow;
+    if(!apiBaseUrl) {
+      throw new Error('apiBaseUrl is required');
+    }
+    if(!apiClientId) {
+      throw new Error('apiClientId is required');
+    }
+    if(!apiClientSecret) {
+      throw new Error('apiClientSecret is required');
+    }
+    if(!apiTenantId) {
+      throw new Error('apiTenantId is required');
+    }
+    if(!verifierDid) {
+      throw new Error('verifierDid is required');
+    }
+    if(!verifierName) {
+      throw new Error('verifierName is required');
+    }
+    if(!acceptedCredentialType) {
+      throw new Error('acceptedCredentialType is required');
+    }
+    if(!credentialVerificationCallbackUrl) {
+      throw new Error('credentialVerificationCallbackUrl is required');
+    }
+  } else {
+    throw new Error(
+      'workflow type must be one of the following values: ' +
+      `${WorkFlowTypes.map(v => `'${v}'`).join(', ')}.`
+    );
   }
 };
 

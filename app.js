@@ -13,9 +13,10 @@ import {
   exchangeCodeForToken, getExchangeStatus, health, initiateExchange, login
 } from './controllers/controller.js';
 import AuthenticationMiddleware from './controllers/auth.js';
-import CustomExchangeMiddleware from './controllers/exchanges/custom.js';
 import {exchanges} from './common/database.js';
-import NativeMiddleware from './controllers/exchanges/native.js';
+import MicrosoftEntraVerifiedIdExchangeMiddleware
+  from './controllers/exchanges/microsoft-entra-verified-id.js';
+import NativeExchangeMiddleware from './controllers/exchanges/native.js';
 import OidcMiddleware from './controllers/oidc.js';
 import ResolveClientMiddleware from './controllers/resolveClient.js';
 import VCAPIExchangeMiddleware from './controllers/exchanges/vc-api.js';
@@ -77,9 +78,9 @@ OidcMiddleware(app);
  * over that protocol. Each middleware function needs to call `next()` if it
  * cannot handle the request.
  */
-NativeMiddleware(app);
+NativeExchangeMiddleware(app);
 VCAPIExchangeMiddleware(app);
-CustomExchangeMiddleware(app);
+MicrosoftEntraVerifiedIdExchangeMiddleware(app);
 
 // Endpoints that initiate an exchange
 app.get('/login', login); // returns HTML app

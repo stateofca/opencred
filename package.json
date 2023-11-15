@@ -16,6 +16,7 @@
     "test": "NODE_ENV=test mocha tests"
   },
   "dependencies": {
+    "@azure/msal-node": "^2.5.1",
     "@digitalbazaar/data-integrity": "^1.4.1",
     "@digitalbazaar/data-integrity-context": "^1.0.0",
     "@digitalbazaar/did-io": "^2.0.0",

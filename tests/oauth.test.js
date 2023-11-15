@@ -94,4 +94,3 @@ describe('OAuth Login Workflow', function() {
     dbStub.restore();
   });
 });
-

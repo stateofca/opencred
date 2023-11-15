@@ -11,10 +11,10 @@ const attachClient = async (req, res, next) => {
   if(!rp) {
     res.status(400).send({message: 'Unknown client_id'});
   }
-
   req.rp = rp;
   next();
 };
+
 const attachClientByWorkflowId = async (req, res, next) => {
   const rp = config.relyingParties.find(
     r => r.workflow?.id == req.params.workflowId

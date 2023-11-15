@@ -6,6 +6,7 @@ import request from 'supertest';
 import {app} from '../app.js';
 import {config} from '../config/config.js';
 import {exchanges} from '../common/database.js';
+import {msalUtils} from '../common/utils.js';
 import {zcapClient} from '../common/zcap.js';
 
 const testRP = {
@@ -184,5 +185,116 @@ describe('OpenCred API - VC-API Workflow', function() {
     expect(response.body.exchange.id).to.equal(testEx.id);
     findStub.restore();
     zcapStub.restore();
+  });
+});
+
+describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
+  this.beforeEach(() => {
+    this.rpStub = sinon.stub(config, 'relyingParties').value([{
+      ...testRP,
+      workflow: {
+        id: testRP.workflow.id,
+        type: 'microsoft-entra-verified-id',
+        apiBaseUrl: 'https://entra.microsoft.example.com/123',
+        verifierDid: 'did:web:example.com',
+        verifierName: 'Test Entra Verifier',
+        acceptedCredentialType: 'Iso18013DriversLicenseCredential',
+        credentialVerificationCallbackUrl: 'https://example.com/callback',
+        credentialVerificationCallbackAuthEnabled: false
+      }
+    }]);
+  });
+
+  this.afterEach(() => {
+    this.rpStub.restore();
+  });
+
+  it('should create a new exchange with the workflow', async function() {
+    const insertStub = sinon.stub(exchanges, 'insertOne').resolves();
+    const getMsalClientStub = sinon.stub(msalUtils, 'getMsalClient')
+      .returns(null);
+    const makeHttpPostRequestStub = sinon.stub(msalUtils, 'makeHttpPostRequest')
+      .resolves({
+        data: {
+          requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
+          url: 'openid://vc/?request_uri=https://requri.example.com/123',
+          expiry: 1699635246762
+        }
+      });
+    const response = await request(app)
+      .post(`/workflows/${testRP.workflow.id}/exchanges`)
+      .set(
+        'Authorization', `Basic ${Buffer.from('test:shhh').toString('base64')}`
+      )
+      .send()
+      .set('Accept', 'application/json');
+
+    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.status).to.equal(200);
+    expect(response.body.id).to.equal('c656dad8-a8fa-4361-baef-51af0c2e428e');
+    expect(response.body.vcapi).to.not.be(undefined);
+    expect(response.body.accessToken).to.not.be(undefined);
+    expect(response.body.QR).to.not.be(undefined);
+    expect(response.body.OID4VP).to.equal(
+      'openid://vc/?request_uri=https://requri.example.com/123'
+    );
+    expect(response.body.workflowId).to.equal(testRP.workflow.id);
+    expect(insertStub.called).to.be(true);
+    expect(getMsalClientStub.called).to.be(true);
+    expect(makeHttpPostRequestStub.called).to.be(true);
+    insertStub.restore();
+    getMsalClientStub.restore();
+    makeHttpPostRequestStub.restore();
+  });
+
+  it('should return status on exchange', async function() {
+    const findStub = sinon.stub(exchanges, 'findOne').resolves(
+      testEx
+    );
+    const response = await request(app)
+      .get(`/workflows/${testRP.workflow.id}/exchanges/${testEx.id}`)
+      .set(
+        'Authorization', `Bearer ${testEx.accessToken}`
+      );
+
+    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.status).to.equal(200);
+    expect(response.body.exchange.id).to.equal(testEx.id);
+    findStub.restore();
+  });
+
+  it('should update exchange status after verification', async function() {
+    const findStub = sinon.stub(exchanges, 'findOne').resolves(
+      testEx
+    );
+    const updateStub = sinon.stub(exchanges, 'updateOne').resolves();
+    const dateStub = sinon.stub(Date, 'now').returns(1699635246762);
+    const response = await request(app)
+      .post('/verification/callback')
+      .set(
+        'Authorization', `Bearer ${testEx.accessToken}`
+      )
+      .send({
+        requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
+        requestStatus: 'presentation_verified',
+        verifiedCredentialsData: [{
+          credentialState: {
+            revocationStatus: 'VALID'
+          }
+        }]
+      })
+      .set('Accept', 'application/json');
+
+    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.status).to.equal(200);
+    expect(findStub.called).to.be(true);
+    expect(updateStub.calledWith({
+      id: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
+      state: 'complete'
+    }, {$set: {updatedAt: 1699635246762}})).to.be(true);
+    expect(dateStub.called).to.be(true);
+    findStub.restore();
+    updateStub.restore();
+    dateStub.restore();
   });
 });
