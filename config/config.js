@@ -138,18 +138,11 @@ const defaultTheme = configDoc.theme ?? {
 const domain = configDoc.domain ?? 'http://localhost:8080';
 
 const validateDidWeb = () => {
-  if(!configDoc.didWeb?.enabled) {
-    return {
-      mainEnabled: false,
-      linkageEnabled: false
-    };
-  }
-
   return {
-    mainEnabled: true,
-    linkageEnabled: true,
-    mainDocument: JSON.parse(configDoc.didWeb.document),
-    linkageDocument: JSON.parse(configDoc.didWeb.document)
+    mainEnabled: configDoc.didWeb?.mainEnabled,
+    linkageEnabled: configDoc.didWeb?.linkageEnabled,
+    mainDocument: JSON.parse(configDoc.didWeb?.mainDocument),
+    linkageDocument: JSON.parse(configDoc.didWeb?.linkageDocument)
   };
 };
 const didWeb = validateDidWeb();
