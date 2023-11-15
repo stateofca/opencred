@@ -73,31 +73,66 @@ the user with a list of credentials that can be used to satisfy the request.
 You can use OpenCred as a did:web endpoint by configuring the `didWeb` section
 of the config file. The following would result in a DID document being
 published for the did `did:web:example.com`. The document would be available
-from OpenCred at `/.well-known/did.json`. 
+from OpenCred at `/.well-known/did.json`. If domain linkage support is supported, you can find that document at `/.well-known/did-configuration.json`.
 
 ```yaml
 didWeb:
-  enabled: true
-domain: https://example.com
-```
-
-You may enter key information in the `signingKeys` section
-of the config, and the public keys will be published at the did:web endpoint if
-you include the `assertionMethod` purpose in the key configuration. If you enable signingKeys, you may also want to enable the `linkedDomain` purpose. If any keys
-have the `linkedDomain` purpose, the `/.well-known/did-configuration.json` 
-endpoint will be include a LinkedDomainCredential signed with the key.
-
-Supported key types include: 
-
-`Ed25519VerificationKey2020`: generate a seed with `npm run generate:ed25519`.
-
-```yaml
-signingKeys: 
-  - type: Ed25519VerificationKey2020
-    seed: z1AkD6Wv5tKQdCTFJMEmF9vDJaa4V6f44jUasJPyn6RqdFZ
-    purpose: 
-      - assertionMethod
-      - DomainLinkageCredential
+  mainEnabled: true
+  linkageEnabled: true
+  mainDocument: >
+    {
+      "id": "did:web:example.com",
+      "@context": [
+        "https://www.w3.org/ns/did/v1",
+        {
+          "@base": "did:web:example.com"
+        }
+      ],
+      "service": [
+        {
+          "id": "#linkeddomains",
+          "type": "LinkedDomains",
+          "serviceEndpoint": {
+            "origins": [
+              "https://example.com"
+            ]
+          }
+        },
+        {
+          "id": "#hub",
+          "type": "IdentityHub",
+          "serviceEndpoint": {
+            "instances": [
+              "https://hub.did.msidentity.com/v1.0/test-instance-id"
+            ]
+          }
+        }
+      ],
+      "verificationMethod": [
+        {
+          "id": "test-signing-key",
+          "controller": "did:web:example.com",
+          "type": "EcdsaSecp256k1VerificationKey2019",
+          "publicKeyJwk": {
+            "crv": "secp256k1",
+            "kty": "EC",
+            "x": "test-x",
+            "y": "test-y"
+          }
+        }
+      ],
+      "authentication": [
+        "test-signing-key"
+      ],
+      "assertionMethod": [
+        "test-signing-key"
+      ]
+    }
+  linkageDocument: >
+    {
+      "@context": "https://identity.foundation/.well-known/did-configuration/v1",
+      "linked_dids": ["eyJhbGciOiJFZERTQSIsImtpZCI6ImRpZDprZXk6ejZNa29USHNnTk5yYnk4SnpDTlExaVJMeVc1UVE2UjhYdXU2QUE4aWdHck1WUFVNI3o2TWtvVEhzZ05OcmJ5OEp6Q05RMWlSTHlXNVFRNlI4WHV1NkFBOGlnR3JNVlBVTSJ9.eyJleHAiOjE3NjQ4NzkxMzksImlzcyI6ImRpZDprZXk6ejZNa29USHNnTk5yYnk4SnpDTlExaVJMeVc1UVE2UjhYdXU2QUE4aWdHck1WUFVNIiwibmJmIjoxNjA3MTEyNzM5LCJzdWIiOiJkaWQ6a2V5Ono2TWtvVEhzZ05OcmJ5OEp6Q05RMWlSTHlXNVFRNlI4WHV1NkFBOGlnR3JNVlBVTSIsInZjIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIiwiaHR0cHM6Ly9pZGVudGl0eS5mb3VuZGF0aW9uLy53ZWxsLWtub3duL2RpZC1jb25maWd1cmF0aW9uL3YxIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7ImlkIjoiZGlkOmtleTp6Nk1rb1RIc2dOTnJieThKekNOUTFpUkx5VzVRUTZSOFh1dTZBQThpZ0dyTVZQVU0iLCJvcmlnaW4iOiJpZGVudGl0eS5mb3VuZGF0aW9uIn0sImV4cGlyYXRpb25EYXRlIjoiMjAyNS0xMi0wNFQxNDoxMjoxOS0wNjowMCIsImlzc3VhbmNlRGF0ZSI6IjIwMjAtMTItMDRUMTQ6MTI6MTktMDY6MDAiLCJpc3N1ZXIiOiJkaWQ6a2V5Ono2TWtvVEhzZ05OcmJ5OEp6Q05RMWlSTHlXNVFRNlI4WHV1NkFBOGlnR3JNVlBVTSIsInR5cGUiOlsiVmVyaWZpYWJsZUNyZWRlbnRpYWwiLCJEb21haW5MaW5rYWdlQ3JlZGVudGlhbCJdfX0.aUFNReA4R5rcX_oYm3sPXqWtso_gjPHnWZsB6pWcGv6m3K8-4JIAvFov3ZTM8HxPOrOL17Qf4vBFdY9oK0HeCQ"]
+    }
 ```
 
 ### Run via node

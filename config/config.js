@@ -140,53 +140,19 @@ const domain = configDoc.domain ?? 'http://localhost:8080';
 const validateDidWeb = () => {
   if(!configDoc.didWeb?.enabled) {
     return {
-      enabled: false
+      mainEnabled: false,
+      linkageEnabled: false
     };
   }
 
   return {
-    enabled: true,
-    services: configDoc.didWeb.services.map(s => {
-      if(!s.id) {
-        throw new Error('Each service in didWeb.services must have an id.');
-      }
-      if(!s.type) {
-        throw new Error('Each service in didWeb.services must have a type.');
-      }
-      if(!s.serviceEndpoint) {
-        throw new Error(
-          'Each service in didWeb.services must have a serviceEndpoint.'
-        );
-      }
-      return {
-        id: s.id,
-        type: s.type,
-        serviceEndpoint: s.serviceEndpoint
-      };
-
-    })
+    mainEnabled: true,
+    linkageEnabled: true,
+    mainDocument: JSON.parse(configDoc.didWeb.document),
+    linkageDocument: JSON.parse(configDoc.didWeb.document)
   };
 };
 const didWeb = validateDidWeb();
-
-const validateSigningKeys = () => {
-  if(!configDoc.signingKeys) {
-    return [];
-  }
-  configDoc.signingKeys.forEach(sk => {
-    if(!sk.type) {
-      throw new Error('Each signingKey must have a type.');
-    }
-    if(!Array.isArray(sk.purpose) || !sk.purpose?.length) {
-      throw new Error('Each signingKey must have at least one purpose.');
-    }
-    if(!sk.seed) {
-      throw new Error('Each signingKey must have a seed.');
-    }
-  });
-};
-const signingKeys = configDoc.signingKeys ?? [];
-validateSigningKeys();
 
 /**
  * An list of relying parties (connected apps or workflows) in use by OpenCred
@@ -209,6 +175,5 @@ export const config = {
   defaultLanguage,
   domain,
   relyingParties,
-  signingKeys,
   translations,
 };
