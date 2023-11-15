@@ -14,7 +14,7 @@ import {
 } from './controllers/controller.js';
 import AuthenticationMiddleware from './controllers/auth.js';
 import CustomExchangeMiddleware from './controllers/exchanges/custom.js';
-
+import {exchanges} from './common/database.js';
 import NativeMiddleware from './controllers/exchanges/native.js';
 import OidcMiddleware from './controllers/oidc.js';
 import ResolveClientMiddleware from './controllers/resolveClient.js';
