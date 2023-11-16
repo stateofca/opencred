@@ -34,7 +34,7 @@ relyingParties:
     configFrom: 32bb6cec384b # client_id of another relying party to serve as default values
     workflow:
       type: microsoft-entra-verified-id
-      apiBaseUrl: https://entra.microsoft.example.com/123 # required
+      apiBaseUrl: https://entra.microsoft.example.com/123 # required, will generally be https://login.microsoftonline.com/{tenantId}
       apiClientId: "TODO" # required
       apiClientSecret: "TODO" # required
       apiTenantId: "TODO" # required
