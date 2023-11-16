@@ -10,17 +10,17 @@ import {
   didConfigurationDocument, didWebDocument
 } from './controllers/didWeb.js';
 import {
-  getExchangeStatus, initiateExchange
-} from './controllers/api.js';
-import {
   exchangeCodeForToken, login, OidcValidationMiddleware
 } from './controllers/oidc.js';
+import {
+  getExchangeStatus, initiateExchange
+} from './controllers/api.js';
 import AuthenticationMiddleware from './controllers/auth.js';
 import {exchanges} from './common/database.js';
+import {health} from './controllers/health.js';
 import MicrosoftEntraVerifiedIdExchangeMiddleware
   from './controllers/exchanges/microsoft-entra-verified-id.js';
 import NativeExchangeMiddleware from './controllers/exchanges/native.js';
-import OidcMiddleware from './controllers/oidc.js';
 import ResolveClientMiddleware from './controllers/resolveClient.js';
 import VCAPIExchangeMiddleware from './controllers/exchanges/vc-api.js';
 

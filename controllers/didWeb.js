@@ -31,3 +31,13 @@ export const didConfigurationDocument = async (req, res) => {
 
   res.send(config.didWeb?.linkageDocument);
 };
+
+/**
+ * Converts configured domain to DID web format.
+ * @param {string} domain
+ * @returns {string}
+ */
+export const domainToDidWeb = domain => {
+  const didWeb = `did:web:${domain.replace(/^https?:\/\//, '')}`;
+  return didWeb;
+};
