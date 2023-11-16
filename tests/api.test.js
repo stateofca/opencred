@@ -195,7 +195,8 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
       workflow: {
         id: testRP.workflow.id,
         type: 'microsoft-entra-verified-id',
-        apiBaseUrl: 'https://entra.microsoft.example.com/123',
+        apiBaseUrl: 'https://api.entra.microsoft.example.com/v1.0',
+        apiLoginBaseUrl: 'https://login.entra.microsoft.example.com',
         verifierDid: 'did:web:example.com',
         verifierName: 'Test Entra Verifier',
         acceptedCredentialType: 'Iso18013DriversLicenseCredential',

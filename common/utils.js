@@ -29,7 +29,7 @@ const MSAL_ACCESS_TOKEN_REQUEST_SCOPE =
 
 const getMsalClient = relyingParty => {
   const {
-    apiBaseUrl,
+    apiLoginBaseUrl,
     apiClientId,
     apiClientSecret,
     apiTenantId
@@ -38,7 +38,7 @@ const getMsalClient = relyingParty => {
     auth: {
       clientId: apiClientId,
       clientSecret: apiClientSecret,
-      authority: `${apiBaseUrl}/${apiTenantId}`
+      authority: `${apiLoginBaseUrl}/${apiTenantId}`
     }
   };
   return new ConfidentialClientApplication(msalConfig);

@@ -143,6 +143,7 @@ const validateWorkflow = rp => {
   } else if(rp.workflow.type === WorkflowType.MicrosoftEntraVerifiedId) {
     const {
       apiBaseUrl,
+      apiLoginBaseUrl,
       apiClientId,
       apiClientSecret,
       apiTenantId,
@@ -153,6 +154,9 @@ const validateWorkflow = rp => {
     } = rp.workflow;
     if(!apiBaseUrl) {
       throw new Error('apiBaseUrl is required');
+    }
+    if(!apiLoginBaseUrl) {
+      throw new Error('apiLoginBaseUrl is required');
     }
     if(!apiClientId) {
       throw new Error('apiClientId is required');

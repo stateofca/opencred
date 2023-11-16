@@ -91,7 +91,7 @@ const createExchangeHelper = async rp => {
   const msalClient = msalUtils.getMsalClient(rp);
   const {data: {requestId, url, expiry}} = await msalUtils.makeHttpPostRequest({
     msalClient,
-    url: `${apiBaseUrl}/${apiTenantId}`,
+    url: `${apiBaseUrl}/verifiableCredentials/createPresentationRequest`,
     data: verificationPayload
   });
 
