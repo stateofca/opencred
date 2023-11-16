@@ -1,18 +1,21 @@
 # opencred-platform Changelog
 
-## 4.0.0 - 2023-11-XX
+## 4.0.0 - 2023-11-16
+
+### Changed
+- **BREAKING**: Config change to use consistent property casing. Requires a
+  config update.
 
 ### Added
-- Optionally serve a did:web DID document
+- Optionally serve a `did:web` DID document.
 - Optionally serve a did-configuration document with DomainLinkageCredentials.
-- Microsoft Entra Verified ID exchange type
+- Microsoft Entra Verified ID exchange type.
 - New configFrom property to enable relying party inheritance.
 
 ### Fixed
 - Use client-specific theme information in the UI to enable multiple clients to
   use the same install of OpenCred.
 - Made ID Regex in endpoints less restrictive.
-- Config change to use consistent property casing. Requires config update!
 - Moved results into proper step.
 - Removed unused 'custom' exchange type.
 
