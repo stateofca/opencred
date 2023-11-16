@@ -19,8 +19,7 @@ relyingParties:
         description: "Open ID Connect"
     claims:
       - name: "email"
-        description: "Your email address"
-        claimIri: "https://schema.org/email"
+        path: "email"
     workflow:
       type: vc-api
       baseUrl: https://example.org/exchanges/123

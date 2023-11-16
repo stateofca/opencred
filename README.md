@@ -135,6 +135,24 @@ didWeb:
     }
 ```
 
+### Configuring OIDC Token Signing Key
+
+You may enter key information in the `signingKeys` section of the config, and
+the public keys will be published in the `./well-known/jwks.json` endpoint for
+keys with the `id_token` purpose. 
+
+Supported key types for id_token signing include: 
+
+JWT alg `ES256`: generate a seed with `npm run generate:prime256v1`.
+
+```yaml
+signingKeys: 
+  - type: Ed25519VerificationKey2020
+    seed: z1AkD6Wv5tKQdCTFJMEmF9vDJaa4V6f44jUasJPyn6RqdFZ
+    purpose: 
+      - id_token
+```
+
 ### Run via node
 
 Prerequisites: 

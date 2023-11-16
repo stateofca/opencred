@@ -70,5 +70,4 @@ export default function(app) {
   app.get(
     '/workflows/:workflowId/exchanges/:exchangeId', getAuthFunction(true, true)
   );
-  app.post('/token', getAuthFunction(true, false));
 }

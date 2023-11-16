@@ -63,8 +63,7 @@ const configDoc = yaml.load(fs.readFileSync(configPath, 'utf8'));
  * @property {VcApiWorkflow | NativeWorkflow | EntraWorkflow} workflow
  * @property {Array<Object>} [claims] - Claims to extract into id_token.
  * @property {string} claims[].name - id_token property destination
- * @property {string} claims[].description - Extra description, justification
- * @property {string} claims[].claimIri - The property IRI in credentialSubject
+ * @property {string} claims[].path - The path from credentialSubject
  * @property {Object.<string, Object.<string, string>>} translations - Strings
  */
 
@@ -215,6 +214,30 @@ const validateDidWeb = () => {
 };
 const didWeb = validateDidWeb();
 
+const validateSigningKeys = () => {
+  if(!configDoc.signingKeys) {
+    return [];
+  }
+  configDoc.signingKeys.forEach(sk => {
+    if(!sk.type) {
+      throw new Error('Each signingKey must have a type.');
+    }
+    if(!Array.isArray(sk.purpose) || !sk.purpose?.length) {
+      throw new Error('Each signingKey must have at least one purpose.');
+    }
+    if(
+      sk.type == 'ES256' &&
+      (!sk.privateKeyPem || !sk.publicKeyPem)
+    ) {
+      throw new Error(
+        'Each ES256 signingKey must have a privateKeyPem and publicKeyPem.'
+      );
+    }
+  });
+};
+const signingKeys = configDoc.signingKeys ?? [];
+validateSigningKeys();
+
 /**
  * An list of relying parties (connected apps or workflows) in use by OpenCred
  * @type {RelyingParty[]}
@@ -239,5 +262,6 @@ export const config = {
   defaultLanguage,
   domain,
   relyingParties,
+  signingKeys,
   translations,
 };

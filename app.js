@@ -10,8 +10,11 @@ import {
   didConfigurationDocument, didWebDocument
 } from './controllers/didWeb.js';
 import {
-  exchangeCodeForToken, getExchangeStatus, health, initiateExchange, login
-} from './controllers/controller.js';
+  getExchangeStatus, initiateExchange
+} from './controllers/api.js';
+import {
+  exchangeCodeForToken, login, OidcValidationMiddleware
+} from './controllers/oidc.js';
 import AuthenticationMiddleware from './controllers/auth.js';
 import {exchanges} from './common/database.js';
 import MicrosoftEntraVerifiedIdExchangeMiddleware
@@ -70,7 +73,7 @@ app.get('/.well-known/did-configuration.json', didConfigurationDocument);
 // by inspecting the request for a client_id query parameter.
 ResolveClientMiddleware(app);
 AuthenticationMiddleware(app);
-OidcMiddleware(app);
+OidcValidationMiddleware(app);
 
 /**
  * Middleware attaches exchange type-specific handlers to /login /exchange,
@@ -82,8 +85,151 @@ NativeExchangeMiddleware(app);
 VCAPIExchangeMiddleware(app);
 MicrosoftEntraVerifiedIdExchangeMiddleware(app);
 
-// Endpoints that initiate an exchange
-app.get('/login', login); // returns HTML app
+/**
+ * OIDC Endpoints: GET /login, POST /token
+ */
+
+/**
+ * @openapi
+ * /login:
+ *   get:
+ *     summary: Initiates an OIDC Login to get claims from a Verifiable
+ *       credential in a wallet.
+ *     tags:
+ *       - OIDC
+ *     operationId: OpenID Connect Login
+ *     description:
+ *       A client may redirect a user to this endpoint to initiate an exchange
+ *       where they may present a credential from their wallet.
+ *     parameters:
+ *       - name: client_id
+ *         description: The identifier of the relying party
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: redirect_uri
+ *         description: The redirect URI to return the user after getting their
+ *           credential. (URL-encoded string.)
+ *         required: true
+ *         in: query
+ *         schema:
+ *           type: string
+ *       - name: scope
+ *         description: The scope of the request. Must be exactly "openid".
+ *         required: true
+ *         in: query
+ *         schema:
+ *           type: string
+ *           enum: [openid]
+ *       - name: state
+ *         description: An opaque value used by the client to maintain state.
+ *         required: false
+ *         in: query
+ *         schema:
+ *           type: string
+ *       - name: response_type
+ *         description: The response type. Must be exactly "code".
+ *         required: true
+ *         in: query
+ *         schema:
+ *           type: string
+ *           enum: [code]
+ *     responses:
+ *       "200":
+ *         description: Information about the exchange.
+ *         content:
+ *           text/html:
+ *             description: HTML page with QR code and CHAPI button.
+ *       "400":
+ *         description: Request is malformed.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       "500":
+ *         description: Internal server error.
+ */
+app.get('/login', login);
+
+/**
+ * @openapi
+ * /token:
+ *   post:
+ *     summary: Completes an OIDC login flow by exchanging a code for id_token.
+ *     tags:
+ *       - OIDC
+ *     operationId: OpenID Connect Token
+ *     description:
+ *       A client can use this endpoint to get VC-based user info from a wallet
+ *       after the user has completed the wallet exchange and returned to the
+ *       client with a code.
+ *     requestBody:
+ *       content:
+ *         'application/x-www-form-urlencoded':
+ *           schema:
+ *             type: object
+ *             properties:
+ *               client_id:
+ *                 description: The identifier of the relying party
+ *                 type: string
+ *                 required: true
+ *               client_secret:
+ *                 description: The secret of the relying party
+ *                 type: string
+ *                 required: true
+ *               code:
+ *                 description: A random code that identifies this transaction
+ *                 type: string
+ *                 required: true
+ *               grant_type:
+ *                 description: Grant type must be "authorization_code".
+ *                 type: string
+ *                 required: true
+ *                 enum: [authorization_code]
+ *     responses:
+ *       "200":
+ *         description: An access token response. access_token is not usable,
+ *           but the id_token contains claims about the user.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 access_token:
+ *                   description: Not used, but present for OAuth2 compliance.
+ *                   type: string
+ *                 id_token:
+ *                   description: A signed JWT with claims about the user.
+ *                   type: string
+ *                 expires_in:
+ *                   description: not used, but present for OAuth2 compliance.
+ *                   type: number
+ *                 token_type:
+ *                   description: Always "Bearer", but access token is not used.
+ *                   type: string
+ *       "400":
+ *         description: Request is malformed.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       "500":
+ *         description: Internal server error.
+ */
+app.post('/token', exchangeCodeForToken);
+
+/**
+ * HTTP API Endpoints:
+ * - POST /workflows/{workflowId}/exchanges (initiate an exchange)
+ * - GET /workflows/{workflowId}/exchanges/{exchangeId} (get exchange status)
+ */
 
 /**
  * @openapi

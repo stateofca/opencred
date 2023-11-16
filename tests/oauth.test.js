@@ -10,7 +10,13 @@ import {config} from '../config/config.js';
 
 const exampleRelyingParty = {
   workflow: {
-    type: 'native'
+    type: 'native',
+    initialStep: 'default',
+    steps: {
+      default: {
+        verifiablePresentationRequest: {}
+      }
+    }
   },
   clientId: 'test',
   clientSecret: 'testsecret',
@@ -20,7 +26,13 @@ const exampleRelyingParty = {
     cta: '#8A2BE2',
     primary: '#6A5ACD',
     header: '#9370DB',
-  }
+  },
+  claims: [
+    {
+      name: 'name',
+      path: 'name'
+    }
+  ]
 };
 
 describe('OAuth Login Workflow', function() {
@@ -54,7 +66,7 @@ describe('OAuth Login Workflow', function() {
 
     expect(response.headers['content-type']).to.match(/json/);
     expect(response.status).to.equal(400);
-    expect(response.body.message).to.equal('Unknown redirect_uri');
+    expect(response.body.error_description).to.equal('Unknown redirect_uri');
 
     dbStub.restore();
   });
@@ -70,7 +82,10 @@ describe('OAuth Login Workflow', function() {
 
     expect(response.headers['content-type']).to.match(/json/);
     expect(response.status).to.equal(400);
-    expect(response.body.message).to.equal('Invalid scope');
+    expect(response.body.error).to.equal('invalid_scope');
+    expect(response.body.error_description).to.equal(
+      'scope must be "openid"'
+    );
 
     dbStub.restore();
   });
@@ -90,6 +105,180 @@ describe('OAuth Login Workflow', function() {
     expect(
       response.text.includes('openid4vp://authorize?'))
       .to.be(true);
+
+    dbStub.restore();
+  });
+
+  it('should enable code for token exchange', async function() {
+    const dbStub = sinon.stub(exchanges, 'findOne');
+    dbStub.resolves({
+      _id: 'test',
+      ttl: 900,
+      clientId: 'test',
+      code: 'the-code',
+      variables: {
+        results: {
+          default: {
+            verifiablePresentation: {
+              type: 'VerifiablePresentation',
+              verifiableCredential: [{
+                type: 'VerifiableCredential',
+                credentialSubject: {
+                  id: 'did:example:123',
+                  name: 'Alice'
+                }
+              }]
+            }
+          }
+        }
+      },
+      step: 'default',
+      redirectUri: 'https://example.com',
+      state: 'complete',
+      scope: 'openid'
+    });
+    const updateStub = sinon.stub(exchanges, 'updateOne');
+    updateStub.resolves(undefined);
+
+    const keysStub = sinon.stub(config, 'signingKeys').value([
+      {
+        type: 'ES256',
+        privateKeyPem: '-----BEGIN PRIVATE KEY-----\n' +
+          'MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgwLbkoZh3wYp0p83Z\n' +
+          'vlsqUhoT5Tmb/C2noUIQIRGA57ahRANCAARfPqGvN6FfB3Ke1RPSB6GQz2dd+ELC\n' +
+          'h0bvoXioeqXrMR/RvZ+JRuQ5nMfh3UC7As2Ve4hq6JAUa2+VsxC2z2fd\n' +
+          '-----END PRIVATE KEY-----',
+        publicKeyPem: '-----BEGIN PUBLIC KEY-----\n' +
+          'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXz6hrzehXwdyntUT0gehkM9nXfhC\n' +
+          'wodG76F4qHql6zEf0b2fiUbkOZzH4d1AuwLNlXuIauiQFGtvlbMQts9n3Q==\n' +
+          '-----END PUBLIC KEY-----',
+        purpose: ['id_token']
+      }
+    ]);
+
+    const response = await request(app)
+      .post('/token')
+      .set('Accept', 'application/json')
+      .send(
+        'client_id=test&client_secret=testsecret' +
+        '&grant_type=authorization_code&code=the-code' +
+        '&redirect_uri=https%3A%2F%2Fexample.com' +
+        '&scope=openid'
+      );
+    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.status).to.equal(200);
+    expect(response.body.id_token).to.not.be(undefined);
+    expect(response.body.token_type).to.equal('Bearer');
+
+    // Bearer token is included for OAuth2 compliance, but is not used.
+    expect(response.body.access_token).to.equal('NONE');
+
+    keysStub.restore();
+    updateStub.restore();
+    dbStub.restore();
+  });
+
+  it('should fail to be exchanged twice', async function() {
+    const dbStub = sinon.stub(exchanges, 'findOne');
+    dbStub.onCall(0).resolves({
+      _id: 'test',
+      ttl: 900,
+      clientId: 'test',
+      code: 'the-code',
+      variables: {
+        results: {
+          default: {
+            verifiablePresentation: {
+              type: 'VerifiablePresentation',
+              verifiableCredential: [{
+                type: 'VerifiableCredential',
+                credentialSubject: {
+                  id: 'did:example:123',
+                  name: 'Alice'
+                }
+              }]
+            }
+          }
+        }
+      },
+      step: 'default',
+      redirectUri: 'https://example.com',
+      state: 'complete',
+      scope: 'openid'
+    });
+    dbStub.onCall(1).resolves(undefined);
+    const updateStub = sinon.stub(exchanges, 'updateOne');
+    updateStub.resolves(undefined);
+
+    const keysStub = sinon.stub(config, 'signingKeys').value([
+      {
+        type: 'ES256',
+        privateKeyPem: '-----BEGIN PRIVATE KEY-----\n' +
+          'MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgwLbkoZh3wYp0p83Z\n' +
+          'vlsqUhoT5Tmb/C2noUIQIRGA57ahRANCAARfPqGvN6FfB3Ke1RPSB6GQz2dd+ELC\n' +
+          'h0bvoXioeqXrMR/RvZ+JRuQ5nMfh3UC7As2Ve4hq6JAUa2+VsxC2z2fd\n' +
+          '-----END PRIVATE KEY-----',
+        publicKeyPem: '-----BEGIN PUBLIC KEY-----\n' +
+          'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXz6hrzehXwdyntUT0gehkM9nXfhC\n' +
+          'wodG76F4qHql6zEf0b2fiUbkOZzH4d1AuwLNlXuIauiQFGtvlbMQts9n3Q==\n' +
+          '-----END PUBLIC KEY-----',
+        purpose: ['id_token']
+      }
+    ]);
+
+    const requestBody = 'client_id=test&client_secret=testsecret' +
+    '&grant_type=authorization_code&code=the-code' +
+    '&redirect_uri=https%3A%2F%2Fexample.com' +
+    '&scope=openid';
+    const response = await request(app)
+      .post('/token')
+      .set('Accept', 'application/json')
+      .send(requestBody);
+    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.status).to.equal(200);
+
+    const response2 = await request(app)
+      .post('/token')
+      .set('Accept', 'application/json')
+      .send(requestBody);
+    expect(response2.headers['content-type']).to.match(/json/);
+    expect(response2.status).to.equal(400);
+    expect(response2.body.error).to.equal('invalid_grant');
+    expect(response2.body.error_description).to.equal('Invalid code');
+
+    keysStub.restore();
+    dbStub.restore();
+    updateStub.restore();
+  });
+
+  it('Should not yield a token if exchange isn\'t complete', async function() {
+    const dbStub = sinon.stub(exchanges, 'findOne');
+    dbStub.resolves({
+      _id: 'test',
+      ttl: 900,
+      clientId: 'test',
+      code: 'the-code',
+      step: 'default',
+      redirectUri: 'https://example.com',
+      state: 'invalid',
+      scope: 'openid'
+    });
+
+    const response = await request(app)
+      .post('/token')
+      .set('Accept', 'application/json')
+      .send(
+        'client_id=test&client_secret=testsecret' +
+        '&grant_type=authorization_code&code=the-code' +
+        '&redirect_uri=https%3A%2F%2Fexample.com' +
+        '&scope=openid'
+      );
+    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.status).to.equal(400);
+    expect(response.body.error).to.equal('invalid_grant');
+    expect(response.body.error_description).to.equal(
+      'Invalid code: Exchange status invalid'
+    );
 
     dbStub.restore();
   });
