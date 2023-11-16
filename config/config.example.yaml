@@ -2,7 +2,9 @@ dbConnectionUri: "mongodb://localhost:27017/databaseName"
 domain: "http://localhost:8080"
 relyingParties:
   - name: "Test App"
-    clientId: "rp1"
+    # An example that uses a remove VC-API exchanger to connect with a wallet
+    # See Verifiable Credentials API Documentation: https://w3c-ccg.github.io/vc-api/
+    clientId: "32bb6cec384b"
     clientSecret: "DeepestAndDarkest"
     description: "Relying Party Test App"
     icon: "https://placekitten.com/200/200"
@@ -15,24 +17,6 @@ relyingParties:
     scopes:
       - name: "openid"
         description: "Open ID Connect"
-    vprQuery: >
-      {
-        "query": {
-          "type": "QueryByExample",
-          "credentialQuery": {
-            "reason": "Please present your Verifiable Credential to complete the verification process.",
-            "example": {
-              "@context": [
-                "https://www.w3.org/2018/credentials/v1",
-                "https://w3id.org/citizenship/v1"
-              ],
-              "type": [
-                "PermanentResidentCard"
-              ]
-            }
-          }
-        }
-      }
     claims:
       - name: "email"
         description: "Your email address"
@@ -42,28 +26,30 @@ relyingParties:
       baseUrl: https://example.org/exchanges/123
       capability: "example"
       clientSecret: "example"
-
-      # Microsoft Entra Verified Id workflow config
-      # Many of these config fields map to request fields in the APIs linked below:
-      # https://learn.microsoft.com/en-us/entra/verified-id/get-started-request-api
-      # https://learn.microsoft.com/en-us/entra/verified-id/presentation-request-api
-      # type: microsoft-entra-verified-id # required
-      # apiBaseUrl: https://entra.microsoft.example.com/123 # required
-      # apiClientId: "TODO" # required
-      # apiClientSecret: "TODO" # required
-      # apiTenantId: "TODO" # required
-      # verifierDid: "TODO" # required
-      # verifierName: "TODO" # required
-      # acceptedCredentialType: "TODO" # required
-      # # The suffix of this URL must match a valid path that handles the verification callback middleware
-      # credentialVerificationCallbackUrl: https://example.com/verification/callback # required
-      # credentialVerificationCallbackAuthEnabled: true # optional (default populated in middleware unless overridden here)
-      # acceptedCredentialIssuers: [] # optional (default populated in middleware unless overridden here)
-      # credentialVerificationPurpose: "So that we can evaluate your permission to access the requested resource" # optional (default populated in middleware unless overridden here)
-      # allowRevokedCredentials: false # optional (default populated in middleware unless overridden here)
-      # validateLinkedDomain: true # optional (default populated in middleware unless overridden here)
-      # includeQrCode: false # optional (default populated in middleware unless overridden here)
-      # includeReceipt: false # optional (default populated in middleware unless overridden here)
+  - client_id: 4e3a8b7b4b7b4b7b4b7b
+    # Microsoft Entra Verified Id workflow config
+    # Many of these config fields map to request fields in the APIs linked below:
+    #   https://learn.microsoft.com/en-us/entra/verified-id/get-started-request-api
+    #   https://learn.microsoft.com/en-us/entra/verified-id/presentation-request-api
+    configFrom: 32bb6cec384b # client_id of another relying party to serve as default values
+    workflow:
+      type: microsoft-entra-verified-id
+      apiBaseUrl: https://entra.microsoft.example.com/123 # required
+      apiClientId: "TODO" # required
+      apiClientSecret: "TODO" # required
+      apiTenantId: "TODO" # required
+      verifierDid: "TODO" # required
+      verifierName: "TODO" # required
+      acceptedCredentialType: "TODO" # required
+      # The suffix of credentialVerificationCallbackUrl must match a valid path that handles the verification callback middleware
+      credentialVerificationCallbackUrl: https://example.com/verification/callback # required
+      credentialVerificationCallbackAuthEnabled: true # optional (default populated in middleware unless overridden here)
+      acceptedCredentialIssuers: [] # optional (default populated in middleware unless overridden here)
+      credentialVerificationPurpose: "So that we can evaluate your permission to access the requested resource" # optional (default populated in middleware unless overridden here)
+      allowRevokedCredentials: false # optional (default populated in middleware unless overridden here)
+      validateLinkedDomain: true # optional (default populated in middleware unless overridden here)
+      includeQrCode: true # optional (default populated in middleware unless overridden here)
+      includeReceipt: false # optional (default populated in middleware unless overridden here)
 defaultLanguage: en
 translations:
   en:

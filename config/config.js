@@ -2,6 +2,7 @@ import * as fs from 'node:fs';
 import * as yaml from 'js-yaml';
 import 'dotenv/config';
 
+import {applyRpDefaults} from './configUtils.js';
 import {combineTranslations} from './translation.js';
 
 // Environment variables
@@ -11,8 +12,31 @@ const configPath = process.env.CONFIG_PATH || '/etc/app-config/config.yaml';
 const configDoc = yaml.load(fs.readFileSync(configPath, 'utf8'));
 
 /**
- * @typedef {Object} Workflow
- * @property {string} type - The type of the workflow.
+ * @typedef {Object} VcApiWorkflow
+ * @property {'vc-api'} type - The type of the workflow.
+ * @property {boolean} createChallenge - Whether to create a challenge?
+ * @property {string} verifiablePresentationRequest - What to request
+ */
+
+/**
+ * @typedef {Object} WorkflowStep
+ * @property {string} id - The ID
+ * @property {string} id - The ID of the workflow.
+ * @property {string} initialStep - The id of the first step.
+ * @property {Object.<string, WorkflowStep>} steps - Steps to execute
+ */
+
+/**
+ * @typedef {Object} NativeWorkflow
+ * @property {'native'} type - The type of the workflow.
+ * @property {string} id - The ID of the workflow.
+ * @property {string} initialStep - The id of the first step.
+ * @property {Array<WorkflowStep>} steps - The capability of the workflow.
+ */
+
+/**
+ * @typedef {Object} EntraWorkflow
+ * @property {'microsoft-entra-verified-id'} type - The type of the workflow.
  * @property {string} id - The ID of the workflow.
  * @property {string} baseUrl - The base URL of the workflow.
  * @property {string} capability - The capability of the workflow.
@@ -36,7 +60,7 @@ const configDoc = yaml.load(fs.readFileSync(configPath, 'utf8'));
  * @property {Array<Object>} scopes - OAuth2 scopes
  * @property {string} scopes[].name - The name of the scope.
  * @property {string} scopes[].description - The description of the scope.
- * @property {Workflow} workflow - VC Exchange Workflow
+ * @property {VcApiWorkflow | NativeWorkflow | EntraWorkflow} workflow
  * @property {Array<Object>} [claims] - Claims to extract into id_token.
  * @property {string} claims[].name - id_token property destination
  * @property {string} claims[].description - Extra description, justification
@@ -164,11 +188,6 @@ if(!Array.isArray(configRPs)) {
   throw new Error('Configuration relyingParties must be an array.');
 }
 
-configRPs.forEach(validateRelyingParty);
-
-// Validate workflow connection configuration
-configRPs.forEach(validateWorkflow);
-
 const databaseConnectionUri = configDoc.dbConnectionUri;
 if(!databaseConnectionUri) {
   throw new Error('databaseConnectionUri not found in config.');
@@ -201,12 +220,15 @@ const didWeb = validateDidWeb();
  * @type {RelyingParty[]}
  */
 const relyingParties = configRPs.map(rp => {
+  const app = applyRpDefaults(configRPs, rp);
+  validateRelyingParty(app);
+  validateWorkflow(app);
   const theme = {
     ...defaultTheme,
-    ...(rp.theme ? rp.theme : {})
+    ...(app.theme ? app.theme : {})
   };
   return {
-    ...rp,
+    ...app,
     theme
   };
 });

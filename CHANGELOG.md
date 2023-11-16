@@ -5,6 +5,7 @@
 ### Added
 - Optionally serve a did:web DID document
 - Optionally serve a did-configuration document with DomainLinkageCredentials.
+- New configFrom property to enable relying party inheritance.
 
 ### Fixed
 - Use client-specific theme information in the UI to enable multiple clients to
