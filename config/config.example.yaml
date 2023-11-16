@@ -41,8 +41,6 @@ relyingParties:
       verifierDid: "TODO" # required
       verifierName: "TODO" # required
       acceptedCredentialType: "TODO" # required
-      # The suffix of credentialVerificationCallbackUrl must match a valid path that handles the verification callback middleware
-      credentialVerificationCallbackUrl: https://example.com/verification/callback # required
       credentialVerificationCallbackAuthEnabled: true # optional (default populated in middleware unless overridden here)
       acceptedCredentialIssuers: [] # optional (default populated in middleware unless overridden here)
       credentialVerificationPurpose: "So that we can evaluate your permission to access the requested resource" # optional (default populated in middleware unless overridden here)

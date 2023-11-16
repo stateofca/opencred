@@ -3,8 +3,12 @@
 ## 4.0.0 - 2023-11-XX
 
 ### Added
+<<<<<<< HEAD
 - Optionally serve a did:web DID document
 - Optionally serve a did-configuration document with DomainLinkageCredentials.
+=======
+- Microsoft Entra Verified ID exchange type
+>>>>>>> 78f57aa (Protect from crashing if auth undefined)
 - New configFrom property to enable relying party inheritance.
 
 ### Fixed

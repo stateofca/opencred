@@ -28,7 +28,6 @@ const createExchangeHelper = async rp => {
     verifierDid,
     verifierName,
     acceptedCredentialType,
-    credentialVerificationCallbackUrl
   } = workflow;
   let {
     credentialVerificationCallbackAuthEnabled,
@@ -68,7 +67,7 @@ const createExchangeHelper = async rp => {
       clientName: verifierName
     },
     callback: {
-      url: credentialVerificationCallbackUrl,
+      url: `${domain}/verification/callback,`,
       state,
       ...(credentialVerificationCallbackAuthEnabled && {
         headers: {
@@ -142,12 +141,14 @@ const verificationCallback = async (req, res) => {
   const verificationStatus = req.body.requestStatus;
   const [vcData] = req.body.verifiedCredentialsData;
   const credentialState = vcData.credentialState;
-  const [authType, authValue] = authHeader.split(' ');
+  const [authType, authValue] = authHeader ?
+    authHeader.split(' ') :
+    [undefined, undefined];
 
   let exchange;
   if(authValue) {
     exchange = await exchanges.findOne(
-      {accessToken: authValue, id: requestId},
+      {id: requestId},
       {projection: {_id: 0}}
     );
   }
@@ -166,6 +167,10 @@ const verificationCallback = async (req, res) => {
     }
     if(authType !== 'Bearer' || !authValue) {
       res.status(401).send({message: 'Invalid authorization format'});
+      return;
+    }
+    if(exchange.accessToken != authValue) {
+      res.status(401).send({message: 'Invalid access token'});
       return;
     }
   }
