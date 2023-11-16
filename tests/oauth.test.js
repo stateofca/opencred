@@ -35,6 +35,20 @@ const exampleRelyingParty = {
   ]
 };
 
+const exampleKey = {
+  type: 'ES256',
+  privateKeyPem: '-----BEGIN PRIVATE KEY-----\n' +
+    'MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgwLbkoZh3wYp0p83Z\n' +
+    'vlsqUhoT5Tmb/C2noUIQIRGA57ahRANCAARfPqGvN6FfB3Ke1RPSB6GQz2dd+ELC\n' +
+    'h0bvoXioeqXrMR/RvZ+JRuQ5nMfh3UC7As2Ve4hq6JAUa2+VsxC2z2fd\n' +
+    '-----END PRIVATE KEY-----',
+  publicKeyPem: '-----BEGIN PUBLIC KEY-----\n' +
+    'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXz6hrzehXwdyntUT0gehkM9nXfhC\n' +
+    'wodG76F4qHql6zEf0b2fiUbkOZzH4d1AuwLNlXuIauiQFGtvlbMQts9n3Q==\n' +
+    '-----END PUBLIC KEY-----',
+  purpose: ['id_token']
+};
+
 describe('OAuth Login Workflow', function() {
   this.beforeEach(() => {
     this.rpStub = sinon.stub(config, 'relyingParties').value(
@@ -141,19 +155,7 @@ describe('OAuth Login Workflow', function() {
     updateStub.resolves(undefined);
 
     const keysStub = sinon.stub(config, 'signingKeys').value([
-      {
-        type: 'ES256',
-        privateKeyPem: '-----BEGIN PRIVATE KEY-----\n' +
-          'MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgwLbkoZh3wYp0p83Z\n' +
-          'vlsqUhoT5Tmb/C2noUIQIRGA57ahRANCAARfPqGvN6FfB3Ke1RPSB6GQz2dd+ELC\n' +
-          'h0bvoXioeqXrMR/RvZ+JRuQ5nMfh3UC7As2Ve4hq6JAUa2+VsxC2z2fd\n' +
-          '-----END PRIVATE KEY-----',
-        publicKeyPem: '-----BEGIN PUBLIC KEY-----\n' +
-          'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXz6hrzehXwdyntUT0gehkM9nXfhC\n' +
-          'wodG76F4qHql6zEf0b2fiUbkOZzH4d1AuwLNlXuIauiQFGtvlbMQts9n3Q==\n' +
-          '-----END PUBLIC KEY-----',
-        purpose: ['id_token']
-      }
+      exampleKey
     ]);
 
     const response = await request(app)
@@ -211,19 +213,7 @@ describe('OAuth Login Workflow', function() {
     updateStub.resolves(undefined);
 
     const keysStub = sinon.stub(config, 'signingKeys').value([
-      {
-        type: 'ES256',
-        privateKeyPem: '-----BEGIN PRIVATE KEY-----\n' +
-          'MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgwLbkoZh3wYp0p83Z\n' +
-          'vlsqUhoT5Tmb/C2noUIQIRGA57ahRANCAARfPqGvN6FfB3Ke1RPSB6GQz2dd+ELC\n' +
-          'h0bvoXioeqXrMR/RvZ+JRuQ5nMfh3UC7As2Ve4hq6JAUa2+VsxC2z2fd\n' +
-          '-----END PRIVATE KEY-----',
-        publicKeyPem: '-----BEGIN PUBLIC KEY-----\n' +
-          'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXz6hrzehXwdyntUT0gehkM9nXfhC\n' +
-          'wodG76F4qHql6zEf0b2fiUbkOZzH4d1AuwLNlXuIauiQFGtvlbMQts9n3Q==\n' +
-          '-----END PUBLIC KEY-----',
-        purpose: ['id_token']
-      }
+      exampleKey
     ]);
 
     const requestBody = 'client_id=test&client_secret=testsecret' +
@@ -281,5 +271,40 @@ describe('OAuth Login Workflow', function() {
     );
 
     dbStub.restore();
+  });
+});
+
+describe('JWKS Endpoint', function() {
+  it('should return an empty set if no keys are configured', async function() {
+    const signingKeyStub = sinon.stub(config, 'signingKeys').value([]);
+
+    const response = await request(app)
+      .get('/.well-known/jwks.json')
+      .set('Accept', 'application/json');
+
+    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.status).to.equal(200);
+    expect(response.body.keys).to.be.an(Array);
+    expect(response.body.keys.length).to.equal(0);
+
+    signingKeyStub.restore();
+  });
+
+  it('should return a key if configured', async function() {
+    const signingKeyStub = sinon.stub(config, 'signingKeys').value(
+      [exampleKey]
+    );
+
+    const response = await request(app)
+      .get('/.well-known/jwks.json')
+      .set('Accept', 'application/json');
+
+    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.status).to.equal(200);
+    expect(response.body.keys).to.be.an(Array);
+    expect(response.body.keys.length).to.equal(1);
+    expect(response.body.keys[0].kid).to.not.be(undefined);
+
+    signingKeyStub.restore();
   });
 });

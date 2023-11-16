@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -171,4 +172,25 @@ export const exchangeCodeForToken = async (req, res) => {
     });
     return;
   }
+};
+
+export const jwksEndpoint = async (req, res) => {
+  const jwks = config.signingKeys.filter(
+    key => key.purpose.includes('id_token')
+  ).map(key => {
+    const rehydratedKey = crypto.createPublicKey({
+      key: key.publicKeyPem.toString('hex'),
+      format: 'pem',
+      type: 'spki'
+    });
+    const jwkFormat = rehydratedKey.export({format: 'jwk', type: 'public'});
+    return {
+      kid: crypto.createHash('sha256').update(key.publicKeyPem).digest('hex'),
+      ...jwkFormat
+    };
+  });
+
+  res.send({
+    keys: jwks
+  });
 };

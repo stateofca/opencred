@@ -10,7 +10,7 @@ import {
   didConfigurationDocument, didWebDocument
 } from './controllers/didWeb.js';
 import {
-  exchangeCodeForToken, login, OidcValidationMiddleware
+  exchangeCodeForToken, jwksEndpoint, login, OidcValidationMiddleware
 } from './controllers/oidc.js';
 import {
   getExchangeStatus, initiateExchange
@@ -68,6 +68,7 @@ app.get('/health', health);
 
 app.get('/.well-known/did.json', didWebDocument);
 app.get('/.well-known/did-configuration.json', didConfigurationDocument);
+app.get('/.well-known/jwks.json', jwksEndpoint);
 
 // Middleware that attaches the RP configuration to the request object, usually
 // by inspecting the request for a client_id query parameter.
