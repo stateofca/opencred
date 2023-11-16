@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 4.0.1 - 2023-11-16
+
+### Fixed
+- Fix Entra API verification and access token requests.
+
 ## 4.0.0 - 2023-11-16
 
 ### Changed
