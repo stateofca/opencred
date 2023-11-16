@@ -24,7 +24,6 @@ const createExchangeHelper = async rp => {
   const workflowId = workflow.id;
   const {
     apiBaseUrl,
-    apiTenantId,
     verifierDid,
     verifierName,
     acceptedCredentialType,
