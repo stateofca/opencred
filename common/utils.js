@@ -15,10 +15,6 @@ export const createId = async (bitLength = 128) => {
   return id;
 };
 
-export const ensureValue = (optionalValue, defaultValue) => {
-  return optionalValue !== undefined ? optionalValue : defaultValue;
-};
-
 // Verify Utilities
 
 export const verifyUtils = {

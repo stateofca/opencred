@@ -1,5 +1,5 @@
-import {createId, ensureValue} from '../../common/utils.js';
 import {config} from '../../config/config.js';
+import {createId} from '../../common/utils.js';
 import {exchanges} from '../../common/database.js';
 import {msalUtils} from '../../common/utils.js';
 
@@ -29,7 +29,17 @@ const createExchangeHelper = async rp => {
     verifierName,
     acceptedCredentialType,
   } = workflow;
-  let {
+
+  const defaults = {
+    credentialVerificationCallbackAuthEnabled: true,
+    acceptedCredentialIssuers: [],
+    credentialVerificationPurpose: 'To check permission to access resources',
+    allowRevokedCredentials: false,
+    validateLinkedDomain: true,
+    includeQrCode: false,
+    includeReceipt: false
+  };
+  const {
     credentialVerificationCallbackAuthEnabled,
     acceptedCredentialIssuers,
     credentialVerificationPurpose,
@@ -37,19 +47,7 @@ const createExchangeHelper = async rp => {
     validateLinkedDomain,
     includeQrCode,
     includeReceipt
-  } = workflow;
-  credentialVerificationCallbackAuthEnabled =
-      ensureValue(credentialVerificationCallbackAuthEnabled, true);
-  acceptedCredentialIssuers = ensureValue(acceptedCredentialIssuers, []);
-  credentialVerificationPurpose = ensureValue(
-    credentialVerificationPurpose,
-    'So that we can evaluate your permission to access the requested resource'
-  );
-  allowRevokedCredentials = ensureValue(allowRevokedCredentials, false);
-  validateLinkedDomain = ensureValue(validateLinkedDomain, true);
-  includeQrCode = ensureValue(includeQrCode, false);
-  includeReceipt = ensureValue(includeReceipt, false);
-
+  } = {defaults, ...workflow};
   const domain = rp.domain;
   const accessToken = await createId();
   // NOTE: Since we do not receive the state back from
