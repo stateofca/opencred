@@ -149,8 +149,7 @@ const validateWorkflow = rp => {
       apiTenantId,
       verifierDid,
       verifierName,
-      acceptedCredentialType,
-      credentialVerificationCallbackUrl
+      acceptedCredentialType
     } = rp.workflow;
     if(!apiBaseUrl) {
       throw new Error('apiBaseUrl is required');
@@ -175,9 +174,6 @@ const validateWorkflow = rp => {
     }
     if(!acceptedCredentialType) {
       throw new Error('acceptedCredentialType is required');
-    }
-    if(!credentialVerificationCallbackUrl) {
-      throw new Error('credentialVerificationCallbackUrl is required');
     }
   } else {
     throw new Error(

@@ -64,7 +64,7 @@ const createExchangeHelper = async rp => {
       clientName: verifierName
     },
     callback: {
-      url: `${domain}/verification/callback,`,
+      url: `${domain}/verification/callback`,
       state,
       ...(credentialVerificationCallbackAuthEnabled && {
         headers: {
