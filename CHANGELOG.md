@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 5.0.0 - 2023-11-17
+
+### Changed
+- New config variables.
+
 ## 4.0.1 - 2023-11-16
 
 ### Fixed
