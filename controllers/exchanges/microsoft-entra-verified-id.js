@@ -11,14 +11,6 @@ const VerificationStatus = {
   PresentationVerified: 'presentation_verified'
 };
 
-// Domain of values for credentialState.revocationStatus
-// in verification callback request
-const RevocationStatus = {
-  Valid: 'VALID',
-  Revoked: 'REVOKED',
-  Unknown: 'UNKNOWN'
-};
-
 const createExchangeHelper = async rp => {
   const workflow = rp.workflow;
   const workflowId = workflow.id;
@@ -35,8 +27,7 @@ const createExchangeHelper = async rp => {
     credentialVerificationPurpose: 'To check permission to access resources',
     allowRevokedCredentials: false,
     validateLinkedDomain: true,
-    includeQrCode: false,
-    includeReceipt: false
+    includeQrCode: false
   };
   const {
     credentialVerificationCallbackAuthEnabled,
@@ -44,8 +35,7 @@ const createExchangeHelper = async rp => {
     credentialVerificationPurpose,
     allowRevokedCredentials,
     validateLinkedDomain,
-    includeQrCode,
-    includeReceipt
+    includeQrCode
   } = {defaults, ...workflow};
   const domain = rp.domain;
   const accessToken = await createId();
@@ -58,7 +48,7 @@ const createExchangeHelper = async rp => {
 
   const verificationPayload = {
     includeQRCode: includeQrCode,
-    includeReceipt,
+    includeReceipt: true,
     authority: verifierDid,
     registration: {
       clientName: verifierName
@@ -128,6 +118,22 @@ const createExchange = async (req, res, next) => {
   next();
 };
 
+const _convertEntraVcDataToW3cVcData = entraVcData => {
+  return entraVcData.map(vcData => {
+    return {
+      '@context': [
+        'https://www.w3.org/2018/credentials/v1',
+        // TODO - need additional context for claims
+      ],
+      type: vcData.type,
+      issuer: vcData.issuer,
+      issuanceDate: vcData.issuanceDate,
+      expirationDate: vcData.expirationDate,
+      credentialSubject: vcData.claims
+    };
+  });
+};
+
 const verificationCallback = async (req, res) => {
   const authHeader = req.headers.authorization;
   // NOTE: Since we do not receive the state back from
@@ -136,8 +142,10 @@ const verificationCallback = async (req, res) => {
   // Hence, we cannot use this and instead use requestId.
   const requestId = req.body.requestId;
   const verificationStatus = req.body.requestStatus;
-  const [vcData] = req.body.verifiedCredentialsData;
-  const credentialState = vcData.credentialState;
+  const subject = req.body.subject;
+  const entraVcData = req.body.verifiedCredentialsData;
+  // const credentialState = vcData.credentialState;
+  const receipt = req.body.receipt;
   const [authType, authValue] = authHeader ?
     authHeader.split(' ') :
     [undefined, undefined];
@@ -176,38 +184,53 @@ const verificationCallback = async (req, res) => {
   switch(verificationStatus) {
     case VerificationStatus.RequestRetrieved:
       exchangeState = 'pending';
+      res.status(200).send({message: 'Credential verification is pending'});
       break;
     case VerificationStatus.PresentationVerified:
-      if(
-        credentialState.isExpired ||
-        credentialState.revocationStatus === RevocationStatus.Revoked ||
-        credentialState.revocationStatus === RevocationStatus.Unknown
-      ) {
-        exchangeState = 'invalid';
-        res.status(400).send({message: 'Credential is expired or revoked'});
-      } else if(
-        credentialState.revocationStatus === RevocationStatus.Valid
-      ) {
-        exchangeState = 'complete';
-        res.status(200).send({message: 'Credential is verified'});
-      } else {
-        exchangeState = 'invalid';
-        res.status(400).send(
-          {message: 'Unrecognized revocation status from Microsoft Entra'}
-        );
-      }
+      exchangeState = 'complete';
+      res.status(200).send({message: 'Credential verification is complete'});
       break;
     default:
       exchangeState = 'invalid';
       res.status(400).send(
-        {message: 'Unrecognized verification status from Microsoft Entra'}
+        {message: 'Unrecognized verification status'}
       );
   }
 
-  await exchanges.updateOne({
-    id: requestId,
-    state: exchangeState
-  }, {$set: {updatedAt: Date.now()}});
+  if(receipt?.vp_token) {
+    await exchanges.updateOne({
+      id: requestId,
+      state: exchangeState
+    }, {$set: {
+      'variables.results.default': {
+        verifiablePresentation: receipt.vp_token
+      },
+      updatedAt: Date.now()
+    }});
+  } else if(Array.isArray(entraVcData) && entraVcData.length > 0) {
+    const w3cVcData = _convertEntraVcDataToW3cVcData(entraVcData);
+    await exchanges.updateOne({
+      id: requestId,
+      state: exchangeState
+    }, {$set: {
+      'variables.results.default': {
+        verifiablePresentation: {
+          '@context': ['https://www.w3.org/2018/credentials/v1'],
+          type: ['VerifiablePresentation'],
+          verifiableCredential: w3cVcData,
+          holder: subject
+        }
+      },
+      updatedAt: Date.now()
+    }});
+  } else {
+    await exchanges.updateOne({
+      id: requestId,
+      state: exchangeState
+    }, {$set: {
+      updatedAt: Date.now()
+    }});
+  }
 };
 
 export default function(app) {

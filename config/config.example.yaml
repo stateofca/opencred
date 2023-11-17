@@ -47,7 +47,6 @@ relyingParties:
       allowRevokedCredentials: false # optional (default populated in middleware unless overridden here)
       validateLinkedDomain: true # optional (default populated in middleware unless overridden here)
       includeQrCode: true # optional (default populated in middleware unless overridden here)
-      includeReceipt: false # optional (default populated in middleware unless overridden here)
 defaultLanguage: en
 translations:
   en:

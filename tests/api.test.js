@@ -24,6 +24,7 @@ const testRP = {
   redirectUri: 'https://example.com',
   scopes: [{name: 'openid'}],
 };
+
 const testEx = {
   id: 'abc123456',
   sequence: 0,
@@ -263,38 +264,174 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
     findStub.restore();
   });
 
-  it('should update exchange status after verification', async function() {
-    const findStub = sinon.stub(exchanges, 'findOne').resolves(
-      testEx
-    );
-    const updateStub = sinon.stub(exchanges, 'updateOne').resolves();
-    const dateStub = sinon.stub(Date, 'now').returns(1699635246762);
-    const response = await request(app)
-      .post('/verification/callback')
-      .set(
-        'Authorization', `Bearer ${testEx.accessToken}`
-      )
-      .send({
-        requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
-        requestStatus: 'presentation_verified',
-        verifiedCredentialsData: [{
+  it('should update exchange status after verification with vp token',
+    async function() {
+      const findStub = sinon.stub(exchanges, 'findOne').resolves(
+        testEx
+      );
+      const updateStub = sinon.stub(exchanges, 'updateOne').resolves();
+      const dateStub = sinon.stub(Date, 'now').returns(1699635246762);
+      const testVpToken = {
+        '@context': [
+          'https://www.w3.org/2018/credentials/v1'
+        ],
+        type: [
+          'VerifiablePresentation'
+        ],
+        verifiableCredential: [
+          {
+            '@context': [
+              'https://www.w3.org/2018/credentials/v1',
+              'https://www.w3.org/2018/credentials/examples/v1'
+            ],
+            id: 'https://example.com/credentials/1872',
+            type: [
+              'VerifiableCredential',
+              'IDCardCredential'
+            ],
+            issuer: {
+              id: 'did:example:issuer'
+            },
+            issuanceDate: '2010-01-01T19:23:24Z',
+            credentialSubject: {
+              given_name: 'Fredrik',
+              family_name: 'Str&#246;mberg',
+              birthdate: '1949-01-22'
+            },
+            proof: {
+              type: 'Ed25519Signature2018',
+              created: '2021-03-19T15:30:15Z',
+              jws: 'eyJhbGciOiJFZER..PT8yCqVjj5ZHD0W',
+              proofPurpose: 'assertionMethod',
+              verificationMethod: 'did:example:issuer#keys-1'
+            }
+          }
+        ],
+        id: 'ebc6f1c2',
+        holder: 'did:example:holder',
+        proof: {
+          type: 'Ed25519Signature2018',
+          created: '2021-03-19T15:30:15Z',
+          challenge: 'n-0S6_WzA2Mj',
+          domain: 's6BhdRkqt3',
+          jws: 'eyJhbGciOiJFZER..GF5Z6TamgNE8QjE',
+          proofPurpose: 'authentication',
+          verificationMethod: 'did:example:holder#key-1'
+        }
+      };
+      const response = await request(app)
+        .post('/verification/callback')
+        .set(
+          'Authorization', `Bearer ${testEx.accessToken}`
+        )
+        .send({
+          requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
+          requestStatus: 'presentation_verified',
+          subject: 'did:web:verifiedid.contoso.com',
+          receipt: {
+            vp_token: testVpToken
+          },
+          verifiedCredentialsData: []
+        })
+        .set('Accept', 'application/json');
+
+      expect(response.headers['content-type']).to.match(/json/);
+      expect(response.status).to.equal(200);
+      expect(findStub.called).to.be(true);
+      expect(updateStub.calledWith({
+        id: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
+        state: 'complete'
+      }, {$set: {
+        'variables.results.default': {
+          verifiablePresentation: testVpToken
+        },
+        updatedAt: 1699635246762
+      }})).to.be(true);
+      expect(dateStub.called).to.be(true);
+      findStub.restore();
+      updateStub.restore();
+      dateStub.restore();
+    });
+
+  it('should update exchange status after verification without vp token',
+    async function() {
+      const findStub = sinon.stub(exchanges, 'findOne').resolves(
+        testEx
+      );
+      const updateStub = sinon.stub(exchanges, 'updateOne').resolves();
+      const dateStub = sinon.stub(Date, 'now').returns(1699635246762);
+      const testEntraVcData = [
+        {
+          issuer: 'did:ion:issuer123',
+          type: [
+            'VerifiableCredential',
+            'VerifiedCredentialExpert'
+          ],
+          claims: {
+            firstName: 'Megan',
+            lastName: 'Bowen'
+          },
           credentialState: {
             revocationStatus: 'VALID'
-          }
-        }]
-      })
-      .set('Accept', 'application/json');
+          },
+          domainValidation: {
+            url: 'https://contoso.com'
+          },
+          issuanceDate: '2010-01-01T19:23:24Z',
+          expirationDate: '2020-01-01T19:23:24Z'
+        }
+      ];
+      const testW3cVcData = [{
+        '@context': [
+          'https://www.w3.org/2018/credentials/v1',
+          // TODO - need additional context for claims
+        ],
+        type: [
+          'VerifiableCredential',
+          'VerifiedCredentialExpert'
+        ],
+        issuer: 'did:ion:issuer123',
+        issuanceDate: '2010-01-01T19:23:24Z',
+        expirationDate: '2020-01-01T19:23:24Z',
+        credentialSubject: {
+          firstName: 'Megan',
+          lastName: 'Bowen'
+        }
+      }];
+      const response = await request(app)
+        .post('/verification/callback')
+        .set(
+          'Authorization', `Bearer ${testEx.accessToken}`
+        )
+        .send({
+          requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
+          requestStatus: 'presentation_verified',
+          subject: 'did:web:verifiedid.contoso.com',
+          receipt: {},
+          verifiedCredentialsData: testEntraVcData
+        })
+        .set('Accept', 'application/json');
 
-    expect(response.headers['content-type']).to.match(/json/);
-    expect(response.status).to.equal(200);
-    expect(findStub.called).to.be(true);
-    expect(updateStub.calledWith({
-      id: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
-      state: 'complete'
-    }, {$set: {updatedAt: 1699635246762}})).to.be(true);
-    expect(dateStub.called).to.be(true);
-    findStub.restore();
-    updateStub.restore();
-    dateStub.restore();
-  });
+      expect(response.headers['content-type']).to.match(/json/);
+      expect(response.status).to.equal(200);
+      expect(findStub.called).to.be(true);
+      expect(updateStub.calledWith({
+        id: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
+        state: 'complete'
+      }, {$set: {
+        'variables.results.default': {
+          verifiablePresentation: {
+            '@context': ['https://www.w3.org/2018/credentials/v1'],
+            type: ['VerifiablePresentation'],
+            verifiableCredential: testW3cVcData,
+            holder: 'did:web:verifiedid.contoso.com'
+          }
+        },
+        updatedAt: 1699635246762
+      }})).to.be(true);
+      expect(dateStub.called).to.be(true);
+      findStub.restore();
+      updateStub.restore();
+      dateStub.restore();
+    });
 });
