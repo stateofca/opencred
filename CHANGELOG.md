@@ -5,6 +5,11 @@
 ### Changed
 - New config variables.
 
+### Added
+- Add `openid-configuration` and JWKS endpoints
+- Configure `prime256v1` EC keys for JWT signing
+- Sign `id_tokens` to complete OpenID Connect Login flow
+
 ## 4.0.1 - 2023-11-16
 
 ### Fixed
