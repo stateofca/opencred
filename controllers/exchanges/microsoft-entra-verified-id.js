@@ -144,7 +144,6 @@ const verificationCallback = async (req, res) => {
   const verificationStatus = req.body.requestStatus;
   const subject = req.body.subject;
   const entraVcData = req.body.verifiedCredentialsData;
-  // const credentialState = vcData.credentialState;
   const receipt = req.body.receipt;
   const [authType, authValue] = authHeader ?
     authHeader.split(' ') :
