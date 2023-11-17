@@ -1,5 +1,5 @@
 import {
-  convertJwtVpTokenToW3cVp,
+  convertJwtVpTokenToLdpVp,
   createId
 } from '../../common/utils.js';
 import {config} from '../../config/config.js';
@@ -208,13 +208,13 @@ const verificationCallback = async (req, res) => {
       updatedAt: Date.now()
     }});
   } else if(typeof vpToken === 'string') {
-    const w3cVp = convertJwtVpTokenToW3cVp(vpToken);
+    const ldpVp = convertJwtVpTokenToLdpVp(vpToken);
     await exchanges.updateOne({
       id: requestId,
       state: exchangeState
     }, {$set: {
       'variables.results.final': {
-        verifiablePresentation: w3cVp
+        verifiablePresentation: ldpVp
       },
       updatedAt: Date.now()
     }});

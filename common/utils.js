@@ -22,15 +22,15 @@ const _decodeJwtPayload = jwtToken => {
   return JSON.parse(decodedPayloadString);
 };
 
-const _convertJwtVcTokenToW3cVcs = vcTokens => {
+const _convertJwtVcTokenToLdpVcs = vcTokens => {
   return vcTokens.map(t => _decodeJwtPayload(t).vc);
 };
 
-export const convertJwtVpTokenToW3cVp = vpToken => {
+export const convertJwtVpTokenToLdpVp = vpToken => {
   const decodedVpPayloadWithEncodedVcs = _decodeJwtPayload(vpToken).vp;
   const decodedVpPayload = {
     ...decodedVpPayloadWithEncodedVcs,
-    verifiableCredential: _convertJwtVcTokenToW3cVcs(
+    verifiableCredential: _convertJwtVcTokenToLdpVcs(
       decodedVpPayloadWithEncodedVcs.verifiableCredential
     )
   };
