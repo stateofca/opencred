@@ -1,4 +1,5 @@
 import {verify, verifyCredential} from '@digitalbazaar/vc';
+import base64url from 'base64url';
 import {ConfidentialClientApplication} from '@azure/msal-node';
 import {generateId} from 'bnid';
 import {httpClient} from '@digitalbazaar/http-client';
@@ -13,6 +14,27 @@ export const createId = async (bitLength = 128) => {
     multihash: true
   });
   return id;
+};
+
+const _decodeJwtPayload = jwtToken => {
+  const [, encodedPayloadString] = jwtToken.split('.');
+  const decodedPayloadString = base64url.decode(encodedPayloadString);
+  return JSON.parse(decodedPayloadString);
+};
+
+const _convertJwtVcTokenToW3cVcs = vcTokens => {
+  return vcTokens.map(t => _decodeJwtPayload(t).vc);
+};
+
+export const convertJwtVpTokenToW3cVp = vpToken => {
+  const decodedVpPayloadWithEncodedVcs = _decodeJwtPayload(vpToken).vp;
+  const decodedVpPayload = {
+    ...decodedVpPayloadWithEncodedVcs,
+    verifiableCredential: _convertJwtVcTokenToW3cVcs(
+      decodedVpPayloadWithEncodedVcs.verifiableCredential
+    )
+  };
+  return decodedVpPayload;
 };
 
 // Verify Utilities

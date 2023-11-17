@@ -1,5 +1,8 @@
+import {
+  convertJwtVpTokenToW3cVp,
+  createId
+} from '../../common/utils.js';
 import {config} from '../../config/config.js';
-import {createId} from '../../common/utils.js';
 import {exchanges} from '../../common/database.js';
 import {msalUtils} from '../../common/utils.js';
 
@@ -133,22 +136,6 @@ const createExchange = async (req, res, next) => {
   next();
 };
 
-const _convertEntraVcDataToW3cVcData = entraVcData => {
-  return entraVcData.map(vcData => {
-    return {
-      '@context': [
-        'https://www.w3.org/2018/credentials/v1',
-        {'@vocab': 'https://schema.org'}
-      ],
-      type: vcData.type,
-      issuer: vcData.issuer,
-      issuanceDate: vcData.issuanceDate,
-      expirationDate: vcData.expirationDate,
-      credentialSubject: vcData.claims
-    };
-  });
-};
-
 const verificationCallback = async (req, res) => {
   const authHeader = req.headers.authorization;
   // NOTE: Since we do not receive the state back from
@@ -157,8 +144,6 @@ const verificationCallback = async (req, res) => {
   // Hence, we cannot use this and instead use requestId.
   const requestId = req.body.requestId;
   const verificationStatus = req.body.requestStatus;
-  const subject = req.body.subject;
-  const entraVcData = req.body.verifiedCredentialsData;
   const receipt = req.body.receipt;
   const [authType, authValue] = authHeader ?
     authHeader.split(' ') :
@@ -211,36 +196,32 @@ const verificationCallback = async (req, res) => {
       );
   }
 
-  if(receipt?.vp_token) {
+  const vpToken = receipt?.vp_token;
+  if(typeof vpToken === 'object') {
     await exchanges.updateOne({
       id: requestId,
       state: exchangeState
     }, {$set: {
       'variables.results.final': {
-        verifiablePresentation: receipt.vp_token
+        verifiablePresentation: vpToken
       },
       updatedAt: Date.now()
     }});
-  } else if(Array.isArray(entraVcData) && entraVcData.length > 0) {
-    const w3cVcData = _convertEntraVcDataToW3cVcData(entraVcData);
+  } else if(typeof vpToken === 'string') {
+    const w3cVp = convertJwtVpTokenToW3cVp(vpToken);
     await exchanges.updateOne({
       id: requestId,
       state: exchangeState
     }, {$set: {
       'variables.results.final': {
-        verifiablePresentation: {
-          '@context': ['https://www.w3.org/2018/credentials/v1'],
-          type: ['VerifiablePresentation'],
-          verifiableCredential: w3cVcData,
-          holder: subject
-        }
+        verifiablePresentation: w3cVp
       },
       updatedAt: Date.now()
     }});
   } else {
     await exchanges.updateOne({
       id: requestId,
-      state: exchangeState
+      state: 'invalid'
     }, {$set: {
       updatedAt: Date.now()
     }});
