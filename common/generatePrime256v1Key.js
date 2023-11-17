@@ -29,9 +29,9 @@ if(import.meta.url === pathToFileURL(process.argv[1]).href) {
       'Use config values:',
       'signingKeys:',
       '  - type: ES256',
-      '    privateKeyPem: >-',
+      '    privateKeyPem: |',
       '      ' + privK.replaceAll('\n', '\n      ').trimEnd(),
-      '    publicKeyPem: >-',
+      '    publicKeyPem: |',
       '      ' + pubK.replaceAll('\n', '\n      ').trimEnd(),
       '    purpose:',
       '      - id_token'
