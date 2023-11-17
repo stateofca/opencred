@@ -3,7 +3,6 @@ import crypto from 'node:crypto';
 import jp from 'jsonpath';
 
 import {config} from '../config/config.js';
-import {domainToDidWeb} from '../controllers/didWeb.js';
 
 /**
  * Generates a JWT id_token from a VP exchange if the exchange is complete.
