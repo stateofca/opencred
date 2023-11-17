@@ -89,7 +89,7 @@ const createExchangeHelper = async rp => {
     const {code: outerCode, outerMessage, innererror} = error;
     const {innerCode, innerMessage, target} = innererror;
     throw new Error(
-      `Request ID - ${requestId}\n`
+      `Request ID - ${requestId}\n    ` +
       `[${outerCode}] ${outerMessage}\n    ` +
       `[${innerCode}${target ? ' - ' + target : ''}] ${innerMessage}\n`
     );
