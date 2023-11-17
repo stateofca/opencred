@@ -15,31 +15,6 @@ const attachClientByQuery = async (req, res, next) => {
   next();
 };
 
-const attachClientByBody = async (req, res, next) => {
-  if(!req.body.client_id) {
-    res.status(400).send({message: 'client_id is required'});
-    return;
-  }
-  const rp = config.relyingParties.find(
-    r => r.clientId == req.body.client_id
-  );
-  if(!rp) {
-    res.status(400).send({message: 'Unknown client_id'});
-  }
-
-  if(!req.body.client_secret) {
-    res.status(400).send({message: 'client_secret is required'});
-    return;
-  }
-  if(rp.clientSecret !== req.body.client_secret) {
-    res.status(400).send({message: 'Invalid client_secret'});
-    return;
-  }
-
-  req.rp = rp;
-  next();
-};
-
 const attachClientByWorkflowId = async (req, res, next) => {
   const rp = config.relyingParties.find(
     r => r.workflow?.id == req.params.workflowId
@@ -58,7 +33,6 @@ export default function(app) {
     '/workflows/:workflowId/exchanges/:exchangeId',
     attachClientByWorkflowId
   );
-  app.post('/token', attachClientByBody);
 
   app.post('/workflows/:workflowId/exchanges', attachClientByWorkflowId);
   app.get(

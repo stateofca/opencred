@@ -1,28 +1,67 @@
+import {config} from '../config/config.js';
 import {getExchange} from './exchanges/native.js';
 
-const getAuthFunction = (basicEnabled, bearerEnabled) => {
+const getAuthFunction = ({basic, bearer, body}) => {
   const ensureAuth = async (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    const parts = authHeader?.split(' ') ?? [];
+
+    if(body && !req.rp) {
+      const body_id = req.body?.client_id;
+      const body_secret = req.body?.client_secret;
+
+      if(body_id && body_secret) {
+        req.rp = config.relyingParties.find(
+          r => r.clientId == body_id && r.clientSecret == body_secret
+        );
+        if(req.rp) {
+          next();
+          return;
+        }
+      }
+    }
+
+    if(basic && !req.rp) {
+      const val = Buffer.from(parts[1], 'base64').toString('utf-8');
+      const authValueParts = val.split(':');
+      if(
+        authValueParts.length !== 2
+      ) {
+        res.status(401).send(
+          {message: 'Malformed Authorization header'}
+        );
+        return;
+      }
+      const clientId = authValueParts[0];
+      const clientSecret = authValueParts[1];
+      req.rp = config.relyingParties.find(
+        r => r.clientId == clientId && r.clientSecret == clientSecret
+      );
+      if(req.rp) {
+        next();
+        return;
+      }
+    }
+
     if(!req.rp) {
-      res.status(500).send(
-        {message: 'Unexpected server error: clientId was not resolved'}
+      res.status(401).send(
+        {message: 'Client ID could not be resolved from request.'}
       );
     }
-    if(!req.headers.authorization) {
+    const clientId = req.rp.clientId;
+    const clientSecret = req.rp.clientSecret;
+
+    if(!body && !req.headers.authorization) {
       res.status(401).send({message: 'Authorization header is required'});
       return;
     }
 
-    const clientId = req.rp.clientId;
-    const clientSecret = req.rp.clientSecret;
-
-    const authHeader = req.headers.authorization;
-    const parts = authHeader.split(' ');
-    if(parts.length !== 2) {
+    if(!body && parts.length !== 2) {
       res.status(401).send(
         {message: 'Invalid Authorization format. Basic or Bearer required'}
       );
       return;
-    } else if(basicEnabled && parts[0] == 'Basic') {
+    } else if(basic && parts[0] == 'Basic') {
       const val = Buffer.from(parts[1], 'base64').toString('utf-8');
       const authValueParts = val.split(':');
       if(
@@ -35,7 +74,7 @@ const getAuthFunction = (basicEnabled, bearerEnabled) => {
         );
         return;
       }
-    } else if(bearerEnabled && parts[0] == 'Bearer') {
+    } else if(bearer && parts[0] == 'Bearer') {
       const exchange = await getExchange(req.params.exchangeId, {
         others: {accessToken: parts[1]}, allowExpired: true
       });
@@ -45,6 +84,16 @@ const getAuthFunction = (basicEnabled, bearerEnabled) => {
       }
       if(!exchange?.challenge || exchange.workflowId !== req.rp.workflow.id) {
         res.status(401).send({message: 'Invalid token'});
+        return;
+      }
+    } else if(body) {
+      if(
+        req.body.client_id !== clientId ||
+        req.body.client_secret !== clientSecret
+      ) {
+        res.status(401).send(
+          {message: 'Malformed token or invalid clientId or clientSecret'}
+        );
         return;
       }
     } else {
@@ -66,8 +115,15 @@ const getAuthFunction = (basicEnabled, bearerEnabled) => {
  * @param {Express} app - Express app instance
  */
 export default function(app) {
-  app.post('/workflows/:workflowId/exchanges', getAuthFunction(true, false));
+  app.post('/workflows/:workflowId/exchanges', getAuthFunction({
+    basic: true, bearer: false, body: false
+  }));
   app.get(
-    '/workflows/:workflowId/exchanges/:exchangeId', getAuthFunction(true, true)
+    '/workflows/:workflowId/exchanges/:exchangeId', getAuthFunction({
+      basic: true, bearer: true, body: false
+    })
   );
+  app.post('/token', getAuthFunction({
+    basic: true, bearer: false, body: true
+  }));
 }

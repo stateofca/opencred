@@ -85,6 +85,16 @@ describe('OAuth Login Workflow', function() {
     dbStub.restore();
   });
 
+  it('should fail for unregistered client ids', async function() {
+    const response = await request(app)
+      .get('/login?client_id=unknown')
+      .set('Accept', 'application/json');
+
+    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.status).to.equal(400);
+    expect(response.body.message).to.equal('Unknown client_id');
+  });
+
   it('should fail for incorrect scopes', async function() {
     const dbStub = sinon.stub(exchanges, 'insertOne');
     dbStub.resolves({insertedId: 'test'});
@@ -239,6 +249,66 @@ describe('OAuth Login Workflow', function() {
     keysStub.restore();
     dbStub.restore();
     updateStub.restore();
+  });
+
+  it('should allow client_secret_basic auth', async function() {
+    const dbStub = sinon.stub(exchanges, 'findOne');
+    dbStub.resolves({
+      _id: 'test',
+      ttl: 900,
+      clientId: 'test',
+      code: 'the-code',
+      variables: {
+        results: {
+          default: {
+            verifiablePresentation: {
+              type: 'VerifiablePresentation',
+              verifiableCredential: [{
+                type: 'VerifiableCredential',
+                credentialSubject: {
+                  id: 'did:example:123',
+                  name: 'Alice'
+                }
+              }]
+            }
+          }
+        }
+      },
+      step: 'default',
+      redirectUri: 'https://example.com',
+      state: 'complete',
+      scope: 'openid'
+    });
+    const updateStub = sinon.stub(exchanges, 'updateOne');
+    updateStub.resolves(undefined);
+
+    const keysStub = sinon.stub(config, 'signingKeys').value([
+      exampleKey
+    ]);
+
+    const response = await request(app)
+      .post('/token')
+      .set('Accept', 'application/json')
+      .set(
+        'Authorization',
+        `Basic ${Buffer.from('test:testsecret').toString('base64')}`
+      )
+      .send(
+        'grant_type=authorization_code&code=the-code' +
+        '&redirect_uri=https%3A%2F%2Fexample.com' +
+        '&scope=openid'
+      );
+    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.status).to.equal(200);
+    expect(response.body.id_token).to.not.be(undefined);
+    expect(response.body.token_type).to.equal('Bearer');
+
+    // Bearer token is included for OAuth2 compliance, but is not used.
+    expect(response.body.access_token).to.equal('NONE');
+
+    keysStub.restore();
+    updateStub.restore();
+    dbStub.restore();
   });
 
   it('Should not yield a token if exchange isn\'t complete', async function() {

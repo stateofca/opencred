@@ -203,11 +203,11 @@ export const openIdConfiguration = async (req, res) => {
     jwks_uri: config.domain + '/.well-known/jwks.json',
 
     grant_types_supported: ['authorization_code'],
-    response_types_supported: ['code', 'code id_token', 'id_token'], // Verify
+    response_types_supported: ['code', 'code id_token'],
     scopes_supported: ['openid'],
     subject_types_supported: ['public'],
     token_endpoint_auth_methods_supported: [
-      // 'client_secret_basic', TODO
+      'client_secret_basic',
       'client_secret_post'
     ],
     id_token_signing_alg_values_supported: ['ES256'],
