@@ -215,7 +215,7 @@ const verificationCallback = async (req, res) => {
       id: requestId,
       state: exchangeState
     }, {$set: {
-      'variables.results.default': {
+      'variables.results.final': {
         verifiablePresentation: receipt.vp_token
       },
       updatedAt: Date.now()
@@ -226,7 +226,7 @@ const verificationCallback = async (req, res) => {
       id: requestId,
       state: exchangeState
     }, {$set: {
-      'variables.results.default': {
+      'variables.results.final': {
         verifiablePresentation: {
           '@context': ['https://www.w3.org/2018/credentials/v1'],
           type: ['VerifiablePresentation'],

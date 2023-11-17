@@ -342,7 +342,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
         id: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
         state: 'complete'
       }, {$set: {
-        'variables.results.default': {
+        'variables.results.final': {
           verifiablePresentation: testVpToken
         },
         updatedAt: 1699635246762
@@ -419,7 +419,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
         id: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
         state: 'complete'
       }, {$set: {
-        'variables.results.default': {
+        'variables.results.final': {
           verifiablePresentation: {
             '@context': ['https://www.w3.org/2018/credentials/v1'],
             type: ['VerifiablePresentation'],
