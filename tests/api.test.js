@@ -384,7 +384,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
       const testW3cVcData = [{
         '@context': [
           'https://www.w3.org/2018/credentials/v1',
-          // TODO - need additional context for claims
+          {'@vocab': 'https://schema.org'}
         ],
         type: [
           'VerifiableCredential',
