@@ -78,11 +78,23 @@ const createExchangeHelper = async rp => {
   };
 
   const msalClient = msalUtils.getMsalClient(rp);
-  const {data: {requestId, url, expiry}} = await msalUtils.makeHttpPostRequest({
+  const {data} = await msalUtils.makeHttpPostRequest({
     msalClient,
     url: `${apiBaseUrl}/verifiableCredentials/createPresentationRequest`,
     data: verificationPayload
   });
+
+  if(data.error) {
+    const error = data.error;
+    const {code: outerCode, outerMessage, innererror} = error;
+    const {innerCode, innerMessage, target} = innererror;
+    throw new Error(
+      `[${outerCode}] ${outerMessage}\n    ` +
+      `[${innerCode}${target ? ' - ' + target : ''}] ${innerMessage}\n`
+    );
+  }
+
+  const {requestId, url, expiry} = data;
 
   const now = Date.now();
   const ttl = Math.floor((expiry - now) / 1000);
@@ -112,7 +124,9 @@ const createExchange = async (req, res, next) => {
   try {
     req.exchange = await createExchangeHelper(rp);
   } catch(error) {
-    res.status(500).send({message: 'Error creating exchange'});
+    res.status(500).send({
+      message: 'Error creating exchange:\n' + error.message
+    });
     return;
   }
   next();
