@@ -308,3 +308,42 @@ describe('JWKS Endpoint', function() {
     signingKeyStub.restore();
   });
 });
+
+describe('Open ID Connect Configuration Endpoint', function() {
+  this.beforeEach(() => {
+    this.signingKeyStub = sinon.stub(config, 'signingKeys').value([]);
+  });
+
+  this.afterEach(() => {
+    this.signingKeyStub.restore();
+  });
+
+  it('should return Open ID service discovery info', async function() {
+    const response = await request(app)
+      .get('/.well-known/openid-configuration')
+      .set('Accept', 'application/json');
+
+    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.status).to.equal(200);
+    expect(response.body.issuer).to.equal(config.domain);
+  });
+
+  it('should report what languages are available', async function() {
+    const translationsStub = sinon.stub(config, 'translations').value({
+      en: {},
+      fr: {},
+      de: {}
+    });
+    const response = await request(app)
+      .get('/.well-known/openid-configuration')
+      .set('Accept', 'application/json');
+
+    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.status).to.equal(200);
+    expect(response.body.ui_locales_supported).to.be.an(Array);
+    expect(response.body.ui_locales_supported.length).to.equal(3);
+    expect(response.body.ui_locales_supported).to.contain('en');
+
+    translationsStub.restore();
+  });
+});

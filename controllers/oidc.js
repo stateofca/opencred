@@ -194,3 +194,33 @@ export const jwksEndpoint = async (req, res) => {
     keys: jwks
   });
 };
+
+export const openIdConfiguration = async (req, res) => {
+  const info = {
+    issuer: config.domain,
+    authorization_endpoint: config.domain + '/login',
+    token_endpoint: config.domain + '/token',
+    jwks_uri: config.domain + '/.well-known/jwks.json',
+
+    grant_types_supported: ['authorization_code'],
+    response_types_supported: ['code', 'code id_token', 'id_token'], // Verify
+    scopes_supported: ['openid'],
+    subject_types_supported: ['public'],
+    token_endpoint_auth_methods_supported: [
+      // 'client_secret_basic', TODO
+      'client_secret_post'
+    ],
+    id_token_signing_alg_values_supported: ['ES256'],
+
+    request_parameter_supported: false,
+    request_uri_parameter_supported: false,
+    request_object_signing_alg_values_supported: ['none'],
+    display_values_supported: ['page', 'touch'],
+    claim_types_supported: ['normal'],
+    claims_parameter_supported: false,
+    service_documentation: 'https://github.com/digitalbazaar/opencred-platform',
+    ui_locales_supported: Object.keys(config.translations)
+  };
+
+  res.send(info);
+};
