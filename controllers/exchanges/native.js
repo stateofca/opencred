@@ -1,7 +1,7 @@
 import {
+  convertJwtVpTokenToLdpVp,
   createId,
-  normalizeVpTokenDataIntegrity,
-  normalizeVpTokenJWT
+  normalizeVpTokenDataIntegrity
 } from '../../common/utils.js';
 import {config} from '../../config/config.js';
 import {exchanges} from '../../common/database.js';
@@ -77,6 +77,7 @@ export const createNativeExchange = async (req, res, next) => {
 export const verifySubmission = async (vp_token, submission, exchange) => {
   let errors = [];
   let vpVerified = false;
+  let vp;
   const documentLoader = getDocumentLoader().build();
   const {presentation_definition} = exchange.variables.authorizationRequest;
   if(submission.definition_id !== presentation_definition.id) {
@@ -94,27 +95,16 @@ export const verifySubmission = async (vp_token, submission, exchange) => {
       if(!submitted) {
         errors.push(`Submission not found for input descriptor`);
       } else if(submitted.format === 'jwt_vc_json') {
-        const vp = normalizeVpTokenJWT(vp_token)[0];
+        vp = convertJwtVpTokenToLdpVp(vp_token);
         if(!vpVerified) {
-          const result = await verifyUtils.verifyJWT(vp.jwt);
+          const result = await verifyUtils.verifyJWT(vp_token);
           if(!result.verified) {
             errors = [...errors, ...result.errors];
           }
           vpVerified = true;
         }
-        const vc = jp.query(vp.payload, submitted.path_nested.path)[0];
-        console.log(vc, submitted.path_nested.path);
-        // const result = await verifyUtils.verifyJWT({
-        //   credential: vc,
-        //   documentLoader,
-        //   suite: SUITES,
-        // });
-        // if(!result.verified) {
-        //   errors.push(result.error);
-        // }
-        // console.log(vp);
       } else if(submitted.format === 'ldp_vp') {
-        const vp = normalizeVpTokenDataIntegrity(vp_token)[0];
+        vp = normalizeVpTokenDataIntegrity(vp_token)[0];
         if(!vpVerified) {
           const result = await verifyUtils.verifyDataIntegrity({
             presentation: vp,
@@ -145,7 +135,7 @@ export const verifySubmission = async (vp_token, submission, exchange) => {
     console.error('errors: ', errors);
     return {errors, verified: false};
   }
-  return {errors, verified: true};
+  return {errors, verified: true, verifiablePresentation: vp};
 };
 
 export default function(app) {
@@ -241,7 +231,7 @@ export default function(app) {
       const submission = typeof req.body.presentation_submission === 'string' ?
         JSON.parse(req.body.presentation_submission) :
         req.body.presentation_submission;
-      const {verified, errors} = await verifySubmission(
+      const {verified, errors, verifiablePresentation} = await verifySubmission(
         req.body.vp_token, submission, exchange
       );
       if(verified) {
@@ -256,8 +246,8 @@ export default function(app) {
             },
             variables: {
               results: {
-                'templated-vpr': {
-                  verifiablePresentation: req.body.vp_token
+                [exchange.step]: {
+                  verifiablePresentation
                 }
               }
             }

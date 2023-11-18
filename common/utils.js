@@ -39,32 +39,6 @@ export const convertJwtVpTokenToLdpVp = vpToken => {
   return decodedVpPayload;
 };
 
-export const normalizeVpTokenJWT = vpToken => {
-  if(typeof vpToken === 'string') {
-    try {
-      const parts = vpToken.split('.');
-      return [{
-        header: JSON.parse(
-          Buffer.from(parts[0], 'base64url').toString('utf-8')
-        ),
-        payload: JSON.parse(
-          Buffer.from(parts[1], 'base64url').toString('utf-8')
-        ),
-        jwt: vpToken
-      }];
-    } catch(e) {
-      return null;
-    }
-  }
-
-  if(Array.isArray(vpToken)) {
-    return vpToken.flatMap(item => normalizeVpTokenJWT(item));
-  }
-
-  console.error('vp_token format is not recognized.');
-  return null;
-};
-
 export const normalizeVpTokenDataIntegrity = vpToken => {
   if(typeof vpToken === 'string') {
     try {
@@ -82,8 +56,7 @@ export const normalizeVpTokenDataIntegrity = vpToken => {
     return vpToken.map(item => {
       if(typeof item === 'string') {
         try {
-          const buffer = Buffer.from(item, 'base64');
-          return JSON.parse(buffer.toString('utf8'));
+          return JSON.parse(base64url.decode(item));
         } catch(e) {
           console.error('vp_token contains invalid Base64 encoded JSON.');
           return null;

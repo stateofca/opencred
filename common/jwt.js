@@ -39,7 +39,7 @@ export const jwtFromExchange = async (exchange, rp) => {
   };
 
   const stepResultKey = Object.keys(exchange.variables.results).find(
-    v => v == exchange.step || v == 'templated-vpr'
+    v => v == exchange.step
   );
   const stepResults = exchange.variables.results[stepResultKey];
   const c = jp.query(
