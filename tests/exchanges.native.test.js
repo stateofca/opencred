@@ -21,27 +21,31 @@ const rp = {
 
 describe('Exchanges (Native)', async () => {
   let vp_token;
-  let submission;
+  let presentation_submission;
   let exchange;
   let verifyStub;
   let verifyCredentialStub;
   let dbStub;
 
   before(() => {
-    vp_token = JSON.parse(fs.readFileSync(
-      './tests/fixtures/vp_token.json'));
-    submission = JSON.parse(fs.readFileSync(
-      './tests/fixtures/submission.json'));
+    const oid4vp = JSON.parse(fs.readFileSync(
+      './tests/fixtures/oid4vp_di.json'));
+    vp_token = oid4vp.vp_token;
+    presentation_submission = oid4vp.presentation_submission;
     exchange = JSON.parse(fs.readFileSync(
       './tests/fixtures/exchange.json'));
+    exchange.createdAt = new Date(exchange.createdAt);
+    exchange.recordExpiresAt = new Date(exchange.recordExpiresAt);
     dbStub = sinon.stub(exchanges, 'insertOne')
       .resolves({insertedId: 'test'});
     sinon.stub(getDocumentLoader(), 'build')
       .returns(() => {
         return Promise.resolve({/* mock resolved value */});
       });
-    verifyStub = sinon.stub(verifyUtils, 'verify').resolves({verified: true});
-    verifyCredentialStub = sinon.stub(verifyUtils, 'verifyCredential')
+    verifyStub = sinon.stub(verifyUtils, 'verifyDataIntegrity')
+      .resolves({verified: true});
+    verifyCredentialStub = sinon.stub(
+      verifyUtils, 'verifyCredentialDataIntegrity')
       .resolves({verified: true});
   });
 
@@ -84,7 +88,9 @@ describe('Exchanges (Native)', async () => {
   });
 
   it('should verify a submission and return verified true', async () => {
-    const result = await verifySubmission(vp_token, submission, exchange);
+    const result = await verifySubmission(
+      vp_token, presentation_submission, exchange
+    );
 
     expect(verifyStub.called).to.be.true;
     expect(verifyCredentialStub.called).to.be.true;
@@ -93,8 +99,10 @@ describe('Exchanges (Native)', async () => {
   });
 
   it('should return an error if definition_id does not match', async () => {
-    submission.definition_id = 'incorrect';
-    const result = await verifySubmission(vp_token, submission, exchange);
+    presentation_submission.definition_id = 'incorrect';
+    const result = await verifySubmission(
+      vp_token, presentation_submission, exchange
+    );
 
     expect(verifyStub.called).to.be.false;
     expect(verifyCredentialStub.called).to.be.false;
@@ -104,9 +112,11 @@ describe('Exchanges (Native)', async () => {
 
   it('should return an error if vp invalid', async () => {
     verifyStub.restore();
-    verifyStub = sinon.stub(verifyUtils, 'verify')
+    verifyStub = sinon.stub(verifyUtils, 'verifyDataIntegrity')
       .resolves({verified: false, error: 'invalid vp'});
-    const result = await verifySubmission(vp_token, submission, exchange);
+    const result = await verifySubmission(
+      vp_token, presentation_submission, exchange
+    );
 
     expect(verifyStub.called).to.be.true;
     expect(verifyCredentialStub.called).to.be.false;
@@ -116,9 +126,12 @@ describe('Exchanges (Native)', async () => {
 
   it('should return an error if vc invalid', async () => {
     verifyCredentialStub.restore();
-    verifyCredentialStub = sinon.stub(verifyUtils, 'verifyCredential')
+    verifyCredentialStub = sinon.stub(
+      verifyUtils, 'verifyCredentialDataIntegrity')
       .resolves({verified: false, error: 'invalid vc'});
-    const result = await verifySubmission(vp_token, submission, exchange);
+    const result = await verifySubmission(
+      vp_token, presentation_submission, exchange
+    );
 
     expect(verifyStub.called).to.be.true;
     expect(verifyCredentialStub.called).to.be.true;
@@ -126,4 +139,3 @@ describe('Exchanges (Native)', async () => {
     expect(result.errors.length).to.be.greaterThan(0);
   });
 });
-

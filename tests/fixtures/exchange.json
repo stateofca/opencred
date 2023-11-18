@@ -3,6 +3,8 @@
   "sequence": 0,
   "ttl": 900,
   "state": "pending",
+  "accessToken": "z19k6s2E9wr30gb56t789AmFS",
+  "workflowId": "testworkflow",
   "variables": {
     "authorizationRequest": {
       "response_type": "vp_token",
@@ -55,5 +57,7 @@
     }
   },
   "step": "default",
-  "challenge": "z1A6a4Ej1rWXdLfNjJUymAF31"
+  "challenge": "z1A6a4Ej1rWXdLfNjJUymAF31",
+  "createdAt": "2023-11-14T18:56:39.859+00:00",
+  "recordExpiresAt": "2023-11-14T18:56:39.859+00:00"
 }

@@ -1,6 +1,7 @@
 import * as sinon from 'sinon';
-import {describe, it} from 'mocha';
+import {before, describe, it} from 'mocha';
 import expect from 'expect.js';
+import fs from 'node:fs';
 import request from 'supertest';
 import {UnsecuredJWT} from 'jose';
 import {zcapClient} from '../common/zcap.js';
@@ -43,24 +44,37 @@ const testRP = {
   scopes: [{name: 'openid'}],
 };
 
-const testEx = {
-  id: 'abc123456',
-  sequence: 0,
-  ttl: 900,
-  state: 'pending',
-  variables: {},
-  step: 'waiting',
-  challenge: 'parkour',
-  workflowId: testRP.workflow.id,
-  accessToken: 'opensesame2023',
-  createdAt: new Date(),
-  oidc: {
-    state: 'abc123',
-    code: null
-  }
-};
+const exchange = JSON.parse(fs.readFileSync(
+  './tests/fixtures/exchange.json'
+));
+exchange.createdAt = new Date();
+exchange.recordExpiresAt = new Date();
 
 describe('OpenCred API - Native Workflow', function() {
+  let vp_token_di;
+  let presentation_submission_di;
+  let vp_token_jwt;
+  let presentation_submission_jwt;
+  let exchange_jwt;
+
+  before(() => {
+    const di = JSON.parse(fs.readFileSync(
+      './tests/fixtures/oid4vp_di.json'
+    ));
+    vp_token_di = di.vp_token;
+    presentation_submission_di = di.presentation_submission;
+    const jwt = JSON.parse(fs.readFileSync(
+      './tests/fixtures/oid4vp_jwt.json'
+    ));
+    vp_token_jwt = jwt.vp_token;
+    presentation_submission_jwt = jwt.presentation_submission;
+    exchange_jwt = {
+      ...jwt.exchange,
+      createdAt: new Date(),
+      recordExpiresAt: new Date()
+    };
+  });
+
   this.beforeEach(() => {
     this.rpStub = sinon.stub(config, 'relyingParties').value([testRP]);
   });
@@ -71,7 +85,7 @@ describe('OpenCred API - Native Workflow', function() {
 
   it('should return 404 for unknown workflow id', async function() {
     const findStub = sinon.stub(exchanges, 'findOne').resolves(
-      testEx
+      exchange
     );
     const response = await request(app)
       .post(`/workflows/not-the-${testRP.workflow.id}/exchanges`)
@@ -147,25 +161,24 @@ describe('OpenCred API - Native Workflow', function() {
 
   it('should return status on exchange', async function() {
     const findStub = sinon.stub(exchanges, 'findOne').resolves(
-      testEx
+      exchange
     );
     const response = await request(app)
-      .get(`/workflows/${testRP.workflow.id}/exchanges/${testEx.id}`)
+      .get(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}`)
       .set(
-        'Authorization', `Bearer ${testEx.accessToken}`
+        'Authorization', `Bearer ${exchange.accessToken}`
       );
 
     expect(response.headers['content-type']).to.match(/json/);
     expect(response.status).to.equal(200);
-    expect(response.body.exchange.id).to.equal(testEx.id);
+    expect(response.body.exchange.id).to.equal(exchange.id);
     findStub.restore();
   });
 
   it('should allow POST to exchange endpoint', async function() {
-    const findStub = sinon.stub(exchanges, 'findOne').resolves(testEx);
-    // console.error(`/workflows/${testRP.workflow.id}/exchanges/${testEx.id}`)
+    const findStub = sinon.stub(exchanges, 'findOne').resolves(exchange);
     const response = await request(app)
-      .post(`/workflows/${testRP.workflow.id}/exchanges/${testEx.id}`)
+      .post(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}`)
       .send()
       .set('Accept', 'application/json');
 
@@ -176,15 +189,65 @@ describe('OpenCred API - Native Workflow', function() {
 
   it('should 404 on POST to exchange endpoint if expired', async function() {
     const findStub = sinon.stub(exchanges, 'findOne').resolves({
-      ...testEx, createdAt: new Date(new Date().getTime() - 1000 * 1000)
+      ...exchange, createdAt: new Date(new Date().getTime() - 1000 * 1000)
     });
     const response = await request(app)
-      .post(`/workflows/${testRP.workflow.id}/exchanges/${testEx.id}`)
+      .post(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}`)
       .send()
       .set('Accept', 'application/json');
 
     expect(response.status).to.equal(404);
     findStub.restore();
+  });
+
+  it('OID4VP should handle DI authorization response', async function() {
+    const findStub = sinon.stub(exchanges, 'findOne').resolves(exchange);
+    const updateStub = sinon.stub(exchanges, 'updateOne');
+    const response = await request(app)
+      .post(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}/` +
+        'openid/client/authorization/response')
+      .send({
+        vp_token: vp_token_di,
+        presentation_submission: presentation_submission_di
+      });
+
+    expect(response.status).to.equal(204);
+    findStub.restore();
+    updateStub.restore();
+  });
+
+  it('OID4VP should handle DI authorization response', async function() {
+    const findStub = sinon.stub(exchanges, 'findOne').resolves(exchange);
+    const updateStub = sinon.stub(exchanges, 'updateOne');
+    const response = await request(app)
+      .post(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}/` +
+        'openid/client/authorization/response')
+      .send({
+        vp_token: vp_token_di,
+        presentation_submission: presentation_submission_di
+      });
+
+    expect(response.status).to.equal(204);
+    findStub.restore();
+    updateStub.restore();
+  });
+
+  it('OID4VP should handle JWT authorization response', async function() {
+    const findStub = sinon.stub(exchanges, 'findOne').resolves(
+      exchange_jwt
+    );
+    const updateStub = sinon.stub(exchanges, 'updateOne');
+    const response = await request(app)
+      .post(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}/` +
+        'openid/client/authorization/response')
+      .send({
+        vp_token: vp_token_jwt,
+        presentation_submission: presentation_submission_jwt
+      });
+
+    findStub.restore();
+    updateStub.restore();
+    expect(response.status).to.equal(204);
   });
 });
 
@@ -234,19 +297,19 @@ describe('OpenCred API - VC-API Workflow', function() {
 
   it('should return status on exchange', async function() {
     const findStub = sinon.stub(exchanges, 'findOne').resolves(
-      testEx
+      exchange
     );
     const zcapStub = sinon.stub(zcapClient, 'zcapReadRequest')
-      .resolves({data: testEx});
+      .resolves({data: exchange});
     const response = await request(app)
-      .get(`/workflows/${testRP.workflow.id}/exchanges/${testEx.id}`)
+      .get(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}`)
       .set(
-        'Authorization', `Bearer ${testEx.accessToken}`
+        'Authorization', `Bearer ${exchange.accessToken}`
       );
 
     expect(response.headers['content-type']).to.match(/json/);
     expect(response.status).to.equal(200);
-    expect(response.body.exchange.id).to.equal(testEx.id);
+    expect(response.body.exchange.id).to.equal(exchange.id);
     findStub.restore();
     zcapStub.restore();
   });
@@ -313,24 +376,24 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
 
   it('should return status on exchange', async function() {
     const findStub = sinon.stub(exchanges, 'findOne').resolves(
-      testEx
+      exchange
     );
     const response = await request(app)
-      .get(`/workflows/${testRP.workflow.id}/exchanges/${testEx.id}`)
+      .get(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}`)
       .set(
-        'Authorization', `Bearer ${testEx.accessToken}`
+        'Authorization', `Bearer ${exchange.accessToken}`
       );
 
     expect(response.headers['content-type']).to.match(/json/);
     expect(response.status).to.equal(200);
-    expect(response.body.exchange.id).to.equal(testEx.id);
+    expect(response.body.exchange.id).to.equal(exchange.id);
     findStub.restore();
   });
 
   it('should update exchange status after verification with object vp token',
     async function() {
       const findStub = sinon.stub(exchanges, 'findOne').resolves(
-        testEx
+        exchange
       );
       const updateStub = sinon.stub(exchanges, 'updateOne').resolves();
       const dateStub = sinon.stub(Date, 'now').returns(1699635246762);
@@ -385,7 +448,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
       const response = await request(app)
         .post('/verification/callback')
         .set(
-          'Authorization', `Bearer ${testEx.accessToken}`
+          'Authorization', `Bearer ${exchange.accessToken}`
         )
         .send({
           requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
@@ -417,7 +480,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
   it('should update exchange status after verification with string vp token',
     async function() {
       const findStub = sinon.stub(exchanges, 'findOne').resolves(
-        testEx
+        exchange
       );
       const updateStub = sinon.stub(exchanges, 'updateOne').resolves();
       const dateStub = sinon.stub(Date, 'now').returns(1699635246762);
@@ -515,7 +578,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
       const response = await request(app)
         .post('/verification/callback')
         .set(
-          'Authorization', `Bearer ${testEx.accessToken}`
+          'Authorization', `Bearer ${exchange.accessToken}`
         )
         .send({
           requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',

@@ -1,0 +1,80 @@
+{
+  "exchange": {
+    "id": "z19k6s2E9wr29gb56t789AmFS",
+    "sequence": 0,
+    "ttl": 900,
+    "state": "pending",
+    "accessToken": "z19k6s2E9wr30gb56t789AmFS",
+    "workflowId": "testworkflow",
+    "variables": {
+      "authorizationRequest": {
+        "response_type": "vp_token",
+        "presentation_definition": {
+          "id": "ac1ced75-e910-440d-9c00-a3c0d1dfe379",
+          "input_descriptors": [
+            {
+              "id": "c65236cb-89a3-4177-8a56-23d239b4f9a8",
+              "constraints": {
+                "fields": [
+                  {
+                    "path": "$['@context']",
+                    "filter": {
+                      "type": "array",
+                      "contains": [
+                        {
+                          "type": "string",
+                          "const": "https://www.w3.org/2018/credentials/v1"
+                        },
+                        {
+                          "type": "string",
+                          "const": "https://identity.foundation/.well-known/did-configuration/v1"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "path": "$['type']",
+                    "filter": {
+                      "type": "array",
+                      "contains": [
+                        {
+                          "type": "string",
+                          "const": "DomainLinkageCredential"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "response_mode": "direct_post",
+        "client_id": "http://localhost:8080/workflows/default/exchanges/z19k6s2E9wr29gb56t789AmFS/openid/client/authorization/response",
+        "client_id_scheme": "redirect_uri",
+        "response_uri": "http://localhost:8080/workflows/default/exchanges/z19k6s2E9wr29gb56t789AmFS/openid/client/authorization/response",
+        "nonce": "z19k6s2E9wr29gb56t789AmFS"
+      }
+    },
+    "step": "default",
+    "challenge": "z1A6a4Ej1rWXdLfNjJUymAF31",
+    "createdAt": "2023-11-14T18:56:39.859+00:00",
+    "recordExpiresAt": "2023-11-14T18:56:39.859+00:00"
+  },
+  "vp_token": "eyJhbGciOiJFZERTQSJ9.eyJleHAiOjE3NjQ4Nzg5MDgsImlzcyI6ImRpZDprZXk6ejZNa29USHNnTk5yYnk4SnpDTlExaVJMeVc1UVE2UjhYdXU2QUE4aWdHck1WUFVNIiwibmJmIjoxNjA3MTEyNTA4LCJzdWIiOiJkaWQ6a2V5Ono2TWtvVEhzZ05OcmJ5OEp6Q05RMWlSTHlXNVFRNlI4WHV1NkFBOGlnR3JNVlBVTSIsInZjIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIiwiaHR0cHM6Ly9pZGVudGl0eS5mb3VuZGF0aW9uLy53ZWxsLWtub3duL2RpZC1jb25maWd1cmF0aW9uL3YxIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7ImlkIjoiZGlkOmtleTp6Nk1rb1RIc2dOTnJieThKekNOUTFpUkx5VzVRUTZSOFh1dTZBQThpZ0dyTVZQVU0iLCJvcmlnaW4iOiJpZGVudGl0eS5mb3VuZGF0aW9uIn0sImV4cGlyYXRpb25EYXRlIjoiMjAyNS0xMi0wNFQxNDowODoyOC0wNjowMCIsImlzc3VhbmNlRGF0ZSI6IjIwMjAtMTItMDRUMTQ6MDg6MjgtMDY6MDAiLCJpc3N1ZXIiOiJkaWQ6a2V5Ono2TWtvVEhzZ05OcmJ5OEp6Q05RMWlSTHlXNVFRNlI4WHV1NkFBOGlnR3JNVlBVTSIsInR5cGUiOlsiVmVyaWZpYWJsZUNyZWRlbnRpYWwiLCJEb21haW5MaW5rYWdlQ3JlZGVudGlhbCJdfX0.6ovgQ-T_rmYueviySqXhzMzgqJMAizOGUKAObQr2iikoRNsb8DHfna4rh1puwWqYwgT3QJVpzdO_xZARAYM9Dw",
+  "presentation_submission": {
+    "id": "018815e8-358c-40f2-9648-2edee6908ac4",
+    "definition_id": "ac1ced75-e910-440d-9c00-a3c0d1dfe379",
+    "descriptor_map": [
+      {
+        "id": "c65236cb-89a3-4177-8a56-23d239b4f9a8",
+        "path": "$",
+        "format": "jwt_vc_json",
+        "path_nested": {
+          "format": "jwt_vc_json",
+          "path": "$.vc"
+        }
+      }
+    ]
+  }
+}

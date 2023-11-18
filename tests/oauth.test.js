@@ -128,7 +128,7 @@ describe('OAuth Login Workflow', function() {
     expect(response.status).to.equal(200);
     expect(response.text).to.be.a('string');
     expect(
-      response.text.includes('openid4vp://authorize?'))
+      response.text.includes('openid4vp://?'))
       .to.be(true);
 
     dbStub.restore();

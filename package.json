@@ -49,6 +49,7 @@
     "credentials-context": "^2.0.0",
     "crypto-ld": "^7.0.0",
     "did-context": "^3.1.1",
+    "did-jwt-vc": "^3.2.14",
     "dotenv": "^16.0.1",
     "ed25519-signature-2020-context": "^1.1.0",
     "errorhandler": "^1.5.1",

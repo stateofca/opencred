@@ -1,5 +1,9 @@
+import {
+  createId,
+  normalizeVpTokenDataIntegrity,
+  normalizeVpTokenJWT
+} from '../../common/utils.js';
 import {config} from '../../config/config.js';
-import {createId} from '../../common/utils.js';
 import {exchanges} from '../../common/database.js';
 import {getDocumentLoader} from '../../common/documentLoader.js';
 import jp from 'jsonpath';
@@ -39,8 +43,8 @@ export const createExchange = async (domain, workflow, oidcState = '') => {
     client_id: `${vcapi}/openid/client/authorization/response`,
     request_uri: authzReqUrl
   });
-  const OID4VP = 'openid4vp://authorize?' + searchParams.toString();
-  return {id, vcapi, OID4VP, accessToken, workflowId, oidc};
+  const OID4VP = 'openid4vp://?' + searchParams.toString();
+  return {id, vcapi, OID4VP, accessToken, workflowId};
 };
 
 export const getExchange = async (id, {others, allowExpired} = {
@@ -71,7 +75,7 @@ export const createNativeExchange = async (req, res, next) => {
 };
 
 export const verifySubmission = async (vp_token, submission, exchange) => {
-  const errors = [];
+  let errors = [];
   let vpVerified = false;
   const documentLoader = getDocumentLoader().build();
   const {presentation_definition} = exchange.variables.authorizationRequest;
@@ -89,21 +93,42 @@ export const verifySubmission = async (vp_token, submission, exchange) => {
         .find(d => d.id === descriptor.id);
       if(!submitted) {
         errors.push(`Submission not found for input descriptor`);
-      } else if(submitted.format === 'ldp_vp') {
+      } else if(submitted.format === 'jwt_vc_json') {
+        const vp = normalizeVpTokenJWT(vp_token)[0];
         if(!vpVerified) {
-          const result = await verifyUtils.verify({
-            presentation: vp_token,
+          const result = await verifyUtils.verifyJWT(vp.jwt);
+          if(!result.verified) {
+            errors = [...errors, ...result.errors];
+          }
+          vpVerified = true;
+        }
+        const vc = jp.query(vp.payload, submitted.path_nested.path)[0];
+        console.log(vc, submitted.path_nested.path);
+        // const result = await verifyUtils.verifyJWT({
+        //   credential: vc,
+        //   documentLoader,
+        //   suite: SUITES,
+        // });
+        // if(!result.verified) {
+        //   errors.push(result.error);
+        // }
+        // console.log(vp);
+      } else if(submitted.format === 'ldp_vp') {
+        const vp = normalizeVpTokenDataIntegrity(vp_token)[0];
+        if(!vpVerified) {
+          const result = await verifyUtils.verifyDataIntegrity({
+            presentation: vp,
             documentLoader,
             suite: SUITES,
-            challenge: vp_token.proof.challenge
+            challenge: exchange.id
           });
           if(!result.verified) {
             errors.push(result.error);
           }
           vpVerified = true;
         }
-        const vc = jp.query(vp_token, submitted.path_nested.path)[0];
-        const result = await verifyUtils.verifyCredential({
+        const vc = jp.query(vp, submitted.path_nested.path)[0];
+        const result = await verifyUtils.verifyCredentialDataIntegrity({
           credential: vc,
           documentLoader,
           suite: SUITES,
@@ -154,26 +179,46 @@ export default function(app) {
       res.status(400).send(`Exchange in state ${exchange.state}`);
       return;
     }
-    const step = req.rp.workflow.steps[exchange.step];
+    try {
+      const step = req.rp.workflow.steps[exchange.step];
 
-    const vpr = JSON.parse(step.verifiablePresentationRequest);
-    vpr.domain = `${config.domain}${
-      req.originalUrl.replace('request', 'response')}`;
-    vpr.challenge = exchange.id;
+      const vpr = JSON.parse(step.verifiablePresentationRequest);
+      vpr.domain = `${config.domain}${
+        req.originalUrl.replace('request', 'response')}`;
+      vpr.challenge = exchange.id;
 
-    const authorizationRequest = {
-      ...oid4vp.fromVpr({verifiablePresentationRequest: vpr}),
-      client_id: vpr.domain,
-    };
-    await exchanges.updateOne({id: exchange.id}, {
-      $set: {
-        'variables.authorizationRequest': authorizationRequest,
-        updatedAt: Date.now()
-      }
-    });
-    const jwt = new UnsecuredJWT(authorizationRequest).encode();
-    res.set('Content-Type', 'application/oauth-authz-req+jwt');
-    res.send(jwt);
+      const authorizationRequest = {
+        ...oid4vp.fromVpr({verifiablePresentationRequest: vpr}),
+        presentation_definition: {
+          id: 'ea905a29-0f82-4ccd-961d-27d752d88a94',
+          input_descriptors: [
+            {
+              id: '9157b16b-ff34-4cf7-a944-a2c41dc5a31e',
+              name: 'Iso18013DriversLicenseCredential',
+              schema: [
+                {
+                  uri: 'Iso18013DriversLicenseCredential'
+                }
+              ]
+            }
+          ]
+        },
+        client_id: vpr.domain,
+      };
+
+      await exchanges.updateOne({id: exchange.id}, {
+        $set: {
+          'variables.authorizationRequest': authorizationRequest,
+          updatedAt: Date.now()
+        }
+      });
+      const jwt = new UnsecuredJWT(authorizationRequest).encode();
+      res.set('Content-Type', 'application/oauth-authz-req+jwt');
+      res.send(jwt);
+    } catch(e) {
+      console.error(e);
+      res.sendStatus(500);
+    }
     return;
   });
 
@@ -184,6 +229,7 @@ export default function(app) {
       res.sendStatus(404);
       return;
     }
+
     if(exchange.state !== 'pending') {
       await exchanges.updateOne({
         id: exchange.id
@@ -192,20 +238,17 @@ export default function(app) {
       return;
     }
     try {
-      const vp_token = JSON.parse(req.body.vp_token);
-      const submission = JSON.parse(req.body.presentation_submission);
-      if(vp_token.proof.challenge !== exchange.id) {
-        res.status(400).send(`Invalid nonce`);
-        return;
-      }
+      const submission = typeof req.body.presentation_submission === 'string' ?
+        JSON.parse(req.body.presentation_submission) :
+        req.body.presentation_submission;
       const {verified, errors} = await verifySubmission(
-        vp_token, submission, exchange
+        req.body.vp_token, submission, exchange
       );
       if(verified) {
         const update = {
           $inc: {sequence: 1},
           $set: {
-            updatedAt: Date.now(),
+            updatedAt: new Date(),
             state: 'complete',
             oidc: {
               code: await createId(),
@@ -213,8 +256,8 @@ export default function(app) {
             },
             variables: {
               results: {
-                [exchange.step]: {
-                  verifiablePresentation: vp_token
+                'templated-vpr': {
+                  verifiablePresentation: req.body.vp_token
                 }
               }
             }
@@ -241,28 +284,33 @@ export default function(app) {
       res.status(400).send({message: 'Incorrect workflowId'});
       return;
     }
-    const exchange = await getExchange(req.params.exchangeId);
-
-    if(exchange) {
-      const step = req.rp.workflow.steps[exchange.step];
-      let vpr;
-      try {
-        vpr = JSON.parse(step.verifiablePresentationRequest);
-      } catch(e) {
-        console.error(e);
-        res.sendStatus(404);
+    try {
+      const exchange = await getExchange(req.params.exchangeId);
+      if(exchange) {
+        const step = req.rp.workflow.steps[exchange.step];
+        let vpr;
+        try {
+          vpr = JSON.parse(step.verifiablePresentationRequest);
+        } catch(e) {
+          console.error(e);
+          res.sendStatus(404);
+          return;
+        }
+        res.send({
+          verifiablePresentationRequest:
+            {
+              ...vpr,
+              challenge: exchange.challenge
+            }
+        });
         return;
+      } else {
+        res.sendStatus(404);
       }
-      res.send({
-        verifiablePresentationRequest:
-          {
-            ...vpr,
-            challenge: exchange.challenge
-          }
-      });
-      return;
+    } catch(e) {
+      console.error(e);
+      res.sendStatus(500);
     }
-    res.sendStatus(404);
     return;
   });
 }

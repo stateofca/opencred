@@ -56,7 +56,7 @@ didJwkDriver.use({
   handler: Ed25519VerificationKey2020.from
 });
 
-const didResolver = new CachedResolver();
+export const didResolver = new CachedResolver();
 didResolver.use(didWebDriver);
 didResolver.use(didKeyDriver);
 didResolver.use(didJwkDriver);
