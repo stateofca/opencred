@@ -89,8 +89,8 @@ const createExchangeHelper = async rp => {
 
   if(data.error) {
     const {requestId, error} = data;
-    const {code: outerCode, outerMessage, innererror} = error;
-    const {innerCode, innerMessage, target} = innererror;
+    const {code: outerCode, message: outerMessage, innererror} = error;
+    const {code: innerCode, message: innerMessage, target} = innererror;
     throw new Error(
       `Request ID - ${requestId}\n    ` +
       `[${outerCode}] ${outerMessage}\n    ` +
