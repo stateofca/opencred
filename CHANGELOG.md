@@ -1,9 +1,9 @@
 # opencred-platform Changelog
 
-## 5.0.1 - 2023-11-XX
+## 5.0.1 - 2023-11-20
 
 ### Fixed
-- Better Microsoft Entra Verified ID error handling
+- Improve Microsoft Entra Verified ID error handling.
 
 ## 5.0.0 - 2023-11-17
 
