@@ -14,6 +14,7 @@ dist
 node_modules
 package-lock.json
 config/config.yaml
+config/*.pem
 
 dist
 dist-ssr
