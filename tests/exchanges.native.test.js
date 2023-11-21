@@ -52,7 +52,7 @@ describe('Exchanges (Native)', async () => {
   it('should set req.exchange for native workflow in createNativeExchange',
     async () => {
       const next = sinon.spy();
-      const req = {rp};
+      const req = {rp, query: {state: 'test'}};
 
       await createNativeExchange(req, null, next);
       expect(next).to.have.property('called');
@@ -65,7 +65,7 @@ describe('Exchanges (Native)', async () => {
   it('should not set req.exchange for vc-api workflow in createNativeExchange',
     async () => {
       const next = sinon.spy();
-      const req = klona({rp});
+      const req = klona({rp, query: {state: 'test'}});
       req.rp.workflow.type = 'vc-api';
       await createNativeExchange(req, null, next);
       expect(next).to.have.property('called');
@@ -74,7 +74,7 @@ describe('Exchanges (Native)', async () => {
 
   it('should get the correct exchange data', async () => {
     const next = sinon.spy();
-    const req = {rp};
+    const req = {rp, query: {state: 'test'}};
     await createNativeExchange(req, null, next);
     expect(next).to.have.property('called');
     expect(req).to.have.property('exchange');

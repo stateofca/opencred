@@ -8,7 +8,7 @@ import {SUITES} from '../../common/suites.js';
 import {UnsecuredJWT} from 'jose';
 import {verifyUtils} from '../../common/utils.js';
 
-export const createExchange = async (domain, workflow) => {
+export const createExchange = async (domain, workflow, oidcState = '') => {
   const id = await createId();
   const workflowId = workflow.id;
   const accessToken = await createId();
@@ -26,7 +26,11 @@ export const createExchange = async (domain, workflow) => {
     challenge,
     accessToken,
     createdAt,
-    recordExpiresAt: new Date(createdAt.getTime() + 86400000 + (ttl * 1000))
+    recordExpiresAt: new Date(createdAt.getTime() + 86400000 + (ttl * 1000)),
+    oidc: {
+      code: null,
+      state: oidcState
+    }
   });
   const vcapi = `${domain}/workflows/${workflow.id}/exchanges/${id}`;
   const authzReqUrl = `${vcapi}/openid/client/authorization/request`;
@@ -59,7 +63,9 @@ export const createNativeExchange = async (req, res, next) => {
     next();
     return;
   }
-  req.exchange = await createExchange(config.domain, rp.workflow);
+  req.exchange = await createExchange(
+    config.domain, rp.workflow, req.query.state
+  );
   next();
 };
 

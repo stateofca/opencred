@@ -17,6 +17,10 @@ const db = client.db();
   challenge: {string}
   workflowId: {string}
   accessToken?: {string}
+  oidc: {
+    code?: string,
+    state?: string,
+  }
 }
  */
 export const exchanges = db.collection('Exchanges');

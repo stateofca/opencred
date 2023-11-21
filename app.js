@@ -345,7 +345,13 @@ app.post('/token', exchangeCodeForToken);
 
 app.on('init', async function() {
   await exchanges.createIndex({recordExpiresAt: 1}, {expireAfterSeconds: 0});
-  console.log('Created 24hr TTL index');
+  console.log('Ensured index exists: 24hr record TTL on recordExpiresAt');
+
+  await exchanges.createIndex(
+    {'oidc.code': 1},
+    {partialFilterExpression: {'oidc.code': {$exists: true}}}
+  );
+  console.log('Ensured partial index exists: oidc.code');
 });
 
 export const PORT = process.env.PORT || '8080';

@@ -57,7 +57,11 @@ const createVcApiExchange = async (req, res, next) => {
       accessToken: await createId(),
       ttl,
       createdAt,
-      recordExpiresAt: new Date(createdAt.getTime() + 86400000 + (ttl * 1000))
+      recordExpiresAt: new Date(createdAt.getTime() + 86400000 + (ttl * 1000)),
+      oidc: {
+        code: null,
+        state: req.query.state ?? null
+      }
     };
     await exchanges.insertOne(req.exchange);
     next();

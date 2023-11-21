@@ -14,7 +14,7 @@ const VerificationStatus = {
   PresentationVerified: 'presentation_verified'
 };
 
-const createExchangeHelper = async rp => {
+const createExchangeHelper = async (rp, oidcState = null) => {
   const workflow = rp.workflow;
   const workflowId = workflow.id;
   const {
@@ -100,15 +100,21 @@ const createExchangeHelper = async rp => {
 
   const {requestId, url, expiry} = data;
 
-  const now = Date.now();
-  const ttl = Math.floor((expiry - now) / 1000);
+  const createdAt = Date.now();
+  const ttl = Math.floor((expiry - createdAt) / 1000);
   await exchanges.insertOne({
     id: requestId,
     workflowId,
     sequence: 0,
     ttl,
     state: 'pending',
-    accessToken
+    accessToken,
+    createdAt,
+    recordExpiresAt: new Date(createdAt + 86400000 + (ttl * 1000)),
+    oidc: {
+      code: null,
+      state: oidcState
+    }
   });
 
   const vcapi = `${domain}/workflows/${workflowId}/exchanges/${requestId}`;
@@ -126,7 +132,7 @@ const createExchange = async (req, res, next) => {
     return;
   }
   try {
-    req.exchange = await createExchangeHelper(rp);
+    req.exchange = await createExchangeHelper(rp, req.query.state ?? null);
   } catch(error) {
     res.status(500).send({
       message: 'Error creating exchange:\n' + error.message

@@ -278,7 +278,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
         data: {
           requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
           url: 'openid://vc/?request_uri=https://requri.example.com/123',
-          expiry: 1699635246762
+          expiry: Date.now() + 1000000
         }
       });
     const response = await request(app)
