@@ -1,5 +1,15 @@
 # opencred-platform Changelog
 
+## 5.0.3 - 2023-11-XX
+
+### Fixed
+- Redirect to client `redirect_uri` after exchange is complete.
+- Generate TTL Index for Entra exchanger.
+
+### Changed
+- Organize OIDC data in database into `oidc` document property.
+- Add database index for `oidc.code` (partial, on existing values).
+
 ## 5.0.2 - 2023-11-21
 
 ### Fixed
