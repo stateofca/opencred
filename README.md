@@ -208,6 +208,34 @@ $ npm run build
 $ npm run start
 ```
 
+### Optional HTTPS Setup
+
+In order to interact with a wallet or resolve `did:web` identifiers, it may be
+necessary to run the server over HTTPS from your local computer. You can use
+openssl and [ngrok](https://ngrok.com) or
+[localtunnel](https://localtunnel.github.io/www/) to set up a tunnel to your
+local server. Here are instructions for how to generate relevant key and
+certificate files with openssl, stored in ignored locations in the `config`
+directory.
+
+```sh
+openssl req -nodes -newkey rsa:2048 -keyout ./config/private_key.pem -out ./config/csr.pem
+openssl x509 -req -in ./config/csr.pem -signkey ./config/private_key.pem -out ./config/cert.pem
+openssl req -nodes -newkey rsa:2048 -keyout ./config/ca_key.pem -out ./config/ca_csr.pem
+openssl x509 -req -in ./config/ca_csr.pem -signkey .config/ca_key.pem -out ./config/ca_cert.pem
+openssl x509 -req -in ./config/ca_csr.pem -signkey ./config/ca_key.pem -out ./config/ca_cert.pem
+```
+
+Set your domain to use HTTPS in the `config.yaml` with a custom requested
+subdomain like: `domain: "https://my-opencred-subdomain-837.loca.lt"`
+
+Then, you can run the server with the following command to launch with your
+subdomain:
+
+```sh
+npx localtunnel -p 8080 --local-cert ./config/cert.pem --local_key ./config/private_key.pem --local_ca ./config/ca_cert.pem --subdomain my-opencred-subdomain-837
+```
+
 ### Run via Docker
 
 You can build and run the server via Docker mounting your local configuration

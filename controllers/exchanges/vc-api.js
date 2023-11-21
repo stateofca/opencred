@@ -104,7 +104,20 @@ export default function(app) {
         res.sendStatus(404);
         return;
       } else {
-        req.exchange = data;
+        const oidc = {
+          code: await createId(),
+          state: exchange.oidc?.state
+        };
+        if(data.state == 'complete' && !exchange.oidc?.code) {
+          await exchanges.updateOne({id: exchange.id}, {
+            $set: {oidc}
+          });
+        }
+
+        req.exchange = {
+          ...data,
+          oidc
+        };
       }
       next();
     });

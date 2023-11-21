@@ -15,6 +15,10 @@ export const createExchange = async (domain, workflow, oidcState = '') => {
   const challenge = await createId();
   const createdAt = new Date();
   const ttl = 60 * 15;
+  const oidc = {
+    code: null,
+    state: oidcState
+  };
   await exchanges.insertOne({
     id,
     workflowId,
@@ -27,10 +31,7 @@ export const createExchange = async (domain, workflow, oidcState = '') => {
     accessToken,
     createdAt,
     recordExpiresAt: new Date(createdAt.getTime() + 86400000 + (ttl * 1000)),
-    oidc: {
-      code: null,
-      state: oidcState
-    }
+    oidc
   });
   const vcapi = `${domain}/workflows/${workflow.id}/exchanges/${id}`;
   const authzReqUrl = `${vcapi}/openid/client/authorization/request`;
@@ -39,7 +40,7 @@ export const createExchange = async (domain, workflow, oidcState = '') => {
     request_uri: authzReqUrl
   });
   const OID4VP = 'openid4vp://authorize?' + searchParams.toString();
-  return {id, vcapi, OID4VP, accessToken, workflowId};
+  return {id, vcapi, OID4VP, accessToken, workflowId, oidc};
 };
 
 export const getExchange = async (id, {others, allowExpired} = {
@@ -206,6 +207,10 @@ export default function(app) {
           $set: {
             updatedAt: Date.now(),
             state: 'complete',
+            oidc: {
+              code: await createId(),
+              state: exchange.oidc.state
+            },
             variables: {
               results: {
                 [exchange.step]: {

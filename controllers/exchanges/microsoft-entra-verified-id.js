@@ -102,6 +102,10 @@ const createExchangeHelper = async (rp, oidcState = null) => {
 
   const createdAt = Date.now();
   const ttl = Math.floor((expiry - createdAt) / 1000);
+  const oidc = {
+    code: null,
+    state: oidcState
+  };
   await exchanges.insertOne({
     id: requestId,
     workflowId,
@@ -111,14 +115,11 @@ const createExchangeHelper = async (rp, oidcState = null) => {
     accessToken,
     createdAt,
     recordExpiresAt: new Date(createdAt + 86400000 + (ttl * 1000)),
-    oidc: {
-      code: null,
-      state: oidcState
-    }
+    oidc
   });
 
   const vcapi = `${domain}/workflows/${workflowId}/exchanges/${requestId}`;
-  return {id: requestId, vcapi, OID4VP: url, accessToken, workflowId};
+  return {id: requestId, vcapi, OID4VP: url, accessToken, workflowId, oidc};
 };
 
 const createExchange = async (req, res, next) => {
@@ -211,6 +212,7 @@ const verificationCallback = async (req, res) => {
       'variables.results.final': {
         verifiablePresentation: vpToken
       },
+      ...(exchangeState === 'complete' ? {'oidc.code': await createId()} : {}),
       updatedAt: Date.now()
     }});
   } else if(typeof vpToken === 'string') {
@@ -222,6 +224,7 @@ const verificationCallback = async (req, res) => {
       'variables.results.final': {
         verifiablePresentation: ldpVp
       },
+      ...(exchangeState === 'complete' ? {'oidc.code': await createId()} : {}),
       updatedAt: Date.now()
     }});
   } else {
