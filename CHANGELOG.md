@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 5.0.2 - 2023-11-XX
+## 5.0.2 - 2023-11-21
 
 ### Fixed
 - Fix `client_id` generation issue when behind certain load balancers.
