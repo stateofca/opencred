@@ -2,12 +2,13 @@ import * as sinon from 'sinon';
 import {describe, it} from 'mocha';
 import expect from 'expect.js';
 import request from 'supertest';
+import {UnsecuredJWT} from 'jose';
+import {zcapClient} from '../common/zcap.js';
 
 import {app} from '../app.js';
 import {config} from '../config/config.js';
 import {exchanges} from '../common/database.js';
 import {msalUtils} from '../common/utils.js';
-import {zcapClient} from '../common/zcap.js';
 
 const testRP = {
   workflow: {
@@ -15,7 +16,24 @@ const testRP = {
     id: 'testworkflow',
     steps: {
       waiting: {
-        verifiablePresentationRequest: '{}'
+        verifiablePresentationRequest: JSON.stringify({
+          query: {
+            type: 'QueryByExample',
+            credentialQuery: {
+              reason: 'Please present your Driver\'s License',
+              example: {
+                '@context': [
+                  'https://www.w3.org/2018/credentials/v1',
+                  'https://w3id.org/vdl/v1',
+                  'https://w3id.org/vdl/aamva/v1'
+                ],
+                type: [
+                  'Iso18013DriversLicense'
+                ]
+              }
+            }
+          },
+        })
       }
     }
   },
@@ -80,6 +98,47 @@ describe('OpenCred API - Native Workflow', function() {
     expect(response.body.vcapi).to.not.be(undefined);
     expect(insertStub.called).to.be(true);
     insertStub.restore();
+  });
+
+  it('should return 404 if invalid workflowId', async function() {
+    const findStub = sinon.stub(exchanges, 'findOne').resolves({
+      ...testEx,
+      workflowId: 'WRONG'
+    });
+    const response = await request(app)
+      .get(
+        `/workflows/${testRP.workflow.id}/exchanges/${testEx.id}/` +
+        'openid/client/authorization/request'
+      );
+    expect(response.status).to.equal(404);
+    expect(response.headers['content-type']).to.match(/json/);
+
+    findStub.restore();
+  });
+
+  it('should return Presentation Request JWT', async function() {
+    const findStub = sinon.stub(exchanges, 'findOne').resolves(testEx);
+    const updateStub = sinon.stub(exchanges, 'updateOne').resolves();
+    const domainStub = sinon.stub(config, 'domain').value(
+      'https://example.com'
+    );
+    const response = await request(app)
+      .get(
+        `/workflows/${testRP.workflow.id}/exchanges/${testEx.id}/` +
+        'openid/client/authorization/request'
+      );
+    expect(response.status).to.equal(200);
+    expect(response.headers['content-type']).to.match(
+      /application\/oauth-authz-req\+jwt/
+    );
+
+    const jwt = UnsecuredJWT.decode(response.text);
+    expect(jwt.payload.client_id.startsWith('https://example.com')).to.be(true);
+    expect(response.text).to.not.be(undefined);
+
+    domainStub.restore();
+    updateStub.restore();
+    findStub.restore();
   });
 
   it('should return status on exchange', async function() {

@@ -139,8 +139,8 @@ export default function(app) {
   app.get('/workflows/:workflowId/exchanges/:exchangeId/openid/client/' +
     'authorization/request', async (req, res) => {
     const exchange = await getExchange(req.params.exchangeId);
-    if(!exchange) {
-      res.sendStatus(404);
+    if(!exchange || exchange?.workflowId !== req.params.workflowId) {
+      res.status(404).send({message: 'Exchange not found'});
       return;
     }
     if(exchange.state !== 'pending') {
@@ -150,7 +150,7 @@ export default function(app) {
     const step = req.rp.workflow.steps[exchange.step];
 
     const vpr = JSON.parse(step.verifiablePresentationRequest);
-    vpr.domain = `${req.protocol}://${req.get('host')}${
+    vpr.domain = `${config.domain}${
       req.originalUrl.replace('request', 'response')}`;
     vpr.challenge = exchange.id;
 
