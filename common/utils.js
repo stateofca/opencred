@@ -146,23 +146,44 @@ const getMsalClient = relyingParty => {
       authority: `${apiLoginBaseUrl}/${apiTenantId}`
     }
   };
-  return new ConfidentialClientApplication(msalConfig);
+  try {
+    return new ConfidentialClientApplication(msalConfig);
+  } catch(error) {
+    throw new Error(
+      'Error creating MSAL client:\n' +
+      error.message
+    );
+  }
 };
 
 const acquireAccessToken = async msalClient => {
   const tokenRequest = {
     scopes: [MSAL_ACCESS_TOKEN_REQUEST_SCOPE],
   };
-  return msalClient.acquireTokenByClientCredential(tokenRequest);
+  try {
+    return msalClient.acquireTokenByClientCredential(tokenRequest);
+  } catch(error) {
+    throw new Error(
+      'Error acquiring MSAL access token:\n' +
+      error.message
+    );
+  }
 };
 
 const makeHttpPostRequest = async ({msalClient, url, data}) => {
-  const accessToken = await acquireAccessToken(msalClient);
+  const {accessToken} = await acquireAccessToken(msalClient);
   const headers = {Authorization: `Bearer ${accessToken}`};
-  httpClient.extend({headers});
-  return httpClient.post(
-    url, {json: data}
-  );
+  const client = httpClient.extend({headers});
+  try {
+    return client.post(
+      url, {json: data}
+    );
+  } catch(error) {
+    throw new Error(
+      'Error making MSAL authenticated HTTP POST request:\n' +
+      error.message
+    );
+  }
 };
 
 export const msalUtils = {
