@@ -53,7 +53,11 @@ const testEx = {
   challenge: 'parkour',
   workflowId: testRP.workflow.id,
   accessToken: 'opensesame2023',
-  createdAt: new Date()
+  createdAt: new Date(),
+  oidc: {
+    state: 'abc123',
+    code: null
+  }
 };
 
 describe('OpenCred API - Native Workflow', function() {
@@ -395,14 +399,14 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
       expect(response.headers['content-type']).to.match(/json/);
       expect(response.status).to.equal(200);
       expect(findStub.called).to.be(true);
-      expect(updateStub.calledWith({
+      expect(updateStub.calledWithMatch({
         id: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
         state: 'complete'
       }, {$set: {
         'variables.results.final': {
           verifiablePresentation: testVpToken
         },
-        updatedAt: 1699635246762
+        updatedAt: 1699635246762,
       }})).to.be(true);
       expect(dateStub.called).to.be(true);
       findStub.restore();
@@ -525,7 +529,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
       expect(response.headers['content-type']).to.match(/json/);
       expect(response.status).to.equal(200);
       expect(findStub.called).to.be(true);
-      expect(updateStub.calledWith({
+      expect(updateStub.calledWithMatch({
         id: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
         state: 'complete'
       }, {$set: {

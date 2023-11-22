@@ -129,7 +129,7 @@ export const exchangeCodeForToken = async (req, res) => {
   }
 
   // Look up exchange by code and validate that it is for this RP.
-  const exchange = await exchanges.findOne({oidc: {code: req.body.code}});
+  const exchange = await exchanges.findOne({'oidc.code': req.body.code});
   if(!exchange) {
     res.status(400).send({
       error: 'invalid_grant',

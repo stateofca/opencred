@@ -209,7 +209,7 @@ export default function(app) {
             state: 'complete',
             oidc: {
               code: await createId(),
-              state: exchange.oidc.state
+              state: exchange.oidc?.state
             },
             variables: {
               results: {

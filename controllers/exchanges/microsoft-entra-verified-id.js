@@ -186,21 +186,19 @@ const verificationCallback = async (req, res) => {
     }
   }
 
-  let exchangeState;
+  let exchangeState; let message;
   switch(verificationStatus) {
     case VerificationStatus.RequestRetrieved:
       exchangeState = 'pending';
-      res.status(200).send({message: 'Credential verification is pending'});
+      message = 'Credential verification is pending';
       break;
     case VerificationStatus.PresentationVerified:
       exchangeState = 'complete';
-      res.status(200).send({message: 'Credential verification is complete'});
+      message = 'Credential verification is complete';
       break;
     default:
       exchangeState = 'invalid';
-      res.status(400).send(
-        {message: 'Unrecognized verification status'}
-      );
+      message = 'Unrecognized verification status';
   }
 
   const vpToken = receipt?.vp_token;
@@ -235,6 +233,8 @@ const verificationCallback = async (req, res) => {
       updatedAt: Date.now()
     }});
   }
+
+  res.status(exchangeState === 'invalid' ? 400 : 200).send({message});
 };
 
 export default function(app) {
