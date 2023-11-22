@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 5.0.4 - 2023-11-22
+
+### Fixed
+- Fix token endpoint code query.
+
 ## 5.0.3 - 2023-11-22
 
 ### Fixed
