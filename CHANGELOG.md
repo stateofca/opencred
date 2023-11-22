@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 5.0.5 - 2023-11-XX
+
+### Fixed
+- Fix database test data generation and workflow-client connection.
+
 ## 5.0.4 - 2023-11-22
 
 ### Fixed
