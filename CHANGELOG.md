@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 5.0.3 - 2023-11-XX
+## 5.0.3 - 2023-11-22
 
 ### Fixed
 - Redirect to client `redirect_uri` after exchange is complete.
