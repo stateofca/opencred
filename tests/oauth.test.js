@@ -10,6 +10,7 @@ import {config} from '../config/config.js';
 
 const exampleRelyingParty = {
   workflow: {
+    id: 'testWorkflowId',
     type: 'native',
     initialStep: 'default',
     steps: {
@@ -138,7 +139,7 @@ describe('OAuth Login Workflow', function() {
     dbStub.resolves({
       _id: 'test',
       ttl: 900,
-      clientId: 'test',
+      workflowId: 'testWorkflowId',
       code: 'the-code',
       variables: {
         results: {
@@ -190,12 +191,60 @@ describe('OAuth Login Workflow', function() {
     dbStub.restore();
   });
 
+  it('should fail for the wrong client info', async function() {
+    const dbStub = sinon.stub(exchanges, 'findOne');
+    dbStub.resolves({
+      _id: 'test',
+      ttl: 900,
+      workflowId: 'WRONG',
+      code: 'the-code',
+      variables: {
+        results: {
+          default: {
+            verifiablePresentation: {
+              type: 'VerifiablePresentation',
+              verifiableCredential: [{
+                type: 'VerifiableCredential',
+                credentialSubject: {
+                  id: 'did:example:123',
+                  name: 'Alice'
+                }
+              }]
+            }
+          }
+        }
+      },
+      step: 'default',
+      redirectUri: 'https://example.com',
+      state: 'complete',
+      scope: 'openid'
+    });
+
+    const response = await request(app)
+      .post('/token')
+      .set('Accept', 'application/json')
+      .send(
+        'client_id=test&client_secret=testsecret' +
+        '&grant_type=authorization_code&code=the-code' +
+        '&redirect_uri=https%3A%2F%2Fexample.com' +
+        '&scope=openid'
+      );
+    expect(response.headers['content-type']).to.match(/json/);
+    expect(response.status).to.equal(400);
+    expect(response.body.error).to.equal('invalid_grant');
+    expect(response.body.error_description).to.equal(
+      'Invalid code or client_id'
+    );
+
+    dbStub.restore();
+  });
+
   it('should fail to be exchanged twice', async function() {
     const dbStub = sinon.stub(exchanges, 'findOne');
     dbStub.onCall(0).resolves({
       _id: 'test',
       ttl: 900,
-      clientId: 'test',
+      workflowId: 'testWorkflowId',
       code: 'the-code',
       variables: {
         results: {
@@ -256,7 +305,7 @@ describe('OAuth Login Workflow', function() {
     dbStub.resolves({
       _id: 'test',
       ttl: 900,
-      clientId: 'test',
+      workflowId: 'testWorkflowId',
       code: 'the-code',
       variables: {
         results: {
@@ -316,7 +365,7 @@ describe('OAuth Login Workflow', function() {
     dbStub.resolves({
       _id: 'test',
       ttl: 900,
-      clientId: 'test',
+      workflowId: 'testWorkflowId',
       code: 'the-code',
       step: 'default',
       redirectUri: 'https://example.com',

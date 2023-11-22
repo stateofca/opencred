@@ -136,7 +136,7 @@ export const exchangeCodeForToken = async (req, res) => {
       error_description: 'Invalid code'
     });
     return;
-  } else if(exchange.clientId !== rp.clientId) {
+  } else if(exchange.workflowId !== rp.workflow.id) {
     res.status(400).send({
       error: 'invalid_grant',
       error_description: 'Invalid code or client_id'
