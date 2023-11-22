@@ -108,7 +108,7 @@ export default function(app) {
           code: await createId(),
           state: exchange.oidc?.state
         };
-        if(data.state == 'complete' && !exchange.oidc?.code) {
+        if(data.state === 'complete' && !exchange.oidc?.code) {
           await exchanges.updateOne({id: exchange.id}, {
             $set: {oidc}
           });
