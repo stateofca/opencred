@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## NEXT - TBD
+
+### Fixed
+- Revert to `node:20-alpine` in Dockerfile.
+
 ## 5.0.5 - 2023-11-22
 
 ### Fixed
