@@ -56,7 +56,7 @@
       "nonce": "z19k6s2E9wr29gb56t789AmFS"
     }
   },
-  "step": "default",
+  "step": "waiting",
   "challenge": "z1A6a4Ej1rWXdLfNjJUymAF31",
   "createdAt": "2023-11-14T18:56:39.859+00:00",
   "recordExpiresAt": "2023-11-14T18:56:39.859+00:00"

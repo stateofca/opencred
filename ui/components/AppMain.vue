@@ -58,7 +58,14 @@
         { headers: { Authorization: `Bearer ${props.exchangeData.accessToken}` } }
       ));
       if (Object.keys(exchange).length > 0) {
-        if (exchange.state === "complete") {
+        if (exchange.state === "complete" && exchange.oidc?.code) {
+          const queryParams = new URLSearchParams({
+          state: props.exchangeData.oidc.state,
+          code: exchange.oidc.code,
+        });
+        const destination = `${props.rp.redirectUri}?${queryParams.toString()}`;
+        window.location.href = destination;
+      } else if (exchange.state === 'complete') {
           const { verifiablePresentation } =
             exchange.variables.results[exchange.step];
           vp.value = verifiablePresentation;

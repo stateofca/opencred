@@ -1,9 +1,9 @@
 import * as sinon from 'sinon';
 import {before, describe, it} from 'mocha';
+import {decodeJwt} from 'jose';
 import expect from 'expect.js';
 import fs from 'node:fs';
 import request from 'supertest';
-import {UnsecuredJWT} from 'jose';
 import {zcapClient} from '../common/zcap.js';
 
 import {msalUtils, verifyUtils} from '../common/utils.js';
@@ -120,12 +120,12 @@ describe('OpenCred API - Native Workflow', function() {
 
   it('should return 404 if invalid workflowId', async function() {
     const findStub = sinon.stub(exchanges, 'findOne').resolves({
-      ...testEx,
+      ...exchange,
       workflowId: 'WRONG'
     });
     const response = await request(app)
       .get(
-        `/workflows/${testRP.workflow.id}/exchanges/${testEx.id}/` +
+        `/workflows/${testRP.workflow.id}/exchanges/${exchange.id}/` +
         'openid/client/authorization/request'
       );
     expect(response.status).to.equal(404);
@@ -135,23 +135,22 @@ describe('OpenCred API - Native Workflow', function() {
   });
 
   it('should return Presentation Request JWT', async function() {
-    const findStub = sinon.stub(exchanges, 'findOne').resolves(testEx);
+    const findStub = sinon.stub(exchanges, 'findOne').resolves(exchange);
     const updateStub = sinon.stub(exchanges, 'updateOne').resolves();
     const domainStub = sinon.stub(config, 'domain').value(
       'https://example.com'
     );
     const response = await request(app)
       .get(
-        `/workflows/${testRP.workflow.id}/exchanges/${testEx.id}/` +
+        `/workflows/${testRP.workflow.id}/exchanges/${exchange.id}/` +
         'openid/client/authorization/request'
       );
     expect(response.status).to.equal(200);
     expect(response.headers['content-type']).to.match(
       /application\/oauth-authz-req\+jwt/
     );
-
-    const jwt = UnsecuredJWT.decode(response.text);
-    expect(jwt.payload.client_id.startsWith('https://example.com')).to.be(true);
+    const jwt = decodeJwt(response.text);
+    expect(jwt.client_id.startsWith('did:web:example.com')).to.be(true);
     expect(response.text).to.not.be(undefined);
 
     domainStub.restore();

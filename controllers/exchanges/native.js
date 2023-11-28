@@ -45,7 +45,7 @@ export const createExchange = async (domain, workflow, oidcState = '') => {
     request_uri: authzReqUrl
   });
   const OID4VP = 'openid4vp://?' + searchParams.toString();
-  return {id, vcapi, OID4VP, accessToken, workflowId};
+  return {id, vcapi, OID4VP, accessToken, workflowId, oidc};
 };
 
 export const getExchange = async (id, {others, allowExpired} = {
