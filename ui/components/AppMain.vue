@@ -1,7 +1,8 @@
 <script setup>
-  import {reactive} from 'vue';
+  import {onMounted, reactive, ref} from 'vue';
+  import {httpClient} from "@digitalbazaar/http-client";
 
-  defineProps({
+  const props = defineProps({
     step: String,
     rp: {
       clientId: String,
@@ -31,13 +32,45 @@
     }
   })
 
+  let intervalId;
+  const vp = ref(null);
+
   const state = reactive({
     isQROpen: false
   });
 
+  onMounted(async () => {
+    await checkStatus();
+    intervalId = setInterval(checkStatus, 5000);
+  })
+
   const switchView = () => {
     state.isQROpen = !state.isQROpen;
   }
+
+  const checkStatus = async () => {
+    try {
+      let exchange = {};
+      ({
+        data: { exchange },
+      } = await httpClient.get(
+        `/workflows/${props.rp.workflow.id}/exchanges/${props.exchangeData.id}`, 
+        { headers: { Authorization: `Bearer ${props.exchangeData.accessToken}` } }
+      ));
+      if (Object.keys(exchange).length > 0) {
+        if (exchange.state === "complete") {
+          const { verifiablePresentation } =
+            exchange.variables.results[exchange.step];
+          vp.value = verifiablePresentation;
+          clearInterval(intervalId);
+        }
+      } else {
+        console.log("not complete");
+      }
+    } catch (error) {
+      console.error("An error occurred while polling the endpoint:", error);
+    }
+  };
 </script>
 
 <template>
@@ -69,8 +102,13 @@
           &nbsp;
         </div>
       </div>
+      <div v-if="vp">
+        <div class="flex justify-center">
+          <JsonView :data="{ vp }" title="Verified Credential" />
+        </div>
+      </div>
       <ButtonView
-        v-if="!state.isQROpen"
+        v-else-if="!state.isQROpen"
         :rp="rp"
         :translations="translations"
         :defaultLanguage="defaultLanguage"

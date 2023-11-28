@@ -19,7 +19,7 @@ import {defineProps, reactive} from 'vue';
 
 const state = reactive({expanded: false});
 
-defineProps({
+const props = defineProps({
   value: {
     type: String,
     required: true

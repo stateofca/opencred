@@ -1,7 +1,6 @@
 <script setup>
 import { defineEmits, ref } from "vue";
 import { getCredentials } from "../chapi.js";
-import { httpClient } from "@digitalbazaar/http-client";
 
 const props = defineProps({
   step: String,
@@ -36,8 +35,6 @@ const switchView = () => {
   emit("switchView");
 };
 const loading = ref(false);
-let intervalId;
-const vp = ref(null);
 
 const openChapi = async () => {
   const req = await getCredentials({
@@ -48,42 +45,9 @@ const openChapi = async () => {
   });
   if (req.dataType === "OutOfBand") {
     loading.value = true;
-    await checkStatus();
-    intervalId = setInterval(checkStatus, 5000);
   }
 };
 
-const checkStatus = async () => {
-  try {
-    let exchange = {};
-    ({
-      data: { exchange },
-    } = await httpClient.get(
-      `/workflows/${props.rp.workflow.id}/exchanges/${props.exchangeData.id}`, 
-      { headers: { Authorization: `Bearer ${props.exchangeData.accessToken}` } }
-    ));
-    if (Object.keys(exchange).length > 0) {
-      if (exchange.state === "complete" && exchange.oidc?.code) {
-        const queryParams = new URLSearchParams({
-          state: props.exchangeData.oidc.state,
-          code: exchange.oidc.code,
-        });
-        const destination = `${props.rp.redirectUri}?${queryParams.toString()}`;
-        window.location.href = destination;
-      } else if (exchange.state === "complete") {
-        const { verifiablePresentation } =
-          exchange.variables.results[exchange.step];
-        vp.value = verifiablePresentation;
-        clearInterval(intervalId);
-        loading.value = false;
-      }
-    } else {
-      console.log("not complete");
-    }
-  } catch (error) {
-    console.error("An error occurred while polling the endpoint:", error);
-  }
-};
 </script>
 <template>
   <div
@@ -102,16 +66,13 @@ const checkStatus = async () => {
     ></p>
     <div class="flex justify-center">
       <button
-        v-if="!loading && !vp"
+        v-if="!loading"
         @click="openChapi"
         class="text-white py-2 px-6 rounded-xl my-8"
         :style="{ background: rp.theme.cta }"
       >
         {{ translations[defaultLanguage].appCta }}
       </button>
-      <div v-else-if="vp">
-        <JsonView :data="{ vp }" title="Verified Credential" />
-      </div>
       <div
         v-else
         class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] py-2 my-8 motion-reduce:animate-[spin_1.5s_linear_infinite]"

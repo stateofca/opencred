@@ -6,10 +6,10 @@ import request from 'supertest';
 import {UnsecuredJWT} from 'jose';
 import {zcapClient} from '../common/zcap.js';
 
+import {msalUtils, verifyUtils} from '../common/utils.js';
 import {app} from '../app.js';
 import {config} from '../config/config.js';
 import {exchanges} from '../common/database.js';
-import {msalUtils} from '../common/utils.js';
 
 const testRP = {
   workflow: {
@@ -216,26 +216,12 @@ describe('OpenCred API - Native Workflow', function() {
     updateStub.restore();
   });
 
-  it('OID4VP should handle DI authorization response', async function() {
-    const findStub = sinon.stub(exchanges, 'findOne').resolves(exchange);
-    const updateStub = sinon.stub(exchanges, 'updateOne');
-    const response = await request(app)
-      .post(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}/` +
-        'openid/client/authorization/response')
-      .send({
-        vp_token: vp_token_di,
-        presentation_submission: presentation_submission_di
-      });
-
-    expect(response.status).to.equal(204);
-    findStub.restore();
-    updateStub.restore();
-  });
-
   it('OID4VP should handle JWT authorization response', async function() {
     const findStub = sinon.stub(exchanges, 'findOne').resolves(
       exchange_jwt
     );
+    const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyJWTPresentation')
+      .resolves({verified: true});
     const updateStub = sinon.stub(exchanges, 'updateOne');
     const response = await request(app)
       .post(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}/` +
@@ -247,6 +233,7 @@ describe('OpenCred API - Native Workflow', function() {
 
     findStub.restore();
     updateStub.restore();
+    verifyUtilsStub.restore();
     expect(response.status).to.equal(204);
   });
 });

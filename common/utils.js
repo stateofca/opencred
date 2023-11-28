@@ -1,10 +1,13 @@
 import {verify, verifyCredential} from '@digitalbazaar/vc';
+import {
+  verifyCredential as verifyJWTCredential,
+  verifyPresentation as verifyJWTPresentation
+} from 'did-jwt-vc';
 import base64url from 'base64url';
 import {ConfidentialClientApplication} from '@azure/msal-node';
 import {didResolver} from './documentLoader.js';
 import {generateId} from 'bnid';
 import {httpClient} from '@digitalbazaar/http-client';
-import {verifyCredential as verifyJWTCredential} from 'did-jwt-vc';
 
 // General Utilities
 
@@ -73,13 +76,27 @@ export const normalizeVpTokenDataIntegrity = vpToken => {
 
 // Verify Utilities
 
-const verifyJWT = async jwt => {
+const verifyJWTVC = async (jwt, options) => {
   try {
     const vc = await verifyJWTCredential(jwt, {
       resolve: did => didResolver.get({did})
-    });
+    }, options);
     if(vc) {
       return {verified: true, vc};
+    }
+    return {verified: false};
+  } catch(e) {
+    return {verified: false, errors: [e.message]};
+  }
+};
+
+const verifyJWTVP = async (jwt, options) => {
+  try {
+    const vp = await verifyJWTPresentation(jwt, {
+      resolve: did => didResolver.get({did})
+    }, options);
+    if(vp) {
+      return {verified: true, vp};
     }
     return {verified: false};
   } catch(e) {
@@ -90,7 +107,8 @@ const verifyJWT = async jwt => {
 export const verifyUtils = {
   verifyDataIntegrity: async args => verify(args),
   verifyCredentialDataIntegrity: async args => verifyCredential(args),
-  verifyJWT: async jwt => verifyJWT(jwt)
+  verifyJWTPresentation: async (jwt, options) => verifyJWTVP(jwt, options),
+  verifyJWTCredential: async (jwt, options) => verifyJWTVC(jwt, options)
 };
 
 // MSAL Client Utilities

@@ -20,10 +20,11 @@ const configDoc = yaml.load(fs.readFileSync(configPath, 'utf8'));
 
 /**
  * @typedef {Object} WorkflowStep
- * @property {string} id - The ID
- * @property {string} id - The ID of the workflow.
- * @property {string} initialStep - The id of the first step.
- * @property {Object.<string, WorkflowStep>} steps - Steps to execute
+ * @property {boolean} createChallenge - Whether to create a challenge?
+ * @property {string} verifiablePresentationRequest - What to request
+ * @property {string} constraintsOverride - Override presentation definition \
+ * constraints with value
+* @property {Object.<string, WorkflowStep>} steps - Steps to execute
  */
 
 /**
@@ -31,7 +32,7 @@ const configDoc = yaml.load(fs.readFileSync(configPath, 'utf8'));
  * @property {'native'} type - The type of the workflow.
  * @property {string} id - The ID of the workflow.
  * @property {string} initialStep - The id of the first step.
- * @property {Array<WorkflowStep>} steps - The capability of the workflow.
+ * @property {Object.<string, WorkflowStep>} steps - The steps of the workflow.
  */
 
 /**

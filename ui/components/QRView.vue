@@ -1,6 +1,6 @@
 <script setup>
   import {defineEmits} from 'vue';
-  defineProps({
+  const props = defineProps({
     step: String,
     translations: Object,
     defaultLanguage: String,

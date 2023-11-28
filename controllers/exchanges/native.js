@@ -3,13 +3,13 @@ import {
   createId,
   normalizeVpTokenDataIntegrity
 } from '../../common/utils.js';
+import {importPKCS8, SignJWT} from 'jose';
 import {config} from '../../config/config.js';
 import {exchanges} from '../../common/database.js';
 import {getDocumentLoader} from '../../common/documentLoader.js';
 import jp from 'jsonpath';
 import {oid4vp} from '@digitalbazaar/oid4-client';
 import {SUITES} from '../../common/suites.js';
-import {UnsecuredJWT} from 'jose';
 import {verifyUtils} from '../../common/utils.js';
 
 export const createExchange = async (domain, workflow, oidcState = '') => {
@@ -40,7 +40,8 @@ export const createExchange = async (domain, workflow, oidcState = '') => {
   const vcapi = `${domain}/workflows/${workflow.id}/exchanges/${id}`;
   const authzReqUrl = `${vcapi}/openid/client/authorization/request`;
   const searchParams = new URLSearchParams({
-    client_id: `${vcapi}/openid/client/authorization/response`,
+    client_id: `did:web:${config.domain.split('https://')[1]}`,
+    // client_id: `${vcapi}/openid/client/authorization/response`,
     request_uri: authzReqUrl
   });
   const OID4VP = 'openid4vp://?' + searchParams.toString();
@@ -94,10 +95,12 @@ export const verifySubmission = async (vp_token, submission, exchange) => {
         .find(d => d.id === descriptor.id);
       if(!submitted) {
         errors.push(`Submission not found for input descriptor`);
-      } else if(submitted.format === 'jwt_vc_json') {
+      } else if(submitted.format === 'jwt_vp_json') {
         vp = convertJwtVpTokenToLdpVp(vp_token);
         if(!vpVerified) {
-          const result = await verifyUtils.verifyJWT(vp_token);
+          const result = await verifyUtils.verifyJWTPresentation(vp_token, {
+            audience: `did:web:${config.domain.split('https://')[1]}`
+          });
           if(!result.verified) {
             errors = [...errors, ...result.errors];
           }
@@ -176,24 +179,51 @@ export default function(app) {
       vpr.domain = `${config.domain}${
         req.originalUrl.replace('request', 'response')}`;
       vpr.challenge = exchange.id;
-
+      const fromVPR = oid4vp.fromVpr({
+        verifiablePresentationRequest: vpr,
+        prefixVC: true
+      });
+      const input_descriptors = fromVPR.presentation_definition
+        .input_descriptors.map(i => {
+          return {
+            ...i,
+            constraints: step.constraintsOverride ?
+              JSON.parse(step.constraintsOverride) : i.constraints,
+            format: {
+              jwt_vc_json: {
+                alg: [
+                  'ES256'
+                ]
+              }
+            }
+          };
+        });
       const authorizationRequest = {
-        ...oid4vp.fromVpr({verifiablePresentationRequest: vpr}),
+        response_type: 'vp_token',
+        response_mode: 'direct_post',
         presentation_definition: {
-          id: 'ea905a29-0f82-4ccd-961d-27d752d88a94',
-          input_descriptors: [
-            {
-              id: '9157b16b-ff34-4cf7-a944-a2c41dc5a31e',
-              name: 'Iso18013DriversLicenseCredential',
-              schema: [
-                {
-                  uri: 'Iso18013DriversLicenseCredential'
-                }
+          ...fromVPR.presentation_definition,
+          input_descriptors
+        },
+        client_id: `did:web:${config.domain.split('https://')[1]}`,
+        client_id_scheme: 'did',
+        nonce: await createId(),
+        jti: 'd029318c-9026-476e-9431-7414bad8b6b3',
+        response_uri: fromVPR.response_uri,
+        state: await createId(),
+        client_metadata: {
+          client_name: 'OpenCred Verifier',
+          subject_syntax_types_supported: [
+            'did:jwk'
+          ],
+          vp_formats: {
+            jwt_vc: {
+              alg: [
+                'ES256'
               ]
             }
-          ]
+          },
         },
-        client_id: vpr.domain,
       };
 
       await exchanges.updateOne({id: exchange.id}, {
@@ -202,7 +232,21 @@ export default function(app) {
           updatedAt: Date.now()
         }
       });
-      const jwt = new UnsecuredJWT(authorizationRequest).encode();
+
+      const key = config.signingKeys[0];
+      const {privateKeyPem} = key;
+      const privateKey = await importPKCS8(privateKeyPem, key.type);
+
+      const jwt = await new SignJWT(authorizationRequest)
+        .setProtectedHeader({
+          alg: key.type,
+          kid: `did:web:${config.domain.split('https://')[1]}#1`,
+          typ: 'JWT'
+        })
+        .setIssuedAt()
+        .setExpirationTime('15m')
+        .sign(privateKey);
+
       res.set('Content-Type', 'application/oauth-authz-req+jwt');
       res.send(jwt);
     } catch(e) {

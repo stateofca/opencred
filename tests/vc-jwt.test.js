@@ -13,19 +13,19 @@ const jwtCases = JSON.parse(fs.readFileSync(
 describe('VC-JWT', async () => {
   it('should verify valid vc-jwt (did:key)', async () => {
     const verification =
-      await verifyUtils.verifyJWT(jwtCases.valid['did:key']);
+      await verifyUtils.verifyJWTCredential(jwtCases.valid['did:key']);
     assert.strictEqual(verification.verified, true);
   });
 
   it('should fail verification of invalid vc-jwt (signature)', async () => {
     const verification =
-      await verifyUtils.verifyJWT(jwtCases.invalid.signature);
+      await verifyUtils.verifyJWTCredential(jwtCases.invalid.signature);
     assert.strictEqual(verification.verified, false);
   });
 
   it('should fail verification of invalid vc-jwt (vc)', async () => {
     const verification =
-      await verifyUtils.verifyJWT(jwtCases.invalid.vc);
+      await verifyUtils.verifyJWTCredential(jwtCases.invalid.vc);
     assert.strictEqual(verification.verified, false);
   });
 });
