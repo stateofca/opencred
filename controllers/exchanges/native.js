@@ -297,8 +297,9 @@ export default function(app) {
             variables: {
               results: {
                 [exchange.step]: {
-                  verifiablePresentation
-                }
+                  verifiablePresentation,
+                  vpToken: req.body.vp_token
+                },
               }
             }
           }
