@@ -137,33 +137,36 @@ didWeb:
     }
 ```
 
-### Configuring OIDC Token Signing Key
+### Configuring Signing Key
 
-In order to use this app as an OIDC provider, you must configure a signing key.
-You may enter key information in the `signingKeys` section of the config, and
-the public keys will be published in the `./well-known/jwks.json` endpoint for
-keys with the `id_token` purpose. 
+You must configure a signing key by entering key information in the
+`signingKeys` section of the config, and the public keys will be published in
+the `./well-known/jwks.json` endpoint for keys with the `id_token` purpose as
+well as in the `.well-known/did.json` endpoint for keys with the
+`authorization_request` purpose.
 
-Supported key types for id_token signing include: 
+Supported key types for JWT signing include: 
 
 JWT alg `ES256`: generate a seed with `npm run generate:prime256v1`.
 
 ```yaml
 signingKeys:
   - type: ES256
+    id: 91705ba8b54357e00953b2d5cc2d805c25f86bbec4777ea4f0dc883dd84b4803
     privateKeyPem: |
       -----BEGIN PRIVATE KEY-----
-      MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg1MpljPTcYJFcvDhk
-      n1/Qjy0Omw/NIxy+f94ZMgLd8C+hRANCAASGlN1Eh1dobs+s5T2151htdS/bnr9O
-      oG+scxpx/p92UZHoBJkNQKbQpfaioUdwu9eDxv6FE69C+2X8ajiRpI5H
+      MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgdU1KX0SdMjy4AzVm
+      5awy7B3tHz0y+mckq/x2V8fWwrmhRANCAARkJ4rsoMcdayGPTcAbgLfKRdqwN57I
+      n9CRsED9Yno+oC4R7xz6xXpT2CQAkioPDmou1DYYU+oMaV9lCjvw9vqs
       -----END PRIVATE KEY-----
     publicKeyPem: |
       -----BEGIN PUBLIC KEY-----
-      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEhpTdRIdXaG7PrOU9tedYbXUv256/
-      TqBvrHMacf6fdlGR6ASZDUCm0KX2oqFHcLvXg8b+hROvQvtl/Go4kaSORw==
+      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZCeK7KDHHWshj03AG4C3ykXasDee
+      yJ/QkbBA/WJ6PqAuEe8c+sV6U9gkAJIqDw5qLtQ2GFPqDGlfZQo78Pb6rA==
       -----END PUBLIC KEY-----
     purpose:
       - id_token
+      - authorization_request
 ```
 
 #### Configuring id_token claims for OIDC

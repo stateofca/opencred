@@ -185,7 +185,7 @@ export const jwksEndpoint = async (req, res) => {
     });
     const jwkFormat = rehydratedKey.export({format: 'jwk', type: 'public'});
     return {
-      kid: crypto.createHash('sha256').update(key.publicKeyPem).digest('hex'),
+      kid: key.id,
       ...jwkFormat
     };
   });

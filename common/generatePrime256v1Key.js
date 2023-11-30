@@ -29,6 +29,8 @@ if(import.meta.url === pathToFileURL(process.argv[1]).href) {
       'Use config values:',
       'signingKeys:',
       '  - type: ES256',
+      `    id: ${crypto
+        .createHash('sha256').update(pubK).digest('hex')}`,
       '    privateKeyPem: |',
       '      ' + privK.replaceAll('\n', '\n      ').trimEnd(),
       '    publicKeyPem: |',

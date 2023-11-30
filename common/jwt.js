@@ -17,7 +17,7 @@ export const jwtFromExchange = async (exchange, rp) => {
     throw new Error('No signing key found in config with purpose id_token');
   }
 
-  const {privateKeyPem, publicKeyPem} = signingKey;
+  const {privateKeyPem} = signingKey;
   const rehydratedKey = crypto.createPrivateKey({
     key: privateKeyPem.toString('hex'),
     format: 'pem',
@@ -35,7 +35,7 @@ export const jwtFromExchange = async (exchange, rp) => {
   const header = {
     alg: 'ES256',
     typ: 'JWT',
-    kid: crypto.createHash('sha256').update(publicKeyPem).digest('hex')
+    kid: signingKey.id
   };
 
   const stepResultKey = Object.keys(exchange.variables.results).find(

@@ -32,7 +32,7 @@ export const didWebDocument = async (req, res) => {
         verificationMethod: [
           ...config.didWeb.mainDocument.verificationMethod,
           {
-            id: domainToDidWeb(config.domain) + '#authorization_request',
+            id: `${domainToDidWeb(config.domain)}#${authzReqKey.id}`,
             controller: domainToDidWeb(config.domain),
             type: 'JsonWebKey2020',
             publicKeyJwk: {
@@ -42,11 +42,7 @@ export const didWebDocument = async (req, res) => {
         ],
         assertionMethod: [
           ...config.didWeb.mainDocument.assertionMethod,
-          domainToDidWeb(config.domain) + '#authorization_request'
-        ],
-        authentication: [
-          ...config.didWeb.mainDocument.authentication,
-          domainToDidWeb(config.domain) + '#authorization_request'
+          `${domainToDidWeb(config.domain)}#${authzReqKey.id}`
         ]
       };
       res.send(doc);
@@ -57,7 +53,7 @@ export const didWebDocument = async (req, res) => {
       id: domainToDidWeb(config.domain),
       verificationMethod: [
         {
-          id: domainToDidWeb(config.domain) + '#authorization_request',
+          id: `${domainToDidWeb(config.domain)}#${authzReqKey.id}`,
           controller: domainToDidWeb(config.domain),
           type: 'JsonWebKey2020',
           publicKeyJwk: {
@@ -66,11 +62,8 @@ export const didWebDocument = async (req, res) => {
         }
       ],
       assertionMethod: [
-        domainToDidWeb(config.domain) + '#authorization_request'
-      ],
-      authentication: [
-        domainToDidWeb(config.domain) + '#authorization_request'
-      ],
+        `${domainToDidWeb(config.domain)}#${authzReqKey.id}`
+      ]
     };
     res.send(doc);
     return;

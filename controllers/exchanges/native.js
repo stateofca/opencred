@@ -237,17 +237,16 @@ export default function(app) {
       const key = config.signingKeys
         .find(k => k.purpose?.includes('authorization_request'));
       if(!key) {
-        console.log('No authorization_request key found');
+        console.log('No key with purpose authorization_request found');
         res.sendStatus(500);
         return;
       }
       const {privateKeyPem} = key;
       const privateKey = await importPKCS8(privateKeyPem, key.type);
-
       const jwt = await new SignJWT(authorizationRequest)
         .setProtectedHeader({
           alg: key.type,
-          kid: `${domainToDidWeb(config.domain)}#authorization_request`,
+          kid: `${domainToDidWeb(config.domain)}#${key.id}`,
           typ: 'JWT'
         })
         .setIssuedAt()
