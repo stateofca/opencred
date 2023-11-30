@@ -38,6 +38,7 @@ const exampleRelyingParty = {
 
 const exampleKey = {
   type: 'ES256',
+  id: 'example-key',
   privateKeyPem: '-----BEGIN PRIVATE KEY-----\n' +
     'MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgwLbkoZh3wYp0p83Z\n' +
     'vlsqUhoT5Tmb/C2noUIQIRGA57ahRANCAARfPqGvN6FfB3Ke1RPSB6GQz2dd+ELC\n' +

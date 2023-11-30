@@ -88,7 +88,7 @@ describe('OpenCred did:web support', function() {
     expect(response.headers['content-type']).to.match(/json/);
     expect(response.status).to.equal(200);
     expect(response.body.id).to.equal('did:web:example.com');
-    expect(response.body.verificationMethod.length).to.equal(1);
+    expect(response.body.verificationMethod.length).to.equal(2);
 
     didWebStub.restore();
   });
@@ -106,8 +106,8 @@ describe('OpenCred did:web support', function() {
     expect(response.headers['content-type']).to.match(/json/);
     expect(response.status).to.equal(200);
     expect(response.body.id).to.equal('did:web:example.com');
-    expect(response.body.verificationMethod.length).to.equal(1);
-    expect(response.body.assertionMethod.length).to.equal(1);
+    expect(response.body.verificationMethod.length).to.equal(2);
+    expect(response.body.assertionMethod.length).to.equal(2);
     expect(response.body.verificationMethod[0].id).to.equal(
       response.body.assertionMethod[0]
     );
