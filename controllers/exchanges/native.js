@@ -5,6 +5,7 @@ import {
 } from '../../common/utils.js';
 import {importPKCS8, SignJWT} from 'jose';
 import {config} from '../../config/config.js';
+import {domainToDidWeb} from '../didWeb.js';
 import {exchanges} from '../../common/database.js';
 import {getDocumentLoader} from '../../common/documentLoader.js';
 import jp from 'jsonpath';
@@ -40,7 +41,7 @@ export const createExchange = async (domain, workflow, oidcState = '') => {
   const vcapi = `${domain}/workflows/${workflow.id}/exchanges/${id}`;
   const authzReqUrl = `${vcapi}/openid/client/authorization/request`;
   const searchParams = new URLSearchParams({
-    client_id: `did:web:${config.domain.split('https://')[1]}`,
+    client_id: domainToDidWeb(config.domain),
     // client_id: `${vcapi}/openid/client/authorization/response`,
     request_uri: authzReqUrl
   });
@@ -99,7 +100,7 @@ export const verifySubmission = async (vp_token, submission, exchange) => {
         vp = convertJwtVpTokenToLdpVp(vp_token);
         if(!vpVerified) {
           const result = await verifyUtils.verifyJWTPresentation(vp_token, {
-            audience: `did:web:${config.domain.split('https://')[1]}`
+            audience: domainToDidWeb(config.domain)
           });
           if(!result.verified) {
             errors = [...errors, ...result.errors];
@@ -205,7 +206,7 @@ export default function(app) {
           ...fromVPR.presentation_definition,
           input_descriptors
         },
-        client_id: `did:web:${config.domain.split('https://')[1]}`,
+        client_id: domainToDidWeb(config.domain),
         client_id_scheme: 'did',
         nonce: await createId(),
         jti: 'd029318c-9026-476e-9431-7414bad8b6b3',
@@ -233,14 +234,20 @@ export default function(app) {
         }
       });
 
-      const key = config.signingKeys[0];
+      const key = config.signingKeys
+        .find(k => k.purpose?.includes('authorization_request'));
+      if(!key) {
+        console.log('No authorization_request key found');
+        res.sendStatus(500);
+        return;
+      }
       const {privateKeyPem} = key;
       const privateKey = await importPKCS8(privateKeyPem, key.type);
 
       const jwt = await new SignJWT(authorizationRequest)
         .setProtectedHeader({
           alg: key.type,
-          kid: `did:web:${config.domain.split('https://')[1]}#1`,
+          kid: `${domainToDidWeb(config.domain)}#authorization_request`,
           typ: 'JWT'
         })
         .setIssuedAt()

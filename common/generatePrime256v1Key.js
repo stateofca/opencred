@@ -34,7 +34,8 @@ if(import.meta.url === pathToFileURL(process.argv[1]).href) {
       '    publicKeyPem: |',
       '      ' + pubK.replaceAll('\n', '\n      ').trimEnd(),
       '    purpose:',
-      '      - id_token'
+      '      - id_token',
+      '      - authorization_request',
     ].join('\n'));
   });
 }

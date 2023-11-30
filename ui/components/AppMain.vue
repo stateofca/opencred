@@ -58,7 +58,7 @@
         { headers: { Authorization: `Bearer ${props.exchangeData.accessToken}` } }
       ));
       if (Object.keys(exchange).length > 0) {
-        if (exchange.state === "complete" && exchange.oidc?.code) {
+        if (exchange.state === "complete" && exchange.oidc?.code && false) {
           const queryParams = new URLSearchParams({
           state: props.exchangeData.oidc.state,
           code: exchange.oidc.code,
