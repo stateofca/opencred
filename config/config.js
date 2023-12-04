@@ -209,7 +209,7 @@ const validateDidWeb = () => {
   return {
     mainEnabled: configDoc.didWeb?.mainEnabled,
     linkageEnabled: configDoc.didWeb?.linkageEnabled,
-    mainDocument: JSON.parse(configDoc.didWeb?.mainDocument ?? null),
+    mainDocument: JSON.parse(configDoc.didWeb?.mainDocument ?? '{}'),
     linkageDocument: JSON.parse(configDoc.didWeb?.linkageDocument ?? '{}')
   };
 };

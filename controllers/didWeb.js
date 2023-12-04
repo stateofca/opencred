@@ -26,11 +26,11 @@ export const didWebDocument = async (req, res) => {
     .find(k => k.purpose?.includes('authorization_request'));
   if(authzReqKey) {
     const key = await importSPKI(authzReqKey.publicKeyPem, authzReqKey.type);
-    if(config.didWeb?.mainDocument) {
+    if(Object.keys(config.didWeb?.mainDocument).length > 0) {
       const doc = {
         ...config.didWeb.mainDocument,
         verificationMethod: [
-          ...config.didWeb.mainDocument.verificationMethod,
+          ...config.didWeb.mainDocument.verificationMethod ?? [],
           {
             id: `${domainToDidWeb(config.domain)}#${authzReqKey.id}`,
             controller: domainToDidWeb(config.domain),
@@ -41,7 +41,7 @@ export const didWebDocument = async (req, res) => {
           }
         ],
         assertionMethod: [
-          ...config.didWeb.mainDocument.assertionMethod,
+          ...config.didWeb.mainDocument.assertionMethod ?? [],
           `${domainToDidWeb(config.domain)}#${authzReqKey.id}`
         ]
       };
