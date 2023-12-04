@@ -103,7 +103,7 @@ export const verifySubmission = async (vp_token, submission, exchange) => {
             audience: domainToDidWeb(config.domain)
           });
           if(!result.verified) {
-            errors = [...errors, ...result.errors];
+            errors = errors.concat(result.errors);
           }
           vpVerified = true;
         }
