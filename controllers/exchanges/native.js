@@ -42,7 +42,6 @@ export const createExchange = async (domain, workflow, oidcState = '') => {
   const authzReqUrl = `${vcapi}/openid/client/authorization/request`;
   const searchParams = new URLSearchParams({
     client_id: domainToDidWeb(config.domain),
-    // client_id: `${vcapi}/openid/client/authorization/response`,
     request_uri: authzReqUrl
   });
   const OID4VP = 'openid4vp://?' + searchParams.toString();
@@ -209,7 +208,6 @@ export default function(app) {
         client_id: domainToDidWeb(config.domain),
         client_id_scheme: 'did',
         nonce: await createId(),
-        jti: 'd029318c-9026-476e-9431-7414bad8b6b3',
         response_uri: fromVPR.response_uri,
         state: await createId(),
         client_metadata: {
@@ -230,7 +228,7 @@ export default function(app) {
       await exchanges.updateOne({id: exchange.id}, {
         $set: {
           'variables.authorizationRequest': authorizationRequest,
-          updatedAt: Date.now()
+          updatedAt: new Date()
         }
       });
 
@@ -273,7 +271,7 @@ export default function(app) {
     if(exchange.state !== 'pending') {
       await exchanges.updateOne({
         id: exchange.id
-      }, {$set: {state: 'invalid', updatedAt: Date.now()}});
+      }, {$set: {state: 'invalid', updatedAt: new Date()}});
       res.status(400).send(`Exchange in state ${exchange.state}`);
       return;
     }
