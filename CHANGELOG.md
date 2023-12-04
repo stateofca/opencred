@@ -6,7 +6,7 @@
 - Revert to `node:20-alpine` in Dockerfile.
 
 ### Added
-- Native OID4VP flow works completes with VC-JWT.
+- Native OID4VP flow works with VC-JWT.
 
 ## 5.0.5 - 2023-11-22
 
