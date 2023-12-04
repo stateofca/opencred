@@ -221,7 +221,7 @@ describe('OpenCred API - Native Workflow', function() {
     );
     const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
       .resolves({verified: true});
-    const updateStub = sinon.stub(exchanges, 'updateOne');
+    const updateStub = sinon.stub(exchanges, 'updateOne').resolves();
     const response = await request(app)
       .post(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}/` +
         'openid/client/authorization/response')
