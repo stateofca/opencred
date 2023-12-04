@@ -1,9 +1,12 @@
 # opencred-platform Changelog
 
-## NEXT - TBD
+## 5.1.0 - 2023-12-XX
 
 ### Fixed
 - Revert to `node:20-alpine` in Dockerfile.
+
+### Added
+- Native OID4VP flow works completes with VC-JWT.
 
 ## 5.0.5 - 2023-11-22
 
