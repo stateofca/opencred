@@ -201,7 +201,7 @@ describe('OpenCred API - Native Workflow', function() {
 
   it('OID4VP should handle DI authorization response', async function() {
     const findStub = sinon.stub(exchanges, 'findOne').resolves(exchange);
-    const updateStub = sinon.stub(exchanges, 'updateOne');
+    const updateStub = sinon.stub(exchanges, 'updateOne').resolves();
     const response = await request(app)
       .post(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}/` +
         'openid/client/authorization/response')
