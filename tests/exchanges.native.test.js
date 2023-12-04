@@ -42,7 +42,7 @@ describe('Exchanges (Native)', async () => {
       .returns(() => {
         return Promise.resolve({/* mock resolved value */});
       });
-    verifyStub = sinon.stub(verifyUtils, 'verifyDataIntegrity')
+    verifyStub = sinon.stub(verifyUtils, 'verifyPresentationDataIntegrity')
       .resolves({verified: true});
     verifyCredentialStub = sinon.stub(
       verifyUtils, 'verifyCredentialDataIntegrity')
@@ -112,7 +112,7 @@ describe('Exchanges (Native)', async () => {
 
   it('should return an error if vp invalid', async () => {
     verifyStub.restore();
-    verifyStub = sinon.stub(verifyUtils, 'verifyDataIntegrity')
+    verifyStub = sinon.stub(verifyUtils, 'verifyPresentationDataIntegrity')
       .resolves({verified: false, error: 'invalid vp'});
     const result = await verifySubmission(
       vp_token, presentation_submission, exchange

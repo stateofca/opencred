@@ -99,7 +99,7 @@ export const verifySubmission = async (vp_token, submission, exchange) => {
       } else if(submitted.format === 'jwt_vp_json') {
         vp = convertJwtVpTokenToLdpVp(vp_token);
         if(!vpVerified) {
-          const result = await verifyUtils.verifyJWTPresentation(vp_token, {
+          const result = await verifyUtils.verifyPresentationJWT(vp_token, {
             audience: domainToDidWeb(config.domain)
           });
           if(!result.verified) {
@@ -110,7 +110,7 @@ export const verifySubmission = async (vp_token, submission, exchange) => {
       } else if(submitted.format === 'ldp_vp') {
         vp = normalizeVpTokenDataIntegrity(vp_token)[0];
         if(!vpVerified) {
-          const result = await verifyUtils.verifyDataIntegrity({
+          const result = await verifyUtils.verifyPresentationDataIntegrity({
             presentation: vp,
             documentLoader,
             suite: SUITES,
