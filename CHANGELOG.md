@@ -5,6 +5,7 @@
 ### Added
 - Add support for loading the config from a Base64 encoded environmental
   variable: OPENCRED_CONFIG.
+- Add RS256 signing key.
 
 ## 5.1.0 - 2023-12-04
 
