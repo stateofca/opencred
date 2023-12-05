@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 5.2.0 - 2023-12-xx
+## 5.2.0 - 2023-12-05
 
 ### Added
 - Add support for loading the config from a Base64 encoded environmental
