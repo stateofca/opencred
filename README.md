@@ -57,7 +57,16 @@ The app is configured via a YAML file. See
 
 Copy the example to the ignored location `cp config/config.example.yaml
 config/config.yaml` and edit the file. Configure the details of your relying
-party, and connection details for a VC-API exchanger endpoint
+party, and connection details for a VC-API exchanger endpoint.
+
+#### Configure with an Environment Variable
+If an `OPENCRED_CONFIG` environment variable is set, the config specified in
+the environment variable will supersede any file based configuration. The
+environment variable must be a Base64 encoded string based on a YAML config
+file. The environment variable may be set with the following command:
+```
+export OPENCRED_CONFIG=$(cat config.yaml | base64)
+```
 
 #### Configuring a Native workflow
 
@@ -145,7 +154,7 @@ the `./well-known/jwks.json` endpoint for keys with the `id_token` purpose as
 well as in the `.well-known/did.json` endpoint for keys with the
 `authorization_request` purpose.
 
-Supported key types for JWT signing include: 
+Supported key types for JWT signing include:
 
 JWT alg `ES256`: generate a seed with `npm run generate:prime256v1`.
 
@@ -194,11 +203,11 @@ that is verified to match the workflow requirements, if successfully presented.
 In the workflow, you can use the method appropriate to the workflow type to
 specify which Verifiable Credential type, context, and/or issuers you will
 accept. This enables the specification of a plaintext `path` relative to
-`credentialSubject` to source the claim value from. 
+`credentialSubject` to source the claim value from.
 
 ### Run via node
 
-Prerequisites: 
+Prerequisites:
 
 * Node v20
 * MongoDB: configure e.g. `dbConnectionUri: mongodb://localhost:27017`
@@ -321,7 +330,7 @@ The HTTP API workflow follows this process:
   `accessToken` from the exchange initiation. Or you may continue to use the
   Basic method from the first request. The accessToken is short lived and will
   expire after a 15 minutes and may be made available to a browser client,
-  whereas the `clientId` should only be held server-side. 
+  whereas the `clientId` should only be held server-side.
 * The response will contain an `exchange` object with a `state` that is either
   `pending`, `complete`, or `invalid` with additional results.
 
