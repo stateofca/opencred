@@ -16,10 +16,9 @@ export const generateP256SigningKey = () => {
     }, (err, publicKey, privateKey) => {
       if(err) {
         console.error('Error generating P-256 key pair:', err);
-        reject(err);
-      } else {
-        resolve({privateKey, publicKey});
+        return reject(err);
       }
+      resolve({privateKey, publicKey});
     });
   });
 };

@@ -18,10 +18,9 @@ export const generateRSA256SigningKey = () => {
       (err, publicKey, privateKey) => {
         if(err) {
           console.error('Error generating RSA-256 key pair:');
-          reject(err);
-        } else {
-          resolve({privateKey, publicKey});
+          return reject(err);
         }
+        resolve({privateKey, publicKey});
       }
     );
   });
