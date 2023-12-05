@@ -5,11 +5,18 @@ import 'dotenv/config';
 import {applyRpDefaults} from './configUtils.js';
 import {combineTranslations} from './translation.js';
 
-// Environment variables
-const configPath = process.env.CONFIG_PATH || '/etc/app-config/config.yaml';
+let configDoc;
+if(process.env.OPENCRED_CONFIG) {
+  configDoc = yaml.load(
+    Buffer.from(process.env.OPENCRED_CONFIG, 'base64').toString()
+  );
+} else {
+  // Environment variables
+  const configPath = process.env.CONFIG_PATH || '/etc/app-config/config.yaml';
 
-// Load config doc and parse YAML.
-const configDoc = yaml.load(fs.readFileSync(configPath, 'utf8'));
+  // Load config doc and parse YAML.
+  configDoc = yaml.load(fs.readFileSync(configPath, 'utf8'));
+}
 
 /**
  * @typedef {Object} VcApiWorkflow
