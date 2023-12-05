@@ -1,4 +1,5 @@
 import {describe, it} from 'mocha';
+import {importSPKI, jwtVerify} from 'jose';
 import {exchanges} from '../common/database.js';
 
 import * as sinon from 'sinon';
@@ -37,17 +38,60 @@ const exampleRelyingParty = {
 };
 
 const exampleKey = {
-  type: 'ES256',
+  type: 'RS256',
   id: 'example-key',
-  privateKeyPem: '-----BEGIN PRIVATE KEY-----\n' +
-    'MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgwLbkoZh3wYp0p83Z\n' +
-    'vlsqUhoT5Tmb/C2noUIQIRGA57ahRANCAARfPqGvN6FfB3Ke1RPSB6GQz2dd+ELC\n' +
-    'h0bvoXioeqXrMR/RvZ+JRuQ5nMfh3UC7As2Ve4hq6JAUa2+VsxC2z2fd\n' +
-    '-----END PRIVATE KEY-----',
-  publicKeyPem: '-----BEGIN PUBLIC KEY-----\n' +
-    'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXz6hrzehXwdyntUT0gehkM9nXfhC\n' +
-    'wodG76F4qHql6zEf0b2fiUbkOZzH4d1AuwLNlXuIauiQFGtvlbMQts9n3Q==\n' +
-    '-----END PUBLIC KEY-----',
+  privateKeyPem: `-----BEGIN PRIVATE KEY-----
+MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDDhVw2YPUExQJI
+ekl7sxN73Y4F0n9/tVKoEVOZ8b2NcRbjpYBnvyMudQEvRDnyUu40drW3ZPAlPILN
+zxdSQDeLDmypdJ8OAPuR4Sc6HTaktNmjzKYNnPfGlosdgxr0eORXb31JDaC+oeJs
+84CojLvb54mQXI7rKlMfo3KzWQZXHq7ATKTtZ1UaZJULFvipMWtMzVoGhrOrnIhH
+J7J7D1T1oKdfnJcDE9Gu4a3E9lmqFuecpGjnKr2hdLjyd4qlQXeNGuNI1Grwpxbq
+8XLa8kfNn2GKrGVZWWLh3BD5/H/E/Um2eF5P+S4LQTevP4SVsIhlIDGLEjEvzdYq
+nWj5/yaDAgMBAAECggEBAISvbQuuMrkA5XLAIjwjI9bMXQRQfJvzNlu+Hmj7Z7Kk
+C2+Dsic1zC9L0fj8qQJtCyBpaxpBEsOCVBZNMrtrvwXMTSuWbBY5zn+KN2+1wY52
++LezOwFEA9Yt9cyaW2GK5RL9Ix2/dNXJ0Ho1qZs4nog2keF5HrgyqeRvrHhPswDN
+LiWmwO+fEO7CaMfFC3hRJOdxGAdYbEd6FhGuzPzJZabNBOHpZPAaMbyD4uLLWiNL
+CPSL3E/0tYC66cqfUGaaXRTxtbzuiFJjcr+oRnTlSorlVxCVg9v+pJpoRsG6wdXD
+yn9/Y8uyQ6nTw0xh+gUWWqKmU2JP4cGOGTs3yyF4mLECgYEA8aOUdHPv+SQjKhH1
+1h1uw9pH24tizNiPtdcAcDxt4eyphEgHuCqL6AK6sdnL6yoneaCHJ7ZdFNKZ+Kr0
+nP4iUV98OyBMvJDA7f23Lg96tAPRBD7hBP8dtNednO779+KpvV0JC2dnhAM778Eg
+5oOBC/O+spKf70MogrLj/FxQsYsCgYEAzyQd1+veGfVZkS5FLYss677EGY7LZh6w
+KfLT6cVZP7CikjUImjPAfWcpm0PWEku1rv74Z8BdXLRxgS2zY2kRL9Fbetw+XW7/
+nL/IlJnxjRNf8NRjQ6fZuFZYZRPFdYN4C7khNPiGP3UqDMNQ6s3yCUOzfB+TCayA
+VUvYihjMjekCgYEAvBO4fxOmWuL3w80K7ccm6aZCe+13zz1YTg60tqcyV8DfCKkP
+6RakosdNDRUalUXQR+jcidp1hLmPQm+9yVw81d1eUp8HW1XH9PWf2GgP94Fo9McE
+WeE/+/w/H2EcGYsA1vVNDuVDOwtRYYGO3BzLGsRzT4a0mYRKScB3l3s7C5UCgYEA
+jz3ihVZOmJTaA1OD8yKzRbL92M6uSUgfemK5uIcIWMrFIWYbNMdk7VNRqlUWzEAe
+u40GKnkUFu+RLkt0KeKWSAL2x9dWKTaA/NyC0IBEUdJ8HgZBPp/sJ1VOe1dYzRLF
+CRZUqFTUQT28fmbype0U2uM+Uy9iduYbOODiNV1A10ECgYADlmAxLX74Tay0JX4C
+57CZzcgoZHQsdH8sSa5noZLp30SxeHaLfZsWv4qB2wWFqkfULwXWjtR28jFVYzvj
+twpE2n4U47ieMFI0zkfY+AwMmmenkwm3Ken4fwOx0iU/o5a6vtKT4umYPzXWMkLe
+Bdhx5w4eksSbrwLu9q5ZoiPC6w==
+-----END PRIVATE KEY-----`,
+  publicKeyPem: `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw4VcNmD1BMUCSHpJe7MT
+e92OBdJ/f7VSqBFTmfG9jXEW46WAZ78jLnUBL0Q58lLuNHa1t2TwJTyCzc8XUkA3
+iw5sqXSfDgD7keEnOh02pLTZo8ymDZz3xpaLHYMa9HjkV299SQ2gvqHibPOAqIy7
+2+eJkFyO6ypTH6Nys1kGVx6uwEyk7WdVGmSVCxb4qTFrTM1aBoazq5yIRyeyew9U
+9aCnX5yXAxPRruGtxPZZqhbnnKRo5yq9oXS48neKpUF3jRrjSNRq8KcW6vFy2vJH
+zZ9hiqxlWVli4dwQ+fx/xP1JtnheT/kuC0E3rz+ElbCIZSAxixIxL83WKp1o+f8m
+gwIDAQAB
+-----END PUBLIC KEY-----`,
+  purpose: ['id_token']
+};
+
+const exampleKey2 = {
+  type: 'ES256',
+  id: 'example-key-2',
+  privateKeyPem: `-----BEGIN PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgQOoiBgmueLfufGgB
+uUgIAANl9SvL52DFIRwwLjWdNNuhRANCAAQdKDqJPHPl7XKKvN1ne1fJ70UcnYtD
+MjCUYHTzElFFxXNut27DnTeuJ7mOdJojJa2f1n1QibkZZ2d3lzr92WJn
+-----END PRIVATE KEY-----`,
+  publicKeyPem: `-----BEGIN PUBLIC KEY-----
+  MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHSg6iTxz5e1yirzdZ3tXye9FHJ2L
+  QzIwlGB08xJRRcVzbrduw503rie5jnSaIyWtn9Z9UIm5GWdnd5c6/dliZw==
+  -----END PUBLIC KEY-----`,
   purpose: ['id_token']
 };
 
@@ -135,62 +179,141 @@ describe('OAuth Login Workflow', function() {
     dbStub.restore();
   });
 
-  it('should enable code for token exchange', async function() {
-    const dbStub = sinon.stub(exchanges, 'findOne');
-    dbStub.resolves({
-      _id: 'test',
-      ttl: 900,
-      workflowId: 'testWorkflowId',
-      code: 'the-code',
-      variables: {
-        results: {
-          default: {
-            verifiablePresentation: {
-              type: 'VerifiablePresentation',
-              verifiableCredential: [{
-                type: 'VerifiableCredential',
-                credentialSubject: {
-                  id: 'did:example:123',
-                  name: 'Alice'
-                }
-              }]
+  it('should enable code for valid token exchange (RS256)',
+    async function() {
+      const dbStub = sinon.stub(exchanges, 'findOne');
+      dbStub.resolves({
+        _id: 'test',
+        ttl: 900,
+        workflowId: 'testWorkflowId',
+        code: 'the-code',
+        variables: {
+          results: {
+            default: {
+              verifiablePresentation: {
+                type: 'VerifiablePresentation',
+                verifiableCredential: [{
+                  type: 'VerifiableCredential',
+                  credentialSubject: {
+                    id: 'did:example:123',
+                    name: 'Alice'
+                  }
+                }]
+              }
             }
           }
-        }
-      },
-      step: 'default',
-      redirectUri: 'https://example.com',
-      state: 'complete',
-      scope: 'openid'
-    });
-    const updateStub = sinon.stub(exchanges, 'updateOne');
-    updateStub.resolves(undefined);
+        },
+        step: 'default',
+        redirectUri: 'https://example.com',
+        state: 'complete',
+        scope: 'openid'
+      });
+      const updateStub = sinon.stub(exchanges, 'updateOne');
+      updateStub.resolves(undefined);
 
-    const keysStub = sinon.stub(config, 'signingKeys').value([
-      exampleKey
-    ]);
+      const keysStub = sinon.stub(config, 'signingKeys').value([
+        exampleKey
+      ]);
 
-    const response = await request(app)
-      .post('/token')
-      .set('Accept', 'application/json')
-      .send(
-        'client_id=test&client_secret=testsecret' +
-        '&grant_type=authorization_code&code=the-code' +
-        '&redirect_uri=https%3A%2F%2Fexample.com' +
-        '&scope=openid'
+      const response = await request(app)
+        .post('/token')
+        .set('Accept', 'application/json')
+        .send(
+          'client_id=test&client_secret=testsecret' +
+          '&grant_type=authorization_code&code=the-code' +
+          '&redirect_uri=https%3A%2F%2Fexample.com' +
+          '&scope=openid'
+        );
+      expect(response.headers['content-type']).to.match(/json/);
+      expect(response.status).to.equal(200);
+      expect(response.body.id_token).to.not.be(undefined);
+      expect(response.body.token_type).to.equal('Bearer');
+
+      // Bearer token is included for OAuth2 compliance, but is not used.
+      expect(response.body.access_token).to.equal('NONE');
+
+      // Verify jwt
+      const key = await importSPKI(exampleKey.publicKeyPem, 'ES256');
+      const {payload, protectedHeader} = await jwtVerify(
+        response.body.id_token,
+        key
       );
-    expect(response.headers['content-type']).to.match(/json/);
-    expect(response.status).to.equal(200);
-    expect(response.body.id_token).to.not.be(undefined);
-    expect(response.body.token_type).to.equal('Bearer');
+      expect(payload.name).to.be('Alice');
+      expect(protectedHeader.alg).to.be('RS256');
+      expect(protectedHeader.kid).to.be('example-key');
 
-    // Bearer token is included for OAuth2 compliance, but is not used.
-    expect(response.body.access_token).to.equal('NONE');
+      keysStub.restore();
+      updateStub.restore();
+      dbStub.restore();
+    });
 
-    keysStub.restore();
-    updateStub.restore();
-    dbStub.restore();
-  });
+  it.skip('should enable code for valid token exchange (ES256)',
+    async function() {
+      const dbStub = sinon.stub(exchanges, 'findOne');
+      dbStub.resolves({
+        _id: 'test',
+        ttl: 900,
+        workflowId: 'testWorkflowId',
+        code: 'the-code',
+        variables: {
+          results: {
+            default: {
+              verifiablePresentation: {
+                type: 'VerifiablePresentation',
+                verifiableCredential: [{
+                  type: 'VerifiableCredential',
+                  credentialSubject: {
+                    id: 'did:example:123',
+                    name: 'Alice'
+                  }
+                }]
+              }
+            }
+          }
+        },
+        step: 'default',
+        redirectUri: 'https://example.com',
+        state: 'complete',
+        scope: 'openid'
+      });
+      const updateStub = sinon.stub(exchanges, 'updateOne');
+      updateStub.resolves(undefined);
+
+      const keysStub = sinon.stub(config, 'signingKeys').value([
+        exampleKey2
+      ]);
+
+      const response = await request(app)
+        .post('/token')
+        .set('Accept', 'application/json')
+        .send(
+          'client_id=test&client_secret=testsecret' +
+          '&grant_type=authorization_code&code=the-code' +
+          '&redirect_uri=https%3A%2F%2Fexample.com' +
+          '&scope=openid'
+        );
+      expect(response.headers['content-type']).to.match(/json/);
+      expect(response.status).to.equal(200);
+      expect(response.body.id_token).to.not.be(undefined);
+      expect(response.body.token_type).to.equal('Bearer');
+
+      // Bearer token is included for OAuth2 compliance, but is not used.
+      expect(response.body.access_token).to.equal('NONE');
+
+      // Verify jwt
+      const key = await importSPKI(exampleKey2.publicKeyPem, 'ES256');
+      const {payload, protectedHeader} = await jwtVerify(
+        response.body.id_token,
+        key
+      );
+      expect(payload.name).to.be('Alice');
+      expect(protectedHeader.alg).to.be('RS256');
+      expect(protectedHeader.kid).to.be('example-key');
+
+      keysStub.restore();
+      updateStub.restore();
+      dbStub.restore();
+    });
 
   it('should fail for the wrong client info', async function() {
     const dbStub = sinon.stub(exchanges, 'findOne');

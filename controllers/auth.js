@@ -21,7 +21,7 @@ const getAuthFunction = ({basic, bearer, body}) => {
       }
     }
 
-    if(basic && !req.rp) {
+    if(basic && !req.rp && parts.length > 0) {
       const val = Buffer.from(parts[1], 'base64').toString('utf-8');
       const authValueParts = val.split(':');
       if(

@@ -179,7 +179,7 @@ export const jwksEndpoint = async (req, res) => {
     key => key.purpose.includes('id_token')
   ).map(key => {
     const rehydratedKey = crypto.createPublicKey({
-      key: key.publicKeyPem.toString('hex'),
+      key: key.publicKeyPem,
       format: 'pem',
       type: 'spki'
     });
@@ -196,6 +196,9 @@ export const jwksEndpoint = async (req, res) => {
 };
 
 export const openIdConfiguration = async (req, res) => {
+  const id_token_signing_alg_values_supported = config.signingKeys.filter(
+    key => key.purpose.includes('id_token')
+  ).map(k => k.type);
   const info = {
     issuer: config.domain,
     authorization_endpoint: config.domain + '/login',
@@ -210,7 +213,7 @@ export const openIdConfiguration = async (req, res) => {
       'client_secret_basic',
       'client_secret_post'
     ],
-    id_token_signing_alg_values_supported: ['ES256'],
+    id_token_signing_alg_values_supported,
 
     request_parameter_supported: false,
     request_uri_parameter_supported: false,

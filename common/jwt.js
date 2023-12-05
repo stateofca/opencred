@@ -18,22 +18,26 @@ export const jwtFromExchange = async (exchange, rp) => {
   }
 
   const {privateKeyPem} = signingKey;
-  const rehydratedKey = crypto.createPrivateKey({
-    key: privateKeyPem.toString('hex'),
-    format: 'pem',
-    type: 'pkcs8'
-  });
+  const rehydratedKey = crypto.createPrivateKey(privateKeyPem);
 
   const signFn = async ({data}) => {
-    const sign = crypto.createSign('SHA256');
+    let algorithm;
+    if(signingKey.type === 'RS256') {
+      algorithm = 'RSA-SHA256';
+    } else if(signingKey.type === 'ES256') {
+      algorithm = 'SHA256';
+    } else {
+      throw new Error('Unsupported algorithm');
+    }
+    const sign = crypto.createSign(algorithm);
     sign.write(data);
     sign.end();
-    const sig = sign.sign(rehydratedKey, 'hex');
+    const sig = sign.sign(rehydratedKey, 'base64url');
     return sig;
   };
 
   const header = {
-    alg: 'ES256',
+    alg: signingKey.type,
     typ: 'JWT',
     kid: signingKey.id
   };

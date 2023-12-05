@@ -1,9 +1,9 @@
 import crypto from 'node:crypto';
 import {pathToFileURL} from 'node:url';
 
-export const generateP256SigningKey = async callback => {
-  crypto.generateKeyPair('ec',
-    {
+export const generateP256SigningKey = () => {
+  return new Promise((resolve, reject) => {
+    crypto.generateKeyPair('ec', {
       namedCurve: 'prime256v1',
       privateKeyEncoding: {
         format: 'pem',
@@ -13,31 +13,40 @@ export const generateP256SigningKey = async callback => {
         format: 'pem',
         type: 'spki'
       }
-    },
-    (err, publicKey, privateKey) => {
-      callback({privateKey, publicKey});
-    }
-  );
+    }, (err, publicKey, privateKey) => {
+      if(err) {
+        console.error('Error generating P-256 key pair:', err);
+        reject(err);
+      } else {
+        resolve({privateKey, publicKey});
+      }
+    });
+  });
 };
 
 if(import.meta.url === pathToFileURL(process.argv[1]).href) {
-  generateP256SigningKey(async ({privateKey, publicKey}) => {
-    const privK = privateKey.toString('hex');
-    const pubK = publicKey.toString('hex');
-
-    console.log([
-      'Use config values:',
-      'signingKeys:',
-      '  - type: ES256',
-      `    id: ${crypto
-        .createHash('sha256').update(pubK).digest('hex')}`,
-      '    privateKeyPem: |',
-      '      ' + privK.replaceAll('\n', '\n      ').trimEnd(),
-      '    publicKeyPem: |',
-      '      ' + pubK.replaceAll('\n', '\n      ').trimEnd(),
-      '    purpose:',
-      '      - id_token',
-      '      - authorization_request',
-    ].join('\n'));
-  });
+  const purposes = process.argv.slice(2);
+  if(purposes.length === 0) {
+    console.error('No purposes for key found! \n\n' +
+    'Usage: `npm run generate:prime256v1 <purpose1> <purpose2> ...`');
+  } else {
+    (async () => {
+      const {privateKey, publicKey} = await generateP256SigningKey();
+      console.log([
+        'Use config values:',
+        'signingKeys:',
+        '  - type: ES256',
+        `    id: ${crypto
+          .createHash('sha256').update(publicKey).digest('hex')}`,
+        '    privateKeyPem: |',
+        '      ' + privateKey
+          .split('\n').map(line => `      ${line}`).join('\n').trim(),
+        '    publicKeyPem: |',
+        '      ' + publicKey
+          .split('\n').map(line => `      ${line}`).join('\n').trim(),
+        '    purpose:',
+        ...purposes.map(p => `      - ${p}`)
+      ].join('\n'));
+    })();
+  }
 }
