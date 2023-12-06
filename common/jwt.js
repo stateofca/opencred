@@ -53,12 +53,13 @@ export const jwtFromExchange = async (exchange, rp) => {
     return null;
   }
 
+  const now = Math.floor(Date.now() / 1000);
   const payload = {
     iss: config.domain,
     aud: rp.clientId,
     sub: c[0].credentialSubject.id,
-    iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + 3600 // an hour
+    iat: now,
+    exp: now + rp.idTokenExpirySeconds
   };
 
   for(const {name, path} of rp.claims ?? []) {
