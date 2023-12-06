@@ -56,7 +56,9 @@ export const jwtFromExchange = async (exchange, rp) => {
   const payload = {
     iss: config.domain,
     aud: rp.clientId,
-    sub: c[0].credentialSubject.id
+    sub: c[0].credentialSubject.id,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 3600 // an hour
   };
 
   for(const {name, path} of rp.claims ?? []) {
