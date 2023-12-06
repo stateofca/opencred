@@ -111,6 +111,9 @@ const validateRelyingParty = rp => {
   if(!rp.scopes.map(s => s.name).includes('openid')) {
     throw new Error(`scopes in client ${rp.clientId} must include openid`);
   }
+  if(!rp.idTokenExpirySeconds) {
+    rp.idTokenExpirySeconds = 3600;
+  }
 };
 
 const validateWorkflow = rp => {

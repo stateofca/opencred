@@ -24,6 +24,7 @@ relyingParties:
     description: "Relying Party Test App"
     icon: "https://placekitten.com/200/200"
     backgroundImage: "https://placekitten.com/800/300"
+    idTokenExpirySeconds: 3600
     theme:
       cta: "#0B669D"
       primary: "#045199"
