@@ -1,9 +1,9 @@
 # opencred-platform Changelog
 
-## 5.2.2 - 2023-12-xx
+## 5.2.2 - 2023-12-06
 
 ### Fixed
-- Fix iat and exp claim in id_token.
+- Fix `iat` and `exp` claim in `id_token`.
 
 ## 5.2.1 - 2023-12-06
 
