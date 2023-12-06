@@ -220,6 +220,10 @@ describe('OpenCred API - Native Workflow', function() {
       exchange_jwt
     );
     const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
+      .resolves({verified: true, vp: {
+        verifiablePresentation: {vc: {proof: {jwt: '...'}}}}
+      });
+    const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
       .resolves({verified: true});
     const updateStub = sinon.stub(exchanges, 'updateOne').resolves();
     const response = await request(app)
@@ -233,6 +237,7 @@ describe('OpenCred API - Native Workflow', function() {
     findStub.restore();
     updateStub.restore();
     verifyUtilsStub.restore();
+    verifyUtilsStub2.restore();
     expect(response.status).to.equal(204);
   });
 });

@@ -28,4 +28,13 @@ describe('VC-JWT', async () => {
       await verifyUtils.verifyCredentialJWT(jwtCases.invalid.vc);
     assert.strictEqual(verification.verified, false);
   });
+
+  it.skip('should fail verification of vc-jwt with invalid x5c in did:jwk',
+    async () => {
+      const verification =
+        await verifyUtils.verifyJWTCredential(jwtCases.invalid.vc_x5c);
+      console.log(verification.vc.signer)
+      assert.strictEqual(verification.verified, false);
+    }
+  );
 });

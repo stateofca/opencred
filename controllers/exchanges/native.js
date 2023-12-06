@@ -77,7 +77,6 @@ export const createNativeExchange = async (req, res, next) => {
 
 export const verifySubmission = async (vp_token, submission, exchange) => {
   let errors = [];
-  let vpVerified = false;
   let vp;
   const documentLoader = getDocumentLoader().build();
   const {presentation_definition} = exchange.variables.authorizationRequest;
@@ -97,28 +96,30 @@ export const verifySubmission = async (vp_token, submission, exchange) => {
         errors.push(`Submission not found for input descriptor`);
       } else if(submitted.format === 'jwt_vp_json') {
         vp = convertJwtVpTokenToLdpVp(vp_token);
-        if(!vpVerified) {
-          const result = await verifyUtils.verifyPresentationJWT(vp_token, {
-            audience: domainToDidWeb(config.domain)
-          });
-          if(!result.verified) {
-            errors = errors.concat(result.errors);
-          }
-          vpVerified = true;
+        const vpResult = await verifyUtils.verifyPresentationJWT(vp_token, {
+          audience: domainToDidWeb(config.domain)
+        });
+        if(!vpResult.verified) {
+          errors = errors.concat(vpResult.errors);
+        }
+        const vc = jp.query(
+          vpResult.vp.verifiablePresentation,
+          submitted.path_nested.path
+        )[0];
+        const result = await verifyUtils.verifyCredentialJWT(vc.proof.jwt);
+        if(!result.verified) {
+          errors = errors.concat(result.errors);
         }
       } else if(submitted.format === 'ldp_vp') {
         vp = normalizeVpTokenDataIntegrity(vp_token)[0];
-        if(!vpVerified) {
-          const result = await verifyUtils.verifyPresentationDataIntegrity({
-            presentation: vp,
-            documentLoader,
-            suite: SUITES,
-            challenge: exchange.id
-          });
-          if(!result.verified) {
-            errors.push(result.error);
-          }
-          vpVerified = true;
+        const vpResult = await verifyUtils.verifyPresentationDataIntegrity({
+          presentation: vp,
+          documentLoader,
+          suite: SUITES,
+          challenge: exchange.id
+        });
+        if(!vpResult.verified) {
+          errors.push(vpResult.error);
         }
         const vc = jp.query(vp, submitted.path_nested.path)[0];
         const result = await verifyUtils.verifyCredentialDataIntegrity({

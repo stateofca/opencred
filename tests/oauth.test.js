@@ -21,6 +21,7 @@ const exampleRelyingParty = {
     }
   },
   clientId: 'test',
+  idTokenExpirySeconds: 3600,
   clientSecret: 'testsecret',
   redirectUri: 'https://example.com',
   scopes: [{name: 'openid'}],

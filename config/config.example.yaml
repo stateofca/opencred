@@ -14,8 +14,61 @@ signingKeys:
       TqBvrHMacf6fdlGR6ASZDUCm0KX2oqFHcLvXg8b+hROvQvtl/Go4kaSORw==
       -----END PUBLIC KEY-----
     purpose:
-      - id_token
+      - authorization_request
 relyingParties:
+  - name: "Test Relying Party (Native)"
+    clientId: "rp1"
+    clientSecret: "DeepestAndDarkest"
+    description: "Relying Party Test App"
+    icon: "https://placekitten.com/200/200"
+    backgroundImage: "https://placekitten.com/800/200"
+    redirectUri: "http://localhost:3000"
+    idTokenExpirySeconds: 3600
+    claims:
+      - name: "dl_number"
+        path: "driversLicense.document_number"
+    theme:
+      cta: "#0B669D"
+      primary: "#045199"
+      header: "#0979c4"
+    scopes:
+      - name: "openid"
+        description: "Open ID Connect"
+    workflow:
+      type: native
+      id: z1A32xJZGqBeAEcMq56avmw2L
+      initialStep: default
+      steps:
+        default:
+          createChallenge: true
+          verifiablePresentationRequest: >
+            {
+              "query": {
+                "type": "QueryByExample",
+                "credentialQuery": {
+                  "reason": "Please present your VC.",
+                  "example": {
+                    "type": [
+                      "Iso18013DriversLicenseCredential"
+                    ]
+                  }
+                }
+              }
+            }
+          constraintsOverride: >
+            {
+              "fields": [
+                {
+                  "path": [
+                    "$.vc.type"
+                  ],
+                  "filter": {
+                    "type": "string",
+                    "pattern": "Iso18013DriversLicenseCredential"
+                  }
+                }
+              ]
+            }
   - name: "Test App"
     # An example that uses a remove VC-API exchanger to connect with a wallet
     # See Verifiable Credentials API Documentation: https://w3c-ccg.github.io/vc-api/
