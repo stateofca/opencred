@@ -29,11 +29,12 @@ describe('VC-JWT', async () => {
     assert.strictEqual(verification.verified, false);
   });
 
+  // TODO cert verification code and test
   it.skip('should fail verification of vc-jwt with invalid x5c in did:jwk',
     async () => {
       const verification =
         await verifyUtils.verifyJWTCredential(jwtCases.invalid.vc_x5c);
-      console.log(verification.vc.signer)
+      console.log(verification.vc.signer);
       assert.strictEqual(verification.verified, false);
     }
   );
