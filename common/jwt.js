@@ -55,7 +55,7 @@ export const jwtFromExchange = async (exchange, rp) => {
 
   const payload = {
     iss: config.domain,
-    aud: rp.redirectUri,
+    aud: rp.clientId,
     sub: c[0].credentialSubject.id
   };
 

@@ -4,6 +4,7 @@
 
 ### Fixed
 - Fix bug with nonce value in OID4VP request.
+- Fix aud claim in id_token.
 
 ## 5.2.0 - 2023-12-05
 
