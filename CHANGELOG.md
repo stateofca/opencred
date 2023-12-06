@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 5.2.1 - 2023-12-xx
+
+### Fixed
+- Fix bug with nonce value in OID4VP request.
+
 ## 5.2.0 - 2023-12-05
 
 ### Added

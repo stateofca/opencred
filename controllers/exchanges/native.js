@@ -207,7 +207,7 @@ export default function(app) {
         },
         client_id: domainToDidWeb(config.domain),
         client_id_scheme: 'did',
-        nonce: await createId(),
+        nonce: req.params.exchangeId,
         response_uri: fromVPR.response_uri,
         state: await createId(),
         client_metadata: {
