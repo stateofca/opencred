@@ -1,11 +1,6 @@
 # opencred-platform Changelog
 
-## 5.3.1 - 2023-12-07
-
-### Fixed
-- Fix broken 5.3.0 release.
-
-## 5.3.0 - 2023-12-07
+## 5.2.3 - 2023-12-07
 
 ### Fixed
 - Verify VC within VC-JWT presentation.
