@@ -220,11 +220,12 @@ describe('OpenCred API - Native Workflow', function() {
       exchange_jwt
     );
     const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
-      .resolves({verified: true, vp: {
+      .resolves({
+        verified: true,
         verifiablePresentation: {vc: {proof: {jwt: '...'}}}}
-      });
+      );
     const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
-      .resolves({verified: true});
+      .resolves({verified: true, signer: {}});
     const updateStub = sinon.stub(exchanges, 'updateOne').resolves();
     const response = await request(app)
       .post(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}/` +

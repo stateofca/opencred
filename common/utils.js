@@ -8,6 +8,7 @@ import {ConfidentialClientApplication} from '@azure/msal-node';
 import {didResolver} from './documentLoader.js';
 import {generateId} from 'bnid';
 import {httpClient} from '@digitalbazaar/http-client';
+import {verifyJWKx509} from './x509.js';
 
 // General Utilities
 
@@ -78,13 +79,12 @@ export const normalizeVpTokenDataIntegrity = vpToken => {
 
 const verifyJWTVC = async (jwt, options) => {
   try {
-    const vc = await verifyCredentialJWT(jwt, {
+    const verification = await verifyCredentialJWT(jwt, {
       resolve: did => didResolver.get({did})
     }, options);
-    if(vc) {
-      return {verified: true, vc};
+    if(verification) {
+      return {...verification, errors: []};
     }
-    return {verified: false};
   } catch(e) {
     return {verified: false, errors: [e.message]};
   }
@@ -92,13 +92,12 @@ const verifyJWTVC = async (jwt, options) => {
 
 const verifyJWTVP = async (jwt, options) => {
   try {
-    const vp = await verifyPresentationJWT(jwt, {
+    const verification = await verifyPresentationJWT(jwt, {
       resolve: did => didResolver.get({did})
     }, options);
-    if(vp) {
-      return {verified: true, vp};
+    if(verification) {
+      return {...verification, errors: []};
     }
-    return {verified: false};
   } catch(e) {
     return {verified: false, errors: [e.message]};
   }
@@ -108,7 +107,8 @@ export const verifyUtils = {
   verifyPresentationDataIntegrity: async args => verify(args),
   verifyCredentialDataIntegrity: async args => verifyCredential(args),
   verifyPresentationJWT: async (jwt, options) => verifyJWTVP(jwt, options),
-  verifyCredentialJWT: async (jwt, options) => verifyJWTVC(jwt, options)
+  verifyCredentialJWT: async (jwt, options) => verifyJWTVC(jwt, options),
+  verifyx509JWT: async jwk => verifyJWKx509(jwk)
 };
 
 // MSAL Client Utilities

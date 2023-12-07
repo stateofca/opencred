@@ -267,6 +267,12 @@ const relyingParties = configRPs.map(rp => {
   };
 });
 
+/**
+ * A list of trusted root certificates
+ */
+const caStore = (configDoc.caStore ?? [])
+  .map(cert => cert.pem);
+
 export const config = {
   databaseConnectionUri,
   didWeb,
@@ -275,4 +281,5 @@ export const config = {
   relyingParties,
   signingKeys,
   translations,
+  caStore
 };

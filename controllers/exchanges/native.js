@@ -103,12 +103,25 @@ export const verifySubmission = async (vp_token, submission, exchange) => {
           errors = errors.concat(vpResult.errors);
         }
         const vc = jp.query(
-          vpResult.vp.verifiablePresentation,
+          vpResult.verifiablePresentation,
           submitted.path_nested.path
         )[0];
-        const result = await verifyUtils.verifyCredentialJWT(vc.proof.jwt);
-        if(!result.verified) {
-          errors = errors.concat(result.errors);
+        if(vc) {
+          const result = await verifyUtils.verifyCredentialJWT(vc?.proof?.jwt);
+          if(!result.verified) {
+            errors = errors.concat(result.errors);
+          } else {
+            if(result.signer.publicKeyJwk?.x5c) {
+              const certValid = await verifyUtils.verifyx509JWT(
+                result.signer.publicKeyJwk
+              );
+              if(!certValid.verified) {
+                errors = errors.concat(certValid.errors);
+              }
+            }
+          }
+        } else {
+          errors = errors.concat('VC not found in presentation');
         }
       } else if(submitted.format === 'ldp_vp') {
         vp = normalizeVpTokenDataIntegrity(vp_token)[0];
