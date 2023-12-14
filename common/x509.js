@@ -1,5 +1,5 @@
 import * as x509 from '@peculiar/x509';
-import {Certificate, CertificateRevocationList} from 'pkijs';
+// import {Certificate, CertificateRevocationList} from 'pkijs';
 import {createPublicKey, X509Certificate} from 'node:crypto';
 import {config} from '../config/config.js';
 import ocsp from 'ocsp';

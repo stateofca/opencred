@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 5.3.0 - 2023-12-xx
+
+### Added
+- Verification of x509 certificates in did:jwk x5c claim.
+
 ## 5.2.4 - 2024-01-xx
 
 ### Changed
