@@ -19,20 +19,24 @@ const checkDates = cert => {
 const checkKeyUsage = cert => {
   const pec = new x509.X509Certificate(cert.toString());
   const keyUsages = pec.getExtension('2.5.29.15'); // key usage extension
-  const digitalSignatureBit = 0;
-
-  // Check to make sure key usage includes digital signatures
-  if((keyUsages.usages & (1 << digitalSignatureBit)) === 0) {
-    return {verified: false, errors: [
-      `Certificate doesn't have digital signature key usage`
-    ]};
+  if(keyUsages) {
+    const keyUsageBuffer = new Uint8Array(keyUsages.value);
+    // The actual key usage data starts at the 4th byte
+    const keyUsageByte = keyUsageBuffer[3];
+    // 0x80 is the bit for digital signatures (RFC5280)
+    const hasDigitalSignature = (keyUsageByte & 0x80) === 0x80;
+    if(hasDigitalSignature) {
+      return {verified: true, errors: []};
+    }
   }
-  return {verified: true, errors: []};
+  return {verified: false, errors: [
+    `Certificate doesn't have digital signature key usage`
+  ]};
 };
 
 const checkRevocation = async (cert, issuer) => {
   const errors = [];
-  if(typeof cert.infoAccess !== 'undefined') {
+  if(cert.infoAccess !== undefined) {
     await new Promise(resolve => {
       ocsp.check({
         cert: cert.raw,

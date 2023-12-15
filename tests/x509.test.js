@@ -75,25 +75,31 @@ async function createCRL(revoked, serialNumber, issuerKeys, issuerCert) {
 }
 
 function createKeyUsageExtension(usage) {
-  const array = new Uint8Array(1);
+  const bitArray = new ArrayBuffer(1);
+  const bitView = new Uint8Array(bitArray);
   if(usage.digitalSignature) {
-    array[0] |= 0x80;
+    bitView[0] |= 0x80;
   } // Bit 0
   if(usage.nonRepudiation) {
-    array[0] |= 0x40;
+    bitView[0] |= 0x40;
   } // Bit 1
   if(usage.keyEncipherment) {
-    array[0] |= 0x20;
+    bitView[0] |= 0x20;
   } // Bit 2
   if(usage.dataEncipherment) {
-    array[0] |= 0x10;
+    bitView[0] |= 0x10;
   } // Bit 3
+  if(usage.keyAgreement) {
+    bitView[0] |= 0x08;
+  } // Bit 4
   if(usage.keyCertSign) {
-    array[0] |= 0x04;
+    bitView[0] |= 0x04;
   } // Bit 5
+  if(usage.cRLSign) {
+    bitView[0] |= 0x02;
+  } // Bit 6
 
-  const keyUsageValue = new asn1js.BitString({valueHex: array.buffer});
-
+  const keyUsageValue = new asn1js.BitString({valueHex: bitArray});
   return new pkijs.Extension({
     extnID: '2.5.29.15', // OID for Key Usage
     critical: true,
@@ -183,14 +189,13 @@ async function generateCertificateChain(
         }).toSchema().toBER(false)
       });
       const keyUsageExt = createKeyUsageExtension({
-        digitalSignature: true,
-        nonRepudiation: true,
-        keyEncipherment: false,
-        dataEncipherment: false,
-        keyCertSign: true,
-        cRLSign: false,
-        encipherOnly: false,
-        decipherOnly: false
+        digitalSignature: true, // bit 0
+        nonRepudiation: true, // bit 1
+        keyEncipherment: false, // bit 2
+        dataEncipherment: false, // bit 3
+        keyAgreement: false, // bit 4
+        keyCertSign: true, // bit 5
+        cRLSign: false, // bit 6
       });
 
       certIssuer.extensions = [];
@@ -231,12 +236,13 @@ async function generateCertificateChain(
       }).toSchema().toBER(false)
     });
     const keyUsageExt = createKeyUsageExtension({
-      digitalSignature: true,
-      nonRepudiation: true,
-      keyEncipherment: false,
-      dataEncipherment: false,
-      keyCertSign: true,
-      cRLSign: i < n - 1
+      digitalSignature: true, // bit 0
+      nonRepudiation: true, // bit 1
+      keyEncipherment: false, // bit 2
+      dataEncipherment: false, // bit 3
+      keyAgreement: false, // bit 4
+      keyCertSign: true, // bit 5
+      cRLSign: i < n - 1 // bit 6
     });
 
     certSubject.extensions = [];
@@ -288,6 +294,7 @@ describe('x509', async () => {
     const verifiedChain = await verifyX509(chain);
 
     configStub.restore();
+    assert.deepEqual(verifiedChain.errors, []);
     assert.ok(verifiedChain.verified);
   });
 

@@ -40,8 +40,6 @@
     "@digitalbazaar/vdl-context": "github:digitalbazaar/vdl-context#context-update-10-24-2023",
     "@digitalbazaar/x25519-key-agreement-key-2020": "^3.0.1",
     "@interop/did-web-resolver": "^3.0.1",
-    "@peculiar/x509": "^1.9.5",
-    "asn1js": "^3.0.5",
     "base64url": "^3.0.1",
     "bnid": "^3.0.0",
     "cors": "^2.8.5",
@@ -70,7 +68,9 @@
   },
   "devDependencies": {
     "@peculiar/webcrypto": "^1.4.3",
+    "@peculiar/x509": "^1.9.5",
     "@vitejs/plugin-vue": "^4.2.3",
+    "asn1js": "^3.0.5",
     "autoprefixer": "^10.4.16",
     "eslint": "^8.49.0",
     "eslint-config-digitalbazaar": "^5.0.1",

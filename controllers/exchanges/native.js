@@ -106,8 +106,8 @@ export const verifySubmission = async (vp_token, submission, exchange) => {
           vpResult.verifiablePresentation,
           submitted.path_nested.path
         )[0];
-        if(vc) {
-          const result = await verifyUtils.verifyCredentialJWT(vc?.proof?.jwt);
+        if(vc && vc.proof && vc.proof.jwt) {
+          const result = await verifyUtils.verifyCredentialJWT(vc.proof.jwt);
           if(!result.verified) {
             errors = errors.concat(result.errors);
           } else {

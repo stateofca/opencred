@@ -82,9 +82,7 @@ const verifyJWTVC = async (jwt, options) => {
     const verification = await verifyCredentialJWT(jwt, {
       resolve: did => didResolver.get({did})
     }, options);
-    if(verification) {
-      return {...verification, errors: []};
-    }
+    return {...verification, errors: []};
   } catch(e) {
     return {verified: false, errors: [e.message]};
   }
@@ -95,9 +93,7 @@ const verifyJWTVP = async (jwt, options) => {
     const verification = await verifyPresentationJWT(jwt, {
       resolve: did => didResolver.get({did})
     }, options);
-    if(verification) {
-      return {...verification, errors: []};
-    }
+    return {...verification, errors: []};
   } catch(e) {
     return {verified: false, errors: [e.message]};
   }
