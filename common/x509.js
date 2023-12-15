@@ -49,6 +49,7 @@ const checkRevocation = async (cert, issuer) => {
   /*
   * TEMPORARILY DISABLED
   const certificate = Certificate.fromBER(cert.raw);
+  // CRL distribution point extension
   const ext = certificate.extensions.find(ext => ext.extnID === '2.5.29.31');
   if(ext) {
     const crlURIs = new Set([]);
