@@ -3,6 +3,7 @@ import {dirname} from 'node:path';
 import express from 'express';
 import {fileURLToPath} from 'node:url';
 import fs from 'node:fs';
+import morgan from 'morgan';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 
@@ -62,6 +63,7 @@ app.use(
     extended: true,
   })
 );
+app.use(morgan('dev'));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiSpecification));
 
 app.use('/assets', express.static('dist/client/assets', {index: false}));

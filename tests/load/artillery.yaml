@@ -1,0 +1,60 @@
+config:
+  target: http://localhost:8080
+  processor: './presentation.cjs'
+  phases:
+    - duration: 5
+      arrivalRate: 1
+      name: Startup phase
+  variables:
+    WORKFLOW_ID: 'default'
+    BASIC: 'cnAxOkRlZXBlc3RBbmREYXJrZXN0'
+scenarios:
+  - flow:
+    - post:
+        url: "/workflows/{{ WORKFLOW_ID }}/exchanges"
+        headers:
+          authorization: 'Basic {{ BASIC }}'
+        capture:
+          - json: "$.id"
+            as: "exchangeId"
+          - json: "$.accessToken"
+            as: "accessToken"
+          - json: "$.vcapi"
+            as: "vcapi"
+
+    - loop:
+      - get:
+          url: "/workflows/{{ WORKFLOW_ID }}/exchanges/{{ exchangeId }}"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+      - think: 5
+      count: 5
+      postProcessor: 
+        js: |
+          if (response.body.status === 'complete') {
+            $loop.break();
+          }
+
+    - get:
+        url: "{{ vcapi }}/openid/client/authorization/request"
+        # afterRequest: "getExchangeDetails"
+        # capture:
+        #   selector: '*'
+        #   as: 'authz_req'
+
+    - post:
+        url: "{{ vcapi }}/openid/client/authorization/request"
+        beforeRequest: "sendPresentation"
+
+    - loop:
+      - get:
+          url: "/workflows/{{ WORKFLOW_ID }}/exchanges/{{ exchangeId }}"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+      - think: 5
+      count: 5
+      postProcessor: 
+        js: |
+          if (response.body.status === 'complete') {
+            $loop.break();
+          }
