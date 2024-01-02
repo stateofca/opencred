@@ -66,6 +66,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiSpecification));
 
 app.use('/assets', express.static('dist/client/assets', {index: false}));
 app.get('/health', health);
+app.get('/health/live', health);
+app.get('/health/ready', health);
 
 app.get('/.well-known/did.json', didWebDocument);
 app.get('/.well-known/did-configuration.json', didConfigurationDocument);
