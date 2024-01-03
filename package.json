@@ -55,6 +55,7 @@
     "jsonld-document-loader": "^2.0.0",
     "jsonpath": "^1.1.1",
     "mongodb": "^6.2.0",
+    "morgan": "^1.10.0",
     "qrcode": "^1.5.3",
     "quasar": "^2.13.0",
     "swagger-jsdoc": "^6.2.8",
