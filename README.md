@@ -334,6 +334,23 @@ The HTTP API workflow follows this process:
 * The response will contain an `exchange` object with a `state` that is either
   `pending`, `complete`, or `invalid` with additional results.
 
+## Testing
+
+### Load Testing
+
+Load testing can be performed using [artillery](https://www.artillery.io/docs). To install artillery globally
+via `npm`:
+
+```
+npm install -g artillery@latest
+```
+
+and run the load testing script:
+
+```
+npm run test:load
+```
+
 ## License
 
 [BSD-3-Clause](./LICENSE)

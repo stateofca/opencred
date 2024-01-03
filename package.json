@@ -15,7 +15,8 @@
     "postinstall": "patch-package",
     "preview": "vite preview",
     "start": "npm run build && node index.js",
-    "test": "NODE_ENV=test mocha tests"
+    "test": "NODE_ENV=test mocha tests",
+    "test:load": "artillery run ./tests/load/artillery.yaml"
   },
   "dependencies": {
     "@azure/msal-node": "^2.5.1",

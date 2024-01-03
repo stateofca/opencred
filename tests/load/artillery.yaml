@@ -3,8 +3,8 @@ config:
   processor: './presentation.cjs'
   phases:
     - duration: 5
-      arrivalRate: 1
-      name: Startup phase
+      arrivalRate: 5
+      name: Load Test
   variables:
     WORKFLOW_ID: 'default'
     BASIC: 'cnAxOkRlZXBlc3RBbmREYXJrZXN0'
@@ -28,33 +28,26 @@ scenarios:
           headers:
             Authorization: "Bearer {{ accessToken }}"
       - think: 5
-      count: 5
-      postProcessor: 
-        js: |
-          if (response.body.status === 'complete') {
-            $loop.break();
-          }
+      count: 3
 
     - get:
         url: "{{ vcapi }}/openid/client/authorization/request"
-        # afterRequest: "getExchangeDetails"
-        # capture:
-        #   selector: '*'
-        #   as: 'authz_req'
+        afterResponse: "getExchangeDetails"
 
     - post:
-        url: "{{ vcapi }}/openid/client/authorization/request"
+        url: "{{ vcapi }}/openid/client/authorization/response"
         beforeRequest: "sendPresentation"
+        json:
+          presentation_submission: "{{submission}}"
+          vp_token: "{{vp_token}}"
 
     - loop:
       - get:
           url: "/workflows/{{ WORKFLOW_ID }}/exchanges/{{ exchangeId }}"
           headers:
             Authorization: "Bearer {{ accessToken }}"
+          capture:
+            - json: $.exchange.state
+              as: "state"
       - think: 5
-      count: 5
-      postProcessor: 
-        js: |
-          if (response.body.status === 'complete') {
-            $loop.break();
-          }
+      whileTrue: "statePending"
