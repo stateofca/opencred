@@ -354,6 +354,9 @@ app.on('init', async function() {
     {partialFilterExpression: {'oidc.code': {$exists: true}}}
   );
   console.log('Ensured partial index exists: oidc.code');
+
+  await exchanges.createIndex({id: 1});
+  console.log('Ensured exchange id index exists');
 });
 
 export const PORT = process.env.PORT || '8080';

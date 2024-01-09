@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 5.2.4 - 2024-01-xx
+
+### Changed
+- Added index on exchange id.
+
 ## 5.2.3 - 2023-12-07
 
 ### Fixed
