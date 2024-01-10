@@ -351,6 +351,14 @@ and run the load testing script:
 npm run test:load
 ```
 
+To run the load testing script against the QA environment:
+
+With a `QA_BASIC_AUTH` variable in a `.env` file which is the base64url encoding of `client_id:client_secret`.
+
+```
+npm run test:load:qa
+```
+
 ## License
 
 [BSD-3-Clause](./LICENSE)
