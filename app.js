@@ -355,7 +355,7 @@ app.on('init', async function() {
   );
   console.log('Ensured partial index exists: oidc.code');
 
-  await exchanges.createIndex({id: 1});
+  await exchanges.createIndex({id: 1}, { unique: true });
   console.log('Ensured exchange id index exists');
 });
 
