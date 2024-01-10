@@ -23,7 +23,7 @@
 /*!
  * Copyright (c) 2022-2023 Digital Bazaar, Inc. All rights reserved.
  */
-import { defineProps, reactive } from "vue";
+import { reactive } from "vue";
 import JsonNode from "./JsonNode.vue";
 import { useQuasar } from "quasar";
 import VueJsonPretty from "vue-json-pretty";

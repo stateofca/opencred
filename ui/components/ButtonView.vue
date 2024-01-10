@@ -1,5 +1,5 @@
 <script setup>
-import { defineEmits, ref } from "vue";
+import { ref } from "vue";
 import { getCredentials } from "../chapi.js";
 
 const props = defineProps({

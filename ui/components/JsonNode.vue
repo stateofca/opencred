@@ -15,7 +15,7 @@
 /*!
  * Copyright (c) 2022-2023 Digital Bazaar, Inc. All rights reserved.
  */
-import {defineProps, reactive} from 'vue';
+import {reactive} from 'vue';
 
 const state = reactive({expanded: false});
 
