@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import pkijs from 'pkijs';
 
 import {config} from '../config/config.js';
+import expect from 'expect.js';
 import {verifyX509} from '../common/x509.js';
 import {X509Certificate} from 'node:crypto';
 const crypto = new Crypto();
@@ -316,7 +317,7 @@ describe('x509', async () => {
     configStub.restore();
     leafValidToStub.restore();
     intValidToStub.restore();
-    assert.ok(!verifiedCert.verified);
+    expect(verifiedCert.verified).to.be(false);
   });
 
   it('should fail to verify with CRL URI status 404', async () => {

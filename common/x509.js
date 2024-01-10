@@ -34,7 +34,7 @@ const checkKeyUsage = cert => {
   ]};
 };
 
-const checkRevocation = async (cert, issuer) => {
+const checkRevocation = async (cert, issuer, i) => {
   const errors = [];
   if(cert.infoAccess !== undefined) {
     await new Promise(resolve => {
@@ -43,7 +43,9 @@ const checkRevocation = async (cert, issuer) => {
         issuer: issuer.raw
       }, function(err, res) {
         if(err !== null || res.type !== 'good') {
-          errors.push('x509 certificate has been revoked (OCSP)');
+          errors.push(
+            `x509 cert ${i} (${cert.fingerprint}) has been revoked (OCSP)`
+          );
         }
         resolve();
       });
@@ -51,7 +53,9 @@ const checkRevocation = async (cert, issuer) => {
   }
 
   /*
-  * TEMPORARILY DISABLED
+  * TEMPORARILY DISABLED UNTIL CRL READY
+  *
+  *
   const certificate = Certificate.fromBER(cert.raw);
   // CRL distribution point extension
   const ext = certificate.extensions.find(ext => ext.extnID === '2.5.29.31');
@@ -80,13 +84,13 @@ const checkRevocation = async (cert, issuer) => {
   return {verified: errors.length === 0, errors};
 };
 
-const checkSignature = async (cert, parentCert) => {
+const checkSignature = async (cert, parentCert, i) => {
   const errors = [];
 
   // verify signature
   const verified = cert.verify(parentCert.publicKey);
   if(!verified) {
-    errors.push(`X509 certificate invalid`);
+    errors.push(`X509 cert ${i} (${cert.fingerprint}) in chain invalid`);
   }
 
   return {verified: errors.length === 0, errors};
@@ -94,18 +98,17 @@ const checkSignature = async (cert, parentCert) => {
 
 const checkTrust = async certs => {
   let errors = [];
-  let i = 0;
-  for(const cert of certs) {
+  for(let i = 0; i < certs.length; i++) {
     if(i < certs.length - 1) {
-      const issued = cert.checkIssued(certs[i + 1]);
+      const issued = certs[i].checkIssued(certs[i + 1]);
       if(!issued) {
         errors.push(`X509 certificate at index ${i} not issued by parent.`);
       } else {
-        const verified = await checkSignature(cert, certs[i + 1]);
+        const verified = await checkSignature(certs[i], certs[i + 1], i);
         if(!verified.verified) {
           errors = errors.concat(verified.errors);
         }
-        const revocation = await checkRevocation(cert, certs[i + 1]);
+        const revocation = await checkRevocation(certs[i], certs[i + 1], i);
         if(!revocation.verified) {
           errors = errors.concat(revocation.errors);
         }
@@ -117,11 +120,11 @@ const checkTrust = async certs => {
         const caCert = new X509Certificate(caCertRaw);
         if(certs[i].checkIssued(caCert)) {
           found = true;
-          const verified = await checkSignature(certs[i], caCert);
+          const verified = await checkSignature(certs[i], caCert, i);
           if(!verified.verified) {
             errors = errors.concat(verified.errors);
           }
-          const revocation = await checkRevocation(certs[i], caCert);
+          const revocation = await checkRevocation(certs[i], caCert, i);
           if(!revocation.verified) {
             errors = errors.concat(revocation.errors);
           }
