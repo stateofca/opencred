@@ -3,10 +3,13 @@ config:
   processor: './presentation.cjs'
   phases:
     - duration: 60
+      name: warmup
       arrivalRate: 5
     - duration: 60
+      name: medium-load
       arrivalRate: 20
     - duration: 60
+      name: large-load
       arrivalRate: 50
   variables:
     WORKFLOW_ID: 'default'
@@ -15,7 +18,7 @@ config:
     qa:
       variables:
         WORKFLOW_ID: 'load-test'
-        BASIC: 'INSERT_BASIC_AUTH_HERE'
+        BASIC: '{{ $env.QA_BASIC_AUTH }}'
       target: "https://qa.opencred.org"
 scenarios:
   - flow:

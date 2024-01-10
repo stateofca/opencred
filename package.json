@@ -17,7 +17,7 @@
     "start": "npm run build && node index.js",
     "test": "NODE_ENV=test mocha tests",
     "test:load": "artillery run ./tests/load/artillery.yaml",
-    "test:load:qa": "artillery run -e qa ./tests/load/artillery.yaml"
+    "test:load:qa": "env-cmd artillery run -e qa ./tests/load/artillery.yaml"
   },
   "dependencies": {
     "@azure/msal-node": "^2.5.1",
@@ -74,6 +74,7 @@
     "@vitejs/plugin-vue": "^4.2.3",
     "asn1js": "^3.0.5",
     "autoprefixer": "^10.4.16",
+    "env-cmd": "^10.1.0",
     "eslint": "^8.49.0",
     "eslint-config-digitalbazaar": "^5.0.1",
     "eslint-plugin-unicorn": "^48.0.1",
