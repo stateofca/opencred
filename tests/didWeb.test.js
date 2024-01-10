@@ -5,6 +5,7 @@ import request from 'supertest';
 
 import {app} from '../app.js';
 import {config} from '../config/config.js';
+import {exampleKey2} from './fixtures/signingKeys.js';
 
 const testDidWebDoc = {
   id: 'did:web:example.com',
@@ -81,6 +82,10 @@ describe('OpenCred did:web support', function() {
       mainEnabled: true,
       mainDocument: testDidWebDoc
     });
+    const signingKeyStub = sinon.stub(config, 'signingKeys').value(
+      [{...exampleKey2, purpose: ['authorization_request']}]
+    );
+
     const response = await request(app)
       .get('/.well-known/did.json')
       .set('Accept', 'application/json');
@@ -91,6 +96,7 @@ describe('OpenCred did:web support', function() {
     expect(response.body.verificationMethod.length).to.equal(2);
 
     didWebStub.restore();
+    signingKeyStub.restore();
   });
 
   it('should return did:web document verificationMethod', async function() {
@@ -98,6 +104,9 @@ describe('OpenCred did:web support', function() {
       mainEnabled: true,
       mainDocument: testDidWebDoc
     });
+    const signingKeyStub = sinon.stub(config, 'signingKeys').value(
+      [{...exampleKey2, purpose: ['authorization_request']}]
+    );
 
     const response = await request(app)
       .get('/.well-known/did.json')
@@ -113,6 +122,7 @@ describe('OpenCred did:web support', function() {
     );
 
     didWebStub.restore();
+    signingKeyStub.restore();
   });
 });
 

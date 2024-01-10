@@ -9,6 +9,7 @@ import {zcapClient} from '../common/zcap.js';
 import {msalUtils, verifyUtils} from '../common/utils.js';
 import {app} from '../app.js';
 import {config} from '../config/config.js';
+import {exampleKey2} from './fixtures/signingKeys.js';
 import {exchanges} from '../common/database.js';
 
 const testRP = {
@@ -140,6 +141,10 @@ describe('OpenCred API - Native Workflow', function() {
     const domainStub = sinon.stub(config, 'domain').value(
       'https://example.com'
     );
+    const keyStub = sinon.stub(config, 'signingKeys').value(
+      [{...exampleKey2, purpose: ['authorization_request']}]
+    );
+
     const response = await request(app)
       .get(
         `/workflows/${testRP.workflow.id}/exchanges/${exchange.id}/` +
@@ -155,6 +160,7 @@ describe('OpenCred API - Native Workflow', function() {
 
     domainStub.restore();
     updateStub.restore();
+    keyStub.restore();
     findStub.restore();
   });
 
