@@ -12,8 +12,8 @@ config:
       name: large-load
       arrivalRate: 50
   variables:
-    WORKFLOW_ID: 'default'
-    BASIC: 'cnAxOkRlZXBlc3RBbmREYXJrZXN0'
+    WORKFLOW_ID: 'load-test'
+    BASIC: 'bG9hZC10ZXN0OkRlZXBlc3RBbmREYXJrZXN0'
   environments:
     qa:
       variables:

@@ -5,6 +5,13 @@ const didJWT = require('did-jwt');
 
 module.exports = {
   getExchangeDetails: function(requestParams, response, context, ee, next) {
+    if(response.statusCode !== 200) {
+      throw new Error(
+        `Error accessing ${
+          context.vars.vcapi
+        }/openid/client/authorization/request - status ${response.statusCode}`
+      );
+    }
     const [, payload] = response.body.split('.');
     context.vars.request = base64url.decode(payload);
     next();

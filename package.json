@@ -8,7 +8,7 @@
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build --ssrManifest --outDir dist/client",
     "build:server": "vite build --ssr ui/entry-server.js --outDir dist/server",
-    "dev": "vite dev",
+    "dev": "vite dev --port 8080",
     "generate:prime256v1": "node ./common/generatePrime256v1Key.js",
     "generate:rsa256": "node ./common/generateRSA256Key.js",
     "lint": "eslint .",

@@ -338,14 +338,20 @@ The HTTP API workflow follows this process:
 
 ### Load Testing
 
-Load testing can be performed using [artillery](https://www.artillery.io/docs). To install artillery globally
-via `npm`:
+Load testing can be performed using [artillery](https://www.artillery.io/docs).
+To install artillery globally via `npm`:
 
 ```
 npm install -g artillery@latest
 ```
 
-and run the load testing script:
+Ensure that there is a relyingParties configuration in `config.yaml` for a
+relying party with `clientId: load-test` matching the configuration for that
+client found in `config/config.example.yaml`. Load testing requires on this
+configuration remaining congruent with hardcoded fixtures and credentials in
+the load tests.
+
+Run the load testing script:
 
 ```
 npm run test:load
