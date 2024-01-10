@@ -2,12 +2,21 @@ config:
   target: http://localhost:8080
   processor: './presentation.cjs'
   phases:
-    - duration: 5
+    - duration: 60
       arrivalRate: 5
-      name: Load Test
+    - duration: 60
+      arrivalRate: 20
+    - duration: 60
+      arrivalRate: 50
   variables:
     WORKFLOW_ID: 'default'
     BASIC: 'cnAxOkRlZXBlc3RBbmREYXJrZXN0'
+  environments:
+    qa:
+      variables:
+        WORKFLOW_ID: 'load-test'
+        BASIC: 'INSERT_BASIC_AUTH_HERE'
+      target: "https://qa.opencred.org"
 scenarios:
   - flow:
     - post:

@@ -16,7 +16,8 @@
     "preview": "vite preview",
     "start": "npm run build && node index.js",
     "test": "NODE_ENV=test mocha tests",
-    "test:load": "artillery run ./tests/load/artillery.yaml"
+    "test:load": "artillery run ./tests/load/artillery.yaml",
+    "test:load:qa": "artillery run -e qa ./tests/load/artillery.yaml"
   },
   "dependencies": {
     "@azure/msal-node": "^2.5.1",
