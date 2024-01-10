@@ -332,7 +332,7 @@ describe('x509', async () => {
       verifiedChain.errors,
       ['Failed to query CRL at http://example.com/crl - Received 404']
     );
-    assert.ok(!verifiedChain.verified);
+    expect(verifiedChain.verified).to.be(false);
   });
 
   it('should fail to verify with CRL revoked entry', async () => {
@@ -349,7 +349,7 @@ describe('x509', async () => {
       verifiedChain.errors,
       ['x509 certificate has been revoked (CRL)']
     );
-    assert.ok(!verifiedChain.verified);
+    expect(verifiedChain.verified).to.be(false);
   });
 
   it('should verify with valid CRL entry', async () => {
@@ -372,6 +372,6 @@ describe('x509', async () => {
   it('should fail to verify invalid test cert', async () => {
     const cert = fs.readFileSync('./tests/fixtures/expired.badssl.com.cer');
     const verifiedCert = await verifyX509([new X509Certificate(cert)]);
-    assert.ok(!verifiedCert.verified);
+    expect(verifiedCert.verified).to.be(false);
   });
 });
