@@ -1,17 +1,19 @@
 dbConnectionUri: "mongodb://localhost:27017/databaseName"
 domain: "http://localhost:8080"
+caStore:
+  - pem: |
+      -----BEGIN CERTIFICATE-----
+      <VALID CERTIFICATE>
+      -----END CERTIFICATE-----
 signingKeys:
   - type: ES256
     privateKeyPem: |
       -----BEGIN PRIVATE KEY-----
-      MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg1MpljPTcYJFcvDhk
-      n1/Qjy0Omw/NIxy+f94ZMgLd8C+hRANCAASGlN1Eh1dobs+s5T2151htdS/bnr9O
-      oG+scxpx/p92UZHoBJkNQKbQpfaioUdwu9eDxv6FE69C+2X8ajiRpI5H
+      <VALID PRIVATE KEY>
       -----END PRIVATE KEY-----
     publicKeyPem: |
       -----BEGIN PUBLIC KEY-----
-      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEhpTdRIdXaG7PrOU9tedYbXUv256/
-      TqBvrHMacf6fdlGR6ASZDUCm0KX2oqFHcLvXg8b+hROvQvtl/Go4kaSORw==
+      <VALID PUBLIC KEY>
       -----END PUBLIC KEY-----
     purpose:
       - authorization_request
