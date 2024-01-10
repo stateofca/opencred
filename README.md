@@ -353,7 +353,9 @@ npm run test:load
 
 To run the load testing script against the QA environment:
 
-With a `QA_BASIC_AUTH` variable in a `.env` file which is the base64url encoding of `client_id:client_secret`.
+With:
+- `QA_BASIC_AUTH` variable in a `.env` file which is the base64url encoding of `client_id:client_secret`.
+- `QA_BASE_URL` variable in a `.env` file which is the target base url.
 
 ```
 npm run test:load:qa

@@ -19,7 +19,7 @@ config:
       variables:
         WORKFLOW_ID: 'load-test'
         BASIC: '{{ $env.QA_BASIC_AUTH }}'
-      target: "https://qa.opencred.org"
+      target: '{{ $env.QA_BASE_URL }}'
 scenarios:
   - flow:
     - post:
