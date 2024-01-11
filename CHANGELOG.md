@@ -1,22 +1,14 @@
 # opencred-platform Changelog
 
-## 5.4.0 - 2024-01-xx
-
-### Added
-- Added load testing script.
-
-### Changed
-- Removed unnecessary imports.
-
-## 5.3.0 - 2023-12-xx
+## 5.3.0 - 2024-01-xx
 
 ### Added
 - Verification of x509 certificates in did:jwk x5c claim.
-
-## 5.2.4 - 2024-01-xx
+- Added load testing script.
 
 ### Changed
 - Added index on exchange id.
+- Removed unnecessary imports.
 
 ## 5.2.3 - 2023-12-07
 
