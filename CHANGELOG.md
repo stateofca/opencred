@@ -1,5 +1,13 @@
 # opencred-platform Changelog
 
+## 5.4.0 - 2024-01-xx
+
+### Added
+- Added load testing script.
+
+### Changed
+- Removed unnecessary imports.
+
 ## 5.3.0 - 2023-12-xx
 
 ### Added
