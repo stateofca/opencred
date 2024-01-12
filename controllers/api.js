@@ -13,7 +13,6 @@ export async function initiateExchange(req, res) {
     );
     return;
   }
-
   res.send({...exchangeData, QR: await QRCode.toDataURL(exchangeData.OID4VP)});
 }
 

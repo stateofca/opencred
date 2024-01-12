@@ -17,6 +17,7 @@ import {
 import {
   getExchangeStatus, initiateExchange
 } from './controllers/api.js';
+import {asyncHandler} from './common/utils.js';
 import AuthenticationMiddleware from './controllers/auth.js';
 import {exchanges} from './common/database.js';
 import {health} from './controllers/health.js';
@@ -161,7 +162,7 @@ MicrosoftEntraVerifiedIdExchangeMiddleware(app);
  *       "500":
  *         description: Internal server error.
  */
-app.get('/login', login);
+app.get('/login', asyncHandler(login));
 
 /**
  * @openapi
@@ -231,7 +232,7 @@ app.get('/login', login);
  *       "500":
  *         description: Internal server error.
  */
-app.post('/token', exchangeCodeForToken);
+app.post('/token', asyncHandler(exchangeCodeForToken));
 
 /**
  * HTTP API Endpoints:
@@ -289,7 +290,7 @@ app.post('/token', exchangeCodeForToken);
  *      "500":
  *        description: Internal server error.
  */
-app.post('/workflows/:workflowId/exchanges', initiateExchange); // Returns JSON
+app.post('/workflows/:workflowId/exchanges', asyncHandler(initiateExchange));
 
 /**
  * @openapi
@@ -343,10 +344,12 @@ app.post('/workflows/:workflowId/exchanges', initiateExchange); // Returns JSON
  *      "500":
  *        description: Internal server error.
  */
-app.get('/workflows/:workflowId/exchanges/:exchangeId', getExchangeStatus);
+app.get('/workflows/:workflowId/exchanges/:exchangeId', asyncHandler(
+  getExchangeStatus
+));
 
 // Token exchange requires rp to be set on req
-app.post('/token', exchangeCodeForToken);
+app.post('/token', asyncHandler(exchangeCodeForToken));
 
 app.on('init', async function() {
   await exchanges.createIndex({recordExpiresAt: 1}, {expireAfterSeconds: 0});

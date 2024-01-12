@@ -107,6 +107,15 @@ export const verifyUtils = {
   verifyx509JWT: async jwk => verifyJWKx509(jwk)
 };
 
+export function asyncHandler(middleware) {
+  return function asyncMiddleware(...args) {
+    const result = middleware(...args);
+    const next = args[args.length - 1];
+    const handleError = (...args) => process.nextTick(() => next(...args));
+    return Promise.resolve(result).catch(handleError);
+  };
+}
+
 // MSAL Client Utilities
 
 const MSAL_ACCESS_TOKEN_REQUEST_SCOPE =
