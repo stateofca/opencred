@@ -22,7 +22,9 @@
     },
     translations: Object,
     defaultLanguage: String,
-    
+    options: {
+      exchangeProtocols: Array
+    },
     exchangeData: {
       id: String,
       QR: String,
@@ -36,7 +38,7 @@
   const vp = ref(null);
 
   const state = reactive({
-    isQROpen: false
+    currentUXMethodIndex: 0
   });
 
   onMounted(async () => {
@@ -45,7 +47,7 @@
   })
 
   const switchView = () => {
-    state.isQROpen = !state.isQROpen;
+    state.currentUXMethodIndex = (state.currentUXMethodIndex + 1) % props.options.exchangeProtocols.length;
   }
 
   const checkStatus = async () => {
@@ -117,18 +119,20 @@
         </div>
       </div>
       <ButtonView
-        v-else-if="!state.isQROpen"
+        v-else-if="props.options.exchangeProtocols[state.currentUXMethodIndex] == 'chapi'"
         :rp="rp"
         :translations="translations"
         :defaultLanguage="defaultLanguage"
+        :options="options"
         :exchangeData="exchangeData"
         @switchView="switchView"/>
       <QRView
-        v-else
+        v-else-if="props.options.exchangeProtocols[state.currentUXMethodIndex] == 'oid4vp'"
         :translations="translations"
         :theme="rp.theme"
         :defaultLanguage="defaultLanguage"
         :exchangeData="exchangeData"
+        :options="options"
         @switchView="switchView"/>
     </main>
     <footer class="text-left p-3"

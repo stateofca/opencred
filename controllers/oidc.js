@@ -75,6 +75,7 @@ export const login = async (req, res) => {
         id: rp.workflow.id
       }
     },
+    options: config.options,
     translations: config.translations,
     defaultLanguage: config.defaultLanguage,
     exchangeData: {

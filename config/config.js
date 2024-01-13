@@ -76,6 +76,17 @@ if(process.env.OPENCRED_CONFIG) {
  */
 
 /**
+ * @typedef {Object} Options
+ * @property {Array.<string>} [exchangeProtocols]
+ */
+
+/**
+ * An list of relying parties (connected apps or workflows) in use by OpenCred
+ * @type {Options}
+ */
+const options = configDoc.options || {exchangeProtocols: ['oid4vp', 'chapi']};
+
+/**
  * An list of relying parties (connected apps or workflows) in use by OpenCred
  * @type {RelyingParty[]}
  */
@@ -278,6 +289,7 @@ export const config = {
   didWeb,
   defaultLanguage,
   domain,
+  options,
   relyingParties,
   signingKeys,
   translations,

@@ -22,6 +22,9 @@ const props = defineProps({
       header: String,
     },
   },
+  options: {
+    exchangeProtocols: Array
+  },
   exchangeData: {
     id: String,
     vcapi: String,
@@ -85,6 +88,7 @@ const openChapi = async () => {
         >
       </div>
     </div>
+    <div v-if="props.options.exchangeProtocols.includes('oid4vp')">
     <p
       class="text-center mb-2"
       v-html="translations[defaultLanguage].qrExplain"
@@ -94,5 +98,6 @@ const openChapi = async () => {
         {{ translations[defaultLanguage].qrCta }}
       </button>
     </p>
+    </div>
   </div>
 </template>
