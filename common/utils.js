@@ -111,7 +111,10 @@ export function asyncHandler(middleware) {
   return function asyncMiddleware(...args) {
     const result = middleware(...args);
     const next = args[args.length - 1];
-    const handleError = (...args) => process.nextTick(() => next(...args));
+    const handleError = (...args) => {
+      console.error(...args);
+      process.nextTick(() => next([]));
+    };
     return Promise.resolve(result).catch(handleError);
   };
 }
