@@ -1,6 +1,5 @@
 import * as DidJwk from '@digitalbazaar/did-method-jwk';
 import * as DidKey from '@digitalbazaar/did-method-key';
-import * as DidWeb from '@interop/did-web-resolver';
 import {
   CONTEXT as CRED_CONTEXT,
   CONTEXT_URL as CRED_CONTEXT_URL
@@ -31,9 +30,11 @@ import {
 } from '@digitalbazaar/vdl-context';
 import {CachedResolver} from '@digitalbazaar/did-io';
 import {CryptoLD} from 'crypto-ld';
+import {getResolver as didWebResolver} from 'web-did-resolver';
 import {Ed25519VerificationKey2020}
   from '@digitalbazaar/ed25519-verification-key-2020';
 import {JsonLdDocumentLoader} from 'jsonld-document-loader';
+import {parse} from 'did-resolver';
 import X25519KeyAgreement2020Context from 'x25519-key-agreement-2020-context';
 import {X25519KeyAgreementKey2020}
   from '@digitalbazaar/x25519-key-agreement-key-2020';
@@ -41,8 +42,9 @@ import {X25519KeyAgreementKey2020}
 const cryptoLd = new CryptoLD();
 cryptoLd.use(Ed25519VerificationKey2020);
 cryptoLd.use(X25519KeyAgreementKey2020);
-
-const didWebDriver = DidWeb.driver({cryptoLd});
+const didWebDriver = options => {
+  return didWebResolver(options).web;
+};
 const didKeyDriver = DidKey.driver();
 didKeyDriver.use({
   name: 'Ed25519',
@@ -57,7 +59,10 @@ didJwkDriver.use({
 });
 
 export const didResolver = new CachedResolver();
-didResolver.use(didWebDriver);
+didResolver.use({method: 'web', get: async opt => {
+  const parsedDID = parse(opt.did);
+  return didWebDriver()(opt.did, parsedDID);
+}});
 didResolver.use(didKeyDriver);
 didResolver.use(didJwkDriver);
 
