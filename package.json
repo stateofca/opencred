@@ -24,7 +24,7 @@
     "@digitalbazaar/data-integrity": "^1.4.1",
     "@digitalbazaar/data-integrity-context": "^1.0.0",
     "@digitalbazaar/did-io": "^2.0.0",
-    "@digitalbazaar/did-method-jwk": "^1.0.0",
+    "@digitalbazaar/did-method-jwk": "^1.0.1",
     "@digitalbazaar/did-method-key": "^5.1.0",
     "@digitalbazaar/ecdsa-2019-cryptosuite": "^1.0.0",
     "@digitalbazaar/ed25519-signature-2018": "^4.0.0",
