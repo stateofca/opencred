@@ -22,4 +22,15 @@ describe('Document Loader', async () => {
     expect(didKeyData.document).property('keyAgreement');
     expect(didKeyData.document.id).equal(didKeyData.documentUrl);
   });
+
+  it('load did:jwk document', async function() {
+    const didJwkData = await documentLoader('did:jwk:eyJjcnYiOiJQLTI1NiIsImt0e\
+SI6IkVDIiwieCI6ImFjYklRaXVNczNpOF91c3pFakoydHBUdFJNNEVVM3l6OTFQSDZDZEgyVjAiLCJ\
+5IjoiX0tjeUxqOXZXTXB0bm1LdG00NkdxRHo4d2Y3NEk1TEtncmwyR3pIM25TRSJ9');
+    expect(didJwkData).property('document');
+    expect(didJwkData).property('documentUrl');
+    expect(didJwkData.document).property('id');
+    expect(didJwkData.document).property('verificationMethod');
+    expect(didJwkData.document.id).equal(didJwkData.documentUrl);
+  });
 });
