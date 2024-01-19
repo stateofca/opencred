@@ -24,13 +24,19 @@ describe('Document Loader', async () => {
   });
 
   it('load did:jwk document', async function() {
-    const didJwkData = await documentLoader('did:jwk:eyJjcnYiOiJQLTI1NiIsImt0e\
-SI6IkVDIiwieCI6ImFjYklRaXVNczNpOF91c3pFakoydHBUdFJNNEVVM3l6OTFQSDZDZEgyVjAiLCJ\
-5IjoiX0tjeUxqOXZXTXB0bm1LdG00NkdxRHo4d2Y3NEk1TEtncmwyR3pIM25TRSJ9');
+    const didJwkData = await documentLoader('did:jwk:eyJraWQiOiJ1cm46aWV0ZjpwYX\
+JhbXM6b2F1dGg6andrLXRodW1icHJpbnQ6c2hhLTI1NjpoeGx4RmdnNF9hX202Tk1kVkJmbjVZa0huN\
+Td6eDFvanpzVzROalpXalk4Iiwia3R5IjoiRUMiLCJjcnYiOiJQLTI1NiIsImFsZyI6IkVTMjU2Iiwi\
+eCI6IkRpMTZpR1NwU1o4NjBCWTRJZ3ZfcHNkLXkyUjB0cTR2NF92eFZvVXFQVzAiLCJ5IjoidjZRdld\
+mZ0JmU1YxeE94SG1WalRQeWlBY2ZqVGF1Znp0N3RpUDZYb0Y2VSJ9');
     expect(didJwkData).property('document');
     expect(didJwkData).property('documentUrl');
     expect(didJwkData.document).property('id');
     expect(didJwkData.document).property('verificationMethod');
+    expect(didJwkData.document).property('authentication');
+    expect(didJwkData.document).property('assertionMethod');
+    expect(didJwkData.document).property('capabilityDelegation');
+    expect(didJwkData.document).property('capabilityInvocation');
     expect(didJwkData.document.id).equal(didJwkData.documentUrl);
   });
 });
