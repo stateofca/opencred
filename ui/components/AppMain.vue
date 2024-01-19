@@ -120,6 +120,16 @@
       </div>
       <ButtonView
         v-else-if="props.options.exchangeProtocols[state.currentUXMethodIndex] == 'chapi'"
+        :chapiEnabled="true"
+        :rp="rp"
+        :translations="translations"
+        :defaultLanguage="defaultLanguage"
+        :options="options"
+        :exchangeData="exchangeData"
+        @switchView="switchView"/>
+      <ButtonView
+        v-else-if="props.options.exchangeProtocols[state.currentUXMethodIndex] == 'oid4vp-button'"
+        :chapiEnabled="false"
         :rp="rp"
         :translations="translations"
         :defaultLanguage="defaultLanguage"

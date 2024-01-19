@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { getCredentials } from "../chapi.js";
 
 const props = defineProps({
+  chapiEnabled: Boolean,
   step: String,
   translations: Object,
   defaultLanguage: String,
@@ -69,13 +70,22 @@ const openChapi = async () => {
     ></p>
     <div class="flex justify-center">
       <button
-        v-if="!loading"
+        v-if="!loading && chapiEnabled"
         @click="openChapi"
         class="text-white py-2 px-6 rounded-xl my-8"
         :style="{ background: rp.theme.cta }"
       >
         {{ translations[defaultLanguage].appCta }}
       </button>
+      <a
+        v-else-if="!loading && !chapiEnabled"
+        :href="exchangeData.OID4VP"
+        class="text-white py-2 px-6 rounded-xl my-8"
+        :style="{ background: rp.theme.cta }"
+        target="_blank"
+      >
+        {{ translations[defaultLanguage].appCta }}
+      </a>
       <div
         v-else
         class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] py-2 my-8 motion-reduce:animate-[spin_1.5s_linear_infinite]"

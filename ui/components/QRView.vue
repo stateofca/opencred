@@ -37,7 +37,7 @@
     <div class="mb-4 flex justify-center">
       <img :src="exchangeData.QR"/>
     </div>
-    <div v-if="props.options.exchangeProtocols.includes('chapi')">
+    <div v-if="props.options.exchangeProtocols.includes('chapi') || props.options.exchangeProtocols.includes('oid4vp-button')">
       <p class="text-center mb-2" v-html="translations[defaultLanguage].qrPageAnotherWay">
       </p>
       <p class="text-center">
