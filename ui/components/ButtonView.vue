@@ -65,6 +65,7 @@ const openChapi = async () => {
     </h1>
     <p class="mb-4" v-html="translations[defaultLanguage].loginExplain"></p>
     <p
+      v-if="translations[defaultLanguage].appInstallExplain"
       class="mb-6"
       v-html="translations[defaultLanguage].appInstallExplain"
     ></p>
@@ -75,7 +76,7 @@ const openChapi = async () => {
         class="text-white py-2 px-6 rounded-xl my-8"
         :style="{ background: rp.theme.cta }"
       >
-        {{ translations[defaultLanguage].appCta }}
+        {{ translations[defaultLanguage]['appCta-chapi-button'] || translations[defaultLanguage].appCta }}
       </button>
       <a
         v-else-if="!loading && !chapiEnabled"
@@ -84,7 +85,7 @@ const openChapi = async () => {
         :style="{ background: rp.theme.cta }"
         target="_blank"
       >
-        {{ translations[defaultLanguage].appCta }}
+        {{ translations[defaultLanguage]['appCta-openid4vp-link'] || translations[defaultLanguage].appCta }}
       </a>
       <div
         v-else
@@ -98,16 +99,16 @@ const openChapi = async () => {
         >
       </div>
     </div>
-    <div v-if="props.options.exchangeProtocols.includes('oid4vp')">
-    <p
-      class="text-center mb-2"
-      v-html="translations[defaultLanguage].qrExplain"
-    ></p>
-    <p class="text-center">
-      <button @click="switchView" :style="{ color: rp.theme.primary }">
-        {{ translations[defaultLanguage].qrCta }}
-      </button>
-    </p>
+    <div v-if="props.options.exchangeProtocols.length > 1">
+      <p
+        class="text-center mb-2"
+        v-html="translations[defaultLanguage].qrExplain"
+      ></p>
+      <p class="text-center">
+        <button @click="switchView" :style="{ color: rp.theme.primary }">
+          {{ translations[defaultLanguage].qrCta }}
+        </button>
+      </p>
     </div>
   </div>
 </template>

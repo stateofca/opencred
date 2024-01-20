@@ -119,7 +119,7 @@
         </div>
       </div>
       <ButtonView
-        v-else-if="props.options.exchangeProtocols[state.currentUXMethodIndex] == 'chapi'"
+        v-else-if="props.options.exchangeProtocols[state.currentUXMethodIndex] == 'chapi-button'"
         :chapiEnabled="true"
         :rp="rp"
         :translations="translations"
@@ -128,7 +128,7 @@
         :exchangeData="exchangeData"
         @switchView="switchView"/>
       <ButtonView
-        v-else-if="props.options.exchangeProtocols[state.currentUXMethodIndex] == 'oid4vp-button'"
+        v-else-if="props.options.exchangeProtocols[state.currentUXMethodIndex] == 'openid4vp-link'"
         :chapiEnabled="false"
         :rp="rp"
         :translations="translations"
@@ -137,7 +137,7 @@
         :exchangeData="exchangeData"
         @switchView="switchView"/>
       <QRView
-        v-else-if="props.options.exchangeProtocols[state.currentUXMethodIndex] == 'oid4vp'"
+        v-else-if="props.options.exchangeProtocols[state.currentUXMethodIndex] == 'openid4vp-qr'"
         :translations="translations"
         :theme="rp.theme"
         :defaultLanguage="defaultLanguage"

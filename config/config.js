@@ -82,10 +82,11 @@ if(process.env.OPENCRED_CONFIG) {
 
 /**
  * An list of relying parties (connected apps or workflows) in use by OpenCred
+ * exchangeProtocols: ['openid4vp-qr', 'chapi-button', 'openid4vp-link']
  * @type {Options}
  */
 const options = configDoc.options || {
-  exchangeProtocols: ['oid4vp', 'chapi']
+  exchangeProtocols: ['openid4vp-qr', 'chapi-button']
 };
 
 /**

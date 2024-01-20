@@ -173,9 +173,9 @@ relyingParties:
             }
 options:
   exchangeProtocols:
-    - chapi
-    - oid4vp
-    # -oid4vp-button
+    - chapi-button
+    - openid4vp-qr
+    # - openid4vp-link
 defaultLanguage: en
 translations:
   en:

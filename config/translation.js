@@ -8,6 +8,8 @@ export const defaultTranslations = {
     'see suggested wallets at the ' +
     '<a href="https://vcplayground.org/">Verifiable Credentials Playground</a>',
     appCta: 'Open wallet app',
+    'appCta-chapi-button': '',
+    'appCta-openid4vp-link': '',
     qrExplain: 'Looking for a QR Code to scan with your wallet app instead?',
     qrCta: 'Scan a QR Code with your wallet app',
     qrPageCta: 'Scan QR Code from within your digital wallet app.',

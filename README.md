@@ -210,14 +210,14 @@ accept. This enables the specification of a plaintext `path` relative to
 OpenCred supports two methods for initiating an exchange with a wallet app, Credential Handler API ([CHAPI](https://chapi.io/)), and OpenID for Verifiable Presentations ([OID4VP](https://openid.github.io/OpenID4VP/openid-4-verifiable-presentations-wg-draft.html)). Implementers may choose
 which of these protocols are supported by configuring the `options.exchangeProtocols` list in the config file. The order of the protocols controls the order in which they are offered to the user. 
 
-An experimental `oid4vp-button` option is also available but not enabled by default, which will launch a wallet registered to handle a `openid4vp://` on the same device as the browser. These links may not be supported on all devices or browsers and result in a failure with no option for user recovery if a wallet that handles the protocol was not previously installed on the device.
+An experimental `openid4vp-link` option is also available but not enabled by default, which will launch a wallet registered to handle a `openid4vp://` on the same device as the browser. These links may not be supported on all devices or browsers and result in a failure with no option for user recovery if a wallet that handles the protocol was not previously installed on the device.
 
 ```yaml
 options:
   exchangeProtocols:
-    - chapi
-    - oid4vp
-    - oid4vp-button
+    - chapi-button
+    - openid4vp-link
+    - openid4vp-qr
 ```
 
 If this section is omitted, both protocols will be offered, with an OID4VP QR code offered to the user first.

@@ -30,6 +30,7 @@
       {{translations[defaultLanguage].qrPageCta}}
     </h1>
     <p
+      v-if="translations[defaultLanguage].appInstallExplain"
       class="mb-6"
       v-html="translations[defaultLanguage].appInstallExplain"
     ></p>
@@ -37,7 +38,7 @@
     <div class="mb-4 flex justify-center">
       <img :src="exchangeData.QR"/>
     </div>
-    <div v-if="props.options.exchangeProtocols.includes('chapi') || props.options.exchangeProtocols.includes('oid4vp-button')">
+    <div v-if="props.options.exchangeProtocols.length > 1">
       <p class="text-center mb-2" v-html="translations[defaultLanguage].qrPageAnotherWay">
       </p>
       <p class="text-center">
