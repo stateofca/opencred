@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 5.3.1 - 2024-01-xx
+## 5.3.1 - 2024-01-22
 
 ### Changed
 - Use `@digitalbazaar/did-method-jwk@1`.
