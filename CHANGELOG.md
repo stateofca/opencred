@@ -4,6 +4,7 @@
 
 ### Changed
 - Use `@digitalbazaar/did-method-jwk@1`.
+- File size limit increased from 100kb to 200kb.
 
 ## 5.3.0 - 2024-01-11
 
