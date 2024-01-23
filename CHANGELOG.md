@@ -1,10 +1,15 @@
 # opencred-platform Changelog
 
+## 5.3.2 - 2024-01-xx
+
+### Changed
+- File size limit on url encoded content increased from 100kb to 200kb.
+
 ## 5.3.1 - 2024-01-22
 
 ### Changed
 - Use `@digitalbazaar/did-method-jwk@1`.
-- File size limit increased from 100kb to 200kb.
+- File size limit on json increased from 100kb to 200kb.
 
 ## 5.3.0 - 2024-01-11
 
