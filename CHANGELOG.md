@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 5.3.2 - 2024-01-xx
+## 5.3.2 - 2024-01-23
 
 ### Changed
 - File size limit on url encoded content increased from 100kb to 200kb.
