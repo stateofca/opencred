@@ -1,5 +1,6 @@
 import * as sinon from 'sinon';
 import {after, before, describe, it} from 'mocha';
+import fetch, {Response} from 'node-fetch';
 import asn1js from 'asn1js';
 import assert from 'node:assert';
 import {Crypto} from '@peculiar/webcrypto';
@@ -11,9 +12,10 @@ import expect from 'expect.js';
 import {verifyX509} from '../common/x509.js';
 import {X509Certificate} from 'node:crypto';
 const crypto = new Crypto();
+global.fetch = fetch;
 
 function crlOk(crl) {
-  const mockResponse = new global.Response(crl, {
+  const mockResponse = new Response(crl, {
     status: 200,
     headers: {
       'Content-type': 'application/pkix-crl'
@@ -339,7 +341,7 @@ describe('x509', async () => {
     const {chain, crl} = await generateCertificateChain(3, true, true);
     const root = chain.pop();
     const configStub = sinon.stub(config, 'caStore').value([root.raw]);
-    const fetchStub = sinon.stub(global, 'fetch').returns(crlOk(crl));
+    const fetchStub = sinon.stub(global, 'fetch').resolves(crlOk(crl));
 
     const verifiedChain = await verifyX509(chain);
 
@@ -355,7 +357,7 @@ describe('x509', async () => {
   it('should verify with valid CRL entry', async () => {
     const {chain, crl} = await generateCertificateChain(3, true, false);
     const root = chain.pop();
-    const fetchStub = sinon.stub(global, 'fetch').returns(crlOk(crl));
+    const fetchStub = sinon.stub(global, 'fetch').resolves(crlOk(crl));
     const configStub = sinon.stub(config, 'caStore').value([root.raw]);
 
     const verifiedChain = await verifyX509(chain);

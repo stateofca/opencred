@@ -1,5 +1,7 @@
 import * as DidJwk from '@digitalbazaar/did-method-jwk';
 import * as DidKey from '@digitalbazaar/did-method-key';
+import fetch from 'node-fetch';
+
 import {
   CONTEXT as CRED_CONTEXT,
   CONTEXT_URL as CRED_CONTEXT_URL

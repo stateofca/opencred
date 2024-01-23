@@ -3,6 +3,7 @@ import {before, describe, it} from 'mocha';
 import {decodeJwt} from 'jose';
 import expect from 'expect.js';
 import fs from 'node:fs';
+import {Headers} from 'node-fetch';
 import request from 'supertest';
 import {zcapClient} from '../common/zcap.js';
 
@@ -269,9 +270,10 @@ describe('OpenCred API - VC-API Workflow', function() {
 
   it('should create a new exchange with the workflow', async function() {
     const insertStub = sinon.stub(exchanges, 'insertOne').resolves();
+    const headers = new Headers({location: 'https://someexchanges.com/123'});
     const zcapStub = sinon.stub(zcapClient, 'zcapWriteRequest').resolves({
       result: {
-        headers: new Headers({location: 'https://someexchanges.com/123'}),
+        headers,
         status: 204
       }
     });
