@@ -59,9 +59,9 @@ didJwkDriver.use({
 });
 
 export const didResolver = new CachedResolver();
-didResolver.use({method: 'web', get: async opt => {
-  const parsedDID = parse(opt.did);
-  return didWebDriver()(opt.did, parsedDID);
+didResolver.use({method: 'web', get: async ({did}) => {
+  const parsedDID = parse(did);
+  return didWebDriver()(did, parsedDID);
 }});
 didResolver.use(didKeyDriver);
 didResolver.use(didJwkDriver);
