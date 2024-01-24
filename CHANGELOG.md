@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 5.3.3 - 2024-01-##
+## 5.4.0 - 2024-01-24
 
 ### Added
 - Add optional config for customizing UI exchangeProtocols order.
