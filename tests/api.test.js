@@ -3,7 +3,6 @@ import {before, describe, it} from 'mocha';
 import {decodeJwt} from 'jose';
 import expect from 'expect.js';
 import fs from 'node:fs';
-import {Headers} from 'node-fetch';
 import request from 'supertest';
 import {zcapClient} from '../common/zcap.js';
 

@@ -4,6 +4,9 @@
   "main": "index.js",
   "type": "module",
   "license": "BSD-3-Clause",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build --ssrManifest --outDir dist/client",
@@ -26,16 +29,16 @@
     "@digitalbazaar/did-io": "^2.0.0",
     "@digitalbazaar/did-method-jwk": "^1.0.1",
     "@digitalbazaar/did-method-key": "^5.1.0",
+    "@digitalbazaar/did-method-web": "^1.0.0",
     "@digitalbazaar/ecdsa-2019-cryptosuite": "^1.0.0",
     "@digitalbazaar/ed25519-signature-2018": "^4.0.0",
     "@digitalbazaar/ed25519-signature-2020": "^5.2.0",
-    "@digitalbazaar/ed25519-verification-key-2018": "^4.0.0",
     "@digitalbazaar/ed25519-verification-key-2020": "^4.1.0",
     "@digitalbazaar/eddsa-2022-cryptosuite": "^1.0.0",
     "@digitalbazaar/ezcap": "^4.0.0",
     "@digitalbazaar/http-client": "^4.0.0",
     "@digitalbazaar/minimal-jwt": "^2.1.0",
-    "@digitalbazaar/oid4-client": "^3.1.0",
+    "@digitalbazaar/oid4-client": "^3.3.0",
     "@digitalbazaar/vc": "^6.0.2",
     "@digitalbazaar/vc-status-list-context": "^3.0.1",
     "@digitalbazaar/vdl-aamva-context": "^1.0.0",
@@ -46,7 +49,6 @@
     "cors": "^2.8.5",
     "credential-handler-polyfill": "^3.2.0",
     "credentials-context": "^2.0.0",
-    "crypto-ld": "^7.0.0",
     "did-context": "^3.1.1",
     "did-jwt-vc": "^3.2.14",
     "did-resolver": "^4.1.0",
@@ -66,7 +68,6 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
     "vue-json-pretty": "^2.2.4",
-    "web-did-resolver": "^2.0.27",
     "x25519-key-agreement-2020-context": "^1.0.0"
   },
   "devDependencies": {
@@ -83,7 +84,6 @@
     "js-yaml": "^4.1.0",
     "klona": "^2.0.6",
     "mocha": "^10.2.0",
-    "node-fetch": "^3.3.2",
     "patch-package": "^8.0.0",
     "postcss": "^8.4.30",
     "sinon": "^17.0.0",

@@ -1,6 +1,5 @@
 import * as sinon from 'sinon';
 import {after, before, describe, it} from 'mocha';
-import fetch, {Response} from 'node-fetch';
 import asn1js from 'asn1js';
 import assert from 'node:assert';
 import {Crypto} from '@peculiar/webcrypto';
@@ -12,7 +11,6 @@ import expect from 'expect.js';
 import {verifyX509} from '../common/x509.js';
 import {X509Certificate} from 'node:crypto';
 const crypto = new Crypto();
-global.fetch = fetch;
 
 function crlOk(crl) {
   const mockResponse = new Response(crl, {

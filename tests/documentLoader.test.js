@@ -1,7 +1,8 @@
+import * as sinon from 'sinon';
 import {describe, it} from 'mocha';
-
 import expect from 'expect.js';
 import {getDocumentLoader} from '../common/documentLoader.js';
+import {httpClient} from '@digitalbazaar/http-client';
 
 const documentLoader = getDocumentLoader().build();
 
@@ -38,5 +39,57 @@ mZ0JmU1YxeE94SG1WalRQeWlBY2ZqVGF1Znp0N3RpUDZYb0Y2VSJ9');
     expect(didJwkData.document).property('capabilityDelegation');
     expect(didJwkData.document).property('capabilityInvocation');
     expect(didJwkData.document.id).equal(didJwkData.documentUrl);
+  });
+
+  it('load did:web document', async function() {
+    const stub = sinon.stub(httpClient, 'get');
+    stub.withArgs('https://example.com/.well-known/did.json',
+      sinon.match.any).returns({data: {
+      '@context': [
+        'https://www.w3.org/ns/did/v1',
+        'https://w3id.org/security/suites/ed25519-2020/v1',
+        'https://w3id.org/security/suites/x25519-2020/v1'
+      ],
+      id: 'did:web:example.com',
+      verificationMethod: [
+        {
+          id: 'did:web:example.com#1',
+          type: 'Ed25519VerificationKey2020',
+          controller: 'did:web:example.com',
+          publicKeyMultibase: 'z6Mkpw72M9suPCBv48X2Xj4YKZJH9W7wzEK1aS6JioKSo89C'
+        }
+      ],
+      authentication: [
+        'did:web:example.com#1'
+      ],
+      assertionMethod: [
+        'did:web:example.com#1'
+      ],
+      capabilityDelegation: [
+        'did:web:example.com#1'
+      ],
+      capabilityInvocation: [
+        'did:web:example.com#1'
+      ],
+      keyAgreement: [
+        {
+          id: 'did:web:example.com#0',
+          type: 'X25519KeyAgreementKey2020',
+          controller: 'did:web:example.com',
+          publicKeyMultibase: 'z6LSgxJr5q1pwHPbiK7u8Pw1GvnfMTZSMxkhaorQ1aJYWFz3'
+        }
+      ]
+    }});
+    const didWebData = await documentLoader('did:web:example.com');
+    expect(didWebData).property('document');
+    expect(didWebData).property('documentUrl');
+    expect(didWebData.document).property('id');
+    expect(didWebData.document).property('verificationMethod');
+    expect(didWebData.document).property('authentication');
+    expect(didWebData.document).property('assertionMethod');
+    expect(didWebData.document).property('capabilityDelegation');
+    expect(didWebData.document).property('capabilityInvocation');
+    expect(didWebData.document.id).equal(didWebData.documentUrl);
+    stub.restore();
   });
 });

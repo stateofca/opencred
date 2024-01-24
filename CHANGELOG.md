@@ -5,6 +5,7 @@
 ### Changed
 - Use `@digitalbazaar/vdl-context@1`.
 - Use `@digitalbazaar/vdl-aamva-context@1`.
+- Use `@digitalbazaar/did-method-web` for `did:web` resolution.
 
 ## 5.4.1 - 2024-01-25
 
