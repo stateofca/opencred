@@ -69,6 +69,7 @@
         });
         const destination = `${props.rp.redirectUri}?${queryParams.toString()}`;
         window.location.href = destination;
+        clearInterval(intervalId);
       } else if (exchange.state === 'complete') {
           const { verifiablePresentation } =
             exchange.variables.results[exchange.step];
