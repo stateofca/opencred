@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 5.4.1 - 2024-01-xx
+## 5.4.1 - 2024-01-25
 
 ### Changed
 - Clear credential status lookup interval after redirect.
