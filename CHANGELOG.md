@@ -1,5 +1,11 @@
 # opencred-platform Changelog
 
+## 5.4.2 - 2024-xx-xx
+
+### Changed
+- Use `@digitalbazaar/vdl-context@1`.
+- Use `@digitalbazaar/vdl-aamva-context@1`.
+
 ## 5.4.1 - 2024-01-25
 
 ### Changed
