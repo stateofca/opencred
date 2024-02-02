@@ -8,7 +8,7 @@ import request from 'supertest';
 
 import {exampleKey, exampleKey2} from './fixtures/signingKeys.js';
 import {app} from '../app.js';
-import {config} from '../config/config.js';
+import {config} from '../configs/config.js';
 
 const exampleRelyingParty = {
   workflow: {

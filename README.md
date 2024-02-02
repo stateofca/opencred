@@ -53,10 +53,10 @@ the server, rebuild the UI, and restart the server, as with `npm run start`.
 ### Configuration
 
 The app is configured via a YAML file. See
-[config/config.example.yaml](config/config.example.yaml) for an example.
+[configs/config.example.yaml](configs/config.example.yaml) for an example.
 
-Copy the example to the ignored location `cp config/config.example.yaml
-config/config.yaml` and edit the file. Configure the details of your relying
+Copy the example to the ignored location `cp configs/config.example.yaml
+configs/config.yaml` and edit the file. Configure the details of your relying
 party, and connection details for a VC-API exchanger endpoint.
 
 #### Configure with an Environment Variable
@@ -248,11 +248,11 @@ certificate files with openssl, stored in ignored locations in the `config`
 directory.
 
 ```sh
-openssl req -nodes -newkey rsa:2048 -keyout ./config/private_key.pem -out ./config/csr.pem
-openssl x509 -req -in ./config/csr.pem -signkey ./config/private_key.pem -out ./config/cert.pem
-openssl req -nodes -newkey rsa:2048 -keyout ./config/ca_key.pem -out ./config/ca_csr.pem
-openssl x509 -req -in ./config/ca_csr.pem -signkey .config/ca_key.pem -out ./config/ca_cert.pem
-openssl x509 -req -in ./config/ca_csr.pem -signkey ./config/ca_key.pem -out ./config/ca_cert.pem
+openssl req -nodes -newkey rsa:2048 -keyout ./configs/private_key.pem -out ./configs/csr.pem
+openssl x509 -req -in ./configs/csr.pem -signkey ./configs/private_key.pem -out ./configs/cert.pem
+openssl req -nodes -newkey rsa:2048 -keyout ./configs/ca_key.pem -out ./configs/ca_csr.pem
+openssl x509 -req -in ./configs/ca_csr.pem -signkey .configs/ca_key.pem -out ./configs/ca_cert.pem
+openssl x509 -req -in ./configs/ca_csr.pem -signkey ./configs/ca_key.pem -out ./configs/ca_cert.pem
 ```
 
 Set your domain to use HTTPS in the `config.yaml` with a custom requested
@@ -262,7 +262,7 @@ Then, you can run the server with the following command to launch with your
 subdomain:
 
 ```sh
-npx localtunnel -p 8080 --local-cert ./config/cert.pem --local_key ./config/private_key.pem --local_ca ./config/ca_cert.pem --subdomain my-opencred-subdomain-837
+npx localtunnel -p 8080 --local-cert ./configs/cert.pem --local_key ./configs/private_key.pem --local_ca ./configs/ca_cert.pem --subdomain my-opencred-subdomain-837
 ```
 
 ### Run via Docker
@@ -364,7 +364,7 @@ npm install -g artillery@latest
 
 Ensure that there is a relyingParties configuration in `config.yaml` for a
 relying party with `clientId: load-test` matching the configuration for that
-client found in `config/config.example.yaml`. Load testing requires on this
+client found in `configs/config.example.yaml`. Load testing requires on this
 configuration remaining congruent with hardcoded fixtures and credentials in
 the load tests.
 

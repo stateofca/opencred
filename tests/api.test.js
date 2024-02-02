@@ -8,7 +8,7 @@ import {zcapClient} from '../common/zcap.js';
 
 import {msalUtils, verifyUtils} from '../common/utils.js';
 import {app} from '../app.js';
-import {config} from '../config/config.js';
+import {config} from '../configs/config.js';
 import {exampleKey2} from './fixtures/signingKeys.js';
 import {exchanges} from '../common/database.js';
 

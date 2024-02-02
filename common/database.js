@@ -1,6 +1,6 @@
 import {MongoClient} from 'mongodb';
 
-import {config} from '../config/config.js';
+import {config} from '../configs/config.js';
 
 const client = new MongoClient(config.databaseConnectionUri);
 const db = client.db();

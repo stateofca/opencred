@@ -4,7 +4,7 @@ import expect from 'expect.js';
 import request from 'supertest';
 
 import {app} from '../app.js';
-import {config} from '../config/config.js';
+import {config} from '../configs/config.js';
 import {exampleKey2} from './fixtures/signingKeys.js';
 
 const testDidWebDoc = {

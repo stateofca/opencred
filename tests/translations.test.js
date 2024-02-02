@@ -1,7 +1,7 @@
 import {describe, it} from 'mocha';
 import expect from 'expect.js';
 
-import {combineTranslations} from '../config/translation.js';
+import {combineTranslations} from '../configs/translation.js';
 
 describe('Translations', async () => {
   it('should combine default and custom translations', () => {

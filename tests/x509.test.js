@@ -6,7 +6,7 @@ import {Crypto} from '@peculiar/webcrypto';
 import fs from 'node:fs';
 import pkijs from 'pkijs';
 
-import {config} from '../config/config.js';
+import {config} from '../configs/config.js';
 import expect from 'expect.js';
 import {verifyX509} from '../common/x509.js';
 import {X509Certificate} from 'node:crypto';

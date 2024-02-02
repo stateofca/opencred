@@ -1,9 +1,27 @@
+import * as bedrock from '@bedrock/core';
 import * as fs from 'node:fs';
 import * as yaml from 'js-yaml';
+import {fileURLToPath} from 'node:url';
+import path from 'node:path';
 import 'dotenv/config';
 
 import {applyRpDefaults} from './configUtils.js';
 import {combineTranslations} from './translation.js';
+
+const {config: brConfig} = bedrock;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootPath = path.join(__dirname, '..');
+
+bedrock.events.on('bedrock.configure', async () => {
+  await import(path.join(brConfig.paths.config, 'core.js'));
+  await import(path.join(brConfig.paths.config, 'express.js'));
+  await import(path.join(brConfig.paths.config, 'server.js'));
+});
+
+brConfig.views.bundle.packages.push({
+  path: path.join(rootPath, 'web'),
+  manifest: path.join(rootPath, 'web', 'manifest.json')
+});
 
 let configDoc;
 if(process.env.OPENCRED_CONFIG) {
@@ -12,7 +30,7 @@ if(process.env.OPENCRED_CONFIG) {
   );
 } else {
   // Environment variables
-  const configPath = process.env.CONFIG_PATH || '/etc/app-config/config.yaml';
+  const configPath = process.env.CONFIG_PATH || '/etc/app-configs/config.yaml';
 
   // Load config doc and parse YAML.
   configDoc = yaml.load(fs.readFileSync(configPath, 'utf8'));

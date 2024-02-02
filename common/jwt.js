@@ -2,12 +2,12 @@ import * as JWT from '@digitalbazaar/minimal-jwt';
 import crypto from 'node:crypto';
 import jp from 'jsonpath';
 
-import {config} from '../config/config.js';
+import {config} from '../configs/config.js';
 
 /**
  * Generates a JWT id_token from a VP exchange if the exchange is complete.
  * @param {import("mongodb").Document}
- * @param {import("../config/config").RelyingParty} rp
+ * @param {import("../configs/config.js").RelyingParty} rp
  */
 export const jwtFromExchange = async (exchange, rp) => {
   const signingKey = config.signingKeys?.find(

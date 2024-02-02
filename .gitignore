@@ -13,8 +13,8 @@ coverage
 dist
 node_modules
 package-lock.json
-config/config.yaml
-config/*.pem
+configs/config.yaml
+configs/*.pem
 
 dist
 dist-ssr
