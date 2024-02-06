@@ -1,8 +1,8 @@
 <script setup>
-  import {onMounted, reactive, ref} from 'vue';
+  import {onBeforeMount, onMounted, reactive, ref} from 'vue';
   import {httpClient} from "@digitalbazaar/http-client";
 
-  const props = defineProps({
+  let props = defineProps({
     step: String,
     rp: {
       clientId: String,
@@ -36,14 +36,26 @@
 
   let intervalId;
   const vp = ref(null);
+  const loading = ref(true);
 
   const state = reactive({
     currentUXMethodIndex: 0
   });
 
+  onBeforeMount(async () => {
+    const resp = await httpClient.get(`/context/login${window.location.search}`);
+    console.log(resp.status)
+    if (resp.status === 200) {
+      props = resp.data;
+      console.log(props);
+      loading.value = false;
+    }
+    loading.value = false;
+  })
+
   onMounted(async () => {
-    await checkStatus();
     intervalId = setInterval(checkStatus, 5000);
+
   })
 
   const switchView = () => {
@@ -86,12 +98,13 @@
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen">
-    <header class="" :style="{background: rp.theme.header}">
+  <div v-if="loading">Loading</div>
+  <div v-else class="flex flex-col min-h-screen">
+    <header class="" :style="{background: props.rp.theme.header}">
       <div class="mx-auto flex justify-between items-center px-6 py-3 max-w-3xl">
-        <a :href="rp.redirectUri"
+        <a :href="props.rp.redirectUri"
           class="flex items-center gap-3">
-          <img :src="rp.icon" :alt="rp.name + 'Logo'" />
+          <img :src="props.rp.icon" :alt="props.rp.name + 'Logo'" />
         </a>
         <button
           class="flex flex-row text-white items-center text-xs gap-3
@@ -99,7 +112,7 @@
           <span class="bg-white rounded-full p-1 flex">
             <img src="https://imagedelivery.net/I-hc6FAYxquPgv-npvTcWQ/505d9676-7f3a-49cc-bf9a-883439873d00/public" />
           </span>
-          {{translations[defaultLanguage].translate}}
+          {{props.translations[props.defaultLanguage].translate}}
         </button>
       </div>
     </header>
@@ -109,7 +122,7 @@
         <h2 class="font-bold">Home</h2>
       </div>
       <div class="bg-no-repeat bg-cover clip-path-bg z-0 min-h-[360px]" 
-        :style="{ 'background-image': `url(${rp.backgroundImage})` }">
+        :style="{ 'background-image': `url(${props.rp.backgroundImage})` }">
         <div class="text-center text-6xl py-10">
           &nbsp;
         </div>
@@ -122,38 +135,36 @@
       <ButtonView
         v-else-if="props.options.exchangeProtocols[state.currentUXMethodIndex] == 'chapi-button'"
         :chapiEnabled="true"
-        :rp="rp"
-        :translations="translations"
-        :defaultLanguage="defaultLanguage"
-        :options="options"
-        :exchangeData="exchangeData"
+        :rp="props.rp"
+        :translations="props.translations"
+        :defaultLanguage="props.defaultLanguage"
+        :options="props.options"
+        :exchangeData="props.exchangeData"
         @switchView="switchView"/>
       <ButtonView
         v-else-if="props.options.exchangeProtocols[state.currentUXMethodIndex] == 'openid4vp-link'"
         :chapiEnabled="false"
-        :rp="rp"
-        :translations="translations"
-        :defaultLanguage="defaultLanguage"
-        :options="options"
-        :exchangeData="exchangeData"
+        :rp="props.rp"
+        :translations="props.translations"
+        :defaultLanguage="props.defaultLanguage"
+        :options="props.options"
+        :exchangeData="props.exchangeData"
         @switchView="switchView"/>
       <QRView
         v-else-if="props.options.exchangeProtocols[state.currentUXMethodIndex] == 'openid4vp-qr'"
-        :translations="translations"
-        :theme="rp.theme"
-        :defaultLanguage="defaultLanguage"
-        :exchangeData="exchangeData"
-        :options="options"
+        :translations="props.translations"
+        :theme="props.rp.theme"
+        :defaultLanguage="props.defaultLanguage"
+        :exchangeData="props.exchangeData"
+        :options="props.options"
         @switchView="switchView"/>
     </main>
     <footer class="text-left p-3"
-      v-html="translations[defaultLanguage].copyright">
+      v-html="props.translations[props.defaultLanguage].copyright">
     </footer>
   </div>
 </template>
 
 <style>
-a {
-  color: v-bind('rp.theme.primary')
-}
+
 </style>

@@ -1,25 +1,13 @@
 <template>
-  <AppMain
-    :step="ctx.step"
-    :rp="ctx.rp"
-    :translations="ctx.translations"
-    :defaultLanguage="ctx.defaultLanguage"
-    :options="ctx.options"
-    :exchangeData="ctx.exchangeData"/>
+  <div>
+    <router-view />
+  </div>
 </template>
 
-<script setup>
-  import { useSSRContext } from 'vue'
-  import './styles.css';
-
-  // Populate data from SSR on server side or from script in <head> on client.
-  let ctx = {};
-  if (import.meta.env.SSR) {
-    ctx = useSSRContext();
-  }
-  else {
-    ctx = window && window.ctx;
-  }
+<script>
+  export default {
+    name: 'App'
+  };
 </script>
 
 <style>

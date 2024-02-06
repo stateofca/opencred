@@ -4,6 +4,7 @@ import * as yaml from 'js-yaml';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import 'dotenv/config';
+import '@bedrock/views';
 
 import {applyRpDefaults} from './configUtils.js';
 import {combineTranslations} from './translation.js';
@@ -12,10 +13,15 @@ const {config: brConfig} = bedrock;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootPath = path.join(__dirname, '..');
 
-bedrock.events.on('bedrock.configure', async () => {
+bedrock.events.on('bedrock-cli.parsed', async () => {
+  await import(path.join(brConfig.paths.config, 'paths.js'));
   await import(path.join(brConfig.paths.config, 'core.js'));
-  await import(path.join(brConfig.paths.config, 'express.js'));
+  // await import(path.join(brConfig.paths.config, 'logging.js'));
+});
+
+bedrock.events.on('bedrock.configure', async () => {
   await import(path.join(brConfig.paths.config, 'server.js'));
+  await import(path.join(brConfig.paths.config, 'express.js'));
 });
 
 brConfig.views.bundle.packages.push({
