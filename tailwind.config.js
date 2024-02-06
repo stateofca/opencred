@@ -1,7 +1,7 @@
 /* eslint-disable unicorn/prefer-module */
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./ui/**/*.html', './ui/**/*.vue', './ui/**/*.js'],
+  content: ['./web/**/*.{html,js,vue}'],
   theme: {
     extend: {},
     clipPath: {

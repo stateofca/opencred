@@ -83,11 +83,13 @@
     "x25519-key-agreement-2020-context": "^1.0.0"
   },
   "devDependencies": {
+    "@babel/compat-data": "^7.23.5",
     "@peculiar/webcrypto": "^1.4.3",
     "@peculiar/x509": "^1.9.5",
     "@vitejs/plugin-vue": "^4.2.3",
     "asn1js": "^3.0.5",
     "autoprefixer": "^10.4.16",
+    "css-loader": "^6.10.0",
     "env-cmd": "^10.1.0",
     "eslint": "^8.49.0",
     "eslint-config-digitalbazaar": "^5.0.1",
@@ -98,7 +100,9 @@
     "mocha": "^10.2.0",
     "patch-package": "^8.0.0",
     "postcss": "^8.4.30",
+    "postcss-loader": "^8.1.0",
     "sinon": "^17.0.0",
+    "style-loader": "^3.3.4",
     "supertest": "^6.3.3",
     "tailwind-clip-path": "^1.0.0",
     "tailwindcss": "^3.3.3",

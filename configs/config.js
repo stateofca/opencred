@@ -29,6 +29,16 @@ brConfig.views.bundle.packages.push({
   manifest: path.join(rootPath, 'web', 'manifest.json')
 });
 
+brConfig['bedrock-webpack'].configs.push({
+  module: {
+    rules: [{
+      test: /\.css$/i,
+      include: path.resolve(__dirname, 'web'),
+      use: ['style-loader', 'css-loader', 'postcss-loader'],
+    }]
+  }
+});
+
 let configDoc;
 if(process.env.OPENCRED_CONFIG) {
   configDoc = yaml.load(
