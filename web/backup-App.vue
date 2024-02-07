@@ -9,7 +9,7 @@
 </template>
 
 <script setup>
-  import './styles.css';
+  import './styles.pcss';
 
   // Populate data from SSR on server side or from script in <head> on client.
   let ctx = {};

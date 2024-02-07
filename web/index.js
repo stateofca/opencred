@@ -7,7 +7,7 @@ import ButtonView from './components/ButtonView.vue';
 import JsonNode from './components/JsonNode.vue';
 import JsonView from './components/JsonView.vue';
 import QRView from './components/QRView.vue';
-import './styles.css';
+import './styles.pcss';
 
 brVue.initialize({
   async beforeMount({app}) {

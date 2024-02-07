@@ -32,9 +32,24 @@ brConfig.views.bundle.packages.push({
 brConfig['bedrock-webpack'].configs.push({
   module: {
     rules: [{
-      test: /\.css$/i,
-      include: path.resolve(__dirname, 'web'),
-      use: ['style-loader', 'css-loader', 'postcss-loader'],
+      test: /\.pcss$/i,
+      include: path.resolve(__dirname, '..', 'web'),
+      use: [
+        'style-loader',
+        'css-loader',
+        {
+          loader: 'postcss-loader',
+          options: {
+            postcssOptions: {
+              plugins: [
+                'postcss-preset-env',
+                'tailwindcss',
+                'autoprefixer',
+              ]
+            }
+          }
+        }
+      ]
     }]
   }
 });
