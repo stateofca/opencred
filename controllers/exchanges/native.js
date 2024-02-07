@@ -359,7 +359,6 @@ export default function(app) {
         return;
       } else {
         res.sendStatus(404);
-        return;
       }
     } catch(e) {
       console.error(e);

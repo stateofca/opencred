@@ -11,5 +11,4 @@ export const health = (req, res) => {
     res.status(503);
     res.send(healthCheck);
   }
-  return;
 };

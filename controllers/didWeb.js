@@ -97,6 +97,5 @@ export const didConfigurationDocument = async (req, res) => {
   }
 
   res.send(config.didWeb?.linkageDocument);
-  return;
 };
 

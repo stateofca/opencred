@@ -14,11 +14,9 @@ export async function initiateExchange(req, res) {
     return;
   }
   res.send({...exchangeData, QR: await QRCode.toDataURL(exchangeData.OID4VP)});
-  return;
 }
 
 export const getExchangeStatus = async (req, res) => {
   res.send({exchange: req.exchange});
-  return;
 };
 
