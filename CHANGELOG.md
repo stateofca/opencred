@@ -1,11 +1,14 @@
 # opencred-platform Changelog
 
-## 5.4.2 - 2024-xx-xx
+## 5.4.2 - 2024-02-07
 
 ### Changed
 - Use `@digitalbazaar/vdl-context@1`.
 - Use `@digitalbazaar/vdl-aamva-context@1`.
 - Use `@digitalbazaar/did-method-web` for `did:web` resolution.
+
+### Fixed
+- Improve error handling in HTTP handlers.
 
 ## 5.4.1 - 2024-01-25
 
