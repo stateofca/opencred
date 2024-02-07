@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 5.4.3 - 2024-02-xx
+
+### Fixed
+- Add explicit return to all responses.
+
 ## 5.4.2 - 2024-02-07
 
 ### Changed

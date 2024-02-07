@@ -68,6 +68,7 @@ const createVcApiExchange = async (req, res, next) => {
   } catch(e) {
     console.error(e);
     res.status(500).send({message: 'Internal Server Error'});
+    return;
   }
 };
 

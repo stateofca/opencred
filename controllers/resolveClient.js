@@ -10,6 +10,7 @@ const attachClientByQuery = async (req, res, next) => {
   );
   if(!rp) {
     res.status(400).send({message: 'Unknown client_id'});
+    return;
   }
   req.rp = rp;
   next();

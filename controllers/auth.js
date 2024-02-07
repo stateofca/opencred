@@ -47,6 +47,7 @@ const getAuthFunction = ({basic, bearer, body}) => {
       res.status(401).send(
         {message: 'Client ID could not be resolved from request.'}
       );
+      return;
     }
     const clientId = req.rp.clientId;
     const clientSecret = req.rp.clientSecret;

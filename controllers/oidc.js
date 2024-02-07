@@ -165,6 +165,7 @@ export const exchangeCodeForToken = async (req, res) => {
     });
 
     res.send(token);
+    return;
   } catch(e) {
     console.error(e);
     res.status(500).send({
@@ -194,6 +195,7 @@ export const jwksEndpoint = async (req, res) => {
   res.send({
     keys: jwks
   });
+  return;
 };
 
 export const openIdConfiguration = async (req, res) => {
@@ -227,4 +229,5 @@ export const openIdConfiguration = async (req, res) => {
   };
 
   res.send(info);
+  return;
 };

@@ -235,6 +235,7 @@ const verificationCallback = async (req, res) => {
   }
 
   res.status(exchangeState === 'invalid' ? 400 : 200).send({message});
+  return;
 };
 
 export default function(app) {

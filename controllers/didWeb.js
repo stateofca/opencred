@@ -18,9 +18,10 @@ export const domainToDidWeb = domain => {
  */
 export const didWebDocument = async (req, res) => {
   if(!config.didWeb?.mainEnabled) {
-    return res.status(404).send({
+    res.status(404).send({
       message: 'A did:web document is not available for this domain.'
     });
+    return;
   }
   const authzReqKey = config.signingKeys
     .find(k => k.purpose?.includes('authorization_request'));
@@ -81,18 +82,21 @@ export const didWebDocument = async (req, res) => {
 
 export const didConfigurationDocument = async (req, res) => {
   if(!config.didWeb?.mainEnabled) {
-    return res.status(404).send({
+    res.status(404).send({
       message: 'A did:web document is not available for this domain.'
     });
+    return;
   }
   if(!config.didWeb?.linkageEnabled) {
-    return res.send({
+    res.send({
       '@context':
         'https://identity.foundation/.well-known/did-configuration/v1',
       linked_dids: []
     });
+    return;
   }
 
   res.send(config.didWeb?.linkageDocument);
+  return;
 };
 
