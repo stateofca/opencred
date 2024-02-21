@@ -8,6 +8,7 @@ import {ConfidentialClientApplication} from '@azure/msal-node';
 import {didResolver} from './documentLoader.js';
 import {generateId} from 'bnid';
 import {httpClient} from '@digitalbazaar/http-client';
+import {logger} from '../lib/logger.js';
 import {verifyJWKx509} from './x509.js';
 
 // General Utilities
@@ -62,7 +63,7 @@ export const normalizeVpTokenDataIntegrity = vpToken => {
         try {
           return JSON.parse(base64url.decode(item));
         } catch(e) {
-          console.error('vp_token contains invalid Base64 encoded JSON.');
+          logger.error('vp_token contains invalid Base64 encoded JSON.');
           return null;
         }
       } else {
@@ -71,7 +72,7 @@ export const normalizeVpTokenDataIntegrity = vpToken => {
     });
   }
 
-  console.error('vp_token format is not recognized.');
+  logger.error('vp_token format is not recognized.');
   return null;
 };
 
@@ -112,7 +113,7 @@ export function asyncHandler(middleware) {
     const result = middleware(...args);
     const next = args[args.length - 1];
     const handleError = (...args) => {
-      console.error(...args);
+      logger.error(...args);
       process.nextTick(() => next([]));
     };
     return Promise.resolve(result).catch(handleError);

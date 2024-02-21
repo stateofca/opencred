@@ -2,6 +2,7 @@ import * as x509 from '@peculiar/x509';
 // import {Certificate, CertificateRevocationList} from 'pkijs';
 import {createPublicKey, X509Certificate} from 'node:crypto';
 import {config} from '../configs/config.js';
+import {logger} from '../lib/logger.js';
 import ocsp from 'ocsp';
 
 const checkDates = cert => {
@@ -165,7 +166,7 @@ export const verifyX509 = async certs => {
     }
     return {verified: errors.length === 0, errors};
   } catch(e) {
-    console.error(e);
+    logger.error(e);
     return {verified: false, errors: [e.message]};
   }
 };
@@ -185,7 +186,7 @@ export const verifyJWKx509 = async jwk => {
     }
     return await verifyX509(certs);
   } catch(e) {
-    console.error(e);
+    logger.error(e);
     return {verified: false, errors: [e.message]};
   }
 };

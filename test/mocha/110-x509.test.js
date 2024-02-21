@@ -274,17 +274,6 @@ async function generateCertificateChain(
 }
 
 describe('x509', async () => {
-  let originalErrorLog;
-
-  before(() => {
-    originalErrorLog = console.error;
-    console.error = () => {};
-  });
-
-  after(() => {
-    console.error = originalErrorLog;
-  });
-
   it('should verify valid certificate chain', async () => {
     const {chain} = await generateCertificateChain(3);
     const root = chain.pop();

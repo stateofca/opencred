@@ -6,6 +6,7 @@ import {
 } from '@digitalbazaar/ed25519-verification-key-2020';
 import {httpClient} from '@digitalbazaar/http-client';
 import https from 'node:https';
+import {logger} from '../lib/logger.js';
 import {ZcapClient} from '@digitalbazaar/ezcap';
 
 const agent = new https.Agent({rejectUnauthorized: false});
@@ -76,7 +77,7 @@ async function zcapWriteRequest({
     });
   } catch(e) {
     error = e;
-    console.error('Error in zcapWriteRequest:', error);
+    logger.error('Error in zcapWriteRequest:', error);
   }
   const {data, statusCode} = _getDataAndStatus({result, error});
   return {result, error, data, statusCode};
@@ -107,7 +108,7 @@ async function zcapReadRequest({
     });
   } catch(e) {
     error = e;
-    console.error('Error in zcapReadRequest:', error);
+    logger.error('Error in zcapReadRequest:', error);
   }
   const {data, statusCode} = _getDataAndStatus({result, error});
   return {result, error, data, statusCode};
