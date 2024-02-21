@@ -9,8 +9,9 @@ FROM build-setup AS build
 ARG NODE_AUTH_TOKEN
 USER node
 COPY --chown=node:node . .
-RUN npm i --omit=optional
-RUN npm run build
+RUN mv dev.js index.js
+
+RUN npm i --omit=dev --package-lock
 
 FROM build AS test
 # RUN cd test && npm t
@@ -18,6 +19,6 @@ FROM build AS test
 
 FROM base AS release
 COPY --from=test --chown=node:node /home/node/app ./
-EXPOSE 10443
+EXPOSE 22443
 ENV NODE_ENV=production
-CMD ["node", "index.js"]
+CMD [ "node", "index", "--bundle-mode", "production"]

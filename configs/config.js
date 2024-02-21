@@ -17,7 +17,6 @@ const rootPath = path.join(__dirname, '..');
 bedrock.events.on('bedrock-cli.parsed', async () => {
   await import(path.join(brConfig.paths.config, 'paths.js'));
   await import(path.join(brConfig.paths.config, 'core.js'));
-  // await import(path.join(brConfig.paths.config, 'logging.js'));
 });
 
 bedrock.events.on('bedrock.configure', async () => {
@@ -63,7 +62,7 @@ if(process.env.OPENCRED_CONFIG) {
   );
 } else {
   // Environment variables
-  const configPath = process.env.CONFIG_PATH || '/etc/app-configs/config.yaml';
+  const configPath = process.env.CONFIG_PATH || '/etc/app-config/config.yaml';
 
   // Load config doc and parse YAML.
   configDoc = yaml.load(fs.readFileSync(configPath, 'utf8'));
