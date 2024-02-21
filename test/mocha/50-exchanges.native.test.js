@@ -1,5 +1,3 @@
-import {after, before, describe, it} from 'mocha';
-
 import * as sinon from 'sinon';
 import expect from 'expect.js';
 import fs from 'node:fs';
@@ -7,10 +5,10 @@ import {klona} from 'klona';
 
 import {
   createNativeExchange, verifySubmission
-} from '../controllers/exchanges/native.js';
-import {exchanges} from '../common/database.js';
-import {getDocumentLoader} from '../common/documentLoader.js';
-import {verifyUtils} from '../common/utils.js';
+} from '../../lib/exchanges/native.js';
+import {database} from '../../lib/database.js';
+import {getDocumentLoader} from '../../common/documentLoader.js';
+import {verifyUtils} from '../../common/utils.js';
 
 const rp = {
   workflow: {
@@ -29,14 +27,14 @@ describe('Exchanges (Native)', async () => {
 
   before(() => {
     const oid4vp = JSON.parse(fs.readFileSync(
-      './tests/fixtures/oid4vp_di.json'));
+      './test/fixtures/oid4vp_di.json'));
     vp_token = oid4vp.vp_token;
     presentation_submission = oid4vp.presentation_submission;
     exchange = JSON.parse(fs.readFileSync(
-      './tests/fixtures/exchange.json'));
+      './test/fixtures/exchange.json'));
     exchange.createdAt = new Date(exchange.createdAt);
     exchange.recordExpiresAt = new Date(exchange.recordExpiresAt);
-    dbStub = sinon.stub(exchanges, 'insertOne')
+    dbStub = sinon.stub(database.collections.Exchanges, 'insertOne')
       .resolves({insertedId: 'test'});
     sinon.stub(getDocumentLoader(), 'build')
       .returns(() => {

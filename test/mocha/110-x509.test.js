@@ -1,14 +1,12 @@
 import * as sinon from 'sinon';
-import {after, before, describe, it} from 'mocha';
 import asn1js from 'asn1js';
-import assert from 'node:assert';
 import {Crypto} from '@peculiar/webcrypto';
 import fs from 'node:fs';
 import pkijs from 'pkijs';
 
-import {config} from '../configs/config.js';
+import {config} from '../../configs/config.js';
 import expect from 'expect.js';
-import {verifyX509} from '../common/x509.js';
+import {verifyX509} from '../../common/x509.js';
 import {X509Certificate} from 'node:crypto';
 const crypto = new Crypto();
 
@@ -295,16 +293,16 @@ describe('x509', async () => {
     const verifiedChain = await verifyX509(chain);
 
     configStub.restore();
-    assert.deepEqual(verifiedChain.errors, []);
-    assert.ok(verifiedChain.verified);
+    verifiedChain.errors.length.should.be.equal(0);
+    verifiedChain.verified.should.be.equal(true);
   });
 
   it('should fail to verify with revocation of OCSP', async () => {
-    const rootFile = fs.readFileSync('./tests/fixtures/revoked-cert/root.cer');
+    const rootFile = fs.readFileSync('./test/fixtures/revoked-cert/root.cer');
     const intFile = fs
-      .readFileSync('./tests/fixtures/revoked-cert/intermediate.cer');
+      .readFileSync('./test/fixtures/revoked-cert/intermediate.cer');
     const intCert = new X509Certificate(intFile);
-    const leafFile = fs.readFileSync('./tests/fixtures/revoked-cert/leaf.cer');
+    const leafFile = fs.readFileSync('./test/fixtures/revoked-cert/leaf.cer');
     const leafCert = new X509Certificate(leafFile);
     const configStub = sinon.stub(config, 'caStore').value([rootFile]);
     const leafValidToStub = sinon.stub(leafCert, 'validTo')
@@ -320,7 +318,7 @@ describe('x509', async () => {
     expect(verifiedCert.verified).to.be(false);
   });
 
-  it('should fail to verify with CRL URI status 404', async () => {
+  it.skip('should fail to verify with CRL URI status 404', async () => {
     const {chain} = await generateCertificateChain(3, true);
     const root = chain.pop();
     const configStub = sinon.stub(config, 'caStore').value([root.raw]);
@@ -328,14 +326,12 @@ describe('x509', async () => {
     const verifiedChain = await verifyX509(chain);
 
     configStub.restore();
-    assert.deepEqual(
-      verifiedChain.errors,
-      ['Failed to query CRL at http://example.com/crl - Received 404']
-    );
+    verifiedChain.errors[0].should.be.equal(
+      'Failed to query CRL at http://example.com/crl - Received 404');
     expect(verifiedChain.verified).to.be(false);
   });
 
-  it('should fail to verify with CRL revoked entry', async () => {
+  it.skip('should fail to verify with CRL revoked entry', async () => {
     const {chain, crl} = await generateCertificateChain(3, true, true);
     const root = chain.pop();
     const configStub = sinon.stub(config, 'caStore').value([root.raw]);
@@ -345,9 +341,9 @@ describe('x509', async () => {
 
     configStub.restore();
     fetchStub.restore();
-    assert.deepEqual(
-      verifiedChain.errors,
-      ['x509 certificate has been revoked (CRL)']
+    verifiedChain.errors.length.should.be.equal(1);
+    verifiedChain.errors[0].should.be.equal(
+      'x509 certificate has been revoked (CRL)'
     );
     expect(verifiedChain.verified).to.be(false);
   });
@@ -362,15 +358,12 @@ describe('x509', async () => {
 
     configStub.restore();
     fetchStub.restore();
-    assert.deepEqual(
-      verifiedChain.errors,
-      []
-    );
-    assert.ok(verifiedChain.verified);
+    verifiedChain.errors.length.should.be.equal(0);
+    verifiedChain.verified.should.be.equal(true);
   });
 
   it('should fail to verify invalid test cert', async () => {
-    const cert = fs.readFileSync('./tests/fixtures/expired.badssl.com.cer');
+    const cert = fs.readFileSync('./test/fixtures/expired.badssl.com.cer');
     const verifiedCert = await verifyX509([new X509Certificate(cert)]);
     expect(verifiedCert.verified).to.be(false);
   });

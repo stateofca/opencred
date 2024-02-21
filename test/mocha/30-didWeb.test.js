@@ -1,11 +1,14 @@
 import * as sinon from 'sinon';
-import {describe, it} from 'mocha';
-import expect from 'expect.js';
-import request from 'supertest';
+import {httpClient} from '@digitalbazaar/http-client';
+import https from 'node:https';
 
-import {app} from '../app.js';
-import {config} from '../configs/config.js';
-import {exampleKey2} from './fixtures/signingKeys.js';
+import {baseUrl} from '../mock-data.js';
+import {config} from '../../configs/config.js';
+import {exampleKey2} from '../fixtures/signingKeys.js';
+import '../../lib/index.js';
+
+const agent = new https.Agent({rejectUnauthorized: false});
+const client = httpClient.extend({agent});
 
 const testDidWebDoc = {
   id: 'did:web:example.com',
@@ -65,15 +68,20 @@ const testLinkageDoc = {
 describe('OpenCred did:web support', function() {
   it('should return 404 if not enabled', async function() {
     const configStub = sinon.stub(config, 'didWeb').value({mainEnabled: false});
-    const response = await request(app)
-      .get('/.well-known/did.json')
-      .set('Accept', 'application/json');
+    let result;
+    let err;
+    try {
+      result = await client.get(`${baseUrl}/.well-known/did.json`);
+    } catch(e) {
+      err = e;
+    }
 
-    expect(response.headers['content-type']).to.match(/json/);
-    expect(response.status).to.equal(404);
-    expect(response.body.message).to.equal(
+    should.not.exist(result);
+    err.status.should.be.equal(404);
+    err.data.message.should.be.equal(
       'A did:web document is not available for this domain.'
     );
+
     configStub.restore();
   });
 
@@ -86,14 +94,18 @@ describe('OpenCred did:web support', function() {
       [{...exampleKey2, purpose: ['authorization_request']}]
     );
 
-    const response = await request(app)
-      .get('/.well-known/did.json')
-      .set('Accept', 'application/json');
+    let result;
+    let err;
+    try {
+      result = await client.get(`${baseUrl}/.well-known/did.json`);
+    } catch(e) {
+      err = e;
+    }
 
-    expect(response.headers['content-type']).to.match(/json/);
-    expect(response.status).to.equal(200);
-    expect(response.body.id).to.equal('did:web:example.com');
-    expect(response.body.verificationMethod.length).to.equal(2);
+    should.not.exist(err);
+    result.status.should.be.equal(200);
+    result.data.id.should.be.equal('did:web:example.com');
+    result.data.verificationMethod.length.should.be.equal(2);
 
     didWebStub.restore();
     signingKeyStub.restore();
@@ -108,17 +120,21 @@ describe('OpenCred did:web support', function() {
       [{...exampleKey2, purpose: ['authorization_request']}]
     );
 
-    const response = await request(app)
-      .get('/.well-known/did.json')
-      .set('Accept', 'application/json');
+    let result;
+    let err;
+    try {
+      result = await client.get(`${baseUrl}/.well-known/did.json`);
+    } catch(e) {
+      err = e;
+    }
 
-    expect(response.headers['content-type']).to.match(/json/);
-    expect(response.status).to.equal(200);
-    expect(response.body.id).to.equal('did:web:example.com');
-    expect(response.body.verificationMethod.length).to.equal(2);
-    expect(response.body.assertionMethod.length).to.equal(2);
-    expect(response.body.verificationMethod[0].id).to.equal(
-      response.body.assertionMethod[0]
+    should.not.exist(err);
+    result.status.should.be.equal(200);
+    result.data.id.should.be.equal('did:web:example.com');
+    result.data.verificationMethod.length.should.be.equal(2);
+    result.data.assertionMethod.length.should.be.equal(2);
+    result.data.verificationMethod[0].id.should.be.equal(
+      result.data.assertionMethod[0]
     );
 
     didWebStub.restore();
@@ -132,13 +148,21 @@ describe('DID Linked Domain credential endpoint', () => {
       mainEnabled: true,
       linkageEnabled: false
     });
-    const response = await request(app)
-      .get('/.well-known/did-configuration.json')
-      .set('Accept', 'application/json');
 
-    expect(response.headers['content-type']).to.match(/json/);
-    expect(response.status).to.equal(200);
-    expect(response.body.linked_dids.length).to.equal(0);
+    let result;
+    let err;
+    try {
+      result = await client.get(
+        `${baseUrl}/.well-known/did-configuration.json`
+      );
+    } catch(e) {
+      err = e;
+    }
+
+    should.not.exist(err);
+    result.status.should.be.equal(200);
+    result.data.linked_dids.length.should.be.equal(0);
+
     configStub.restore();
   });
 
@@ -150,13 +174,19 @@ describe('DID Linked Domain credential endpoint', () => {
       linkageDocument: testLinkageDoc
     });
 
-    const response = await request(app)
-      .get('/.well-known/did-configuration.json')
-      .set('Accept', 'application/json');
+    let result;
+    let err;
+    try {
+      result = await client.get(
+        `${baseUrl}/.well-known/did-configuration.json`
+      );
+    } catch(e) {
+      err = e;
+    }
 
-    expect(response.headers['content-type']).to.match(/json/);
-    expect(response.status).to.equal(200);
-    expect(response.body.linked_dids.length).to.equal(1);
+    should.not.exist(err);
+    result.status.should.be.equal(200);
+    result.data.linked_dids.length.should.be.equal(1);
 
     didWebStub.restore();
   });

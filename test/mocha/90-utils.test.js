@@ -1,6 +1,5 @@
-import {describe, it} from 'mocha';
 import expect from 'expect.js';
-import {normalizeVpTokenDataIntegrity} from '../common/utils.js';
+import {normalizeVpTokenDataIntegrity} from '../../common/utils.js';
 
 describe('normalizeVpTokenDataIntegrity', () => {
 

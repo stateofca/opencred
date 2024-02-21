@@ -37,18 +37,20 @@
   let intervalId;
   const vp = ref(null);
   const loading = ref(true);
+  const error = ref(false);
 
   const state = reactive({
     currentUXMethodIndex: 0
   });
 
   onBeforeMount(async () => {
-    const resp = await httpClient.get(`/context/login${window.location.search}`);
-    console.log(resp.status)
-    if (resp.status === 200) {
-      props = resp.data;
-      console.log(props);
-      loading.value = false;
+    try {
+      const resp = await httpClient.get(`/context/login${window.location.search}`);
+      if (resp.status === 200) {
+        props = resp.data;
+      }
+    } catch(e) {
+      error.value = true;
     }
     loading.value = false;
   })
@@ -99,6 +101,7 @@
 
 <template>
   <div v-if="loading">Loading</div>
+  <div v-else-if="error">Error</div>
   <div v-else class="flex flex-col min-h-screen">
     <header class="" :style="{background: props.rp.theme.header}">
       <div class="mx-auto flex justify-between items-center px-6 py-3 max-w-3xl">

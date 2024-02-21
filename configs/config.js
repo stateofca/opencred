@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import 'dotenv/config';
 import '@bedrock/views';
+import '../lib/index.js';
 
 import {applyRpDefaults} from './configUtils.js';
 import {combineTranslations} from './translation.js';
@@ -22,6 +23,7 @@ bedrock.events.on('bedrock-cli.parsed', async () => {
 bedrock.events.on('bedrock.configure', async () => {
   await import(path.join(brConfig.paths.config, 'server.js'));
   await import(path.join(brConfig.paths.config, 'express.js'));
+  await import(path.join(brConfig.paths.config, 'https-agent.js'));
 });
 
 brConfig.views.bundle.packages.push({
@@ -262,8 +264,8 @@ if(!Array.isArray(configRPs)) {
 }
 
 const databaseConnectionUri = configDoc.dbConnectionUri;
-if(!databaseConnectionUri) {
-  throw new Error('databaseConnectionUri not found in config.');
+if(databaseConnectionUri) {
+  bedrock.config.mongodb.url = databaseConnectionUri;
 }
 
 const defaultLanguage = configDoc.defaultLanguage || 'en';

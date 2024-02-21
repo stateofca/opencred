@@ -1,7 +1,6 @@
 import * as sinon from 'sinon';
-import {describe, it} from 'mocha';
 import expect from 'expect.js';
-import {getDocumentLoader} from '../common/documentLoader.js';
+import {getDocumentLoader} from '../../common/documentLoader.js';
 import {httpClient} from '@digitalbazaar/http-client';
 
 const documentLoader = getDocumentLoader().build();

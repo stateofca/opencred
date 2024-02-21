@@ -1,16 +1,20 @@
 import * as sinon from 'sinon';
-import {before, describe, it} from 'mocha';
 import {decodeJwt} from 'jose';
-import expect from 'expect.js';
 import fs from 'node:fs';
-import request from 'supertest';
-import {zcapClient} from '../common/zcap.js';
+import {zcapClient} from '../../common/zcap.js';
 
-import {msalUtils, verifyUtils} from '../common/utils.js';
-import {app} from '../app.js';
-import {config} from '../configs/config.js';
-import {exampleKey2} from './fixtures/signingKeys.js';
-import {exchanges} from '../common/database.js';
+import {msalUtils, verifyUtils} from '../../common/utils.js';
+import {baseUrl} from '../mock-data.js';
+import {config} from '../../configs/config.js';
+import {database} from '../../lib/database.js';
+import {exampleKey2} from '../fixtures/signingKeys.js';
+import '../../lib/index.js';
+
+import {httpClient} from '@digitalbazaar/http-client';
+import https from 'node:https';
+
+const agent = new https.Agent({rejectUnauthorized: false});
+const client = httpClient.extend({agent});
 
 const testRP = {
   workflow: {
@@ -46,7 +50,7 @@ const testRP = {
 };
 
 const exchange = JSON.parse(fs.readFileSync(
-  './tests/fixtures/exchange.json'
+  './test/fixtures/exchange.json'
 ));
 exchange.createdAt = new Date();
 exchange.recordExpiresAt = new Date();
@@ -59,13 +63,14 @@ describe('OpenCred API - Native Workflow', function() {
   let exchange_jwt;
 
   before(() => {
+    // database.collections.Exchanges = {findOne: {}, insertOne: {}};
     const di = JSON.parse(fs.readFileSync(
-      './tests/fixtures/oid4vp_di.json'
+      './test/fixtures/oid4vp_di.json'
     ));
     vp_token_di = di.vp_token;
     presentation_submission_di = di.presentation_submission;
     const jwt = JSON.parse(fs.readFileSync(
-      './tests/fixtures/oid4vp_jwt.json'
+      './test/fixtures/oid4vp_jwt.json'
     ));
     vp_token_jwt = jwt.vp_token;
     presentation_submission_jwt = jwt.presentation_submission;
@@ -85,59 +90,75 @@ describe('OpenCred API - Native Workflow', function() {
   });
 
   it('should return 404 for unknown workflow id', async function() {
-    const findStub = sinon.stub(exchanges, 'findOne').resolves(
-      exchange
-    );
-    const response = await request(app)
-      .post(`/workflows/not-the-${testRP.workflow.id}/exchanges`)
-      .send({
-
-      })
-      .set('Accept', 'application/json');
-
-    expect(response.headers['content-type']).to.match(/json/);
-    expect(response.status).to.equal(404);
-    expect(response.body.message).to.equal('Unknown workflow id');
-    findStub.restore();
+    let err;
+    let result;
+    try {
+      result = await client
+        .post(`${baseUrl}/workflows/not-the-${testRP.workflow.id}/exchanges`);
+    } catch(e) {
+      err = e;
+    }
+    should.not.exist(result);
+    err.status.should.equal(404);
+    err.data.message.should.equal('Unknown workflow id');
   });
 
   it('should create a new exchange with the workflow', async function() {
-    const insertStub = sinon.stub(exchanges, 'insertOne').resolves();
-    const response = await request(app)
-      .post(`/workflows/${testRP.workflow.id}/exchanges`)
-      .set(
-        'Authorization', `Basic ${Buffer.from('test:shhh').toString('base64')}`
-      )
-      .send()
-      .set('Accept', 'application/json');
+    const insertStub = sinon.stub(database.collections.Exchanges, 'insertOne')
+      .resolves(exchange);
+    const basic = Buffer.from('test:shhh').toString('base64');
+    let result;
+    let err;
+    try {
+      result = await client
+        .post(`${baseUrl}/workflows/${testRP.workflow.id}/exchanges`, {
+          headers: {Authorization: `Basic ${basic}`}
+        });
+    } catch(e) {
+      err = e;
+    }
 
-    expect(response.headers['content-type']).to.match(/json/);
-    expect(response.status).to.equal(200);
-    expect(response.body.id).to.not.be(undefined);
-    expect(response.body.vcapi).to.not.be(undefined);
-    expect(insertStub.called).to.be(true);
+    should.not.exist(err);
+    result.status.should.equal(200);
+    result.data.id.should.be.a('string');
+    result.data.vcapi.should.be.a('string');
+    result.data.OID4VP.should.be.a('string');
+    result.data.accessToken.should.be.a('string');
+    result.data.workflowId.should.be.a('string');
+    result.data.QR.should.be.a('string');
+
+    insertStub.called.should.equal(true);
     insertStub.restore();
   });
 
   it('should return 404 if invalid workflowId', async function() {
-    const findStub = sinon.stub(exchanges, 'findOne').resolves({
-      ...exchange,
-      workflowId: 'WRONG'
-    });
-    const response = await request(app)
-      .get(
-        `/workflows/${testRP.workflow.id}/exchanges/${exchange.id}/` +
-        'openid/client/authorization/request'
-      );
-    expect(response.status).to.equal(404);
-    expect(response.headers['content-type']).to.match(/json/);
+    const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+      .resolves({
+        ...exchange,
+        workflowId: 'WRONG'
+      });
+    let result;
+    let err;
+    try {
+      result = await client
+        .get(
+          `${baseUrl}/workflows/${testRP.workflow.id}/exchanges/` +
+          `${exchange.id}/openid/client/authorization/request`);
+    } catch(e) {
+      err = e;
+    }
+    should.not.exist(result);
+    err.status.should.equal(404);
+    err.data.message.should.equal('Exchange not found');
 
     findStub.restore();
   });
 
   it('should return Presentation Request JWT', async function() {
-    const findStub = sinon.stub(exchanges, 'findOne').resolves(exchange);
-    const updateStub = sinon.stub(exchanges, 'updateOne').resolves();
+    const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+      .resolves(exchange);
+    const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
+      .resolves();
     const domainStub = sinon.stub(config, 'domain').value(
       'https://example.com'
     );
@@ -145,18 +166,24 @@ describe('OpenCred API - Native Workflow', function() {
       [{...exampleKey2, purpose: ['authorization_request']}]
     );
 
-    const response = await request(app)
-      .get(
-        `/workflows/${testRP.workflow.id}/exchanges/${exchange.id}/` +
-        'openid/client/authorization/request'
-      );
-    expect(response.status).to.equal(200);
-    expect(response.headers['content-type']).to.match(
-      /application\/oauth-authz-req\+jwt/
+    let result;
+    let err;
+    try {
+      result = await client
+        .get(
+          `${baseUrl}/workflows/${testRP.workflow.id}/exchanges/` +
+          `${exchange.id}/openid/client/authorization/request`
+        );
+    } catch(e) {
+      err = e;
+    }
+    const jwt = decodeJwt(await result.text());
+    should.not.exist(err);
+    result.status.should.equal(200);
+    result.headers.get('content-type').should.equal(
+      'application/oauth-authz-req+jwt; charset=utf-8'
     );
-    const jwt = decodeJwt(response.text);
-    expect(jwt.client_id.startsWith('did:web:example.com')).to.be(true);
-    expect(response.text).to.not.be(undefined);
+    jwt.client_id.should.have.string('did:web:example.com');
 
     domainStub.restore();
     updateStub.restore();
@@ -165,66 +192,99 @@ describe('OpenCred API - Native Workflow', function() {
   });
 
   it('should return status on exchange', async function() {
-    const findStub = sinon.stub(exchanges, 'findOne').resolves(
-      exchange
-    );
-    const response = await request(app)
-      .get(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}`)
-      .set(
-        'Authorization', `Bearer ${exchange.accessToken}`
-      );
+    const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+      .resolves(exchange);
+    let result;
+    let err;
+    try {
+      result = await client
+        .get(`${baseUrl}/workflows/${testRP.workflow.id}/exchanges/` +
+          `${exchange.id}`, {
+          headers: {Authorization: `Bearer ${exchange.accessToken}`}
+        });
+    } catch(e) {
+      err = e;
+    }
 
-    expect(response.headers['content-type']).to.match(/json/);
-    expect(response.status).to.equal(200);
-    expect(response.body.exchange.id).to.equal(exchange.id);
+    should.not.exist(err);
+    result.status.should.be.equal(200);
+    result.data.exchange.id.should.be.equal(exchange.id);
     findStub.restore();
   });
 
   it('should allow POST to exchange endpoint', async function() {
-    const findStub = sinon.stub(exchanges, 'findOne').resolves(exchange);
-    const response = await request(app)
-      .post(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}`)
-      .send()
-      .set('Accept', 'application/json');
+    const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+      .resolves(exchange);
+    let result;
+    let err;
+    try {
+      result = await client
+        .post(`${baseUrl}/workflows/${testRP.workflow.id}/exchanges/` +
+          `${exchange.id}`);
+    } catch(e) {
+      err = e;
+    }
 
-    expect(response.headers['content-type']).to.match(/json/);
-    expect(response.status).to.equal(200);
+    should.not.exist(err);
+    result.status.should.be.equal(200);
+
     findStub.restore();
   });
 
   it('should 404 on POST to exchange endpoint if expired', async function() {
-    const findStub = sinon.stub(exchanges, 'findOne').resolves({
-      ...exchange, createdAt: new Date(new Date().getTime() - 1000 * 1000)
-    });
-    const response = await request(app)
-      .post(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}`)
-      .send()
-      .set('Accept', 'application/json');
+    const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+      .resolves({
+        ...exchange, createdAt: new Date(new Date().getTime() - 1000 * 1000)
+      });
+    let result;
+    let err;
+    try {
+      result = await client
+        .post(`${baseUrl}/workflows/${testRP.workflow.id}/exchanges/` +
+          `${exchange.id}`);
+    } catch(e) {
+      err = e;
+    }
 
-    expect(response.status).to.equal(404);
+    should.not.exist(result);
+    err.status.should.equal(404);
+
     findStub.restore();
   });
 
   it('OID4VP should handle DI authorization response', async function() {
-    const findStub = sinon.stub(exchanges, 'findOne').resolves(exchange);
-    const updateStub = sinon.stub(exchanges, 'updateOne').resolves();
-    const response = await request(app)
-      .post(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}/` +
-        'openid/client/authorization/response')
-      .send({
-        vp_token: vp_token_di,
-        presentation_submission: presentation_submission_di
-      });
+    const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+      .resolves(exchange);
+    const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
+      .resolves();
+    let result;
+    let err;
+    try {
+      const searchParams = new URLSearchParams();
+      searchParams.set('vp_token', JSON.stringify(vp_token_di));
+      searchParams.set('presentation_submission',
+        JSON.stringify(presentation_submission_di));
+      result = await client
+        .post(`${baseUrl}/workflows/${testRP.workflow.id}/exchanges/` +
+          `${exchange.id}/openid/client/authorization/response`, {
+          body: searchParams,
+          headers: {
+            'content-type': 'application/x-www-form-urlencoded'
+          }});
+    } catch(e) {
+      err = e;
+    }
 
-    expect(response.status).to.equal(204);
+    should.not.exist(err);
+    result.status.should.be.equal(204);
+
     findStub.restore();
     updateStub.restore();
   });
 
   it('OID4VP should handle JWT authorization response', async function() {
-    const findStub = sinon.stub(exchanges, 'findOne').resolves(
-      exchange_jwt
-    );
+    const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+      .resolves(exchange_jwt);
     const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
       .resolves({
         verified: true,
@@ -232,20 +292,31 @@ describe('OpenCred API - Native Workflow', function() {
       );
     const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
       .resolves({verified: true, signer: {}});
-    const updateStub = sinon.stub(exchanges, 'updateOne').resolves();
-    const response = await request(app)
-      .post(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}/` +
-        'openid/client/authorization/response')
-      .send({
-        vp_token: vp_token_jwt,
-        presentation_submission: presentation_submission_jwt
-      });
+    const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
+      .resolves();
+    let result;
+    let err;
+    try {
+      const searchParams = new URLSearchParams();
+      searchParams.set('vp_token', JSON.stringify(vp_token_jwt));
+      searchParams.set('presentation_submission',
+        JSON.stringify(presentation_submission_jwt));
+      result = await client
+        .post(`${baseUrl}/workflows/${testRP.workflow.id}/exchanges/` +
+          `${exchange.id}/openid/client/authorization/response`, {
+          body: searchParams,
+          headers: {'content-type': 'application/x-www-form-urlencoded'}
+        });
+    } catch(e) {
+      err = e;
+    }
+    should.not.exist(err);
+    result.status.should.be.equal(204);
 
     findStub.restore();
     updateStub.restore();
     verifyUtilsStub.restore();
     verifyUtilsStub2.restore();
-    expect(response.status).to.equal(204);
   });
 });
 
@@ -268,7 +339,8 @@ describe('OpenCred API - VC-API Workflow', function() {
   });
 
   it('should create a new exchange with the workflow', async function() {
-    const insertStub = sinon.stub(exchanges, 'insertOne').resolves();
+    const insertStub = sinon.stub(database.collections.Exchanges, 'insertOne')
+      .resolves();
     const headers = new Headers({location: 'https://someexchanges.com/123'});
     const zcapStub = sinon.stub(zcapClient, 'zcapWriteRequest').resolves({
       result: {
@@ -276,39 +348,49 @@ describe('OpenCred API - VC-API Workflow', function() {
         status: 204
       }
     });
-    const response = await request(app)
-      .post(`/workflows/${testRP.workflow.id}/exchanges`)
-      .set(
-        'Authorization', `Basic ${Buffer.from('test:shhh').toString('base64')}`
-      )
-      .send()
-      .set('Accept', 'application/json');
+    let result;
+    let err;
+    try {
+      const basic = Buffer.from('test:shhh').toString('base64');
+      result = await client
+        .post(`${baseUrl}/workflows/${testRP.workflow.id}/exchanges`, {
+          headers: {Authorization: `Basic ${basic}`}
+        });
+    } catch(e) {
+      err = e;
+    }
 
-    expect(response.headers['content-type']).to.match(/json/);
-    expect(response.status).to.equal(200);
-    expect(response.body.id).to.not.be(undefined);
-    expect(response.body.vcapi).to.not.be(undefined);
-    expect(insertStub.called).to.be(true);
-    expect(zcapStub.called).to.be(true);
+    should.not.exist(err);
+    result.status.should.be.equal(200);
+    result.data.id.should.be.a('string');
+    result.data.vcapi.should.be.a('string');
+    insertStub.called.should.be.equal(true);
+    zcapStub.called.should.be.equal(true);
+
     insertStub.restore();
     zcapStub.restore();
   });
 
   it('should return status on exchange', async function() {
-    const findStub = sinon.stub(exchanges, 'findOne').resolves(
-      exchange
-    );
+    const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+      .resolves(exchange);
     const zcapStub = sinon.stub(zcapClient, 'zcapReadRequest')
       .resolves({data: exchange});
-    const response = await request(app)
-      .get(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}`)
-      .set(
-        'Authorization', `Bearer ${exchange.accessToken}`
-      );
+    let result;
+    let err;
+    try {
+      const token = exchange.accessToken;
+      result = await client
+        .get(`${baseUrl}/workflows/${testRP.workflow.id}/exchanges/` +
+          `${exchange.id}`, {headers: {Authorization: `Bearer ${token}`}});
+    } catch(e) {
+      err = e;
+    }
 
-    expect(response.headers['content-type']).to.match(/json/);
-    expect(response.status).to.equal(200);
-    expect(response.body.exchange.id).to.equal(exchange.id);
+    should.not.exist(err);
+    result.status.should.be.equal(200);
+    result.data.exchange.id.should.be.a('string');
+
     findStub.restore();
     zcapStub.restore();
   });
@@ -336,7 +418,8 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
   });
 
   it('should create a new exchange with the workflow', async function() {
-    const insertStub = sinon.stub(exchanges, 'insertOne').resolves();
+    const insertStub = sinon.stub(database.collections.Exchanges, 'insertOne')
+      .resolves();
     const getMsalClientStub = sinon.stub(msalUtils, 'getMsalClient')
       .returns(null);
     const makeHttpPostRequestStub = sinon.stub(msalUtils, 'makeHttpPostRequest')
@@ -347,54 +430,65 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
           expiry: Date.now() + 1000000
         }
       });
-    const response = await request(app)
-      .post(`/workflows/${testRP.workflow.id}/exchanges`)
-      .set(
-        'Authorization', `Basic ${Buffer.from('test:shhh').toString('base64')}`
-      )
-      .send()
-      .set('Accept', 'application/json');
+    let result;
+    let err;
+    try {
+      const basic = Buffer.from('test:shhh').toString('base64');
+      result = await client
+        .post(`${baseUrl}/workflows/${testRP.workflow.id}/exchanges`, {
+          headers: {Authorization: `Basic ${basic}`}
+        });
+    } catch(e) {
+      err = e;
+    }
 
-    expect(response.headers['content-type']).to.match(/json/);
-    expect(response.status).to.equal(200);
-    expect(response.body.id).to.equal('c656dad8-a8fa-4361-baef-51af0c2e428e');
-    expect(response.body.vcapi).to.not.be(undefined);
-    expect(response.body.accessToken).to.not.be(undefined);
-    expect(response.body.QR).to.not.be(undefined);
-    expect(response.body.OID4VP).to.equal(
+    should.not.exist(err);
+    result.status.should.be.equal(200);
+    result.data.id.should.be.equal('c656dad8-a8fa-4361-baef-51af0c2e428e');
+    result.data.vcapi.should.be.a('string');
+    result.data.accessToken.should.be.a('string');
+    result.data.QR.should.be.a('string');
+    result.data.OID4VP.should.be.equal(
       'openid://vc/?request_uri=https://requri.example.com/123'
     );
-    expect(response.body.workflowId).to.equal(testRP.workflow.id);
-    expect(insertStub.called).to.be(true);
-    expect(getMsalClientStub.called).to.be(true);
-    expect(makeHttpPostRequestStub.called).to.be(true);
+    result.data.workflowId.should.be.equal(testRP.workflow.id);
+    insertStub.called.should.be.equal(true);
+    getMsalClientStub.called.should.be.equal(true);
+    makeHttpPostRequestStub.called.should.be.equal(true);
+
     insertStub.restore();
     getMsalClientStub.restore();
     makeHttpPostRequestStub.restore();
   });
 
   it('should return status on exchange', async function() {
-    const findStub = sinon.stub(exchanges, 'findOne').resolves(
-      exchange
-    );
-    const response = await request(app)
-      .get(`/workflows/${testRP.workflow.id}/exchanges/${exchange.id}`)
-      .set(
-        'Authorization', `Bearer ${exchange.accessToken}`
-      );
+    const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+      .resolves(exchange);
+    let result;
+    let err;
+    try {
+      result = await client
+        .get(`${baseUrl}/workflows/${testRP.workflow.id}/exchanges/` +
+          `${exchange.id}`, {
+          headers: {Authorization: `Bearer ${exchange.accessToken}`}
+        });
+    } catch(e) {
+      err = e;
+    }
 
-    expect(response.headers['content-type']).to.match(/json/);
-    expect(response.status).to.equal(200);
-    expect(response.body.exchange.id).to.equal(exchange.id);
+    should.not.exist(err);
+    result.status.should.be.equal(200);
+    result.data.exchange.id.should.be.equal(exchange.id);
+
     findStub.restore();
   });
 
   it('should update exchange status after verification with object vp token',
     async function() {
-      const findStub = sinon.stub(exchanges, 'findOne').resolves(
-        exchange
-      );
-      const updateStub = sinon.stub(exchanges, 'updateOne').resolves();
+      const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+        .resolves(exchange);
+      const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
+        .resolves();
       const dateStub = sinon.stub(Date, 'now').returns(1699635246762);
       const testVpToken = {
         '@context': [
@@ -444,24 +538,29 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
           verificationMethod: 'did:example:holder#key-1'
         }
       };
-      const response = await request(app)
-        .post('/verification/callback')
-        .set(
-          'Authorization', `Bearer ${exchange.accessToken}`
-        )
-        .send({
-          requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
-          requestStatus: 'presentation_verified',
-          receipt: {
-            vp_token: testVpToken
-          }
-        })
-        .set('Accept', 'application/json');
 
-      expect(response.headers['content-type']).to.match(/json/);
-      expect(response.status).to.equal(200);
-      expect(findStub.called).to.be(true);
-      expect(updateStub.calledWithMatch({
+      let result;
+      let err;
+      try {
+        result = await client.post(`${baseUrl}/verification/callback`, {
+          headers: {
+            Authorization: `Bearer ${exchange.accessToken}`
+          },
+          json: {
+            requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
+            requestStatus: 'presentation_verified',
+            receipt: {
+              vp_token: testVpToken
+            }
+          }});
+      } catch(e) {
+        err = e;
+      }
+
+      should.not.exist(err);
+      result.status.should.be.equal(200);
+      findStub.called.should.be.equal(true);
+      updateStub.calledWithMatch({
         id: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
         state: 'complete'
       }, {$set: {
@@ -469,8 +568,9 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
           verifiablePresentation: testVpToken
         },
         updatedAt: 1699635246762,
-      }})).to.be(true);
-      expect(dateStub.called).to.be(true);
+      }}).should.be.equal(true);
+      dateStub.called.should.be.equal(true);
+
       findStub.restore();
       updateStub.restore();
       dateStub.restore();
@@ -478,10 +578,10 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
 
   it('should update exchange status after verification with string vp token',
     async function() {
-      const findStub = sinon.stub(exchanges, 'findOne').resolves(
-        exchange
-      );
-      const updateStub = sinon.stub(exchanges, 'updateOne').resolves();
+      const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+        .resolves(exchange);
+      const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
+        .resolves();
       const dateStub = sinon.stub(Date, 'now').returns(1699635246762);
       const testVpToken = `
         eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtp
@@ -574,24 +674,28 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
           }
         }]
       };
-      const response = await request(app)
-        .post('/verification/callback')
-        .set(
-          'Authorization', `Bearer ${exchange.accessToken}`
-        )
-        .send({
-          requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
-          requestStatus: 'presentation_verified',
-          receipt: {
-            vp_token: testVpToken
-          }
-        })
-        .set('Accept', 'application/json');
+      let result;
+      let err;
+      try {
+        result = await client
+          .post(`${baseUrl}/verification/callback`, {
+            headers: {Authorization: `Bearer ${exchange.accessToken}`},
+            json: {
+              requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
+              requestStatus: 'presentation_verified',
+              receipt: {
+                vp_token: testVpToken
+              }
+            }
+          });
+      } catch(e) {
+        err = e;
+      }
 
-      expect(response.headers['content-type']).to.match(/json/);
-      expect(response.status).to.equal(200);
-      expect(findStub.called).to.be(true);
-      expect(updateStub.calledWithMatch({
+      should.not.exist(err);
+      result.status.should.be.equal(200);
+      findStub.called.should.be.equal(true);
+      updateStub.calledWithMatch({
         id: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
         state: 'complete'
       }, {$set: {
@@ -599,8 +703,9 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
           verifiablePresentation: testVp
         },
         updatedAt: 1699635246762
-      }})).to.be(true);
-      expect(dateStub.called).to.be(true);
+      }}).should.be.equal(true);
+      dateStub.called.should.be.equal(true);
+
       findStub.restore();
       updateStub.restore();
       dateStub.restore();

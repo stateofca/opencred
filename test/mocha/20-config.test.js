@@ -1,7 +1,6 @@
-import {describe, it} from 'mocha';
 import expect from 'expect.js';
 
-import {applyRpDefaults} from '../configs/configUtils.js';
+import {applyRpDefaults} from '../../configs/configUtils.js';
 
 const app1 = {
   clientId: 'test1',
