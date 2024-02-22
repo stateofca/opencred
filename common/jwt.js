@@ -1,8 +1,7 @@
 import * as JWT from '@digitalbazaar/minimal-jwt';
+import {config} from '@bedrock/core';
 import crypto from 'node:crypto';
 import jp from 'jsonpath';
-
-import {config} from '../configs/config.js';
 
 /**
  * Generates a JWT id_token from a VP exchange if the exchange is complete.
@@ -10,7 +9,7 @@ import {config} from '../configs/config.js';
  * @param {import("../configs/config.js").RelyingParty} rp
  */
 export const jwtFromExchange = async (exchange, rp) => {
-  const signingKey = config.signingKeys?.find(
+  const signingKey = config.opencred.signingKeys?.find(
     sk => sk.purpose.includes('id_token')
   );
   if(!signingKey) {
@@ -55,7 +54,7 @@ export const jwtFromExchange = async (exchange, rp) => {
 
   const now = Math.floor(Date.now() / 1000);
   const payload = {
-    iss: config.domain,
+    iss: config.opencred.domain,
     aud: rp.clientId,
     sub: c[0].credentialSubject.id,
     iat: now,

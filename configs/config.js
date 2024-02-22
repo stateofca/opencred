@@ -1,5 +1,4 @@
 import * as bedrock from '@bedrock/core';
-import * as fs from 'node:fs';
 import * as yaml from 'js-yaml';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
@@ -56,20 +55,14 @@ brConfig['bedrock-webpack'].configs.push({
   }
 });
 
-export let config;
-
 bedrock.events.on('bedrock.init', async () => {
-  let configDoc;
+  let {opencred} = brConfig;
   if(process.env.OPENCRED_CONFIG) {
-    configDoc = yaml.load(
+    opencred = yaml.load(
       Buffer.from(process.env.OPENCRED_CONFIG, 'base64').toString()
     );
-  } else {
-    // Environment variables
-    const configPath = process.env.CONFIG_PATH || '/etc/app-config/config.yaml';
-
-    // Load config doc and parse YAML.
-    configDoc = yaml.load(fs.readFileSync(configPath, 'utf8'));
+    brConfig.opencred = opencred;
+    logger.info('Loaded config from environment variable');
   }
 
   /**
@@ -140,7 +133,7 @@ bedrock.events.on('bedrock.init', async () => {
    * exchangeProtocols: ['openid4vp-qr', 'chapi-button', 'openid4vp-link']
    * @type {Options}
    */
-  const options = configDoc.options || {
+  opencred.options = opencred.options || {
     exchangeProtocols: ['openid4vp-qr', 'chapi-button']
   };
 
@@ -148,7 +141,7 @@ bedrock.events.on('bedrock.init', async () => {
    * An list of relying parties (connected apps or workflows) in use by OpenCred
    * @type {RelyingParty[]}
    */
-  const configRPs = configDoc.relyingParties;
+  const configRPs = opencred.relyingParties;
 
   // Workflow types
   const WorkflowType = {
@@ -267,38 +260,38 @@ bedrock.events.on('bedrock.init', async () => {
     throw new Error('Configuration relyingParties must be an array.');
   }
 
-  const databaseConnectionUri = configDoc.dbConnectionUri;
+  const databaseConnectionUri = opencred.dbConnectionUri;
   if(databaseConnectionUri) {
     bedrock.config.mongodb.url = databaseConnectionUri;
   }
 
-  const defaultLanguage = configDoc.defaultLanguage || 'en';
+  opencred.defaultLanguage = opencred.defaultLanguage || 'en';
 
-  const translations = combineTranslations(configDoc.translations || {});
+  opencred.translations = combineTranslations(opencred.translations || {});
 
-  const defaultTheme = configDoc.theme ?? {
+  const defaultTheme = opencred.theme ?? {
     cta: '#006847',
     primary: '#008f5a',
     header: '#004225'
   };
 
-  const domain = configDoc.domain ?? 'http://localhost:8080';
+  opencred.domain = opencred.domain ?? 'http://localhost:8080';
 
   const validateDidWeb = () => {
     return {
-      mainEnabled: configDoc.didWeb?.mainEnabled,
-      linkageEnabled: configDoc.didWeb?.linkageEnabled,
-      mainDocument: JSON.parse(configDoc.didWeb?.mainDocument ?? '{}'),
-      linkageDocument: JSON.parse(configDoc.didWeb?.linkageDocument ?? '{}')
+      mainEnabled: opencred.didWeb?.mainEnabled,
+      linkageEnabled: opencred.didWeb?.linkageEnabled,
+      mainDocument: JSON.parse(opencred.didWeb?.mainDocument ?? '{}'),
+      linkageDocument: JSON.parse(opencred.didWeb?.linkageDocument ?? '{}')
     };
   };
-  const didWeb = validateDidWeb();
+  opencred.didWeb = validateDidWeb();
 
   const validateSigningKeys = () => {
-    if(!configDoc.signingKeys) {
+    if(!opencred.signingKeys) {
       return [];
     }
-    configDoc.signingKeys.forEach(sk => {
+    opencred.signingKeys.forEach(sk => {
       if(!sk.type) {
         throw new Error('Each signingKey must have a type.');
       }
@@ -315,14 +308,14 @@ bedrock.events.on('bedrock.init', async () => {
       }
     });
   };
-  const signingKeys = configDoc.signingKeys ?? [];
+  opencred.signingKeys = opencred.signingKeys ?? [];
   validateSigningKeys();
 
   /**
    * An list of relying parties (connected apps or workflows) in use by OpenCred
    * @type {RelyingParty[]}
    */
-  const relyingParties = configRPs.map(rp => {
+  opencred.relyingParties = configRPs.map(rp => {
     const app = applyRpDefaults(configRPs, rp);
     validateRelyingParty(app);
     validateWorkflow(app);
@@ -339,19 +332,19 @@ bedrock.events.on('bedrock.init', async () => {
   /**
    * A list of trusted root certificates
    */
-  const caStore = (configDoc.caStore ?? [])
+  opencred.caStore = (opencred.caStore ?? [])
     .map(cert => cert.pem);
 
-  config = {
-    databaseConnectionUri,
-    didWeb,
-    defaultLanguage,
-    domain,
-    options,
-    relyingParties,
-    signingKeys,
-    translations,
-    caStore
-  };
-  logger.error('OpenCred Config Set');
+  // config = {
+  //   databaseConnectionUri,
+  //   didWeb,
+  //   defaultLanguage,
+  //   domain,
+  //   options,
+  //   relyingParties,
+  //   signingKeys,
+  //   translations,
+  //   caStore
+  // };
+  logger.info('OpenCred Config Successfully Validated');
 });

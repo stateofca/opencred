@@ -1,5 +1,11 @@
 # opencred-platform Changelog
 
+## 6.0.0 - 2024-02-xx
+
+### Changed
+- Use Bedrock packages
+- Move config location to `/etc/bedrock-config/app.yaml`
+
 ## 5.4.3 - 2024-02-07
 
 ### Fixed

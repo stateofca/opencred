@@ -4,7 +4,7 @@ import {Crypto} from '@peculiar/webcrypto';
 import fs from 'node:fs';
 import pkijs from 'pkijs';
 
-import {config} from '../../configs/config.js';
+import {config} from '@bedrock/core';
 import expect from 'expect.js';
 import {verifyX509} from '../../common/x509.js';
 import {X509Certificate} from 'node:crypto';
@@ -277,7 +277,7 @@ describe('x509', async () => {
   it('should verify valid certificate chain', async () => {
     const {chain} = await generateCertificateChain(3);
     const root = chain.pop();
-    const configStub = sinon.stub(config, 'caStore').value([root.raw]);
+    const configStub = sinon.stub(config.opencred, 'caStore').value([root.raw]);
 
     const verifiedChain = await verifyX509(chain);
 
@@ -293,7 +293,7 @@ describe('x509', async () => {
     const intCert = new X509Certificate(intFile);
     const leafFile = fs.readFileSync('./test/fixtures/revoked-cert/leaf.cer');
     const leafCert = new X509Certificate(leafFile);
-    const configStub = sinon.stub(config, 'caStore').value([rootFile]);
+    const configStub = sinon.stub(config.opencred, 'caStore').value([rootFile]);
     const leafValidToStub = sinon.stub(leafCert, 'validTo')
       .value('Apr 12 23:59:59 2055 GMT');
     const intValidToStub = sinon.stub(intCert, 'validTo')
@@ -310,7 +310,7 @@ describe('x509', async () => {
   it.skip('should fail to verify with CRL URI status 404', async () => {
     const {chain} = await generateCertificateChain(3, true);
     const root = chain.pop();
-    const configStub = sinon.stub(config, 'caStore').value([root.raw]);
+    const configStub = sinon.stub(config.opencred, 'caStore').value([root.raw]);
 
     const verifiedChain = await verifyX509(chain);
 
@@ -323,7 +323,7 @@ describe('x509', async () => {
   it.skip('should fail to verify with CRL revoked entry', async () => {
     const {chain, crl} = await generateCertificateChain(3, true, true);
     const root = chain.pop();
-    const configStub = sinon.stub(config, 'caStore').value([root.raw]);
+    const configStub = sinon.stub(config.opencred, 'caStore').value([root.raw]);
     const fetchStub = sinon.stub(global, 'fetch').resolves(crlOk(crl));
 
     const verifiedChain = await verifyX509(chain);
@@ -341,7 +341,7 @@ describe('x509', async () => {
     const {chain, crl} = await generateCertificateChain(3, true, false);
     const root = chain.pop();
     const fetchStub = sinon.stub(global, 'fetch').resolves(crlOk(crl));
-    const configStub = sinon.stub(config, 'caStore').value([root.raw]);
+    const configStub = sinon.stub(config.opencred, 'caStore').value([root.raw]);
 
     const verifiedChain = await verifyX509(chain);
 

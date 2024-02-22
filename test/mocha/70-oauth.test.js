@@ -5,7 +5,7 @@ import https from 'node:https';
 
 import {exampleKey, exampleKey2} from '../fixtures/signingKeys.js';
 import {baseUrl} from '../mock-data.js';
-import {config} from '../../configs/config.js';
+import {config} from '@bedrock/core';
 import {database} from '../../lib/database.js';
 
 const agent = new https.Agent({rejectUnauthorized: false});
@@ -42,7 +42,7 @@ const exampleRelyingParty = {
 
 describe('OAuth Login Workflow', function() {
   this.beforeEach(() => {
-    this.rpStub = sinon.stub(config, 'relyingParties').value(
+    this.rpStub = sinon.stub(config.opencred, 'relyingParties').value(
       [exampleRelyingParty]
     );
   });
@@ -176,7 +176,7 @@ describe('OAuth Login Workflow', function() {
         'updateOne'
       );
       updateStub.resolves(undefined);
-      const keysStub = sinon.stub(config, 'signingKeys').value([
+      const keysStub = sinon.stub(config.opencred, 'signingKeys').value([
         exampleKey
       ]);
 
@@ -251,7 +251,7 @@ describe('OAuth Login Workflow', function() {
       );
       updateStub.resolves(undefined);
 
-      const keysStub = sinon.stub(config, 'signingKeys').value([
+      const keysStub = sinon.stub(config.opencred, 'signingKeys').value([
         exampleKey2
       ]);
 
@@ -374,7 +374,7 @@ describe('OAuth Login Workflow', function() {
     const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne');
     updateStub.resolves(undefined);
 
-    const keysStub = sinon.stub(config, 'signingKeys').value([
+    const keysStub = sinon.stub(config.opencred, 'signingKeys').value([
       exampleKey
     ]);
 
@@ -451,7 +451,7 @@ describe('OAuth Login Workflow', function() {
     const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne');
     updateStub.resolves(undefined);
 
-    const keysStub = sinon.stub(config, 'signingKeys').value([
+    const keysStub = sinon.stub(config.opencred, 'signingKeys').value([
       exampleKey
     ]);
 
@@ -526,7 +526,7 @@ describe('OAuth Login Workflow', function() {
 
 describe('JWKS Endpoint', function() {
   it('should return an empty set if no keys are configured', async function() {
-    const signingKeyStub = sinon.stub(config, 'signingKeys').value([]);
+    const signingKeyStub = sinon.stub(config.opencred, 'signingKeys').value([]);
 
     let result;
     let err;
@@ -544,7 +544,7 @@ describe('JWKS Endpoint', function() {
   });
 
   it('should return a key if configured', async function() {
-    const signingKeyStub = sinon.stub(config, 'signingKeys').value(
+    const signingKeyStub = sinon.stub(config.opencred, 'signingKeys').value(
       [exampleKey]
     );
 
@@ -567,7 +567,7 @@ describe('JWKS Endpoint', function() {
 
 describe('Open ID Connect Configuration Endpoint', function() {
   this.beforeEach(() => {
-    this.signingKeyStub = sinon.stub(config, 'signingKeys').value([]);
+    this.signingKeyStub = sinon.stub(config.opencred, 'signingKeys').value([]);
   });
 
   this.afterEach(() => {
@@ -585,11 +585,11 @@ describe('Open ID Connect Configuration Endpoint', function() {
 
     should.not.exist(err);
     result.status.should.be.equal(200);
-    result.data.issuer.should.be.equal(config.domain);
+    result.data.issuer.should.be.equal(config.opencred.domain);
   });
 
   it('should report what languages are available', async function() {
-    const translationsStub = sinon.stub(config, 'translations').value({
+    const translationsStub = sinon.stub(config.opencred, 'translations').value({
       en: {},
       fr: {},
       de: {}

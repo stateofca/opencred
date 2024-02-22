@@ -1,7 +1,7 @@
 import * as x509 from '@peculiar/x509';
 // import {Certificate, CertificateRevocationList} from 'pkijs';
 import {createPublicKey, X509Certificate} from 'node:crypto';
-import {config} from '../configs/config.js';
+import {config} from '@bedrock/core';
 import {logger} from '../lib/logger.js';
 import ocsp from 'ocsp';
 
@@ -117,7 +117,7 @@ const checkTrust = async certs => {
     } else {
       // Issuer in CA Store
       let found = false;
-      for(const caCertRaw of config.caStore) {
+      for(const caCertRaw of config.opencred.caStore) {
         const caCert = new X509Certificate(caCertRaw);
         if(certs[i].checkIssued(caCert)) {
           found = true;

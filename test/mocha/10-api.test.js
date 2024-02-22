@@ -5,7 +5,7 @@ import {zcapClient} from '../../common/zcap.js';
 
 import {msalUtils, verifyUtils} from '../../common/utils.js';
 import {baseUrl} from '../mock-data.js';
-import {config} from '../../configs/config.js';
+import {config} from '@bedrock/core';
 import {database} from '../../lib/database.js';
 import {exampleKey2} from '../fixtures/signingKeys.js';
 import '../../lib/index.js';
@@ -82,7 +82,7 @@ describe('OpenCred API - Native Workflow', function() {
   });
 
   this.beforeEach(() => {
-    this.rpStub = sinon.stub(config, 'relyingParties').value([testRP]);
+    this.rpStub = sinon.stub(config.opencred, 'relyingParties').value([testRP]);
   });
 
   this.afterEach(() => {
@@ -98,6 +98,7 @@ describe('OpenCred API - Native Workflow', function() {
     } catch(e) {
       err = e;
     }
+
     should.not.exist(result);
     err.status.should.equal(404);
     err.data.message.should.equal('Unknown workflow id');
@@ -159,10 +160,10 @@ describe('OpenCred API - Native Workflow', function() {
       .resolves(exchange);
     const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
       .resolves();
-    const domainStub = sinon.stub(config, 'domain').value(
+    const domainStub = sinon.stub(config.opencred, 'domain').value(
       'https://example.com'
     );
-    const keyStub = sinon.stub(config, 'signingKeys').value(
+    const keyStub = sinon.stub(config.opencred, 'signingKeys').value(
       [{...exampleKey2, purpose: ['authorization_request']}]
     );
 
@@ -322,7 +323,7 @@ describe('OpenCred API - Native Workflow', function() {
 
 describe('OpenCred API - VC-API Workflow', function() {
   this.beforeEach(() => {
-    this.rpStub = sinon.stub(config, 'relyingParties').value([{
+    this.rpStub = sinon.stub(config.opencred, 'relyingParties').value([{
       ...testRP,
       workflow: {
         id: testRP.workflow.id,
@@ -398,7 +399,7 @@ describe('OpenCred API - VC-API Workflow', function() {
 
 describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
   this.beforeEach(() => {
-    this.rpStub = sinon.stub(config, 'relyingParties').value([{
+    this.rpStub = sinon.stub(config.opencred, 'relyingParties').value([{
       ...testRP,
       workflow: {
         id: testRP.workflow.id,

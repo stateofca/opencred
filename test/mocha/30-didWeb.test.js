@@ -3,7 +3,7 @@ import {httpClient} from '@digitalbazaar/http-client';
 import https from 'node:https';
 
 import {baseUrl} from '../mock-data.js';
-import {config} from '../../configs/config.js';
+import {config} from '@bedrock/core';
 import {exampleKey2} from '../fixtures/signingKeys.js';
 import '../../lib/index.js';
 
@@ -67,7 +67,8 @@ const testLinkageDoc = {
 
 describe('OpenCred did:web support', function() {
   it('should return 404 if not enabled', async function() {
-    const configStub = sinon.stub(config, 'didWeb').value({mainEnabled: false});
+    const configStub = sinon.stub(config.opencred, 'didWeb')
+      .value({mainEnabled: false});
     let result;
     let err;
     try {
@@ -86,11 +87,11 @@ describe('OpenCred did:web support', function() {
   });
 
   it('should return did:web document', async function() {
-    const didWebStub = sinon.stub(config, 'didWeb').value({
+    const didWebStub = sinon.stub(config.opencred, 'didWeb').value({
       mainEnabled: true,
       mainDocument: testDidWebDoc
     });
-    const signingKeyStub = sinon.stub(config, 'signingKeys').value(
+    const signingKeyStub = sinon.stub(config.opencred, 'signingKeys').value(
       [{...exampleKey2, purpose: ['authorization_request']}]
     );
 
@@ -112,11 +113,11 @@ describe('OpenCred did:web support', function() {
   });
 
   it('should return did:web document verificationMethod', async function() {
-    const didWebStub = sinon.stub(config, 'didWeb').value({
+    const didWebStub = sinon.stub(config.opencred, 'didWeb').value({
       mainEnabled: true,
       mainDocument: testDidWebDoc
     });
-    const signingKeyStub = sinon.stub(config, 'signingKeys').value(
+    const signingKeyStub = sinon.stub(config.opencred, 'signingKeys').value(
       [{...exampleKey2, purpose: ['authorization_request']}]
     );
 
@@ -144,7 +145,7 @@ describe('OpenCred did:web support', function() {
 
 describe('DID Linked Domain credential endpoint', () => {
   it('should return an empty list if not enabled', async function() {
-    const configStub = sinon.stub(config, 'didWeb').value({
+    const configStub = sinon.stub(config.opencred, 'didWeb').value({
       mainEnabled: true,
       linkageEnabled: false
     });
@@ -167,7 +168,7 @@ describe('DID Linked Domain credential endpoint', () => {
   });
 
   it('should return a DomainLinkageCredential', async function() {
-    const didWebStub = sinon.stub(config, 'didWeb').value({
+    const didWebStub = sinon.stub(config.opencred, 'didWeb').value({
       mainEnabled: true,
       linkageEnabled: true,
       mainDocument: testDidWebDoc,

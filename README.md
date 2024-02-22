@@ -48,8 +48,8 @@ changes, you must stop the server, and restart the server, with `npm run start`.
 The app is configured via a YAML file. See
 [configs/config.example.yaml](configs/config.example.yaml) for an example.
 
-Copy the example to the ignored location `cp configs/config.example.yaml
-configs/config.yaml` and edit the file. Configure the details of your relying
+Copy the example to the config location `cp configs/config.example.yaml
+/etc/bedrock-config/app.yaml` and edit the file. Configure the details of your relying
 party.
 
 #### Configure with an Environment Variable
