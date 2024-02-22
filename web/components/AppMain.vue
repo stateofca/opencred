@@ -1,67 +1,33 @@
 <script setup>
   import {onBeforeMount, onMounted, reactive, ref} from 'vue';
+  import {config} from '@bedrock/web';
   import {httpClient} from "@digitalbazaar/http-client";
-
-  let props = defineProps({
-    step: String,
-    rp: {
-      clientId: String,
-      redirectUri: String,
-      name: String,
-      icon: String,
-      backgroundImage: String,
-      workflow: {
-        id: String,
-        type: String
-      },
-      theme: {
-        cta: String,
-        primary: String,
-        header: String
-      },
-    },
-    translations: Object,
-    defaultLanguage: String,
-    options: {
-      exchangeProtocols: Array
-    },
-    exchangeData: {
-      id: String,
-      QR: String,
-      vcapi: String,
-      OID4VP: String,
-      accessToken: String
-    }
-  })
 
   let intervalId;
   const vp = ref(null);
-  const loading = ref(true);
-  const error = ref(false);
+  const context = ref({rp: {theme: {
+    cta: config.defaultTheme.cta,
+    primary: config.defaultTheme.primary,
+    header: config.defaultTheme.header
+  }}})
 
   const state = reactive({
     currentUXMethodIndex: 0
   });
 
   onBeforeMount(async () => {
-    try {
-      const resp = await httpClient.get(`/context/login${window.location.search}`);
-      if (resp.status === 200) {
-        props = resp.data;
-      }
-    } catch(e) {
-      error.value = true;
+    const resp = await httpClient.get(`/context/login${window.location.search}`);
+    if (resp.status === 200) {
+      context.value = resp.data;
     }
-    loading.value = false;
   })
 
   onMounted(async () => {
     intervalId = setInterval(checkStatus, 5000);
-
   })
 
   const switchView = () => {
-    state.currentUXMethodIndex = (state.currentUXMethodIndex + 1) % props.options.exchangeProtocols.length;
+    state.currentUXMethodIndex = (state.currentUXMethodIndex + 1) % config.options.exchangeProtocols.length;
   }
 
   const checkStatus = async () => {
@@ -70,18 +36,18 @@
       ({
         data: { exchange },
       } = await httpClient.get(
-        `/workflows/${props.rp.workflow.id}/exchanges/${props.exchangeData.id}`, 
-        { headers: { Authorization: `Bearer ${props.exchangeData.accessToken}` } }
+        `/workflows/${context.value.rp.workflow.id}/exchanges/${context.value.exchangeData.id}`, 
+        { headers: { Authorization: `Bearer ${context.value.exchangeData.accessToken}` } }
       ));
       if (Object.keys(exchange).length > 0) {
         const urlParams = new URLSearchParams(window.location.search);
         const preventRedirect = urlParams.has('preventRedirect');
         if (exchange.state === "complete" && exchange.oidc?.code && !preventRedirect) {
           const queryParams = new URLSearchParams({
-          state: props.exchangeData.oidc.state,
+          state: context.value.exchangeData.oidc.state,
           code: exchange.oidc.code,
         });
-        const destination = `${props.rp.redirectUri}?${queryParams.toString()}`;
+        const destination = `${context.value.rp.redirectUri}?${queryParams.toString()}`;
         window.location.href = destination;
         clearInterval(intervalId);
       } else if (exchange.state === 'complete') {
@@ -100,14 +66,12 @@
 </script>
 
 <template>
-  <div v-if="loading">Loading</div>
-  <div v-else-if="error">Error</div>
-  <div v-else class="flex flex-col min-h-screen">
-    <header class="" :style="{background: props.rp.theme.header}">
+  <div class="flex flex-col min-h-screen">
+    <header :style="{background: context.rp.theme.header}">
       <div class="mx-auto flex justify-between items-center px-6 py-3 max-w-3xl">
-        <a :href="props.rp.redirectUri"
+        <a :href="context.rp.redirectUri"
           class="flex items-center gap-3">
-          <img :src="props.rp.icon" :alt="props.rp.name + 'Logo'" />
+          <img v-if="context.rp.icon" :src="context.rp.icon" :alt="context.rp.name + 'Logo'" />
         </a>
         <button
           class="flex flex-row text-white items-center text-xs gap-3
@@ -115,7 +79,7 @@
           <span class="bg-white rounded-full p-1 flex">
             <img src="https://imagedelivery.net/I-hc6FAYxquPgv-npvTcWQ/505d9676-7f3a-49cc-bf9a-883439873d00/public" />
           </span>
-          {{props.translations[props.defaultLanguage].translate}}
+          {{config.translations[config.defaultLanguage].translate}}
         </button>
       </div>
     </header>
@@ -125,7 +89,7 @@
         <h2 class="font-bold">Home</h2>
       </div>
       <div class="bg-no-repeat bg-cover clip-path-bg z-0 min-h-[360px]" 
-        :style="{ 'background-image': `url(${props.rp.backgroundImage})` }">
+        :style="{ 'background-image': `url(${context.rp.backgroundImage})`}">
         <div class="text-center text-6xl py-10">
           &nbsp;
         </div>
@@ -136,38 +100,34 @@
         </div>
       </div>
       <ButtonView
-        v-else-if="props.options.exchangeProtocols[state.currentUXMethodIndex] == 'chapi-button'"
+        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex] == 'chapi-button'"
         :chapiEnabled="true"
-        :rp="props.rp"
-        :translations="props.translations"
-        :defaultLanguage="props.defaultLanguage"
-        :options="props.options"
-        :exchangeData="props.exchangeData"
+        :rp="context.rp"
+        :translations="config.translations"
+        :defaultLanguage="config.defaultLanguage"
+        :options="config.options"
+        :exchangeData="context.exchangeData"
         @switchView="switchView"/>
       <ButtonView
-        v-else-if="props.options.exchangeProtocols[state.currentUXMethodIndex] == 'openid4vp-link'"
+        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex] == 'openid4vp-link'"
         :chapiEnabled="false"
-        :rp="props.rp"
-        :translations="props.translations"
-        :defaultLanguage="props.defaultLanguage"
-        :options="props.options"
-        :exchangeData="props.exchangeData"
+        :rp="context.rp"
+        :translations="config.translations"
+        :defaultLanguage="config.defaultLanguage"
+        :options="config.options"
+        :exchangeData="context.exchangeData"
         @switchView="switchView"/>
       <QRView
-        v-else-if="props.options.exchangeProtocols[state.currentUXMethodIndex] == 'openid4vp-qr'"
-        :translations="props.translations"
-        :theme="props.rp.theme"
-        :defaultLanguage="props.defaultLanguage"
-        :exchangeData="props.exchangeData"
-        :options="props.options"
+        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex] == 'openid4vp-qr'"
+        :translations="config.translations"
+        :theme="context.rp.theme"
+        :defaultLanguage="config.defaultLanguage"
+        :exchangeData="context.exchangeData"
+        :options="config.options"
         @switchView="switchView"/>
     </main>
     <footer class="text-left p-3"
-      v-html="props.translations[props.defaultLanguage].copyright">
+      v-html="config.translations[config.defaultLanguage].copyright">
     </footer>
   </div>
 </template>
-
-<style>
-
-</style>

@@ -177,6 +177,10 @@ opencred:
       - chapi-button
       - openid4vp-qr
       # - openid4vp-link
+  defaultTheme:
+    cta: "#0B669D"
+    primary: "#045199"
+    header: "#0979c4"
   defaultLanguage: en
   translations:
     en:
@@ -188,6 +192,7 @@ opencred:
       qrPageExplain: "Scan the following QR Code with your wallet app."
       qrCta: "Scan the following QR Code with your wallet app"
       copyright: "Powered by OpenCred"
+      pageTitle: "Login"
     fr:
       loginCta: "Se connecter avec son portefeuille de titres"
       loginExplain: "Pour vous connecter avec votre credential wallet, vous devez avoir installé l'application credential wallet <avec une URL configurable vers les app stores>"

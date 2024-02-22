@@ -1,12 +1,11 @@
 <script setup>
+import { config } from '@bedrock/web';
 import { ref } from "vue";
 import { getCredentials } from "../chapi.js";
 
 const props = defineProps({
   chapiEnabled: Boolean,
   step: String,
-  translations: Object,
-  defaultLanguage: String,
   rp: {
     clientId: String,
     redirectUri: String,
@@ -22,9 +21,6 @@ const props = defineProps({
       primary: String,
       header: String,
     },
-  },
-  options: {
-    exchangeProtocols: Array
   },
   exchangeData: {
     id: String,
@@ -61,13 +57,13 @@ const openChapi = async () => {
       class="text-3xl mb-12 text-center font-semibold"
       :style="{ color: rp.theme.primary }"
     >
-      {{ translations[defaultLanguage].loginCta }}
+      {{ config.translations[config.defaultLanguage].loginCta }}
     </h1>
-    <p class="mb-4" v-html="translations[defaultLanguage].loginExplain"></p>
+    <p class="mb-4" v-html="config.translations[config.defaultLanguage].loginExplain"></p>
     <p
-      v-if="translations[defaultLanguage].appInstallExplain"
+      v-if="config.translations[config.defaultLanguage].appInstallExplain"
       class="mb-6"
-      v-html="translations[defaultLanguage].appInstallExplain"
+      v-html="config.translations[config.defaultLanguage].appInstallExplain"
     ></p>
     <div class="flex justify-center">
       <button
@@ -76,7 +72,7 @@ const openChapi = async () => {
         class="text-white py-2 px-6 rounded-xl my-8"
         :style="{ background: rp.theme.cta }"
       >
-        {{ translations[defaultLanguage]['appCta-chapi-button'] || translations[defaultLanguage].appCta }}
+        {{ config.translations[config.defaultLanguage]['appCta-chapi-button'] || config.translations[config.defaultLanguage].appCta }}
       </button>
       <a
         v-else-if="!loading && !chapiEnabled"
@@ -85,7 +81,7 @@ const openChapi = async () => {
         :style="{ background: rp.theme.cta }"
         target="_blank"
       >
-        {{ translations[defaultLanguage]['appCta-openid4vp-link'] || translations[defaultLanguage].appCta }}
+        {{ config.translations[config.defaultLanguage]['appCta-openid4vp-link'] || config.translations[config.defaultLanguage].appCta }}
       </a>
       <div
         v-else
@@ -99,14 +95,14 @@ const openChapi = async () => {
         >
       </div>
     </div>
-    <div v-if="props.options.exchangeProtocols.length > 1">
+    <div v-if="config.options.exchangeProtocols.length > 1">
       <p
         class="text-center mb-2"
-        v-html="translations[defaultLanguage].qrExplain"
+        v-html="config.translations[config.defaultLanguage].qrExplain"
       ></p>
       <p class="text-center">
         <button @click="switchView" :style="{ color: rp.theme.primary }">
-          {{ translations[defaultLanguage].qrCta }}
+          {{ config.translations[config.defaultLanguage].qrCta }}
         </button>
       </p>
     </div>
