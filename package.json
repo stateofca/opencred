@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@azure/msal-node": "^2.5.1",
-    "@bedrock/config-yaml": "^4.0.0",
+    "@bedrock/config-yaml": "^4.1.0",
     "@bedrock/core": "^6.0.1",
     "@bedrock/express": "^8.2.1",
     "@bedrock/express-browser-fixes": "^3.0.0",
@@ -72,7 +72,6 @@
     "jsonld-document-loader": "^2.0.0",
     "jsonpath": "^1.1.1",
     "mongodb": "^6.2.0",
-    "morgan": "^1.10.0",
     "ocsp": "^1.2.0",
     "oidc-provider": "^8.4.0",
     "patch-package": "^8.0.0",

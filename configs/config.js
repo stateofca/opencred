@@ -1,5 +1,4 @@
 import * as bedrock from '@bedrock/core';
-import * as yaml from 'js-yaml';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import 'dotenv/config';
@@ -10,27 +9,28 @@ import {applyRpDefaults} from './configUtils.js';
 import {combineTranslations} from './translation.js';
 import {logger} from '../lib/logger.js';
 
-const {config: brConfig} = bedrock;
+const {config} = bedrock;
+config.opencred = {};
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootPath = path.join(__dirname, '..');
 
 bedrock.events.on('bedrock-cli.parsed', async () => {
-  await import(path.join(brConfig.paths.config, 'paths.js'));
-  await import(path.join(brConfig.paths.config, 'core.js'));
+  await import(path.join(config.paths.config, 'paths.js'));
+  await import(path.join(config.paths.config, 'core.js'));
 });
 
 bedrock.events.on('bedrock.configure', async () => {
-  await import(path.join(brConfig.paths.config, 'server.js'));
-  await import(path.join(brConfig.paths.config, 'express.js'));
-  await import(path.join(brConfig.paths.config, 'https-agent.js'));
+  await import(path.join(config.paths.config, 'server.js'));
+  await import(path.join(config.paths.config, 'express.js'));
+  await import(path.join(config.paths.config, 'https-agent.js'));
 });
 
-brConfig.views.bundle.packages.push({
+config.views.bundle.packages.push({
   path: path.join(rootPath, 'web'),
   manifest: path.join(rootPath, 'web', 'manifest.json')
 });
 
-brConfig['bedrock-webpack'].configs.push({
+config['bedrock-webpack'].configs.push({
   module: {
     rules: [{
       test: /\.pcss$/i,
@@ -56,15 +56,7 @@ brConfig['bedrock-webpack'].configs.push({
 });
 
 bedrock.events.on('bedrock.init', async () => {
-  let {opencred} = brConfig;
-  if(process.env.OPENCRED_CONFIG) {
-    opencred = yaml.load(
-      Buffer.from(process.env.OPENCRED_CONFIG, 'base64').toString()
-    );
-    brConfig.opencred = opencred;
-    logger.info('Loaded config from environment variable');
-  }
-
+  const {opencred} = config;
   /**
    * @typedef {Object} VcApiWorkflow
    * @property {'vc-api'} type - The type of the workflow.
@@ -335,16 +327,5 @@ bedrock.events.on('bedrock.init', async () => {
   opencred.caStore = (opencred.caStore ?? [])
     .map(cert => cert.pem);
 
-  // config = {
-  //   databaseConnectionUri,
-  //   didWeb,
-  //   defaultLanguage,
-  //   domain,
-  //   options,
-  //   relyingParties,
-  //   signingKeys,
-  //   translations,
-  //   caStore
-  // };
   logger.info('OpenCred Config Successfully Validated');
 });
