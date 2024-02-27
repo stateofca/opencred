@@ -165,9 +165,9 @@ export const verifyX509 = async certs => {
       errors = errors.concat(trustVerify.errors);
     }
     return {verified: errors.length === 0, errors};
-  } catch(e) {
-    logger.error(e);
-    return {verified: false, errors: [e.message]};
+  } catch(error) {
+    logger.error(error.message, {error});
+    return {verified: false, errors: [error.message]};
   }
 };
 
@@ -185,8 +185,8 @@ export const verifyJWKx509 = async jwk => {
       };
     }
     return await verifyX509(certs);
-  } catch(e) {
-    logger.error(e);
-    return {verified: false, errors: [e.message]};
+  } catch(error) {
+    logger.error(error.message, {error});
+    return {verified: false, errors: [error.message]};
   }
 };

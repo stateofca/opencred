@@ -12,6 +12,7 @@ COPY --chown=node:node . .
 RUN mv dev.js index.js
 
 RUN npm i --omit=dev --package-lock
+RUN node index.js bundle --webpack-mode production --bundle-mode production
 
 FROM build AS test
 # RUN cd test && npm t
