@@ -131,7 +131,7 @@ app:
         claims:
           - name: "dl_number"
             path: "driversLicense.document_number"
-        theme:
+        brand:
           cta: "#0B669D"
           primary: "#045199"
           header: "#0979c4"
@@ -175,30 +175,27 @@ app:
                 }
     options:
       exchangeProtocols:
-        - chapi-button
-        - openid4vp-qr
-        # - openid4vp-link
-    defaultTheme:
+        - chapi
+        - openid4vp
+    defaultBrand:
       cta: "#0B669D"
       primary: "#045199"
       header: "#0979c4"
     defaultLanguage: en
     translations:
       en:
+        qrTitle: Login with your Wallet app
+        qrPageExplain: Scan the following QR Code using the Wallet app on your phone.
+        qrPageExplainHelp: (<a href="https://youtube.com">How do I do it?</a>)
+        qrFooter: "Note: Already on your phone with the Wallet app? Open the Wallet app, then come back and tap on the QR code above."
+        qrFooterHelp: Difficulty using the Wallet app to login? revert to using password <a href="#">here</a>
+        qrDisclaimer: If you don't have a Wallet app download it from the app store.
+        qrClickMessage: The Wallet app must be running in the background.
+        qrPageAnotherWay: Want to try another way?
+        chapiPageAnotherWay: "Looking for a QR Code to scan with you wallet app instead?"
         loginCta: "Login with your credential wallet"
         loginExplain: "To login with your credential wallet, you will need to have the credential wallet app <with configurable URL to app stores> installed"
         appInstallExplain: "If you don't have a credential wallet yet, you can get one by downloading the credential wallet app <with configurable URL to app stores>"
         appCta: "Open wallet app"
-        qrExplain: "Looking for a QR Code to scan with you wallet app instead?"
-        qrPageExplain: "Scan the following QR Code with your wallet app."
-        qrCta: "Scan the following QR Code with your wallet app"
         copyright: "Powered by OpenCred"
         pageTitle: "Login"
-      fr:
-        loginCta: "Se connecter avec son portefeuille de titres"
-        loginExplain: "Pour vous connecter avec votre credential wallet, vous devez avoir installé l'application credential wallet <avec une URL configurable vers les app stores>"
-        appInstallExplain: "Si vous n'avez pas encore de porte-monnaie électronique, vous pouvez en obtenir un en téléchargeant l'application credential wallet <avec une URL configurable vers les magasins d'applications>"
-        appCta: "Ouvrir l'application portefeuille"
-        qrExplain: "Vous cherchez un code QR à scanner avec l'application de votre portefeuille?"
-        qrCta: "Scannez le code QR suivant avec l'application de votre portefeuille"
-        copyright: "Développé par OpenCred"
