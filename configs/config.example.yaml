@@ -1,4 +1,6 @@
 app:
+  # server:
+    # baseUri: https://evil-cows-return.loca.lt
   opencred:
     caStore:
       - pem: |

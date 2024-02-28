@@ -20,8 +20,8 @@ bedrock.events.on('bedrock-cli.parsed', async () => {
 });
 
 bedrock.events.on('bedrock.configure', async () => {
-  await import(path.join(config.paths.config, 'server.js'));
   await import(path.join(config.paths.config, 'express.js'));
+  await import(path.join(config.paths.config, 'server.js'));
   await import(path.join(config.paths.config, 'database.js'));
   await import(path.join(config.paths.config, 'https-agent.js'));
 });

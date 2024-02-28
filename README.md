@@ -260,7 +260,7 @@ The above command will output the domain of your remote tunnel URL. You will
 need to access that URL once to finish setting up the tunnel using the
 instructions on that page.
 
-Set your domain in the `config.yaml` with the above URL: `domain: "https://evil-cows-return.loca.lt"`
+Set your `app.server.baseUri` in your `combined.yaml` with the above URL: `baseUri: "https://evil-cows-return.loca.lt"`
 
 Then, you can run the server with the following:
 

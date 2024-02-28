@@ -13,7 +13,7 @@
   "scripts": {
     "generate:prime256v1": "node ./common/generatePrime256v1Key.js",
     "generate:rsa256": "node ./common/generateRSA256Key.js",
-    "tunnel": "lt --local-https -p 22443 --local-cert ./node_modules/@bedrock/server/pki/bedrock.localhost.crt --local-key ./node_modules/@bedrock/server/pki/bedrock.localhost.key --allow-invalid-cert",
+    "tunnel": "lt -p 22080",
     "lint": "eslint .",
     "postinstall": "patch-package",
     "preview": "vite preview",

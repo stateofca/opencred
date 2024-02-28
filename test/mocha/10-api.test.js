@@ -160,7 +160,7 @@ describe('OpenCred API - Native Workflow', function() {
       .resolves(exchange);
     const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
       .resolves();
-    const domainStub = sinon.stub(config.opencred, 'domain').value(
+    const baseUri = sinon.stub(config.server, 'baseUri').value(
       'https://example.com'
     );
     const keyStub = sinon.stub(config.opencred, 'signingKeys').value(
@@ -186,7 +186,7 @@ describe('OpenCred API - Native Workflow', function() {
     );
     jwt.client_id.should.have.string('did:web:example.com');
 
-    domainStub.restore();
+    baseUri.restore();
     updateStub.restore();
     keyStub.restore();
     findStub.restore();
