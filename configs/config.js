@@ -257,7 +257,7 @@ bedrock.events.on('bedrock.init', async () => {
 
   opencred.translations = combineTranslations(opencred.translations || {});
 
-  const defaultBrand = opencred.brand ?? {
+  const defaultBrand = opencred.defaultBrand ?? {
     cta: '#006847',
     primary: '#008f5a',
     header: '#004225'
