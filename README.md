@@ -49,8 +49,8 @@ The app is configured via a YAML file. See
 [configs/config.example.yaml](configs/config.example.yaml) for an example.
 
 Copy the example to the config location `cp configs/config.example.yaml
-/etc/bedrock-config/app.yaml` and edit the file. Configure the details of your relying
-party.
+/etc/bedrock-config/combined.yaml` and edit the file. Configure the details of
+your relying party.
 
 #### Configure with an Environment Variable
 If an `OPENCRED_CONFIG` environment variable is set, the config specified in
@@ -203,13 +203,13 @@ Credential Handler API ([CHAPI](https://chapi.io/)), and OpenID for Verifiable
 Presentations([OID4VP](https://openid.github.io/OpenID4VP/openid-4-verifiable-presentations-wg-draft.html)).
 Implementers may choose which of these protocols are supported by configuring
 the `options.exchangeProtocols` list in the config file. The order of the
-protocols controls the order in which they are offered to the user. 
+protocols controls the order in which they are offered to the user.
 
 An `openid4vp-link` option is also available but not enabled by default, which
 will launch a wallet registered to handle a `openid4vp://` on the same device as
 the browser. These links may not be supported on all devices or browsers and
 result in a failure with no option for user recovery if a wallet that handles
-the protocol was not previously installed on the device. 
+the protocol was not previously installed on the device.
 
 ```yaml
 options:
