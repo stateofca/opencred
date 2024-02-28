@@ -16,7 +16,7 @@ const props = defineProps({
       id: String,
       type: String,
     },
-    theme: {
+    brand: {
       cta: String,
       primary: String,
       header: String,
@@ -55,7 +55,7 @@ const openChapi = async () => {
   >
     <h1
       class="text-3xl mb-12 text-center font-semibold"
-      :style="{ color: rp.theme.primary }"
+      :style="{ color: rp.brand.primary }"
     >
       {{ config.translations[config.defaultLanguage].loginCta }}
     </h1>
@@ -70,23 +70,23 @@ const openChapi = async () => {
         v-if="!loading && chapiEnabled"
         @click="openChapi"
         class="text-white py-2 px-6 rounded-xl my-8"
-        :style="{ background: rp.theme.cta }"
+        :style="{ background: rp.brand.cta }"
       >
-        {{ config.translations[config.defaultLanguage]['appCta-chapi-button'] || config.translations[config.defaultLanguage].appCta }}
+        {{ config.translations[config.defaultLanguage]['appCta-chapi-label'] || config.translations[config.defaultLanguage].appCta }}
       </button>
       <a
         v-else-if="!loading && !chapiEnabled"
         :href="exchangeData.OID4VP"
         class="text-white py-2 px-6 rounded-xl my-8"
-        :style="{ background: rp.theme.cta }"
+        :style="{ background: rp.brand.cta }"
         target="_blank"
       >
-        {{ config.translations[config.defaultLanguage]['appCta-openid4vp-link'] || config.translations[config.defaultLanguage].appCta }}
+        {{ config.translations[config.defaultLanguage]['appCta-openid4vp-label'] || config.translations[config.defaultLanguage].appCta }}
       </a>
       <div
         v-else
         class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] py-2 my-8 motion-reduce:animate-[spin_1.5s_linear_infinite]"
-        :style="{ color: rp.theme.primary }"
+        :style="{ color: rp.brand.primary }"
         role="status"
       >
         <span
@@ -101,8 +101,8 @@ const openChapi = async () => {
         v-html="config.translations[config.defaultLanguage].qrExplain"
       ></p>
       <p class="text-center">
-        <button @click="switchView" :style="{ color: rp.theme.primary }">
-          {{ config.translations[config.defaultLanguage].qrCta }}
+        <button @click="switchView" :style="{ color: rp.brand.primary }">
+          {{ config.translations[config.defaultLanguage].chapiPageAnotherWay }}
         </button>
       </p>
     </div>

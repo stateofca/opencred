@@ -1,21 +1,23 @@
 export const defaultTranslations = {
   en: {
     translate: 'Translate',
-    loginCta: 'Log in with your credential wallet',
-    loginExplain: 'To log in with your credential wallet, you will need ' +
-    'to have the credential wallet app installed',
+    loginCta: 'Login with your credential wallet',
+    loginExplain: 'To login with your credential wallet, you will need ' +
+    'to have a credential wallet app installed',
     appInstallExplain: 'If you don\'t have a credential wallet yet, ' +
     'see suggested wallets at the ' +
     '<a href="https://vcplayground.org/">Verifiable Credentials Playground</a>',
     appCta: 'Open wallet app',
-    'appCta-chapi-button': '',
-    'appCta-openid4vp-link': '',
-    qrExplain: 'Looking for a QR Code to scan with your wallet app instead?',
-    qrCta: 'Scan a QR Code with your wallet app',
-    qrPageCta: 'Scan QR Code from within your digital wallet app.',
-    qrPageExplain: '',
-    qrPageAnotherWay: 'Or, log in with a wallet on this device',
-    qrPageAnotherWayLink: 'Try another way',
+    'appCta-chapi-label': '',
+    'appCta-openid4vp-label': '',
+    qrTitle: 'Login with your Wallet app',
+    qrPageExplain: 'Scan the following QR Code using a Wallet app on your ' +
+    'phone.',
+    qrFooter: 'Note: Already on your phone with a Wallet app? Open the ' +
+    'Wallet app, then come back and tap on the QR code above.',
+    qrDisclaimer: `If you don't have a Wallet app download it from the` +
+    `app store.`,
+    qrClickMessage: `The Wallet app must be running in the background.`,
     copyright: 'Powered by OpenCred',
   }
 };

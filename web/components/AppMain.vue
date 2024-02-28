@@ -2,14 +2,15 @@
   import {onBeforeMount, onMounted, reactive, ref} from 'vue';
   import {config} from '@bedrock/web';
   import {httpClient} from "@digitalbazaar/http-client";
+  import {setCssVar} from 'quasar';
 
   let intervalId;
   const vp = ref(null);
-  const context = ref({rp: {theme: {
-    cta: config.defaultTheme.cta,
-    primary: config.defaultTheme.primary,
-    header: config.defaultTheme.header
-  }}})
+  const context = ref({
+    rp: {
+      brand: config.brand
+    }
+  });
 
   const state = reactive({
     currentUXMethodIndex: 0
@@ -19,6 +20,11 @@
     const resp = await httpClient.get(`/context/login${window.location.search}`);
     if (resp.status === 200) {
       context.value = resp.data;
+      if(resp.data.rp.brand) {
+        Object.keys(resp.data.rp.brand).forEach(key => {
+          setCssVar(key, resp.data.rp.brand[key]);
+        });
+      }
     }
   })
 
@@ -67,7 +73,7 @@
 
 <template>
   <div class="flex flex-col min-h-screen">
-    <header :style="{background: context.rp.theme.header}">
+    <header :style="{background: context.rp.brand.header}">
       <div class="mx-auto flex justify-between items-center px-6 py-3 max-w-3xl">
         <a :href="context.rp.redirectUri"
           class="flex items-center gap-3">
@@ -100,7 +106,7 @@
         </div>
       </div>
       <ButtonView
-        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex] == 'chapi-button'"
+        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex] === 'chapi'"
         :chapiEnabled="true"
         :rp="context.rp"
         :translations="config.translations"
@@ -108,19 +114,10 @@
         :options="config.options"
         :exchangeData="context.exchangeData"
         @switchView="switchView"/>
-      <ButtonView
-        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex] == 'openid4vp-link'"
-        :chapiEnabled="false"
-        :rp="context.rp"
-        :translations="config.translations"
-        :defaultLanguage="config.defaultLanguage"
-        :options="config.options"
-        :exchangeData="context.exchangeData"
-        @switchView="switchView"/>
       <QRView
-        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex] == 'openid4vp-qr'"
+        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex] === 'openid4vp'"
         :translations="config.translations"
-        :theme="context.rp.theme"
+        :brand="context.rp.brand"
         :defaultLanguage="config.defaultLanguage"
         :exchangeData="context.exchangeData"
         :options="config.options"
@@ -131,3 +128,10 @@
     </footer>
   </div>
 </template>
+
+<style>
+  a {
+    color: var(--q-primary) !important;
+    text-decoration: underline !important;
+  }
+</style>

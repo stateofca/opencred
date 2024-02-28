@@ -1,3 +1,4 @@
+import * as brQuasar from '@bedrock/quasar';
 import * as brVue from '@bedrock/vue';
 import * as polyfill from 'credential-handler-polyfill';
 import {config, extend} from '@bedrock/web';
@@ -43,6 +44,9 @@ brVue.initialize({
     });
     brVue.augmentRouter({app, router});
     app.use(router);
+
+    await brQuasar.initialize({app});
+    await brQuasar.theme({brand: appConfig.brand});
 
     // create root Vue component
     return App;

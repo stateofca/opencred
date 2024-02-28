@@ -27,7 +27,7 @@ const exampleRelyingParty = {
   clientSecret: 'testsecret',
   redirectUri: 'https://example.com',
   scopes: [{name: 'openid'}],
-  theme: {
+  brand: {
     cta: '#8A2BE2',
     primary: '#6A5ACD',
     header: '#9370DB',

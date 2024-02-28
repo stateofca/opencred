@@ -16,7 +16,7 @@ const app1 = {
       }
     }
   },
-  theme: {
+  brand: {
     cta: '#111111',
     primary: '#a11111',
     header: '#a11111',
@@ -27,7 +27,7 @@ const app2 = {
   clientId: 'test2',
   redirectUri: 'https://example.com',
   configFrom: 'test1',
-  theme: {
+  brand: {
     cta: '#222222',
     primary: '#a22222',
     header: '#a22222',
@@ -43,7 +43,7 @@ const app3 = {
 describe('Config - setting defaults with configFrom', function() {
   it('should populate defaults from configFrom config', async function() {
     const result = applyRpDefaults([app1, app2, app3], app3);
-    expect(result.theme.cta).to.equal('#222222');
+    expect(result.brand.cta).to.equal('#222222');
     expect(result.clientSecret).to.equal('three is a crowd');
   });
 

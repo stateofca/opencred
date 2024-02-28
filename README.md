@@ -205,22 +205,40 @@ Implementers may choose which of these protocols are supported by configuring
 the `options.exchangeProtocols` list in the config file. The order of the
 protocols controls the order in which they are offered to the user.
 
-An `openid4vp-link` option is also available but not enabled by default, which
-will launch a wallet registered to handle a `openid4vp://` on the same device as
-the browser. These links may not be supported on all devices or browsers and
-result in a failure with no option for user recovery if a wallet that handles
-the protocol was not previously installed on the device.
-
 ```yaml
 options:
   exchangeProtocols:
-    - chapi-button
-    - openid4vp-link
-    - openid4vp-qr
+    - chapi
+    - openid4vp
 ```
 
-If this section is omitted, both protocols (`openid4vp-qr` and `chapi-button`)
+If this section is omitted, both protocols (`openid4vp` and `chapi`)
 will be offered, with an OID4VP QR code offered to the user first.
+
+### Configuring translations
+
+The two views of the login page both have text entries
+stored in the translations entries of the config. To configure the text of the login page set the following entries:
+
+```yaml
+translations:
+  en:
+    qrTitle: Login with your Wallet app
+    qrPageExplain: Scan the following QR Code using the Wallet app on your phone.
+    qrPageExplainHelp: (<a href="https://youtube.com">How do I do it?</a>)
+    qrFooter: "Note: Already on your phone with the Wallet app? Open the Wallet app, then come back and tap on the QR code above."
+    qrFooterHelp: Difficulty using the Wallet app to login? revert to using password <a href="#">here</a>
+    qrDisclaimer: If you don't have a Wallet app download it from the app store.
+    qrClickMessage: The Wallet app must be running in the background.
+    qrPageAnotherWay: Want to try another way?
+    chapiPageAnotherWay: "Looking for a QR Code to scan with you wallet app instead?"
+    loginCta: "Login with your credential wallet"
+    loginExplain: "To login with your credential wallet, you will need to have the credential wallet app <with configurable URL to app stores> installed"
+    appInstallExplain: "If you don't have a credential wallet yet, you can get one by downloading the credential wallet app <with configurable URL to app stores>"
+    appCta: "Open wallet app"
+    copyright: "Powered by OpenCred"
+    pageTitle: "Login"
+```
 
 ### Run via node
 

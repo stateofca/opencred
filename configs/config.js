@@ -102,10 +102,10 @@ bedrock.events.on('bedrock.init', async () => {
    * @property {string} description - The description of the relying party.
    * @property {string} icon - The icon URL of the relying party.
    * @property {string} backgroundImage - Background image URL.
-   * @property {Object} theme - The theme of the relying party.
-   * @property {string} theme.cta - The call to action color, hex like "#6A5ACD"
-   * @property {string} theme.primary - The primary color hex.
-   * @property {string} theme.header - The header color hex.
+   * @property {Object} brand - The brand of the relying party.
+   * @property {string} brand.cta - The call to action color, hex like "#6A5ACD"
+   * @property {string} brand.primary - The primary color hex.
+   * @property {string} brand.header - The header color hex.
    * @property {Array<Object>} scopes - OAuth2 scopes
    * @property {string} scopes[].name - The name of the scope.
    * @property {string} scopes[].description - The description of the scope.
@@ -122,12 +122,12 @@ bedrock.events.on('bedrock.init', async () => {
    */
 
   /**
-   * An list of relying parties (connected apps or workflows) in use by OpenCred
-   * exchangeProtocols: ['openid4vp-qr', 'chapi-button', 'openid4vp-link']
+   * An list of exchange protocols in use by OpenCred
+   * exchangeProtocols: ['openid4vp', 'chapi']
    * @type {Options}
    */
   opencred.options = opencred.options || {
-    exchangeProtocols: ['openid4vp-qr', 'chapi-button']
+    exchangeProtocols: ['openid4vp', 'chapi']
   };
 
   /**
@@ -257,7 +257,7 @@ bedrock.events.on('bedrock.init', async () => {
 
   opencred.translations = combineTranslations(opencred.translations || {});
 
-  const defaultTheme = opencred.theme ?? {
+  const defaultBrand = opencred.brand ?? {
     cta: '#006847',
     primary: '#008f5a',
     header: '#004225'
@@ -305,13 +305,13 @@ bedrock.events.on('bedrock.init', async () => {
     const app = applyRpDefaults(configRPs, rp);
     validateRelyingParty(app);
     validateWorkflow(app);
-    const theme = {
-      ...defaultTheme,
-      ...(app.theme ? app.theme : {})
+    const brand = {
+      ...defaultBrand,
+      ...(app.brand ? app.brand : {})
     };
     return {
       ...app,
-      theme
+      brand
     };
   });
 

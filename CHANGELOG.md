@@ -9,6 +9,7 @@
   should be specified via `config.mongodb`.
 - **BREAKING**: Remove `opencred.domain` configuration. HTTP Server options
   should be specified via `config.server` and `config.express`.
+- Move OID4VP login pages into single page.
 
 ## 5.4.3 - 2024-02-07
 

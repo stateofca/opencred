@@ -31,6 +31,7 @@
     "@bedrock/express-browser-fixes": "^3.0.0",
     "@bedrock/health": "^4.0.0",
     "@bedrock/mongodb": "^10.1.0",
+    "@bedrock/quasar": "^9.0.0",
     "@bedrock/server": "^5.0.0",
     "@bedrock/views": "^11.0.0",
     "@bedrock/vue": "^5.0.1",
