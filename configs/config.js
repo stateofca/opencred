@@ -263,8 +263,6 @@ bedrock.events.on('bedrock.init', async () => {
     header: '#004225'
   };
 
-  opencred.domain = opencred.domain ?? 'http://localhost:8080';
-
   const validateDidWeb = () => {
     return {
       mainEnabled: opencred.didWeb?.mainEnabled,

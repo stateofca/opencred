@@ -7,6 +7,8 @@
 - Move config location to `/etc/bedrock-config/combined.yaml`.
 - **BREAKING**: Remove `opencred.dbConnectionUri` configuration. MongoDB options
   should be specified via `config.mongodb`.
+- **BREAKING**: Remove `opencred.domain` configuration. HTTP Server options
+  should be specified via `config.server` and `config.express`.
 
 ## 5.4.3 - 2024-02-07
 

@@ -11,3 +11,4 @@ config.server.port = 22443;
 config.server.httpPort = 22080;
 // config.server.domain = 'slimy-chicken-matter.loca.lt';
 config.server.bindAddr = ['0.0.0.0'];
+config.server.domain = 'localhost';

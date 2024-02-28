@@ -585,7 +585,7 @@ describe('Open ID Connect Configuration Endpoint', function() {
 
     should.not.exist(err);
     result.status.should.be.equal(200);
-    result.data.issuer.should.be.equal(config.opencred.domain);
+    result.data.issuer.should.be.equal(config.server.baseUri);
   });
 
   it('should report what languages are available', async function() {

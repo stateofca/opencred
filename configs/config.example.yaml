@@ -1,6 +1,5 @@
 app:
   opencred:
-    domain: "http://localhost:8080"
     caStore:
       - pem: |
           -----BEGIN CERTIFICATE-----

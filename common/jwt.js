@@ -54,7 +54,7 @@ export const jwtFromExchange = async (exchange, rp) => {
 
   const now = Math.floor(Date.now() / 1000);
   const payload = {
-    iss: config.opencred.domain,
+    iss: config.server.baseUri,
     aud: rp.clientId,
     sub: c[0].credentialSubject.id,
     iat: now,
