@@ -22,6 +22,7 @@ bedrock.events.on('bedrock-cli.parsed', async () => {
 bedrock.events.on('bedrock.configure', async () => {
   await import(path.join(config.paths.config, 'server.js'));
   await import(path.join(config.paths.config, 'express.js'));
+  await import(path.join(config.paths.config, 'database.js'));
   await import(path.join(config.paths.config, 'https-agent.js'));
 });
 
@@ -250,11 +251,6 @@ bedrock.events.on('bedrock.init', async () => {
   // If relyingParties is not an array, throw an error
   if(!Array.isArray(configRPs)) {
     throw new Error('Configuration relyingParties must be an array.');
-  }
-
-  const databaseConnectionUri = opencred.dbConnectionUri;
-  if(databaseConnectionUri) {
-    bedrock.config.mongodb.url = databaseConnectionUri;
   }
 
   opencred.defaultLanguage = opencred.defaultLanguage || 'en';

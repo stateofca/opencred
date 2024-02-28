@@ -3,8 +3,10 @@
 ## 6.0.0 - 2024-02-xx
 
 ### Changed
-- Use Bedrock packages
-- Move config location to `/etc/bedrock-config/app.yaml`
+- Use Bedrock packages.
+- Move config location to `/etc/bedrock-config/combined.yaml`.
+- **BREAKING**: Remove `opencred.dbConnectionUri` configuration. MongoDB options
+  should be specified via `config.mongodb`.
 
 ## 5.4.3 - 2024-02-07
 

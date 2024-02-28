@@ -1,6 +1,5 @@
 app:
   opencred:
-    dbConnectionUri: "mongodb://localhost:27017/databaseName"
     domain: "http://localhost:8080"
     caStore:
       - pem: |

@@ -227,7 +227,7 @@ will be offered, with an OID4VP QR code offered to the user first.
 Prerequisites:
 
 * Node v20
-* MongoDB: configure e.g. `dbConnectionUri: mongodb://localhost:27017`
+* MongoDB v5
 
 Install dependencies, compile the UI, and run the server:
 
