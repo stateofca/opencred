@@ -31,7 +31,7 @@ app:
         claims:
           - name: "dl_number"
             path: "driversLicense.document_number"
-        theme:
+        brand:
           cta: "#0B669D"
           primary: "#045199"
           header: "#0979c4"
@@ -82,7 +82,7 @@ app:
         icon: "https://placekitten.com/200/200"
         backgroundImage: "https://placekitten.com/800/300"
         idTokenExpirySeconds: 3600
-        theme:
+        brand:
           cta: "#0B669D"
           primary: "#045199"
           header: "#0979c4"
