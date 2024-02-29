@@ -57,6 +57,7 @@
     "@digitalbazaar/vdl-aamva-context": "^1.0.0",
     "@digitalbazaar/vdl-context": "^1.0.0",
     "@peculiar/x509": "^1.9.7",
+    "autoprefixer": "^10.4.17",
     "base64url": "^3.0.1",
     "bnid": "^3.0.0",
     "cors": "^2.8.5",
@@ -71,6 +72,9 @@
     "jsonpath": "^1.1.1",
     "ocsp": "^1.2.0",
     "patch-package": "^8.0.0",
+    "postcss": "^8.4.35",
+    "postcss-preset-env": "^9.4.0",
+    "postcss-loader": "^8.1.1",
     "pkijs": "^3.0.15",
     "qrcode": "^1.5.3",
     "quasar": "^2.14.5",
@@ -78,13 +82,16 @@
     "swagger-ui-express": "^5.0.0",
     "vue-json-pretty": "^2.3.0",
     "vue-router": "^4.3.0",
+    "vue": "^3.3.4",
+    "style-loader": "^3.3.4",
+    "tailwind-clip-path": "^1.0.0",
+    "tailwindcss": "^3.4.1",
     "x25519-key-agreement-2020-context": "^1.0.0"
   },
   "devDependencies": {
     "@bedrock/test": "^8.2.0",
     "@peculiar/webcrypto": "^1.4.5",
     "asn1js": "^3.0.5",
-    "autoprefixer": "^10.4.17",
     "cross-env": "^7.0.3",
     "css-loader": "^6.10.0",
     "env-cmd": "^10.1.0",
@@ -93,13 +100,6 @@
     "eslint-plugin-unicorn": "^48.0.1",
     "expect.js": "^0.3.1",
     "klona": "^2.0.6",
-    "postcss": "^8.4.35",
-    "postcss-loader": "^8.1.1",
-    "postcss-preset-env": "^9.4.0",
-    "sinon": "^17.0.1",
-    "style-loader": "^3.3.4",
-    "tailwind-clip-path": "^1.0.0",
-    "tailwindcss": "^3.4.1",
-    "vue": "^3.3.4"
+    "sinon": "^17.0.1"
   }
 }
