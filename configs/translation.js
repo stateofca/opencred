@@ -17,7 +17,10 @@ export const defaultTranslations = {
     'Wallet app, then come back and tap on the QR code above.',
     qrDisclaimer: `If you don't have a Wallet app download it from the` +
     `app store.`,
+    qrPageAnotherWay: `Want to try another way?`,
     qrClickMessage: `The Wallet app must be running in the background.`,
+    chapiPageAnotherWay: 'Looking for a QR Code to scan with your wallet app ' +
+    'instead?',
     copyright: 'Powered by OpenCred',
   }
 };
