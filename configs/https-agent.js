@@ -1,5 +1,5 @@
 /*!
- * Copyright (c) 2023-2024 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Digital Bazaar, Inc.
  */
 import {config} from '@bedrock/core';
 
