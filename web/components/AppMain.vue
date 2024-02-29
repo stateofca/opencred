@@ -114,11 +114,6 @@ const switchView = () => {
 onMounted(async () => {
   intervalId = setInterval(checkStatus, 5000);
 });
-
-const refresh = () => {
-  window.location.reload();
-};
-
 </script>
 
 <template>

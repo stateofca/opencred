@@ -210,6 +210,7 @@ app:
         loginExplain: "To login with your credential wallet, you will need to have the credential wallet app <with configurable URL to app stores> installed"
         appInstallExplain: "If you don't have a credential wallet yet, you can get one by downloading the credential wallet app <with configurable URL to app stores>"
         appCta: "Open wallet app"
+        presentationError: An error occurred during presentation. Please refresh the page to try again.
         copyright: "Powered by OpenCred"
         pageTitle: "Login"
         home: "Home"

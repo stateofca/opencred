@@ -2,6 +2,10 @@
 
 ## 6.4.0 - 2024-04-xx
 
+### Added
+- Entra can be used as an exchange backend.
+- New `presentationError` translation entry added.
+
 ### Fixed
 - Display OAuth validation errors in UI as appropriate.
 
