@@ -71,7 +71,6 @@
     "jose": "^5.2.2",
     "jsonld-document-loader": "^2.0.0",
     "jsonpath": "^1.1.1",
-    "mongodb": "^6.3.0",
     "ocsp": "^1.2.0",
     "oidc-provider": "^8.4.5",
     "patch-package": "^8.0.0",
