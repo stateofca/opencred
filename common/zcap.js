@@ -1,3 +1,10 @@
+/*!
+ * Copyright 2023 - 2024 California Department of Motor Vehicles
+ * Copyright 2023 - 2024 Digital Bazaar, Inc.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 import * as didMethodKey from '@digitalbazaar/did-method-key';
 import {decodeSecretKeySeed} from 'bnid';
 import {Ed25519Signature2020} from '@digitalbazaar/ed25519-signature-2020';

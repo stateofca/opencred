@@ -1,0 +1,14 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Contact: Digital Bazaar, Inc. <support@digitalbazaar.com>
+
+Files: *.md .dockerignore .editorconfig .gitignore .nvmrc package.json
+  patches/credential-handler-polyfill+3.2.0.patch
+  patches/web-request-rpc+2.0.3.patch test/fixtures/exchange.json
+  test/fixtures/expired.badssl.com.cer test/fixtures/oid4vp_di.json
+  test/fixtures/oid4vp_jwt.json test/fixtures/revoked-cert/intermediate.cer
+  test/fixtures/revoked-cert/leaf.cer test/fixtures/revoked-cert/root.cer
+  test/fixtures/signingKeys.js test/fixtures/submission.json
+  test/fixtures/vc_jwt.json web/manifest.json web/styles.pcss
+Copyright: 2023-2024 California Department of Motor Vehicles
+  2023-2024 Digital Bazaar, Inc.
+License: BSD-3-Clause

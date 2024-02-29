@@ -1,3 +1,10 @@
+/*!
+ * Copyright 2023 - 2024 California Department of Motor Vehicles
+ * Copyright 2023 - 2024 Digital Bazaar, Inc.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 const base64url = require('base64url');
 const vc_jwt = require('../fixtures/vc_jwt.json');
 const {createVerifiablePresentationJwt} = require('did-jwt-vc');

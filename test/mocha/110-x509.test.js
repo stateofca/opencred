@@ -1,3 +1,10 @@
+/*!
+ * Copyright 2023 - 2024 California Department of Motor Vehicles
+ * Copyright 2023 - 2024 Digital Bazaar, Inc.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 import * as sinon from 'sinon';
 import asn1js from 'asn1js';
 import {Crypto} from '@peculiar/webcrypto';
