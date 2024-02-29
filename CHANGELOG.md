@@ -1,10 +1,10 @@
 # opencred-platform Changelog
 
-## 6.0.0 - 2024-02-xx
+## 6.0.0 - 2024-02-29
 
 ### Changed
 - Use Bedrock packages.
-- Move config location to `/etc/bedrock-config/combined.yaml`.
+- **BREAKING**: Move config location to `/etc/bedrock-config/combined.yaml`.
 - **BREAKING**: Remove `opencred.dbConnectionUri` configuration. MongoDB options
   should be specified via `config.mongodb`.
 - **BREAKING**: Remove `opencred.domain` configuration. HTTP Server options
