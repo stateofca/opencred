@@ -121,14 +121,21 @@ bedrock.events.on('bedrock.init', async () => {
    * @property {Array.<string>} [exchangeProtocols]
    */
 
+  const availableExchangeProtocols = ['openid4vp', 'chapi'];
   /**
    * An list of exchange protocols in use by OpenCred
    * exchangeProtocols: ['openid4vp', 'chapi']
    * @type {Options}
    */
   opencred.options = opencred.options || {
-    exchangeProtocols: ['openid4vp', 'chapi']
+    exchangeProtocols: availableExchangeProtocols
   };
+  if(!opencred.options.exchangeProtocols
+    .every(el => availableExchangeProtocols.includes(el))) {
+    throw new Error(`Invalid exchange protocol configured: ` +
+      `Found: [${opencred.options.exchangeProtocols}], ` +
+      `Available: [${availableExchangeProtocols}]`);
+  }
 
   /**
    * An list of relying parties (connected apps or workflows) in use by OpenCred
