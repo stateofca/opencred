@@ -20,8 +20,8 @@
     "start": "node --preserve-symlinks dev.js",
     "test": "npm run lint && npm run test-node",
     "test-node": "cross-env NODE_ENV=test node --preserve-symlinks test.js test",
-    "test:load": "artillery run ./tests/load/artillery.yaml",
-    "test:load:qa": "env-cmd artillery run -e qa ./tests/load/artillery.yaml"
+    "test:load": "artillery run ./test/load/artillery.yaml",
+    "test:load:qa": "env-cmd artillery run -e qa ./test/load/artillery.yaml"
   },
   "dependencies": {
     "@azure/msal-node": "^2.6.4",

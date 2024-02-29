@@ -13,9 +13,13 @@ import {setCssVar} from 'quasar';
 
 let intervalId;
 const vp = ref(null);
+const error = ref(false);
 const context = ref({
   rp: {
-    brand: config.brand
+    brand: config.brand,
+    rp: {
+      brand: config.brand
+    }
   }
 });
 
@@ -23,11 +27,6 @@ const state = reactive({
   currentUXMethodIndex: 0,
   error: null
 });
-
-const switchView = () => {
-  state.currentUXMethodIndex = (state.currentUXMethodIndex + 1) %
-    config.options.exchangeProtocols.length;
-};
 
 onBeforeMount(async () => {
   try {
@@ -67,15 +66,17 @@ const checkStatus = async () => {
   }
 
   try {
-    const {id: workflowId} = context.value.rp.workflow;
-    const {redirectUri} = context.value.rp;
-    const {id: exchangeId, accessToken} = context.value.exchangeData;
     let exchange = {};
     ({
       data: {exchange},
     } = await httpClient.get(
-      `/workflows/${workflowId}/exchanges/${exchangeId}`,
-      {headers: {Authorization: `Bearer ${accessToken}`}}
+      `/workflows/${context.value.rp.workflow.id}/exchanges/` +
+      `${context.value.exchangeData.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${context.value.exchangeData.accessToken}`
+        }
+      }
     ));
     if(Object.keys(exchange).length > 0) {
       const urlParams = new URLSearchParams(window.location.search);
@@ -86,7 +87,8 @@ const checkStatus = async () => {
           state: context.value.exchangeData.oidc.state,
           code: exchange.oidc.code,
         });
-        const destination = `${redirectUri}?${queryParams.toString()}`;
+        const destination = `${context.value.rp.redirectUri}?` +
+          `${queryParams.toString()}`;
         window.location.href = destination;
         intervalId = clearInterval(intervalId);
       } else if(exchange.state === 'complete') {
@@ -104,9 +106,19 @@ const checkStatus = async () => {
   }
 };
 
+const switchView = () => {
+  state.currentUXMethodIndex = (state.currentUXMethodIndex + 1) %
+    config.options.exchangeProtocols.length;
+};
+
 onMounted(async () => {
   intervalId = setInterval(checkStatus, 5000);
 });
+
+const refresh = () => {
+  window.location.reload();
+};
+
 </script>
 
 <template>
