@@ -10,6 +10,7 @@
 - **BREAKING**: Remove `opencred.domain` configuration. HTTP Server options
   should be specified via `config.server` and `config.express`.
 - Move OID4VP login pages into single page.
+- Pin quasar to version 2.14.5.
 
 ## 5.4.3 - 2024-02-07
 
