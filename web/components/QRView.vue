@@ -56,7 +56,7 @@ function appOpened() {
 <template>
   <div
     class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
-    px-16 lg:px-24 relative text-center">
+           px-16 lg:px-24 relative text-center">
     <h1
       class="text-3xl mb-12 text-center"
       :style="{color: brand.primary}">
@@ -86,6 +86,13 @@ function appOpened() {
       <img
         v-if="exchangeData"
         :src="exchangeData.QR">
+      <div
+        v-else
+        class="p-12 m-12">
+        <q-spinner-tail
+          color="primary"
+          size="2em" />
+      </div>
     </div>
     <div
       v-if="showWarningMessage &&
