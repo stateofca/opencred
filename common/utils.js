@@ -108,8 +108,8 @@ const verifyJWTVP = async (jwt, options) => {
 };
 
 export const verifyUtils = {
-  verifyPresentationDataIntegrity: async args => verify(args),
-  verifyCredentialDataIntegrity: async args => verifyCredential(args),
+  verifyPresentationDataIntegrity: async options => verify(options),
+  verifyCredentialDataIntegrity: async options => verifyCredential(options),
   verifyPresentationJWT: async (jwt, options) => verifyJWTVP(jwt, options),
   verifyCredentialJWT: async (jwt, options) => verifyJWTVC(jwt, options),
   verifyx509JWT: async jwk => verifyJWKx509(jwk)

@@ -262,7 +262,7 @@ describe('OpenCred API - Native Workflow', function() {
 
   it('OID4VP should handle DI authorization response', async function() {
     const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
-      .resolves(exchange);
+      .resolves({...exchange, challenge: vp_token_di.proof.challenge});
     const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
       .resolves();
     let result;
@@ -282,7 +282,6 @@ describe('OpenCred API - Native Workflow', function() {
     } catch(e) {
       err = e;
     }
-
     should.not.exist(err);
     result.status.should.be.equal(204);
 

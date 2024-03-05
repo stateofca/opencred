@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 6.1.0 - 2024-03-xx
+
+### Fixed
+- Ensure challenge is being included in verification.
+
 ## 6.0.0 - 2024-02-29
 
 ### Changed

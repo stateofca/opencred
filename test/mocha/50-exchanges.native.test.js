@@ -143,4 +143,19 @@ describe('Exchanges (Native)', async () => {
     expect(result.verified).to.be.false;
     expect(result.errors.length).to.be.greaterThan(0);
   });
+
+  it('should return an error if vc fails challenge', async () => {
+    verifyStub.restore();
+    const result = await verifySubmission(
+      vp_token, presentation_submission, {
+        ...exchange,
+        challenge: `incorrect`
+      }
+    );
+
+    // expect(verifyStub.called).to.be.true;
+    // expect(verifyCredentialStub.called).to.be.true;
+    expect(result.verified).to.be.false;
+    expect(result.errors.length).to.be.greaterThan(0);
+  });
 });

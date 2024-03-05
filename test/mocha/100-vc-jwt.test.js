@@ -33,4 +33,13 @@ describe('VC-JWT', async () => {
       await verifyUtils.verifyCredentialJWT(jwtCases.invalid.vc);
     verification.verified.should.be.equal(false);
   });
+  it('should fail verification of invalid vc-jwt vp (nonce)', async () => {
+    const verification =
+      await verifyUtils.verifyPresentationJWT(jwtCases.valid['did:key'], {
+        challenge: `incorrect`
+      });
+    verification.verified.should.be.equal(false);
+    verification.errors[0].should.contain(
+      'Presentation does not contain the mandatory challenge (JWT: nonce)');
+  });
 });
