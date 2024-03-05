@@ -153,8 +153,6 @@ describe('Exchanges (Native)', async () => {
       }
     );
 
-    // expect(verifyStub.called).to.be.true;
-    // expect(verifyCredentialStub.called).to.be.true;
     expect(result.verified).to.be.false;
     expect(result.errors.length).to.be.greaterThan(0);
   });
