@@ -1,10 +1,13 @@
 # OpenCred: The Open Credentials Platform
 
 OpenCred is a system designed to make it easy for organizations (verifiers) to
-check credentials from individuals (holders) in a secure and verifiable way.
-Think of it as a digital verification checkpoint where organizations can ask for
-proof of certain information, like a driver's license or qualifications,
-directly from a person's digital wallet.
+check credentials from individuals (holders), with their consent, in a secure
+and verifiable way.
+
+In other words, OpenCred is like a digital verification checkpoint where
+organizations can ask for proof of certain information, like a driver's license,
+and an individual can decide if they want to provide that information from their
+digital wallet.
 
 ## Features
 
