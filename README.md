@@ -1,9 +1,36 @@
 # OpenCred: The Open Credentials Platform
 
-OpenCred is an open source credential verification platform that allows relying
-party services to request claims about users with a simple API or an OpenID
-Connect-style redirection workflow where the claims are verified via a user
-presenting them within a credential that meets certain requirements.
+OpenCred is a system designed to make it easy for organizations (verifiers) to
+check credentials from individuals (holders) in a secure and verifiable way.
+Think of it as a digital verification checkpoint where organizations can ask for
+proof of certain information, like a driver's license or qualifications,
+directly from a person's digital wallet.
+
+## Features
+
+OpenCred supports the following list of features:
+
+* Docker-based deployment to popular on-premise, hybrid, and cloud environments
+  such as Amazon Web Services, Google Cloud Platform, and Microsoft Azure.
+* Horizontal scaling to support tens of millions of verifications per day.
+* Internationalization support to support multiple languages.
+* Support for the W3C Verifiable Credentials Data Model and W3C Decentralized
+  Identifiers.
+* Support for workflows as an OpenID Connect Identity Provider or using an HTTP
+  API for non-OpenID systems.
+* Open digital wallet selection support through the Credential Handler API
+  (CHAPI)
+* Presentation protocol support for Verifiable Credential Exchanges API (VC API)
+  and OpenID for Verifiable Presentation (OID4VP).
+* Native/local verifier support that is not dependent on any external services.
+* Remote/external verifier support using either the Verifiable Credential
+  Verification API (VC API) or Microsoft Entra
+* Storage of historical DID Documents to enable local auditing
+
+# Architecture
+
+This system can act as a component in an OID4VP workflow or as an independent
+system in other authentication workflows.
 
 An OID4VP workflow is embedded within a OIDC authentication workflow. This app
 is responsible for the inner OID4VP workflow. It returns an OIDC ID token to
@@ -34,12 +61,6 @@ sequenceDiagram
     RP->>User: 14. Display authenticated webpage
     note over User: Views authenticated webpage
 ```
-
-# Architecture
-
-This app uses a node express server and a Vue 3 app client application. It
-doesn't yet support hot-reloading for UI component or server changes. To see
-changes, you must stop the server, and restart the server, with `npm run start`.
 
 ## Usage
 
@@ -241,6 +262,10 @@ translations:
 ```
 
 ### Run via node
+
+This app uses a node express server and a Vue 3 app client application. It
+doesn't yet support hot-reloading for UI component or server changes. To see
+changes, you must stop the server, and restart the server, with `npm run start`.
 
 Prerequisites:
 
