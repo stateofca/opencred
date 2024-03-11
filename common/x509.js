@@ -149,7 +149,7 @@ const checkTrust = async certs => {
   return {verified: errors.length === 0, errors};
 };
 
-export const verifyX509 = async certs => {
+export const verifyChain = async certs => {
   try {
     let errors = [];
     for(const cert of certs) {
@@ -178,10 +178,17 @@ export const verifyX509 = async certs => {
   }
 };
 
-export const verifyJWKx509 = async jwk => {
+export const extractCertsFromX5C = async jwk => {
   try {
     const certs = jwk.x5c.map(x5c =>
       new X509Certificate(Buffer.from(x5c, 'base64')));
+
+    if(!certs) {
+      return {
+        verified: false,
+        errors: [`x5c claim doesn't contain valid certificate`]
+      };
+    }
 
     // Verify public key matches certificate
     const key = createPublicKey({key: jwk, format: 'jwk'});
@@ -191,9 +198,9 @@ export const verifyJWKx509 = async jwk => {
         errors: ['Public key is not found in leaf certificate']
       };
     }
-    return await verifyX509(certs);
+    return certs;
   } catch(error) {
     logger.error(error.message, {error});
-    return {verified: false, errors: [error.message]};
+    return null;
   }
 };

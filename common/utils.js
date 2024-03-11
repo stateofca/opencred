@@ -16,7 +16,7 @@ import {didResolver} from './documentLoader.js';
 import {generateId} from 'bnid';
 import {httpClient} from '@digitalbazaar/http-client';
 import {logger} from '../lib/logger.js';
-import {verifyJWKx509} from './x509.js';
+import {verifyChain} from './x509.js';
 
 // General Utilities
 
@@ -112,7 +112,7 @@ export const verifyUtils = {
   verifyCredentialDataIntegrity: async options => verifyCredential(options),
   verifyPresentationJWT: async (jwt, options) => verifyJWTVP(jwt, options),
   verifyCredentialJWT: async (jwt, options) => verifyJWTVC(jwt, options),
-  verifyx509JWT: async jwk => verifyJWKx509(jwk)
+  verifyx509JWT: async certs => verifyChain(certs)
 };
 
 export function asyncHandler(middleware) {

@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 6.0.3 - 2024-xx-xx
+## 6.1.0 - 2024-xx-xx
 
 ### Changed
 - Update Bedrock Quasar dependencies.
@@ -8,6 +8,7 @@
 - Unpin `quasar`.
 - Use quasar `platform.is.mobile` instead of userAgent regex.
 - Update lint tooling and fix lint issues.
+- Handle both expected x5c claim formats.
 
 ## 6.0.2 - 2024-03-13
 
