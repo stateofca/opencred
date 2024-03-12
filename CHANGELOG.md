@@ -1,5 +1,12 @@
 # opencred-platform Changelog
 
+## 6.0.3 - 2024-xx-xx
+
+### Changed
+- Update Bedrock Quasar dependencies.
+  - `@bedrock/quasar@10`.
+- Unpin `quasar`.
+
 ## 6.0.2 - 2024-03-13
 
 ### Fixed
