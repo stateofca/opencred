@@ -16,6 +16,7 @@ import ButtonView from './components/ButtonView.vue';
 import {httpClient} from '@digitalbazaar/http-client';
 import JsonNode from './components/JsonNode.vue';
 import JsonView from './components/JsonView.vue';
+import {Notify} from 'quasar';
 import QRView from './components/QRView.vue';
 import './styles.pcss';
 
@@ -52,7 +53,11 @@ brVue.initialize({
     brVue.augmentRouter({app, router});
     app.use(router);
 
-    await brQuasar.initialize({app});
+    await brQuasar.initialize({app, quasarOptions: {
+      plugins: {
+        Notify
+      }
+    }});
     await brQuasar.theme({brand: appConfig.brand});
 
     // create root Vue component
