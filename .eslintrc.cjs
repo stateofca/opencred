@@ -7,15 +7,14 @@
 
 module.exports = {
   root: true,
-  parserOptions: {
-    ecmaVersion: 2020
-  },
   env: {
     node: true
   },
   extends: [
+    'plugin:quasar/standard',
     'digitalbazaar',
-    'digitalbazaar/module'
+    'digitalbazaar/module',
+    'digitalbazaar/vue3'
   ],
   ignorePatterns: [
     'node_modules/',
