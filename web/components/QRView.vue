@@ -8,6 +8,7 @@ SPDX-License-Identifier: BSD-3-Clause
 <script setup>
   import {onMounted, ref} from 'vue';
   import {config} from '@bedrock/web';
+  import { useQuasar } from 'quasar';
 
   const props = defineProps({
     step: String,
@@ -26,11 +27,13 @@ SPDX-License-Identifier: BSD-3-Clause
   const switchView = () => {
     emit('switchView');
   }
-  const showDeeplink = ref(true);
+  const showDeeplink = ref(false);
   const showWarningMessage = ref(false);
+  const $q = useQuasar()
+
 
   onMounted(() => {
-    if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
+    if($q.platform.is.mobile){
       showDeeplink.value = true;
     }
   })

@@ -6,6 +6,7 @@
 - Update Bedrock Quasar dependencies.
   - `@bedrock/quasar@10`.
 - Unpin `quasar`.
+- Use quasar `platform.is.mobile` instead of userAgent regex.
 
 ## 6.0.2 - 2024-03-13
 
