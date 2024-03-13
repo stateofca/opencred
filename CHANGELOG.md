@@ -5,6 +5,9 @@
 ### Fixed
 - Add new link to config for home.
 
+### Changed
+- Temporarily disable translate button.
+
 ## 6.0.1 - 2024-03-05
 
 ### Fixed
