@@ -49,7 +49,7 @@ SPDX-License-Identifier: BSD-3-Clause
       ({
         data: { exchange },
       } = await httpClient.get(
-        `/workflows/${context.value.rp.workflow.id}/exchanges/${context.value.exchangeData.id}`, 
+        `/workflows/${context.value.rp.workflow.id}/exchanges/${context.value.exchangeData.id}`,
         { headers: { Authorization: `Bearer ${context.value.exchangeData.accessToken}` } }
       ));
       if (Object.keys(exchange).length > 0) {
@@ -82,26 +82,28 @@ SPDX-License-Identifier: BSD-3-Clause
   <div class="flex flex-col min-h-screen">
     <header :style="{background: context.rp.brand.header}">
       <div class="mx-auto flex justify-between items-center px-6 py-3 max-w-3xl">
-        <a :href="context.rp.redirectUri"
+        <a
+          v-if="context.rp.icon"
+          :href="context.rp.homeLink"
           class="flex items-center gap-3">
-          <img v-if="context.rp.icon" :src="context.rp.icon" :alt="context.rp.name + 'Logo'" />
+          <img v-if="context.rp.icon" :src="context.rp.icon" alt="logo-image" />
         </a>
-        <button
+        <!-- <button
           class="flex flex-row text-white items-center text-xs gap-3
                 hover:underline">
           <span class="bg-white rounded-full p-1 flex">
             <img src="https://imagedelivery.net/I-hc6FAYxquPgv-npvTcWQ/505d9676-7f3a-49cc-bf9a-883439873d00/public" />
           </span>
           {{config.translations[config.defaultLanguage].translate}}
-        </button>
+        </button> -->
       </div>
     </header>
     <main
       class="relative flex-grow">
-      <div class="bg-white w-full text-center py-4">
-        <h2 class="font-bold">Home</h2>
+      <div v-if="context.rp.homeLink" class="bg-white w-full text-center py-4">
+        <h2 class="font-bold"><a :href="context.rp.homeLink">{{config.translations[config.defaultLanguage].home}}</a></h2>
       </div>
-      <div class="bg-no-repeat bg-cover clip-path-bg z-0 min-h-[360px]" 
+      <div class="bg-no-repeat bg-cover clip-path-bg z-0 min-h-[360px]"
         :style="{ 'background-image': `url(${context.rp.backgroundImage})`}">
         <div class="text-center text-6xl py-10">
           &nbsp;

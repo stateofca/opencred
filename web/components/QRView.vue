@@ -72,7 +72,7 @@ SPDX-License-Identifier: BSD-3-Clause
          v-if="config.translations[config.defaultLanguage].qrFooterHelp"
          v-html="config.translations[config.defaultLanguage].qrFooterHelp"></p>
     </div>
-    <div class="mt-12"
+    <div class="mt-12 flex flex-col items-center"
          v-if="config.translations[config.defaultLanguage].qrDisclaimer"
          v-html="config.translations[config.defaultLanguage].qrDisclaimer">
     </div>

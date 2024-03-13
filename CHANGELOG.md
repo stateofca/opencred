@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 6.0.2 - 2024-03-xx
+
+### Fixed
+- Add new link to config for home.
+
 ## 6.0.1 - 2024-03-05
 
 ### Fixed

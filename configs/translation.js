@@ -29,6 +29,7 @@ export const defaultTranslations = {
     chapiPageAnotherWay: 'Looking for a QR Code to scan with your wallet app ' +
     'instead?',
     copyright: 'Powered by OpenCred',
+    home: 'Home'
   }
 };
 
