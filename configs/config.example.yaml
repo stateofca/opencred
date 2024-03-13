@@ -32,6 +32,7 @@ app:
         icon: "https://placekitten.com/200/200"
         backgroundImage: "https://placekitten.com/800/200"
         redirectUri: "http://localhost:3000"
+        homeLink: "https://example.com"
         idTokenExpirySeconds: 3600
         claims:
           - name: "dl_number"
@@ -204,3 +205,4 @@ app:
         appCta: "Open wallet app"
         copyright: "Powered by OpenCred"
         pageTitle: "Login"
+        home: "Home"
