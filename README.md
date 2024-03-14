@@ -77,12 +77,12 @@ Copy the example to the config location `cp configs/config.example.yaml
 your relying party.
 
 #### Configure with an Environment Variable
-If an `OPENCRED_CONFIG` environment variable is set, the config specified in
+If an `BEDROCK_CONFIG` environment variable is set, the config specified in
 the environment variable will supersede any file based configuration. The
 environment variable must be a Base64 encoded string based on a YAML config
 file. The environment variable may be set with the following command:
 ```
-export OPENCRED_CONFIG=$(cat config.yaml | base64)
+export BEDROCK_CONFIG=$(cat combined.yaml | base64)
 ```
 
 #### Configuring a Native workflow
