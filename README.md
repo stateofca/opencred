@@ -77,7 +77,7 @@ Copy the example to the config location `cp configs/config.example.yaml
 your relying party.
 
 #### Configure with an Environment Variable
-If an `BEDROCK_CONFIG` environment variable is set, the config specified in
+If a `BEDROCK_CONFIG` environment variable is set, the config specified in
 the environment variable will supersede any file based configuration. The
 environment variable must be a Base64 encoded string based on a YAML config
 file. The environment variable may be set with the following command:
