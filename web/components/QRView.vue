@@ -8,7 +8,7 @@ SPDX-License-Identifier: BSD-3-Clause
 <script setup>
   import {onMounted, ref} from 'vue';
   import {config} from '@bedrock/web';
-  import { useQuasar } from 'quasar';
+  import {useQuasar} from 'quasar';
 
   const props = defineProps({
     step: String,
@@ -29,8 +29,7 @@ SPDX-License-Identifier: BSD-3-Clause
   }
   const showDeeplink = ref(false);
   const showWarningMessage = ref(false);
-  const $q = useQuasar()
-
+  const $q = useQuasar();
 
   onMounted(() => {
     if($q.platform.is.mobile){
