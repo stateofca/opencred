@@ -26,13 +26,6 @@ import {reactive} from 'vue';
 
 const state = reactive({expanded: false});
 
-const props = defineProps({
-  value: {
-    type: String,
-    required: true
-  }
-});
-
 const expand = () => {
   state.expanded = true;
 };

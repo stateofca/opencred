@@ -6,93 +6,100 @@ SPDX-License-Identifier: BSD-3-Clause
 -->
 
 <script setup>
-  import {onBeforeMount, onMounted, reactive, ref} from 'vue';
-  import {config} from '@bedrock/web';
-  import {httpClient} from "@digitalbazaar/http-client";
-  import {setCssVar} from 'quasar';
+import {onBeforeMount, onMounted, reactive, ref} from 'vue';
+import {config} from '@bedrock/web';
+import {httpClient} from '@digitalbazaar/http-client';
+import {setCssVar} from 'quasar';
 
-  let intervalId;
-  const vp = ref(null);
-  const context = ref({
-    rp: {
-      brand: config.brand
-    }
-  });
-
-  const state = reactive({
-    currentUXMethodIndex: 0
-  });
-
-  onBeforeMount(async () => {
-    const resp = await httpClient.get(`/context/login${window.location.search}`);
-    if (resp.status === 200) {
-      context.value = resp.data;
-      if(resp.data.rp.brand) {
-        Object.keys(resp.data.rp.brand).forEach(key => {
-          setCssVar(key, resp.data.rp.brand[key]);
-        });
-      }
-    }
-  })
-
-  onMounted(async () => {
-    intervalId = setInterval(checkStatus, 5000);
-  })
-
-  const switchView = () => {
-    state.currentUXMethodIndex = (state.currentUXMethodIndex + 1) % config.options.exchangeProtocols.length;
+let intervalId;
+const vp = ref(null);
+const context = ref({
+  rp: {
+    brand: config.brand
   }
+});
 
-  const checkStatus = async () => {
-    try {
-      let exchange = {};
-      ({
-        data: { exchange },
-      } = await httpClient.get(
-        `/workflows/${context.value.rp.workflow.id}/exchanges/${context.value.exchangeData.id}`,
-        { headers: { Authorization: `Bearer ${context.value.exchangeData.accessToken}` } }
-      ));
-      if (Object.keys(exchange).length > 0) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const preventRedirect = urlParams.has('preventRedirect');
-        if (exchange.state === "complete" && exchange.oidc?.code && !preventRedirect) {
-          const queryParams = new URLSearchParams({
+const state = reactive({
+  currentUXMethodIndex: 0
+});
+
+onBeforeMount(async () => {
+  const resp = await httpClient.get(`/context/login${window.location.search}`);
+  if(resp.status === 200) {
+    context.value = resp.data;
+    if(resp.data.rp.brand) {
+      Object.keys(resp.data.rp.brand).forEach(key => {
+        setCssVar(key, resp.data.rp.brand[key]);
+      });
+    }
+  }
+});
+
+const checkStatus = async () => {
+  if(!context.value) {
+    return;
+  }
+  try {
+    const {id: workflowId} = context.value.rp.workflow;
+    const {redirectUri} = context.value.rp;
+    const {id: exchangeId, accessToken} = context.value.exchangeData;
+    let exchange = {};
+    ({
+      data: {exchange},
+    } = await httpClient.get(
+      `/workflows/${workflowId}/exchanges/${exchangeId}`,
+      {headers: {Authorization: `Bearer ${accessToken}`}}
+    ));
+    if(Object.keys(exchange).length > 0) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const preventRedirect = urlParams.has('preventRedirect');
+      if(exchange.state === 'complete' && exchange.oidc?.code &&
+         !preventRedirect) {
+        const queryParams = new URLSearchParams({
           state: context.value.exchangeData.oidc.state,
           code: exchange.oidc.code,
         });
-        const destination = `${context.value.rp.redirectUri}?${queryParams.toString()}`;
+        const destination = `${redirectUri}?${queryParams.toString()}`;
         window.location.href = destination;
         clearInterval(intervalId);
-      } else if (exchange.state === 'complete') {
-          const { verifiablePresentation } =
-            exchange.variables.results[exchange.step];
-          vp.value = verifiablePresentation;
-          clearInterval(intervalId);
-        }
-      } else {
-        console.log("not complete");
+      } else if(exchange.state === 'complete') {
+        const {verifiablePresentation} =
+          exchange.variables.results[exchange.step];
+        vp.value = verifiablePresentation;
+        clearInterval(intervalId);
       }
-    } catch (error) {
-      console.error("An error occurred while polling the endpoint:", error);
+    } else {
+      console.log('not complete');
     }
-  };
+  } catch(error) {
+    console.error('An error occurred while polling the endpoint:', error);
+  }
+};
+
+onMounted(async () => {
+  intervalId = setInterval(checkStatus, 5000);
+});
 </script>
 
 <template>
   <div class="flex flex-col min-h-screen">
     <header :style="{background: context.rp.brand.header}">
-      <div class="mx-auto flex justify-between items-center px-6 py-3 max-w-3xl">
+      <div class="m-auto flex justify-between items-center px-6 py-3 max-w-3xl">
         <a
           v-if="context.rp.icon"
           :href="context.rp.homeLink"
           class="flex items-center gap-3">
-          <img v-if="context.rp.icon" :src="context.rp.icon" alt="logo-image" />
+          <img
+            v-if="context.rp.icon"
+            :src="context.rp.icon"
+            alt="logo-image">
         </a>
         <!-- <button
           class="flex flex-row text-white items-center text-xs gap-3
                 hover:underline">
           <span class="bg-white rounded-full p-1 flex">
-            <img src="https://imagedelivery.net/I-hc6FAYxquPgv-npvTcWQ/505d9676-7f3a-49cc-bf9a-883439873d00/public" />
+            <img src="https://imagedelivery.net/I-hc6FAYxquPgv-npvT
+                      cWQ/505d9676-7f3a-49cc-bf9a-883439873d00/public">
           </span>
           {{config.translations[config.defaultLanguage].translate}}
         </button> -->
@@ -100,10 +107,17 @@ SPDX-License-Identifier: BSD-3-Clause
     </header>
     <main
       class="relative flex-grow">
-      <div v-if="context.rp.homeLink" class="bg-white w-full text-center py-4">
-        <h2 class="font-bold"><a :href="context.rp.homeLink">{{config.translations[config.defaultLanguage].home}}</a></h2>
+      <div
+        v-if="context.rp.homeLink"
+        class="bg-white w-full text-center py-4">
+        <h2 class="font-bold">
+          <a :href="context.rp.homeLink">
+            {{config.translations[config.defaultLanguage].home}}
+          </a>
+        </h2>
       </div>
-      <div class="bg-no-repeat bg-cover clip-path-bg z-0 min-h-[360px]"
+      <div
+        class="bg-no-repeat bg-cover clip-path-bg z-0 min-h-[360px]"
         :style="{ 'background-image': `url(${context.rp.backgroundImage})`}">
         <div class="text-center text-6xl py-10">
           &nbsp;
@@ -111,30 +125,34 @@ SPDX-License-Identifier: BSD-3-Clause
       </div>
       <div v-if="vp">
         <div class="flex justify-center">
-          <JsonView :data="{ vp }" title="Verified Credential" />
+          <JsonView
+            :data="{ vp }"
+            title="Verified Credential" />
         </div>
       </div>
       <ButtonView
-        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex] === 'chapi'"
-        :chapiEnabled="true"
+        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex]
+          === 'chapi'"
+        :chapi-enabled="true"
         :rp="context.rp"
         :translations="config.translations"
-        :defaultLanguage="config.defaultLanguage"
+        :default-language="config.defaultLanguage"
         :options="config.options"
-        :exchangeData="context.exchangeData"
-        @switchView="switchView"/>
+        :exchange-data="context.exchangeData"
+        @switch-view="switchView" />
       <QRView
-        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex] === 'openid4vp'"
+        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex]
+          === 'openid4vp'"
         :translations="config.translations"
         :brand="context.rp.brand"
-        :defaultLanguage="config.defaultLanguage"
-        :exchangeData="context.exchangeData"
+        :default-language="config.defaultLanguage"
+        :exchange-data="context.exchangeData"
         :options="config.options"
-        @switchView="switchView"/>
+        @switch-view="switchView" />
     </main>
-    <footer class="text-left p-3"
-      v-html="config.translations[config.defaultLanguage].copyright">
-    </footer>
+    <footer
+      class="text-left p-3"
+      v-html="config.translations[config.defaultLanguage].copyright" />
   </div>
 </template>
 

@@ -12,9 +12,9 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script>
-  export default {
-    name: 'App'
-  };
+export default {
+  name: 'App'
+};
 </script>
 
 <style>
