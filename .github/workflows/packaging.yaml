@@ -37,13 +37,13 @@ jobs:
       run: echo "tag=us.gcr.io/${{ env.CONTAINER_OWNER }}/${{ env.CONTAINER_IMAGE_NAME }}:${{ steps.version.outputs.current-version }}-${{ github.ref_name }}-${{ github.sha }}-rc${{ steps.rc.outputs.version_build_number }}" >> "$GITHUB_OUTPUT"
 
     - id: 'auth'
-      uses: 'google-github-actions/auth@v1'
+      uses: 'google-github-actions/auth@v2'
       with:
         credentials_json: '${{ secrets.CLOUD_BUILD_GITHUB_ACTION_SA_KEY }}'
 
     # Setup gcloud CLI
     - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v1
+      uses: google-github-actions/setup-gcloud@v2
 
     # Build and push image to Google Container Registry
     # the --tag argument cannot be used when --config is used
