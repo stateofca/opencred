@@ -87,7 +87,9 @@ onMounted(async () => {
 <template>
   <div class="flex flex-col min-h-screen">
     <header :style="{background: context.rp.brand.header}">
-      <div class="m-auto flex justify-between items-center px-6 py-3 max-w-3xl">
+      <div
+        class="mx-auto flex gap-2 justify-between items-center px-6 py-3
+               max-w-3xl">
         <a
           v-if="context.rp.icon"
           :href="context.rp.homeLink"
@@ -97,6 +99,16 @@ onMounted(async () => {
             :src="context.rp.icon"
             alt="logo-image">
         </a>
+        <a
+          v-if="context.rp.icon2"
+          :href="context.rp.homeLink2"
+          class="flex items-center gap-3">
+          <img
+            v-if="context.rp.icon2"
+            :src="context.rp.icon2"
+            alt="logo-image">
+        </a>
+        <div class="flex-grow">
         <!-- <button
           class="flex flex-row text-white items-center text-xs gap-3
                 hover:underline">
@@ -106,6 +118,7 @@ onMounted(async () => {
           </span>
           {{config.translations[config.defaultLanguage].translate}}
         </button> -->
+        </div>
       </div>
     </header>
     <main

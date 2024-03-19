@@ -10,6 +10,7 @@
 - Update lint tooling and fix lint issues.
 - Handle both expected x5c claim formats.
 - Require x5c claim if CA Store in config.
+- Add second header image and link.
 
 ## 6.0.2 - 2024-03-13
 
