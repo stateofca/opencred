@@ -26,6 +26,8 @@ defineProps({
     })
   }
 });
+const emit = defineEmits(['switchView']);
+const switchView = () => emit('switchView');
 const showDeeplink = ref(false);
 const showWarningMessage = ref(false);
 const $q = useQuasar();

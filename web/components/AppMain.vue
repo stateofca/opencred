@@ -23,6 +23,11 @@ const state = reactive({
   currentUXMethodIndex: 0
 });
 
+const switchView = () => {
+  state.currentUXMethodIndex = (state.currentUXMethodIndex + 1) %
+    config.options.exchangeProtocols.length;
+};
+
 onBeforeMount(async () => {
   const resp = await httpClient.get(`/context/login${window.location.search}`);
   if(resp.status === 200) {
@@ -139,7 +144,7 @@ onMounted(async () => {
         :default-language="config.defaultLanguage"
         :options="config.options"
         :exchange-data="context.exchangeData"
-        @switch-view="switchView" />
+        @switchView="switchView" />
       <QRView
         v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex]
           === 'openid4vp'"
@@ -148,7 +153,7 @@ onMounted(async () => {
         :default-language="config.defaultLanguage"
         :exchange-data="context.exchangeData"
         :options="config.options"
-        @switch-view="switchView" />
+        @switchView="switchView" />
     </main>
     <footer
       class="text-left p-3"
