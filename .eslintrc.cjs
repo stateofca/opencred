@@ -25,6 +25,7 @@ module.exports = {
       'error',
       (process.platform === 'win32' ? 'windows' : 'unix')
     ],
-    'unicorn/prefer-node-protocol': 'error'
+    'unicorn/prefer-node-protocol': 'error',
+    'vue/no-v-html': 'off'
   }
 };

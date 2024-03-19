@@ -142,7 +142,7 @@ onMounted(async () => {
         :default-language="config.defaultLanguage"
         :options="config.options"
         :exchange-data="context.exchangeData"
-        @switchView="switchView" />
+        @switch-view="switchView" />
       <QRView
         v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex]
           === 'openid4vp'"
@@ -151,7 +151,7 @@ onMounted(async () => {
         :default-language="config.defaultLanguage"
         :exchange-data="context.exchangeData"
         :options="config.options"
-        @switchView="switchView" />
+        @switch-view="switchView" />
     </main>
     <footer
       class="text-left p-3"
