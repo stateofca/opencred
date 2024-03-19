@@ -73,8 +73,6 @@ const checkStatus = async () => {
         vp.value = verifiablePresentation;
         clearInterval(intervalId);
       }
-    } else {
-      console.log('not complete');
     }
   } catch(error) {
     console.error('An error occurred while polling the endpoint:', error);
