@@ -184,19 +184,15 @@ export const extractCertsFromX5C = async jwk => {
       new X509Certificate(Buffer.from(x5c, 'base64')));
 
     if(!certs) {
-      return {
-        verified: false,
-        errors: [`x5c claim doesn't contain valid certificate`]
-      };
+      logger.error(`x5c claim doesn't contain valid certificate`);
+      return null;
     }
 
     // Verify public key matches certificate
     const key = createPublicKey({key: jwk, format: 'jwk'});
     if(!certs[0].publicKey.equals(key)) {
-      return {
-        verified: false,
-        errors: ['Public key is not found in leaf certificate']
-      };
+      logger.error('Public key is not found in leaf certificate');
+      return null;
     }
     return certs;
   } catch(error) {

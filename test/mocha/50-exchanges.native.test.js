@@ -103,6 +103,35 @@ describe('Exchanges (Native)', async () => {
     expect(result.errors.length).to.be(0);
   });
 
+  it('should require x5c in submission if CA Store in config', async () => {
+    const oid4vpJWT = JSON.parse(fs.readFileSync(
+      './test/fixtures/oid4vp_jwt.json'));
+    const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
+      .resolves({
+        verified: true,
+        verifiablePresentation: {vc: {proof: {jwt: '...'}}}}
+      );
+    const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
+      .resolves({verified: true, signer: {}});
+    const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
+      .resolves();
+    const vp_token_jwt = oid4vpJWT.vp_token;
+    const presentation_submission_jwt = oid4vpJWT.presentation_submission;
+
+    const result = await verifySubmission(
+      vp_token_jwt, presentation_submission_jwt, exchange
+    );
+
+    expect(verifyStub.called).to.be.true;
+    expect(verifyCredentialStub.called).to.be.true;
+    expect(result.verified).to.be.false;
+    expect(result.errors.length).to.be(1);
+
+    updateStub.restore();
+    verifyUtilsStub.restore();
+    verifyUtilsStub2.restore();
+  });
+
   it('should return an error if definition_id does not match', async () => {
     presentation_submission.definition_id = 'incorrect';
     const result = await verifySubmission(

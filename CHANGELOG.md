@@ -9,6 +9,7 @@
 - Use quasar `platform.is.mobile` instead of userAgent regex.
 - Update lint tooling and fix lint issues.
 - Handle both expected x5c claim formats.
+- Require x5c claim if CA Store in config.
 
 ## 6.0.2 - 2024-03-13
 

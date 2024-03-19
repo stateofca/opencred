@@ -301,6 +301,7 @@ describe('OpenCred API - Native Workflow', function() {
       .resolves({verified: true, signer: {}});
     const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
       .resolves();
+    const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
     let result;
     let err;
     try {
@@ -324,6 +325,7 @@ describe('OpenCred API - Native Workflow', function() {
     updateStub.restore();
     verifyUtilsStub.restore();
     verifyUtilsStub2.restore();
+    caStoreStub.restore();
   });
 });
 
