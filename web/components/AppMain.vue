@@ -95,7 +95,6 @@ onMounted(async () => {
           :href="context.rp.homeLink"
           class="flex items-center gap-3">
           <img
-            v-if="context.rp.icon"
             :src="context.rp.icon"
             alt="logo-image">
         </a>
@@ -104,7 +103,6 @@ onMounted(async () => {
           :href="context.rp.homeLink2"
           class="flex items-center gap-3">
           <img
-            v-if="context.rp.icon2"
             :src="context.rp.icon2"
             alt="logo-image">
         </a>
