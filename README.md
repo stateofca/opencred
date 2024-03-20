@@ -28,42 +28,7 @@ OpenCred supports the following list of features:
 * Native/local verifier support that is not dependent on any external services.
 * Remote/external verifier support using either the Verifiable Credential
   Verification API (VC API) or Microsoft Entra
-* Storage of historical DID Documents to enable local auditing
-
-# Architecture
-
-This system can act as a component in an OID4VP workflow or as an independent
-system in other authentication workflows.
-
-An OID4VP workflow is embedded within a OIDC authentication workflow. This app
-is responsible for the inner OID4VP workflow. It returns an OIDC ID token to
-the relying party service or an error.
-
-```mermaid
-sequenceDiagram
-    participant RP as RelyingParty
-    actor User as User
-    participant OpenCred as OpenCred
-    participant Exchanger as Exchanger
-    participant Wallet as Wallet
-    note over User: Views unauthenticated webpage
-    RP->>OpenCred: 1. Auth request w/client_id
-    OpenCred->>Exchanger: 2. Generate OID4VP presentation request
-    Exchanger->>OpenCred: 3. Success response
-    OpenCred->>User: 4. Present URL & QR Code
-    User-->>Wallet: 5. Scan QR Code from wallet app
-    note over Wallet: Display request & credential(s)
-    Wallet->>Exchanger: 6. Post Verifiable Presentation
-    Exchanger->>Wallet: 7. Success response
-    Wallet->>OpenCred: 8. User redirected to OpenCred
-    OpenCred->>Exchanger: 9. Request exchange result
-    Exchanger->>OpenCred: 10. Verified presentation w/credential
-    OpenCred->>RP: 11. Redirect w/Code
-    RP->>OpenCred: 12. Exchange code for id_token
-    OpenCred->>RP: 13. id_token response
-    RP->>User: 14. Display authenticated webpage
-    note over User: Views authenticated webpage
-```
+* Storage of historical DID Documents to enable auditing (coming soon)
 
 ## Usage
 
@@ -161,7 +126,7 @@ didWeb:
     }
 ```
 
-### Configuring Signing Key
+#### Configuring Signing Key
 
 You must configure a signing key by entering key information in the
 `signingKeys` section of the config, and the public keys will be published in
@@ -220,7 +185,7 @@ specify which Verifiable Credential type, context, and/or issuers you will
 accept. This enables the specification of a plaintext `path` relative to
 `credentialSubject` to source the claim value from.
 
-### Configuring Exchange UX Methods
+#### Configuring Exchange UX Methods
 
 OpenCred supports two methods for initiating an exchange with a wallet app,
 Credential Handler API ([CHAPI](https://chapi.io/)), and OpenID for Verifiable
@@ -239,7 +204,7 @@ options:
 If this section is omitted, both protocols (`openid4vp` and `chapi`)
 will be offered, with an OID4VP QR code offered to the user first.
 
-### Configuring translations
+#### Configuring translations
 
 The two views of the login page both have text entries
 stored in the translations entries of the config. To configure the text of the login page set the following entries:
@@ -266,9 +231,8 @@ translations:
 
 ### Run via node
 
-This app uses a node express server and a Vue 3 app client application. It
-doesn't yet support hot-reloading for UI component or server changes. To see
-changes, you must stop the server, and restart the server, with `npm run start`.
+This app uses a `@bedrock/express` server and a Vue 3 UI client application. It
+supports hot reloading for UI changes during development. 
 
 Prerequisites:
 
@@ -329,10 +293,30 @@ $ curl https://localhost:22443/health/live
 
 ## Integrating with OpenCred
 
+OpenCred makes it easy to request a credential from a user and return key
+information to a connected application or "relying party." This can either be
+done with OpenID Connect or calling OpenCred's HTTP API for more precise
+control. 
+
+* Choose OpenID Connect if you can redirect the user in a browser to OpenCred
+  and want to use a standard protocol for authentication that may already be
+  supported in your environment or easy to integrate using a well-known library.
+  This method enables you to obtain an `id_token` that contains claims extracted
+  from the credential that the user presents. 
+* Choose the HTTP API if redirecting the user in a browser is impractical, you
+  want to present the credential request to the user via your own interface
+  (displaying a QR code and enabling the user to launch a wallet app for
+  same-device wallet use), or you want to receive the Verifiable Presentation
+  and Verifiable Credential data in their original form.
+
+
 ### Open ID Connect Login
 
-If you configure an `id_token` signing key, you may use the service as an IDP
-that extracts claims from a presented credential into an id_token. There is an
+You can enable users to sign into a relying party application with a Verifiable
+Credential using OpenCred as an identity provider connected over OAuth 2.0 /
+OpenID Connect. OpenCred returns a signed `id_token` that contains specific claims
+
+ There is an
 `openid-configuration` endpoint at `/.well-known/openid-configuration` with
 detailed information about the algorithm and protocol support that the server
 has. It references a JWKS (keyset) endpoint at `/.well-known/jwks.json` that
@@ -363,15 +347,21 @@ The OIDC workflow follows this process:
   up user data and authenticate the user or augment a user's profile.
 
 Notes:
+* You must configure a signing key with the `id_token` purpose in the config to
+  use this method of integration. The public key will be published in the
+  `/.well-known/jwks.json` endpoint. 
+* You must configure `claims` of your relyingParty to specify which claims you
+  want to extract from the credential and include in the `id_token` result.
 * `ES256` is the only supported signing algorithm for id_tokens to date.
 * `PKCE` not yet supported.
 * There is no `userinfo` endpoint, the app only supports an `id_token` result.
 
 ### HTTP API Integration
 
-OpenCred can also facilitate gathering a user's credential(s) and presenting
-them to a relying party via a HTTP API. This is useful for integrating with a
-relying party that does not support OIDC. The HTTP API is documented in the
+Each time a relying party application requests a credential from a user,
+OpenCred manages a credential "exchange" that lets the user present a Verifiable
+Presentation containing a Verifiable Credential, which is verified and made
+available to the relying party. The HTTP API is documented in the
 [OpenAPI](https://swagger.io/specification/) format. You can view the API
 documentation in a Swagger UI at the `/api-docs` endpoint when the application
 is running.
@@ -385,7 +375,7 @@ The HTTP API workflow follows this process:
 * The response will contain an `OID4VP` URI and a `QR` code as a Data URI that
   you can present to your user to scan with a wallet app as well as a `vcapi`
   value that you can use to initiate a CHAPI wallet flow. It contains an
-  `echangeId` that will be used to check status and an `accessToken` that is a
+  `exchangeId` that will be used to check status and an `accessToken` that is a
   short lived access token that allows you to authenticate the status check
   request.
 * The user activates their wallet, for example by scanning the QR code that you
