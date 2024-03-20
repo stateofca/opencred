@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 6.4.0 - 2024-04-xx
+
+### Fixed
+- Display OAuth validation errors in UI as appropriate.
+
 ## 6.3.0 - 2024-03-21
 
 ### Added
@@ -24,9 +29,6 @@
 - Handle both expected x5c claim formats.
 - Require x5c claim if CA Store in config.
 - Add second header image and link.
-
-### Fixed
-- Display OAuth validation errors in UI as appropriate.
 
 ## 6.0.2 - 2024-03-13
 
