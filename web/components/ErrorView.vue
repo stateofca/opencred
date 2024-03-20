@@ -6,14 +6,14 @@ SPDX-License-Identifier: BSD-3-Clause
 -->
 
 <script setup>
-const props = defineProps({
+defineProps({
   title: {
     type: String,
-    default: () => "Error",
+    default: () => 'Error',
   },
   error: {
     type: String,
-    default: () => "An error occurred.",
+    default: () => 'An error occurred.',
   },
 });
 </script>
@@ -21,11 +21,11 @@ const props = defineProps({
 <template>
   <div class="p-4 md:p-5 space-y-2">
     <h2 class="text-4xl font-extrabold">
-      {{ title }}
+      {{title}}
     </h2>
 
     <p class="mb-4 text-lg font-normal text-gray-500">
-      {{ error }}
+      {{error}}
     </p>
   </div>
 </template>

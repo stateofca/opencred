@@ -31,24 +31,24 @@ const switchView = () => {
 
 onBeforeMount(async () => {
   try {
-    const resp = await httpClient.get(`/context/login${window.location.search}`);
+    const resp = await httpClient.get(
+      `/context/login${window.location.search}`
+    );
     context.value = resp.data;
     if(resp.data.rp.brand) {
       Object.keys(resp.data.rp.brand).forEach(key => {
         setCssVar(key, resp.data.rp.brand[key]);
       });
     }
-  }
-  catch(e) {
-    const { status, data } = e;
+  } catch(e) {
+    const {status, data} = e;
     console.error('An error occurred while loading the application:', e);
-    if (data && data.error_description) {
+    if(data && data.error_description) {
       state.error = {
         title: `${data.error} error`,
         message: data.error_description
       };
-    }
-    else {
+    } else {
       state.error = {
         title: `Error code ${status}`,
         message: 'An error occurred while loading the application.'
@@ -113,8 +113,8 @@ onMounted(async () => {
   <div class="flex flex-col min-h-screen">
     <header :style="{ background: context.rp.brand.header }">
       <div
-        class="mx-auto flex gap-2 justify-between items-center px-6 py-3 max-w-3xl"
-      >
+        class="mx-auto flex gap-2 justify-between items-center px-6 py-3
+               max-w-3xl">
         <a
           v-if="context.rp.primaryLogo"
           :href="context.rp.primaryLink"
@@ -145,34 +145,41 @@ onMounted(async () => {
       </div>
     </header>
     <main class="relative flex-grow">
-      <div v-if="context.rp.homeLink" class="bg-white w-full text-center py-4">
+      <div
+        v-if="context.rp.homeLink"
+        class="bg-white w-full text-center py-4">
         <h2 class="font-bold">
           <a :href="context.rp.homeLink">
-            {{ config.translations[config.defaultLanguage].home }}
+            {{config.translations[config.defaultLanguage].home}}
           </a>
         </h2>
       </div>
       <div
         v-if="!state.error"
         class="bg-no-repeat bg-cover clip-path-bg z-0 min-h-[360px]"
-        :style="{ 'background-image': `url(${context.rp.backgroundImage})` }"
-      >
-        <div class="text-center text-6xl py-10">&nbsp;</div>
+        :style="{ 'background-image': `url(${context.rp.backgroundImage})` }">
+        <div class="text-center text-6xl py-10">
+&nbsp;
+        </div>
       </div>
       <div v-if="vp">
         <div class="flex justify-center">
-          <JsonView :data="{ vp }" title="Verified Credential" />
+          <JsonView
+            :data="{ vp }"
+            title="Verified Credential" />
         </div>
       </div>
       <div v-else-if="state.error">
         <div class="flex justify-center pt-8">
-          <ErrorView :title="state.error.title" :error="state.error.message" />
+          <ErrorView
+            :title="state.error.title"
+            :error="state.error.message" />
         </div>
       </div>
       <ButtonView
         v-else-if="
           config.options.exchangeProtocols[state.currentUXMethodIndex] ===
-          'chapi'
+            'chapi'
         "
         :chapi-enabled="true"
         :rp="context.rp"
@@ -180,12 +187,11 @@ onMounted(async () => {
         :default-language="config.defaultLanguage"
         :options="config.options"
         :exchange-data="context.exchangeData"
-        @switch-view="switchView"
-      />
+        @switch-view="switchView" />
       <QRView
         v-else-if="
           config.options.exchangeProtocols[state.currentUXMethodIndex] ===
-          'openid4vp'
+            'openid4vp'
         "
         :translations="config.translations"
         :brand="context.rp.brand"
@@ -197,8 +203,7 @@ onMounted(async () => {
     </main>
     <footer
       class="text-left p-3"
-      v-html="config.translations[config.defaultLanguage].copyright"
-    />
+      v-html="config.translations[config.defaultLanguage].copyright" />
   </div>
 </template>
 
