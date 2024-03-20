@@ -91,19 +91,19 @@ onMounted(async () => {
         class="mx-auto flex gap-2 justify-between items-center px-6 py-3
                max-w-3xl">
         <a
-          v-if="context.rp.icon"
-          :href="context.rp.homeLink"
+          v-if="context.rp.primaryLogo"
+          :href="context.rp.primaryLink"
           class="flex items-center gap-3">
           <img
-            :src="context.rp.icon"
+            :src="context.rp.primaryLogo"
             alt="logo-image">
         </a>
         <a
-          v-if="context.rp.icon2"
-          :href="context.rp.homeLink2"
+          v-if="context.rp.secondaryLogo"
+          :href="context.rp.secondaryLink"
           class="flex items-center gap-3">
           <img
-            :src="context.rp.icon2"
+            :src="context.rp.secondaryLogo"
             alt="logo-image">
         </a>
         <div class="flex-grow">

@@ -1,5 +1,11 @@
 # opencred-platform Changelog
 
+## 6.1.1 - 2024-03-xx
+
+### Changed
+- Add separate link for home.
+- Rename logos and links.
+
 ## 6.1.0 - 2024-03-20
 
 ### Changed

@@ -29,10 +29,13 @@ app:
         clientId: "rp1"
         clientSecret: "DeepestAndDarkest"
         description: "Relying Party Test App"
-        icon: "https://placekitten.com/200/200"
+        primaryLogo: "https://placekitten.com/200/200"
+        primaryLink: "https://example.com"
+        secondaryLogo: "https://placekitten.com/200/200"
+        secondaryLink: "https://example2.com"
+        homeLink: "https://example.com"
         backgroundImage: "https://placekitten.com/800/200"
         redirectUri: "http://localhost:3000"
-        homeLink: "https://example.com"
         idTokenExpirySeconds: 3600
         claims:
           - name: "dl_number"

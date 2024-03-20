@@ -107,7 +107,11 @@ bedrock.events.on('bedrock.init', async () => {
    * @property {string} clientSecret - The client secret, urlsafe.
    * @property {string} redirectUri - The redirect URI of the relying party.
    * @property {string} description - The description of the relying party.
-   * @property {string} icon - The icon URL of the relying party.
+   * @property {string} primaryLogo - The primary logo of the relying party.
+   * @property {string} primaryLink - The primary link of the relying party.
+   * @property {string} secondaryLogo - The secondary logo of the relying party.
+   * @property {string} secondaryLogo - The secondary link of the relying party.
+   * @property {string} homeLink - The home link of the relying party.
    * @property {string} backgroundImage - Background image URL.
    * @property {Object} brand - The brand of the relying party.
    * @property {string} brand.cta - The call to action color, hex like "#6A5ACD"
