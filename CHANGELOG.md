@@ -25,6 +25,9 @@
 - Require x5c claim if CA Store in config.
 - Add second header image and link.
 
+### Fixed
+- Display OAuth validation errors in UI as appropriate.
+
 ## 6.0.2 - 2024-03-13
 
 ### Fixed
