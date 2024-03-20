@@ -293,7 +293,7 @@ $ curl https://localhost:22443/health/live
 
 ## Integrating with OpenCred
 
-OpenCred makes it easy to request a credential from a user and return key
+OpenCred makes it easy to request a credential from a user and return
 information to a connected application or "relying party." This can either be
 done with OpenID Connect or calling OpenCred's HTTP API for more precise
 control. 
