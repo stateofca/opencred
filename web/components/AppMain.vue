@@ -20,7 +20,8 @@ const context = ref({
 });
 
 const state = reactive({
-  currentUXMethodIndex: 0
+  currentUXMethodIndex: 0,
+  error: null
 });
 
 const switchView = () => {
@@ -29,13 +30,29 @@ const switchView = () => {
 };
 
 onBeforeMount(async () => {
-  const resp = await httpClient.get(`/context/login${window.location.search}`);
-  if(resp.status === 200) {
+  try {
+    const resp = await httpClient.get(`/context/login${window.location.search}`);
     context.value = resp.data;
     if(resp.data.rp.brand) {
       Object.keys(resp.data.rp.brand).forEach(key => {
         setCssVar(key, resp.data.rp.brand[key]);
       });
+    }
+  }
+  catch(e) {
+    const { status, data } = e;
+    console.error('An error occurred while loading the application:', e);
+    if (data && data.error_description) {
+      state.error = {
+        title: `${data.error} error`,
+        message: data.error_description
+      };
+    }
+    else {
+      state.error = {
+        title: `Error code ${status}`,
+        message: 'An error occurred while loading the application.'
+      };
     }
   }
 });
@@ -44,6 +61,11 @@ const checkStatus = async () => {
   if(!context.value) {
     return;
   }
+  if(state.error && intervalId) {
+    intervalId = clearInterval(intervalId);
+    return;
+  }
+
   try {
     const {id: workflowId} = context.value.rp.workflow;
     const {redirectUri} = context.value.rp;
@@ -66,16 +88,19 @@ const checkStatus = async () => {
         });
         const destination = `${redirectUri}?${queryParams.toString()}`;
         window.location.href = destination;
-        clearInterval(intervalId);
+        intervalId = clearInterval(intervalId);
       } else if(exchange.state === 'complete') {
         const {verifiablePresentation} =
           exchange.variables.results[exchange.step];
         vp.value = verifiablePresentation;
-        clearInterval(intervalId);
+        intervalId = clearInterval(intervalId);
       }
     }
-  } catch(error) {
-    console.error('An error occurred while polling the endpoint:', error);
+  } catch(e) {
+    const {status} = e;
+    console.error('An error occurred while polling the endpoint:', e);
+    state.error = state.error = `Error code ${
+      status}: An error occurred while checking exchange status.`;
   }
 };
 
@@ -86,10 +111,10 @@ onMounted(async () => {
 
 <template>
   <div class="flex flex-col min-h-screen">
-    <header :style="{background: context.rp.brand.header}">
+    <header :style="{ background: context.rp.brand.header }">
       <div
-        class="mx-auto flex gap-2 justify-between items-center px-6 py-3
-               max-w-3xl">
+        class="mx-auto flex gap-2 justify-between items-center px-6 py-3 max-w-3xl"
+      >
         <a
           v-if="context.rp.primaryLogo"
           :href="context.rp.primaryLink"
@@ -107,7 +132,7 @@ onMounted(async () => {
             alt="logo-image">
         </a>
         <div class="flex-grow">
-        <!-- <button
+          <!-- <button
           class="flex flex-row text-white items-center text-xs gap-3
                 hover:underline">
           <span class="bg-white rounded-full p-1 flex">
@@ -119,44 +144,49 @@ onMounted(async () => {
         </div>
       </div>
     </header>
-    <main
-      class="relative flex-grow">
-      <div
-        v-if="context.rp.homeLink"
-        class="bg-white w-full text-center py-4">
+    <main class="relative flex-grow">
+      <div v-if="context.rp.homeLink" class="bg-white w-full text-center py-4">
         <h2 class="font-bold">
           <a :href="context.rp.homeLink">
-            {{config.translations[config.defaultLanguage].home}}
+            {{ config.translations[config.defaultLanguage].home }}
           </a>
         </h2>
       </div>
       <div
+        v-if="!state.error"
         class="bg-no-repeat bg-cover clip-path-bg z-0 min-h-[360px]"
-        :style="{ 'background-image': `url(${context.rp.backgroundImage})`}">
-        <div class="text-center text-6xl py-10">
-          &nbsp;
-        </div>
+        :style="{ 'background-image': `url(${context.rp.backgroundImage})` }"
+      >
+        <div class="text-center text-6xl py-10">&nbsp;</div>
       </div>
       <div v-if="vp">
         <div class="flex justify-center">
-          <JsonView
-            :data="{ vp }"
-            title="Verified Credential" />
+          <JsonView :data="{ vp }" title="Verified Credential" />
+        </div>
+      </div>
+      <div v-else-if="state.error">
+        <div class="flex justify-center pt-8">
+          <ErrorView :title="state.error.title" :error="state.error.message" />
         </div>
       </div>
       <ButtonView
-        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex]
-          === 'chapi'"
+        v-else-if="
+          config.options.exchangeProtocols[state.currentUXMethodIndex] ===
+          'chapi'
+        "
         :chapi-enabled="true"
         :rp="context.rp"
         :translations="config.translations"
         :default-language="config.defaultLanguage"
         :options="config.options"
         :exchange-data="context.exchangeData"
-        @switch-view="switchView" />
+        @switch-view="switchView"
+      />
       <QRView
-        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex]
-          === 'openid4vp'"
+        v-else-if="
+          config.options.exchangeProtocols[state.currentUXMethodIndex] ===
+          'openid4vp'
+        "
         :translations="config.translations"
         :brand="context.rp.brand"
         :default-language="config.defaultLanguage"
@@ -167,13 +197,14 @@ onMounted(async () => {
     </main>
     <footer
       class="text-left p-3"
-      v-html="config.translations[config.defaultLanguage].copyright" />
+      v-html="config.translations[config.defaultLanguage].copyright"
+    />
   </div>
 </template>
 
 <style>
-  a {
-    color: var(--q-primary) !important;
-    text-decoration: underline !important;
-  }
+a {
+  color: var(--q-primary) !important;
+  text-decoration: underline !important;
+}
 </style>

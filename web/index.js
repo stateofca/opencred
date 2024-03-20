@@ -13,6 +13,7 @@ import {createRouter, createWebHistory} from 'vue-router';
 import App from './App.vue';
 import AppMain from './components/AppMain.vue';
 import ButtonView from './components/ButtonView.vue';
+import ErrorView from './components/ErrorView.vue';
 import {httpClient} from '@digitalbazaar/http-client';
 import JsonNode from './components/JsonNode.vue';
 import JsonView from './components/JsonView.vue';
@@ -29,6 +30,7 @@ brVue.initialize({
     app.component('AppMain', AppMain);
     app.component('QRView', QRView);
     app.component('ButtonView', ButtonView);
+    app.component('ErrorView', ErrorView);
     app.component('JsonNode', JsonNode);
     app.component('JsonView', JsonView);
     app.component('YouTubeVideo', YouTubeVideo);
