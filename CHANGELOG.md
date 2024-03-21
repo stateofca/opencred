@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 6.3.0
+## 6.3.0 - 2024-03-21
 
 ### Added
 - Add explainer video.
