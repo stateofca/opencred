@@ -6,7 +6,7 @@ SPDX-License-Identifier: BSD-3-Clause
 -->
 
 <script setup>
-import {computed, onMounted, ref} from 'vue';
+import {onMounted, ref} from 'vue';
 import {config} from '@bedrock/web';
 import {useQuasar} from 'quasar';
 
@@ -25,9 +25,12 @@ const props = defineProps({
       OID4VP: ''
     })
   },
-  explainerVideoId: {
-    type: String,
-    default: ''
+  explainerVideo: {
+    type: Object,
+    default: () => ({
+      id: '',
+      provider: ''
+    })
   }
 });
 const emit = defineEmits(['switchView']);
@@ -35,10 +38,6 @@ const switchView = () => emit('switchView');
 const showDeeplink = ref(false);
 const showWarningMessage = ref(false);
 const showVideo = ref(false);
-const explainerVideoLink = computed(() =>
-  'https://www.youtube.com/embed/' + props.explainerVideoId + '?autoplay=1' +
-  '&controls=0&loop=1&playlist=' + props.explainerVideoId
-);
 const $q = useQuasar();
 
 onMounted(() => {
@@ -99,7 +98,7 @@ function appOpened() {
     <div class="mt-2">
       <button
         v-if="config.translations[config.defaultLanguage].qrExplainerText !== ''
-          && props.explainerVideoId"
+          && props.explainerVideo.id !== '' && props.explainerVideo.provider"
         :style="{color: brand.primary}"
         class="underline"
         @click="showVideo = true">
@@ -127,13 +126,9 @@ function appOpened() {
     <q-dialog
       v-model="showVideo">
       <q-card>
-        <iframe
-          width="300"
-          height="650"
-          :src="explainerVideoLink"
-          frameborder="0"
-          allow="autoplay"
-          allowfullscreen />
+        <YoutubeVideo
+          v-if="explainerVideo.provider === 'youtube'"
+          :id="explainerVideo.id" />
       </q-card>
     </q-dialog>
   </div>

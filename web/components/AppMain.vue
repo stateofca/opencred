@@ -162,7 +162,7 @@ onMounted(async () => {
         :default-language="config.defaultLanguage"
         :exchange-data="context.exchangeData"
         :options="config.options"
-        :explainer-video-id="context.rp?.explainerVideoId"
+        :explainer-video="context.rp?.explainerVideo"
         @switch-view="switchView" />
     </main>
     <footer

@@ -34,6 +34,9 @@ app:
         secondaryLogo: "https://placekitten.com/200/200"
         secondaryLink: "https://example2.com"
         homeLink: "https://example.com"
+        explainerVideo:
+          id: "<YOUTUBE ID>"
+          provider: youtube
         backgroundImage: "https://placekitten.com/800/200"
         redirectUri: "http://localhost:3000"
         idTokenExpirySeconds: 3600

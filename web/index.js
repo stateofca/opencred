@@ -18,6 +18,7 @@ import JsonNode from './components/JsonNode.vue';
 import JsonView from './components/JsonView.vue';
 import {Notify} from 'quasar';
 import QRView from './components/QRView.vue';
+import YoutubeVideo from './components/YoutubeVideo.vue';
 import './styles.pcss';
 
 brVue.initialize({
@@ -30,6 +31,7 @@ brVue.initialize({
     app.component('ButtonView', ButtonView);
     app.component('JsonNode', JsonNode);
     app.component('JsonView', JsonView);
+    app.component('YoutubeVideo', YoutubeVideo);
 
     // ensure CHAPI is available
     await polyfill.loadOnce();
