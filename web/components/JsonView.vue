@@ -26,10 +26,14 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
-/*!
- * Copyright (c) 2022-2023 Digital Bazaar, Inc. All rights reserved.
- */
 import JsonNode from './JsonNode.vue';
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
+
+defineProps({
+  data: {
+    type: Object,
+    required: true
+  }
+});
 </script>

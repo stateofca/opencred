@@ -199,6 +199,7 @@ app:
         qrFooter: "Note: Already on your phone with the Wallet app? Open the Wallet app, then come back and tap on the QR code above."
         qrFooterHelp: Difficulty using the Wallet app to login? revert to using password <a href="#">here</a>
         qrDisclaimer: If you don't have a Wallet app download it from the app store.
+        qrExplainerText: (How do I do it?)
         qrClickMessage: The Wallet app must be running in the background.
         qrPageAnotherWay: Want to try another way?
         chapiPageAnotherWay: "Looking for a QR Code to scan with you wallet app instead?"

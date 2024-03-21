@@ -11,7 +11,6 @@ SPDX-License-Identifier: BSD-3-Clause
     <span
       class="cursor-pointer bg-grey-3 q-px-xs"
       @click="expand">...</span>
-    "
   </span>
   <span v-else>
     {{value}}
@@ -19,10 +18,14 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
-/*!
- * Copyright (c) 2022-2023 Digital Bazaar, Inc. All rights reserved.
- */
 import {reactive} from 'vue';
+
+defineProps({
+  value: {
+    type: String,
+    required: true
+  }
+});
 
 const state = reactive({expanded: false});
 

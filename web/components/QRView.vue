@@ -6,11 +6,11 @@ SPDX-License-Identifier: BSD-3-Clause
 -->
 
 <script setup>
-import {onMounted, ref} from 'vue';
+import {computed, onMounted, ref} from 'vue';
 import {config} from '@bedrock/web';
 import {useQuasar} from 'quasar';
 
-defineProps({
+const props = defineProps({
   brand: {
     type: Object,
     default: () => ({
@@ -24,12 +24,21 @@ defineProps({
       vcapi: '',
       OID4VP: ''
     })
+  },
+  explainerVideoId: {
+    type: String,
+    default: ''
   }
 });
 const emit = defineEmits(['switchView']);
 const switchView = () => emit('switchView');
 const showDeeplink = ref(false);
 const showWarningMessage = ref(false);
+const showVideo = ref(false);
+const explainerVideoLink = computed(() =>
+  'https://www.youtube.com/embed/' + props.explainerVideoId + '?autoplay=1' +
+  '&controls=0&loop=1&playlist=' + props.explainerVideoId
+);
 const $q = useQuasar();
 
 onMounted(() => {
@@ -48,7 +57,7 @@ function appOpened() {
 <template>
   <div
     class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
-              px-16 lg:px-24 relative text-center">
+    px-16 lg:px-24 relative text-center">
     <h1
       class="text-3xl mb-12 text-center"
       :style="{color: brand.primary}">
@@ -88,9 +97,14 @@ function appOpened() {
       {{config.translations[config.defaultLanguage].qrClickMessage}}
     </div>
     <div class="mt-2">
-      <p
-        v-if="config.translations[config.defaultLanguage].qrFooter"
-        v-html="config.translations[config.defaultLanguage].qrFooter" />
+      <button
+        v-if="config.translations[config.defaultLanguage].qrExplainerText !== ''
+          && props.explainerVideoId"
+        :style="{color: brand.primary}"
+        class="underline"
+        @click="showVideo = true">
+        {{config.translations[config.defaultLanguage].qrExplainerText}}
+      </button>
       <p
         v-if="config.translations[config.defaultLanguage].qrFooterHelp"
         class="mt-2"
@@ -109,5 +123,18 @@ function appOpened() {
         </button>
       </p>
     </div>
+
+    <q-dialog
+      v-model="showVideo">
+      <q-card>
+        <iframe
+          width="300"
+          height="650"
+          :src="explainerVideoLink"
+          frameborder="0"
+          allow="autoplay"
+          allowfullscreen />
+      </q-card>
+    </q-dialog>
   </div>
 </template>
