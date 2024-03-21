@@ -126,7 +126,7 @@ function appOpened() {
     <q-dialog
       v-model="showVideo">
       <q-card>
-        <YoutubeVideo
+        <YouTubeVideo
           v-if="explainerVideo.provider === 'youtube'"
           :id="explainerVideo.id" />
       </q-card>
