@@ -84,7 +84,7 @@ function appOpened() {
       v-else
       class="mb-4 flex justify-center">
       <img
-        v-if="exchangeData"
+        v-if="exchangeData.QR !== ''"
         :src="exchangeData.QR">
       <div
         v-else

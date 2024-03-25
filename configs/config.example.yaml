@@ -130,7 +130,7 @@ app:
           acceptedCredentialIssuers: [] # optional (default populated in middleware unless overridden here)
           credentialVerificationPurpose: "So that we can evaluate your permission to access the requested resource" # optional (default populated in middleware unless overridden here)
           allowRevokedCredentials: false # optional (default populated in middleware unless overridden here)
-          validateLinkedDomain: true # optional (default populated in middleware unless overridden here)
+          validateLinkedDomain: false # optional (default populated in middleware unless overridden here)
           includeQrCode: true # optional (default populated in middleware unless overridden here)
       - name: "load-test"
         clientId: "load-test"
