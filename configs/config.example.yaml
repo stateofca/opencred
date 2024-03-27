@@ -193,6 +193,7 @@ app:
       cta: "#0B669D"
       primary: "#045199"
       header: "#0979c4"
+    enableAudit: false
     defaultLanguage: en
     translations:
       en:

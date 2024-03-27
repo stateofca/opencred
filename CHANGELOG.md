@@ -4,6 +4,7 @@
 
 ### Added
 - Add Translations using `vue-i18n` and config values.
+- Add audit feature for VP tokens presented in the past.
 
 ### Changed
 - `redirectUrl` can be included as a variable in exchange.

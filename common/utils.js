@@ -5,7 +5,13 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import {verify, verifyCredential} from '@digitalbazaar/vc';
+import {
+  createPresentation,
+  issue,
+  signPresentation,
+  verify,
+  verifyCredential
+} from '@digitalbazaar/vc';
 import {
   verifyCredential as verifyCredentialJWT,
   verifyPresentation as verifyPresentationJWT
@@ -30,18 +36,18 @@ export const createId = async (bitLength = 128) => {
   return id;
 };
 
-const _decodeJwtPayload = jwtToken => {
+export const decodeJwtPayload = jwtToken => {
   const [, encodedPayloadString] = jwtToken.split('.');
   const decodedPayloadString = base64url.decode(encodedPayloadString);
   return JSON.parse(decodedPayloadString);
 };
 
 const _convertJwtVcTokenToDiVcs = vcTokens => {
-  return vcTokens.map(t => _decodeJwtPayload(t).vc);
+  return vcTokens.map(t => decodeJwtPayload(t).vc);
 };
 
 export const convertJwtVpTokenToDiVp = vpToken => {
-  const decodedVpPayloadWithEncodedVcs = _decodeJwtPayload(vpToken).vp;
+  const decodedVpPayloadWithEncodedVcs = decodeJwtPayload(vpToken).vp;
   const decodedVpPayload = {
     ...decodedVpPayloadWithEncodedVcs,
     verifiableCredential: _convertJwtVcTokenToDiVcs(
@@ -85,26 +91,65 @@ export const normalizeVpTokenDataIntegrity = vpToken => {
 
 // Verify Utilities
 
-const verifyJWTVC = async (jwt, options) => {
+const verifyJWTVC = async (jwt, options = {}) => {
+  const {
+    resolver,
+    ...optionsWithoutResolver
+  } = options;
   try {
-    const verification = await verifyCredentialJWT(jwt, {
-      resolve: did => didResolver.get({did})
-    }, options);
+    const verification = await verifyCredentialJWT(jwt,
+      resolver ?
+        {resolve: did => resolver.resolve(did)} :
+        {resolve: did => didResolver.get({did})},
+      optionsWithoutResolver);
     return {...verification, errors: []};
   } catch(e) {
     return {verified: false, errors: [e.message]};
   }
 };
 
-const verifyJWTVP = async (jwt, options) => {
+const verifyJWTVP = async (jwt, options = {}) => {
+  const {
+    resolver,
+    ...optionsWithoutResolver
+  } = options;
   try {
-    const verification = await verifyPresentationJWT(jwt, {
-      resolve: did => didResolver.get({did})
-    }, options);
+    const verification = await verifyPresentationJWT(jwt,
+      resolver ?
+        {resolve: did => resolver.resolve(did)} :
+        {resolve: did => didResolver.get({did})},
+      optionsWithoutResolver);
     return {...verification, errors: []};
   } catch(e) {
     return {verified: false, errors: [e.message]};
   }
+};
+
+const getVerifyPresentationDiError = vpResult => {
+  if(vpResult.error) {
+    return vpResult.error;
+  }
+
+  const vpErrorMessage = vpResult.presentationResult.results
+    .filter(result => !result.verified)
+    .map(result => result.error?.message)
+    .join(', ');
+
+  const vcErrorMessage = vpResult.credentialResults
+    .filter(result => !result.verified)
+    .map(result => {
+      return result.results
+        .filter(result => !result.verified)
+        .map(result => result.error.message);
+    })
+    .reduce((accumulatedMessages, currentMessages) =>
+      accumulatedMessages.concat(currentMessages))
+    .join(', ');
+
+  return 'PresentationVerificationError: ' +
+    `${/\S/.test(vpErrorMessage) ? vpErrorMessage : 'None'}; ` +
+    'CredentialVerificationError: ' +
+    `${/\S/.test(vcErrorMessage) ? vcErrorMessage : 'None'}`;
 };
 
 export const verifyUtils = {
@@ -112,7 +157,17 @@ export const verifyUtils = {
   verifyCredentialDataIntegrity: async options => verifyCredential(options),
   verifyPresentationJWT: async (jwt, options) => verifyJWTVP(jwt, options),
   verifyCredentialJWT: async (jwt, options) => verifyJWTVC(jwt, options),
-  verifyx509JWT: async certs => verifyChain(certs)
+  verifyx509JWT: async certs => verifyChain(certs),
+  getVerifyPresentationDataIntegrityErrors:
+    vpResult => getVerifyPresentationDiError(vpResult)
+};
+
+// Sign Utilities
+
+export const signUtils = {
+  createPresentationDataIntegrity: args => createPresentation(args),
+  signPresentationDataIntegrity: async args => signPresentation(args),
+  signCredentialDataIntegrity: async args => issue(args)
 };
 
 export function asyncHandler(middleware) {

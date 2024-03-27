@@ -62,7 +62,7 @@ didResolver.use(didKeyDriver);
 didResolver.use(didJwkDriver);
 didResolver.use(didWebDriver);
 
-const getDocumentLoader = () => {
+export const getDocumentLoader = () => {
   const jsonLdDocLoader = new JsonLdDocumentLoader();
 
   // handle static contexts
@@ -109,4 +109,27 @@ const getDocumentLoader = () => {
   return jsonLdDocLoader;
 };
 
-export {getDocumentLoader};
+// DID methods where all cryptographic material is self-contained
+const STATIC_DID_METHOD_PATTERNS = [
+  /^did:(jwk):/,
+  /^did:(key):/
+];
+
+// DID requires historical tracking
+export const didRequiresHistoricalTracking = async did => {
+  return STATIC_DID_METHOD_PATTERNS.every(p => !did.match(p));
+};
+
+/**
+ * Uses default resolver, in tandem with overrides, to resolve DIDs.
+ * This is necessary for presentation auditing with old DID documents.
+ */
+export const getOverrideDidResolver = overrides => {
+  const resolve = async did => {
+    if(overrides[did]) {
+      return overrides[did];
+    }
+    return didResolver.get({did});
+  };
+  return {resolve};
+};

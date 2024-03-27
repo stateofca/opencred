@@ -90,10 +90,13 @@ describe('OpenCred API - Native Workflow', function() {
 
   this.beforeEach(() => {
     this.rpStub = sinon.stub(config.opencred, 'relyingParties').value([testRP]);
+    this.isAuditEnabledStub = sinon.stub(config.opencred, 'isAuditEnabled')
+      .returns(false);
   });
 
   this.afterEach(() => {
     this.rpStub.restore();
+    this.isAuditEnabledStub.restore();
   });
 
   it('should return 404 for unknown workflow id', async function() {
@@ -342,10 +345,13 @@ describe('OpenCred API - VC-API Workflow', function() {
         vpr: '{}'
       }
     }]);
+    this.isAuditEnabledStub = sinon.stub(config.opencred, 'isAuditEnabled')
+      .returns(false);
   });
 
   this.afterEach(() => {
     this.rpStub.restore();
+    this.isAuditEnabledStub.restore();
   });
 
   it('should create a new exchange with the workflow', async function() {
@@ -421,10 +427,13 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
         credentialVerificationCallbackAuthEnabled: false
       }
     }]);
+    this.isAuditEnabledStub = sinon.stub(config.opencred, 'isAuditEnabled')
+      .returns(false);
   });
 
   this.afterEach(() => {
     this.rpStub.restore();
+    this.isAuditEnabledStub.restore();
   });
 
   it('should create a new exchange with the workflow', async function() {
@@ -494,7 +503,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
     findStub.restore();
   });
 
-  it('should update exchange status after verification with object vp token',
+  it('should update exchange status after verification with DI VP token',
     async function() {
       const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
         .resolves(exchange);
@@ -579,7 +588,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
       dateStub.restore();
     });
 
-  it('should update exchange status after verification with string vp token',
+  it('should update exchange status after verification with JWT VP token',
     async function() {
       const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
         .resolves(exchange);

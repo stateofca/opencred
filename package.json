@@ -69,6 +69,7 @@
     "dotenv": "^16.4.5",
     "ed25519-signature-2020-context": "^1.1.0",
     "jose": "^5.2.2",
+    "json-canonicalize": "^1.0.6",
     "jsonld-document-loader": "^2.0.0",
     "jsonpath": "^1.1.1",
     "ocsp": "^1.2.0",

@@ -229,6 +229,27 @@ translations:
     pageTitle: "Login"
 ```
 
+#### Configuring Audit
+You can add auditing support to OpenCred to ensure that a VP token presented in the past was valid at the time it was presented. The VP token can be one of two formats: (1) JWT or (2) Data Integrity. In order to configure this feature, use the boolean field `enableAudit` in `config.yaml`:
+
+```yaml
+enableAudit: true
+```
+
+If you want to test out the audit feature, follow these steps:
+1. Run an instance of OpenCred using the instructions below.
+2. Follow the steps in the running app to present a credential to OpenCred.
+3. Run `mongosh $dbConnectionUri` if the database is running in the cloud (`dbConnectionUri` is configured in `config.yaml`) or simply `mongosh` if it is running locally.
+4. Run `use $databaseName` if the database is running in the cloud (`databaseName` is the text between `mongodb://` and the next `:`).
+5. Run `db.Exchanges.find().pretty()`.
+6. Search for `vpToken`.
+7. Run `cp bin/data/vp_token_example.json bin/data/vp_token.json`.
+8. Open `bin/data/vp_token.json` and replace the value in this file with the token from the previous step.
+9. Run `cp bin/audit_vp_token_example.sh bin/audit_vp_token.sh`.
+10. Open `bin/audit_vp_token.sh` and replace the values for `domain`, `clientId`, and `clientSecret` with the corresponding values configured in `config.yaml`.
+11. Run `chmod +x bin/audit_vp_token.sh`.
+12. Run `bin/audit_vp_token.sh`.
+
 ### Run via node
 
 This app uses a `@bedrock/express` server and a Vue 3 UI client application. It

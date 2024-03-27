@@ -339,5 +339,14 @@ bedrock.events.on('bedrock.init', async () => {
   opencred.caStore = (opencred.caStore ?? [])
     .map(cert => cert.pem);
 
+  /**
+   * Auditing configuration
+   */
+  const enableAudit =
+    typeof opencred.enableAudit === 'boolean' ?
+      opencred.enableAudit :
+      false;
+  opencred.isAuditEnabled = () => enableAudit;
+
   logger.info('OpenCred Config Successfully Validated');
 });

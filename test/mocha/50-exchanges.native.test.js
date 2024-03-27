@@ -13,6 +13,7 @@ import {klona} from 'klona';
 import {
   createNativeExchange, verifySubmission
 } from '../../lib/exchanges/native.js';
+import {config} from '@bedrock/core';
 import {database} from '../../lib/database.js';
 import {getDocumentLoader} from '../../common/documentLoader.js';
 import {verifyUtils} from '../../common/utils.js';
@@ -31,6 +32,7 @@ describe('Exchanges (Native)', async () => {
   let verifyStub;
   let verifyCredentialStub;
   let dbStub;
+  let isAuditEnabledStub;
 
   before(() => {
     const oid4vp = JSON.parse(fs.readFileSync(
@@ -52,6 +54,8 @@ describe('Exchanges (Native)', async () => {
     verifyCredentialStub = sinon.stub(
       verifyUtils, 'verifyCredentialDataIntegrity')
       .resolves({verified: true});
+    isAuditEnabledStub = sinon.stub(config.opencred, 'isAuditEnabled')
+      .returns(false);
   });
 
   after(() => {
@@ -71,6 +75,7 @@ describe('Exchanges (Native)', async () => {
       expect(req.exchange).to.have.property('id');
       expect(dbStub.called).to.be.true;
     });
+
   it('should not set req.exchange for vc-api workflow in createNativeExchange',
     async () => {
       const next = sinon.spy();
