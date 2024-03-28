@@ -1,18 +1,24 @@
-import * as sinon from 'sinon';
-import {describe, it} from 'mocha';
-import expect from 'expect.js';
-import request from 'supertest';
+/*!
+ * Copyright 2023 - 2024 California Department of Motor Vehicles
+ * Copyright 2023 - 2024 Digital Bazaar, Inc.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 
-import {app} from '../app.js';
+import * as sinon from 'sinon';
+import {baseUrl} from '../mock-data.js';
 import {config} from '@bedrock/core';
 import {database} from '../../lib/database.js';
-import {generateValidDiVpToken} from './utils/diVpTokens.js';
-import {generateValidJwtVpToken} from './utils/jwtVpTokens.js';
+import {domainToDidWeb} from '../../lib/didWeb.js';
+import {generateValidDiVpToken} from '../utils/diVpTokens.js';
+import {generateValidJwtVpToken} from '../utils/jwtVpTokens.js';
 import {httpClient} from '@digitalbazaar/http-client';
+import https from 'node:https';
+
+const agent = new https.Agent({rejectUnauthorized: false});
+const client = httpClient.extend({agent});
 
 const testRP = {
-  clientId: 'testid',
-  clientSecret: 'testsecret',
   workflow: {
     type: 'native',
     id: 'testflow',
@@ -22,13 +28,14 @@ const testRP = {
       }
     }
   },
-  enableAudit: true
+  clientId: 'testid',
+  clientSecret: 'testsecret',
 };
 
 describe('Audit Presentation', function() {
   this.beforeEach(() => {
-    this.rpStub = sinon.stub(config, 'relyingParties').value([testRP]);
-    this.isAuditEnabledStub = sinon.stub(config, 'isAuditEnabled')
+    this.rpStub = sinon.stub(config.opencred, 'relyingParties').value([testRP]);
+    this.isAuditEnabledStub = sinon.stub(config.opencred, 'isAuditEnabled')
       .returns(true);
   });
 
@@ -41,7 +48,8 @@ describe('Audit Presentation', function() {
     it('should pass audit for single valid cached issuer DID document',
       async function() {
         const {vpToken, issuerDid} =
-          await generateValidJwtVpToken({aud: 'did:web:localhost:8080'});
+          await generateValidJwtVpToken({
+            aud: domainToDidWeb(config.server.baseUri)});
 
         const findOneStub = sinon
           .stub(database.collections.DidDocumentHistory, 'findOne')
@@ -50,44 +58,59 @@ describe('Audit Presentation', function() {
             history: []
           });
 
-        const response = await request(app)
-          .post('/workflows/testflow/audit-presentation')
-          .set(
-            'Authorization', `Basic ${Buffer.from('testid:testsecret')
-              .toString('base64')}`
-          )
-          .send({vpToken})
-          .set('Accept', 'application/json');
+        let result;
+        let error;
+        try {
+          const basic = Buffer.from('testid:testsecret').toString('base64');
+          result = await client
+            .post(`${baseUrl}/workflows/testflow/audit-presentation`, {
+              headers: {
+                Authorization: `Basic ${basic}`
+              },
+              json: {vpToken}
+            });
+        } catch(e) {
+          error = e;
+        }
 
-        expect(response.headers['content-type']).to.match(/json/);
-        expect(response.status).to.equal(200);
-        expect(response.body.verified).to.be(true);
-        expect(response.body.message).to.equal('Success');
+        should.not.exist(error);
+        should.exist(result);
+        result.status.should.equal(200);
+        result.data.verified.should.be.equal(true);
+        result.data.message.should.be.equal('Success');
         findOneStub.restore();
       });
 
     it('should fail audit for issuer DID that has never been encountered',
       async function() {
         const {vpToken, issuerDid} =
-          await generateValidJwtVpToken({aud: 'did:web:localhost:8080'});
+          await generateValidJwtVpToken({
+            aud: domainToDidWeb(config.server.baseUri)});
 
         const findOneStub = sinon
           .stub(database.collections.DidDocumentHistory, 'findOne')
           .resolves(null);
 
-        const response = await request(app)
-          .post('/workflows/testflow/audit-presentation')
-          .set(
-            'Authorization', `Basic ${Buffer.from('testid:testsecret')
-              .toString('base64')}`
-          )
-          .send({vpToken})
-          .set('Accept', 'application/json');
+        let result;
+        let error;
+        try {
+          const basic = Buffer.from('testid:testsecret').toString('base64');
+          result = await client
+            .post(`${baseUrl}/workflows/testflow/audit-presentation`, {
+              headers: {
+                Authorization: `Basic ${basic}`
+              },
+              json: {vpToken}
+            });
+        } catch(e) {
+          error = e;
+        }
 
-        expect(response.headers['content-type']).to.match(/json/);
-        expect(response.status).to.equal(400);
-        expect(response.body.verified).to.be(false);
-        expect(response.body.message).to.equal(
+        should.not.exist(result);
+        should.exist(error);
+        error.status.should.equal(400);
+        error.data.verified.should.be.equal(false);
+        error.data.message.should.be.equal(
           `The system has never encountered issuer DID ${issuerDid}.`);
         findOneStub.restore();
       });
@@ -95,7 +118,8 @@ describe('Audit Presentation', function() {
     it('should fail audit for unauthorized client',
       async function() {
         const {vpToken, issuerDid} =
-          await generateValidJwtVpToken({aud: 'did:web:localhost:8080'});
+          await generateValidJwtVpToken({
+            aud: domainToDidWeb(config.server.baseUri)});
 
         const findOneStub = sinon
           .stub(database.collections.DidDocumentHistory, 'findOne')
@@ -104,19 +128,26 @@ describe('Audit Presentation', function() {
             history: []
           });
 
-        const response = await request(app)
-          .post('/workflows/testflow/audit-presentation')
-          .set(
-            'Authorization', `Basic ${Buffer.from('testid:badtestsecret')
-              .toString('base64')}`
-          )
-          .send({vpToken})
-          .set('Accept', 'application/json');
+        let result;
+        let error;
+        try {
+          const basic = Buffer.from('testid:badtestsecret').toString('base64');
+          result = await client
+            .post(`${baseUrl}/workflows/testflow/audit-presentation`, {
+              headers: {
+                Authorization: `Basic ${basic}`
+              },
+              json: {vpToken}
+            });
+        } catch(e) {
+          error = e;
+        }
 
-        expect(response.headers['content-type']).to.match(/json/);
-        expect(response.status).to.equal(401);
-        expect(response.body.message)
-          .to.equal('Malformed token or invalid clientId or clientSecret');
+        should.not.exist(result);
+        should.exist(error);
+        error.status.should.equal(401);
+        error.data.message.should.be.equal(
+          'Malformed token or invalid clientId or clientSecret');
         findOneStub.restore();
       });
   });
@@ -152,19 +183,26 @@ describe('Audit Presentation', function() {
             ]
           });
 
-        const response = await request(app)
-          .post('/workflows/testflow/audit-presentation')
-          .set(
-            'Authorization', `Basic ${Buffer.from('testid:testsecret')
-              .toString('base64')}`
-          )
-          .send({vpToken})
-          .set('Accept', 'application/json');
+        let result;
+        let error;
+        try {
+          const basic = Buffer.from('testid:testsecret').toString('base64');
+          result = await client
+            .post(`${baseUrl}/workflows/testflow/audit-presentation`, {
+              headers: {
+                Authorization: `Basic ${basic}`
+              },
+              json: {vpToken}
+            });
+        } catch(e) {
+          error = e;
+        }
 
-        expect(response.headers['content-type']).to.match(/json/);
-        expect(response.status).to.equal(200);
-        expect(response.body.verified).to.be(true);
-        expect(response.body.message).to.equal('Success');
+        should.not.exist(error);
+        should.exist(result);
+        result.status.should.equal(200);
+        result.data.verified.should.be.equal(true);
+        result.data.message.should.be.equal('Success');
         resolveDidWebStub.restore();
         findOneStub.restore();
       });
@@ -250,19 +288,26 @@ describe('Audit Presentation', function() {
             ]
           });
 
-        const response = await request(app)
-          .post('/workflows/testflow/audit-presentation')
-          .set(
-            'Authorization', `Basic ${Buffer.from('testid:testsecret')
-              .toString('base64')}`
-          )
-          .send({vpToken})
-          .set('Accept', 'application/json');
+        let result;
+        let error;
+        try {
+          const basic = Buffer.from('testid:testsecret').toString('base64');
+          result = await client
+            .post(`${baseUrl}/workflows/testflow/audit-presentation`, {
+              headers: {
+                Authorization: `Basic ${basic}`
+              },
+              json: {vpToken}
+            });
+        } catch(e) {
+          error = e;
+        }
 
-        expect(response.headers['content-type']).to.match(/json/);
-        expect(response.status).to.equal(200);
-        expect(response.body.verified).to.be(true);
-        expect(response.body.message).to.equal('Success');
+        should.not.exist(error);
+        should.exist(result);
+        result.status.should.equal(200);
+        result.data.verified.should.be.equal(true);
+        result.data.message.should.be.equal('Success');
         resolveDidWebStub.restore();
         findOneStub.restore();
       });
@@ -317,19 +362,26 @@ describe('Audit Presentation', function() {
             ]
           });
 
-        const response = await request(app)
-          .post('/workflows/testflow/audit-presentation')
-          .set(
-            'Authorization', `Basic ${Buffer.from('testid:testsecret')
-              .toString('base64')}`
-          )
-          .send({vpToken})
-          .set('Accept', 'application/json');
+        let result;
+        let error;
+        try {
+          const basic = Buffer.from('testid:testsecret').toString('base64');
+          result = await client
+            .post(`${baseUrl}/workflows/testflow/audit-presentation`, {
+              headers: {
+                Authorization: `Basic ${basic}`
+              },
+              json: {vpToken}
+            });
+        } catch(e) {
+          error = e;
+        }
 
-        expect(response.headers['content-type']).to.match(/json/);
-        expect(response.status).to.equal(200);
-        expect(response.body.verified).to.be(true);
-        expect(response.body.message).to.equal('Success');
+        should.not.exist(error);
+        should.exist(result);
+        result.status.should.equal(200);
+        result.data.verified.should.be.equal(true);
+        result.data.message.should.be.equal('Success');
         resolveDidWebStub.restore();
         findOneStub.restore();
       });
@@ -385,22 +437,29 @@ describe('Audit Presentation', function() {
             ]
           });
 
-        const response = await request(app)
-          .post('/workflows/testflow/audit-presentation')
-          .set(
-            'Authorization', `Basic ${Buffer.from('testid:testsecret')
-              .toString('base64')}`
-          )
-          .send({vpToken})
-          .set('Accept', 'application/json');
+        let result;
+        let error;
+        try {
+          const basic = Buffer.from('testid:testsecret').toString('base64');
+          result = await client
+            .post(`${baseUrl}/workflows/testflow/audit-presentation`, {
+              headers: {
+                Authorization: `Basic ${basic}`
+              },
+              json: {vpToken}
+            });
+        } catch(e) {
+          error = e;
+        }
 
-        expect(response.headers['content-type']).to.match(/json/);
-        expect(response.status).to.equal(400);
-        expect(response.body.verified).to.be(false);
-        expect(response.body.message
-          .includes('CredentialVerificationError')).to.be(true);
-        expect(response.body.message
-          .includes('Safe mode validation error')).to.be(true);
+        should.not.exist(result);
+        should.exist(error);
+        error.status.should.equal(400);
+        error.data.verified.should.be.equal(false);
+        error.data.message
+          .should.match(/CredentialVerificationError/);
+        error.data.message
+          .should.match(/Safe mode validation error/);
         resolveDidWebStub.restore();
         findOneStub.restore();
       });
@@ -425,21 +484,30 @@ describe('Audit Presentation', function() {
           .stub(database.collections.DidDocumentHistory, 'findOne')
           .resolves(null);
 
-        const response = await request(app)
-          .post('/workflows/testflow/audit-presentation')
-          .set(
-            'Authorization', `Basic ${Buffer.from('testid:testsecret')
-              .toString('base64')}`
-          )
-          .send({vpToken})
-          .set('Accept', 'application/json');
+        let result;
+        let error;
+        try {
+          const basic = Buffer.from('testid:testsecret').toString('base64');
+          result = await client
+            .post(`${baseUrl}/workflows/testflow/audit-presentation`, {
+              headers: {
+                Authorization: `Basic ${basic}`
+              },
+              json: {vpToken}
+            });
+        } catch(e) {
+          error = e;
+        }
 
-        expect(response.headers['content-type']).to.match(/json/);
-        expect(response.status).to.equal(400);
-        expect(response.body.verified).to.be(false);
-        expect(response.body.message).to.equal(
-          'The system has never encountered issuer DID ' +
-          `${issuerDidsCredentials[0]}.`);
+        should.not.exist(result);
+        should.exist(error);
+        error.status.should.equal(400);
+        error.data.verified.should.be.equal(false);
+        error.data.message
+          .should.be.equal(
+            'The system has never encountered issuer DID ' +
+            `${issuerDidsCredentials[0]}.`
+          );
         resolveDidWebStub.restore();
         findOneStub.restore();
       });
@@ -474,19 +542,26 @@ describe('Audit Presentation', function() {
             ]
           });
 
-        const response = await request(app)
-          .post('/workflows/testflow/audit-presentation')
-          .set(
-            'Authorization', `Basic ${Buffer.from('testid:badtestsecret')
-              .toString('base64')}`
-          )
-          .send({vpToken})
-          .set('Accept', 'application/json');
+        let result;
+        let error;
+        try {
+          const basic = Buffer.from('testid:badtestsecret').toString('base64');
+          result = await client
+            .post(`${baseUrl}/workflows/testflow/audit-presentation`, {
+              headers: {
+                Authorization: `Basic ${basic}`
+              },
+              json: {vpToken}
+            });
+        } catch(e) {
+          error = e;
+        }
 
-        expect(response.headers['content-type']).to.match(/json/);
-        expect(response.status).to.equal(401);
-        expect(response.body.message)
-          .to.equal('Malformed token or invalid clientId or clientSecret');
+        should.not.exist(result);
+        should.exist(error);
+        error.status.should.equal(401);
+        error.data.message.should.be.equal(
+          'Malformed token or invalid clientId or clientSecret');
         resolveDidWebStub.restore();
         findOneStub.restore();
       });

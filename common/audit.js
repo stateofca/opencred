@@ -1,11 +1,18 @@
+/*!
+ * Copyright 2023 - 2024 California Department of Motor Vehicles
+ * Copyright 2023 - 2024 Digital Bazaar, Inc.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 import {canonicalize} from 'json-canonicalize';
 
 import {
   didRequiresHistoricalTracking,
   didResolver
 } from './documentLoader.js';
-import {decodeJwtPayload} from './utils.js';
 import {database} from '../lib/database.js';
+import {decodeJwtPayload} from './utils.js';
 
 export const getIssuerDidsForVpToken = vpToken => {
   const issuerDids = [];
