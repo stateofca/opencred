@@ -7,6 +7,7 @@
 
 import * as bedrock from '@bedrock/core';
 import {fileURLToPath} from 'node:url';
+import {klona} from 'klona';
 import path from 'node:path';
 import 'dotenv/config';
 import '@bedrock/views';
@@ -134,7 +135,7 @@ bedrock.events.on('bedrock.init', async () => {
 
   const availableExchangeProtocols = ['openid4vp', 'chapi'];
   /**
-   * An list of exchange protocols in use by OpenCred
+   * A list of exchange protocols in use by OpenCred
    * exchangeProtocols: ['openid4vp', 'chapi']
    * @type {Options}
    */
@@ -149,7 +150,7 @@ bedrock.events.on('bedrock.init', async () => {
   }
 
   /**
-   * An list of relying parties (connected apps or workflows) in use by OpenCred
+   * A list of relying parties (connected apps or workflows) in use by OpenCred
    * @type {RelyingParty[]}
    */
   const configRPs = opencred.relyingParties;
@@ -316,7 +317,7 @@ bedrock.events.on('bedrock.init', async () => {
   validateSigningKeys();
 
   /**
-   * An list of relying parties (connected apps or workflows) in use by OpenCred
+   * A list of relying parties (connected apps or workflows) in use by OpenCred
    * @type {RelyingParty[]}
    */
   opencred.relyingParties = configRPs.map(rp => {
@@ -347,6 +348,66 @@ bedrock.events.on('bedrock.init', async () => {
       opencred.enableAudit :
       false;
   opencred.isAuditEnabled = () => enableAudit;
+
+  /**
+   * A field to audit in a VP token
+   * @typedef {Object} AuditField
+   * @property {'text' | 'number' | 'date'} type - Type of audit field.
+   * @property {string} id - Unique ID of audit field.
+   * @property {string} name - Name of audit field.
+   * @property {string} path - Path of the audit field in the VP token.
+   */
+
+  /**
+   * A list of fields to audit in a VP token
+   * @typedef {Array.<AuditField>} AuditFields
+   */
+
+  const requiredAuditFieldKeys = ['type', 'id', 'name', 'path'];
+  const auditFieldTypes = ['text', 'number', 'date'];
+  const validateAuditFields = () => {
+    if(!opencred.auditFields) {
+      return;
+    }
+    if(!Array.isArray(opencred.auditFields)) {
+      throw new Error('The "auditFields" config value must be an array.');
+    }
+    for(const field of opencred.auditFields) {
+      if(!requiredAuditFieldKeys.every(f => Object.keys(field).includes(f))) {
+        throw new Error('Each object in "auditFields" must have the ' +
+          'following keys: ' +
+          requiredAuditFieldKeys.map(k => `"${k}"`).join(', '));
+      }
+      if(!auditFieldTypes.includes(field.type)) {
+        throw new Error('Each object in "auditFields" must have one of the ' +
+          'following types: ' +
+          auditFieldTypes.map(t => `"${t}"`).join(', '));
+      }
+    }
+    const auditFieldHaveUniqueIds = klona(opencred.auditFields)
+      .map(k => k.id)
+      .sort()
+      .reduce((unique, currentId, currentIndex, ids) =>
+        unique && currentId !== ids[currentIndex - 1], true);
+    if(!auditFieldHaveUniqueIds) {
+      throw new Error('Each object in "auditFields" must have a unique "id".');
+    }
+    const auditFieldHaveUniquePaths = klona(opencred.auditFields)
+      .map(k => k.id)
+      .sort()
+      .reduce((unique, currentPath, currentIndex, paths) =>
+        unique && currentPath !== paths[currentIndex - 1], true);
+    if(!auditFieldHaveUniquePaths) {
+      throw new Error('Each object in "auditFields" must have ' +
+        'a unique "path".');
+    }
+  };
+  validateAuditFields();
+  /**
+   * A list of fields to audit in a VP token
+   * @type {AuditFields}
+   */
+  opencred.auditFields = opencred.auditFields ?? [];
 
   logger.info('OpenCred Config Successfully Validated');
 });

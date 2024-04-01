@@ -78,4 +78,3 @@ export const jwtFromExchange = async (exchange, rp) => {
   const jwt = await JWT.sign({payload, header, signFn});
   return jwt.toString();
 };
-

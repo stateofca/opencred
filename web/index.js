@@ -12,6 +12,7 @@ import {config, extend} from '@bedrock/web';
 import {createRouter, createWebHistory} from 'vue-router';
 import App from './App.vue';
 import AppMain from './components/AppMain.vue';
+import AuditPresentation from './components/AuditPresentation.vue';
 import ButtonView from './components/ButtonView.vue';
 import {createI18n} from 'vue-i18n';
 import ErrorView from './components/ErrorView.vue';
@@ -31,6 +32,7 @@ brVue.initialize({
     extend({target: config, source: appConfig, deep: true});
 
     app.component('AppMain', AppMain);
+    app.component('AuditPresentation', AuditPresentation);
     app.component('QRView', QRView);
     app.component('ButtonView', ButtonView);
     app.component('ErrorView', ErrorView);
@@ -50,6 +52,13 @@ brVue.initialize({
         {
           path: '/login',
           component: () => import('./components/AppMain.vue'),
+          meta: {
+            title
+          }
+        },
+        {
+          path: '/audit-presentation',
+          component: () => import('./components/AuditPresentation.vue'),
           meta: {
             title
           }

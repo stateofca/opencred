@@ -6,13 +6,14 @@
  */
 
 import {canonicalize} from 'json-canonicalize';
+import jp from 'jsonpath';
 
+import {convertJwtVpTokenToDiVp, decodeJwtPayload} from './utils.js';
 import {
   didRequiresHistoricalTracking,
   didResolver
 } from './documentLoader.js';
 import {database} from '../lib/database.js';
-import {decodeJwtPayload} from './utils.js';
 
 export const getIssuerDidsForVpToken = vpToken => {
   const issuerDids = [];
@@ -161,9 +162,33 @@ export const getIssuerDidDocumentOverrides =
       }
     }
 
-    if(errors.length !== 0) {
+    if(errors.length > 0) {
       throw new Error(errors.join('; '));
     }
 
     return didDocumentOverrides;
   };
+
+const getFieldMatchesDiVp = (vpToken, fields) => {
+  const credentials = vpToken.verifiableCredential;
+  return Object.fromEntries(
+    Object.entries(fields)
+      .map(([path, value]) => {
+        const credentialMatches = credentials.some(c => {
+          const [credentialValue] = jp.query(c, path);
+          return value === credentialValue;
+        });
+        return [path, credentialMatches];
+      })
+  );
+};
+
+export const getFieldMatches = (vpToken, fields) => {
+  let diVp;
+  if(typeof vpToken === 'object') {
+    diVp = vpToken;
+  } else if(typeof vpToken === 'string') {
+    diVp = convertJwtVpTokenToDiVp(vpToken);
+  }
+  return getFieldMatchesDiVp(diVp, fields);
+};

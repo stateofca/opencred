@@ -27,9 +27,7 @@ const testRP = {
         verifiablePresentationRequest: '{}'
       }
     }
-  },
-  clientId: 'testid',
-  clientSecret: 'testsecret',
+  }
 };
 
 describe('Audit Presentation', function() {
@@ -58,11 +56,11 @@ describe('Audit Presentation', function() {
             history: []
           });
 
-        let result;
+        let response;
         let error;
         try {
-          result = await client
-            .post(`${baseUrl}/workflows/testflow/audit-presentation`, {
+          response = await client
+            .post(`${baseUrl}/audit-presentation`, {
               json: {vpToken}
             });
         } catch(e) {
@@ -70,10 +68,10 @@ describe('Audit Presentation', function() {
         }
 
         should.not.exist(error);
-        should.exist(result);
-        result.status.should.equal(200);
-        result.data.verified.should.be.equal(true);
-        result.data.message.should.be.equal('Success');
+        should.exist(response);
+        response.status.should.equal(200);
+        response.data.verified.should.be.equal(true);
+        response.data.message.should.be.equal('Success');
         findOneStub.restore();
       });
 
@@ -87,18 +85,18 @@ describe('Audit Presentation', function() {
           .stub(database.collections.DidDocumentHistory, 'findOne')
           .resolves(null);
 
-        let result;
+        let response;
         let error;
         try {
-          result = await client
-            .post(`${baseUrl}/workflows/testflow/audit-presentation`, {
+          response = await client
+            .post(`${baseUrl}/audit-presentation`, {
               json: {vpToken}
             });
         } catch(e) {
           error = e;
         }
 
-        should.not.exist(result);
+        should.not.exist(response);
         should.exist(error);
         error.status.should.equal(400);
         error.data.verified.should.be.equal(false);
@@ -139,11 +137,11 @@ describe('Audit Presentation', function() {
             ]
           });
 
-        let result;
+        let response;
         let error;
         try {
-          result = await client
-            .post(`${baseUrl}/workflows/testflow/audit-presentation`, {
+          response = await client
+            .post(`${baseUrl}/audit-presentation`, {
               json: {vpToken}
             });
         } catch(e) {
@@ -151,10 +149,10 @@ describe('Audit Presentation', function() {
         }
 
         should.not.exist(error);
-        should.exist(result);
-        result.status.should.equal(200);
-        result.data.verified.should.be.equal(true);
-        result.data.message.should.be.equal('Success');
+        should.exist(response);
+        response.status.should.equal(200);
+        response.data.verified.should.be.equal(true);
+        response.data.message.should.be.equal('Success');
         resolveDidWebStub.restore();
         findOneStub.restore();
       });
@@ -240,11 +238,11 @@ describe('Audit Presentation', function() {
             ]
           });
 
-        let result;
+        let response;
         let error;
         try {
-          result = await client
-            .post(`${baseUrl}/workflows/testflow/audit-presentation`, {
+          response = await client
+            .post(`${baseUrl}/audit-presentation`, {
               json: {vpToken}
             });
         } catch(e) {
@@ -252,10 +250,10 @@ describe('Audit Presentation', function() {
         }
 
         should.not.exist(error);
-        should.exist(result);
-        result.status.should.equal(200);
-        result.data.verified.should.be.equal(true);
-        result.data.message.should.be.equal('Success');
+        should.exist(response);
+        response.status.should.equal(200);
+        response.data.verified.should.be.equal(true);
+        response.data.message.should.be.equal('Success');
         resolveDidWebStub.restore();
         findOneStub.restore();
       });
@@ -310,11 +308,11 @@ describe('Audit Presentation', function() {
             ]
           });
 
-        let result;
+        let response;
         let error;
         try {
-          result = await client
-            .post(`${baseUrl}/workflows/testflow/audit-presentation`, {
+          response = await client
+            .post(`${baseUrl}/audit-presentation`, {
               json: {vpToken}
             });
         } catch(e) {
@@ -322,10 +320,10 @@ describe('Audit Presentation', function() {
         }
 
         should.not.exist(error);
-        should.exist(result);
-        result.status.should.equal(200);
-        result.data.verified.should.be.equal(true);
-        result.data.message.should.be.equal('Success');
+        should.exist(response);
+        response.status.should.equal(200);
+        response.data.verified.should.be.equal(true);
+        response.data.message.should.be.equal('Success');
         resolveDidWebStub.restore();
         findOneStub.restore();
       });
@@ -381,18 +379,18 @@ describe('Audit Presentation', function() {
             ]
           });
 
-        let result;
+        let response;
         let error;
         try {
-          result = await client
-            .post(`${baseUrl}/workflows/testflow/audit-presentation`, {
+          response = await client
+            .post(`${baseUrl}/audit-presentation`, {
               json: {vpToken}
             });
         } catch(e) {
           error = e;
         }
 
-        should.not.exist(result);
+        should.not.exist(response);
         should.exist(error);
         error.status.should.equal(400);
         error.data.verified.should.be.equal(false);
@@ -424,18 +422,18 @@ describe('Audit Presentation', function() {
           .stub(database.collections.DidDocumentHistory, 'findOne')
           .resolves(null);
 
-        let result;
+        let response;
         let error;
         try {
-          result = await client
-            .post(`${baseUrl}/workflows/testflow/audit-presentation`, {
+          response = await client
+            .post(`${baseUrl}/audit-presentation`, {
               json: {vpToken}
             });
         } catch(e) {
           error = e;
         }
 
-        should.not.exist(result);
+        should.not.exist(response);
         should.exist(error);
         error.status.should.equal(400);
         error.data.verified.should.be.equal(false);
