@@ -171,16 +171,20 @@ export const getIssuerDidDocumentOverrides =
 
 const getFieldMatchesDiVp = (vpToken, fields) => {
   const credentials = vpToken.verifiableCredential;
-  return Object.fromEntries(
-    Object.entries(fields)
-      .map(([path, value]) => {
-        const credentialMatches = credentials.some(c => {
-          const [credentialValue] = jp.query(c, path);
-          return value === credentialValue;
-        });
-        return [path, credentialMatches];
-      })
-  );
+  if(credentials && Array.isArray(credentials)) {
+    return Object.fromEntries(
+      Object.entries(fields)
+        .map(([path, value]) => {
+          const credentialMatches = credentials.some(c => {
+            const [credentialValue] = jp.query(c, path);
+            return value === credentialValue;
+          });
+          return [path, credentialMatches];
+        })
+    );
+  } else {
+    throw new Error('Received invalid vp token format.');
+  }
 };
 
 export const getFieldMatches = (vpToken, fields) => {
