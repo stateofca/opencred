@@ -95,7 +95,7 @@ function clearAuditResults() {
       class="main relative flex-grow mt-20">
       <form
         v-if="config.auditFields && config.auditFields.length > 0"
-        class="px-6 py-6 border rounded"
+        class="px-6 py-8 border rounded"
         @submit.prevent="auditPresentation">
         <h1 class="text-center text-xl font-bold">
           Audit Verifiable Presentation
@@ -148,8 +148,7 @@ function clearAuditResults() {
         </div>
         <p
           v-if="auditResults.data.verified === false && !auditResults.loading"
-          class="font-bold pt-3"
-          style="color: red;">
+          class="error-message font-bold pt-3">
           Error: {{auditResults.data.message}}
         </p>
         <p class="text-lg mt-6 mb-3">
@@ -198,8 +197,7 @@ function clearAuditResults() {
                   Object.entries(auditResults.data.matches).length > 0 &&
                     !auditResults.data.matches[field.path] &&
                     !auditResults.loading"
-                class="font-bold pt-3 mb-5"
-                style="color: red;">
+                class="error-message font-bold pt-3 mb-5">
                 Error: {{field.name}} does not match the value in the token
               </p>
             </li>
@@ -208,7 +206,7 @@ function clearAuditResults() {
         <input
           type="submit"
           class="centered-x text-white text-lg font-bold
-            rounded-xl py-3 px-6 my-5"
+            rounded-xl py-3 px-6 mt-5"
           :style="{ background: '#0979c4' }">
       </form>
       <div
@@ -235,6 +233,7 @@ function clearAuditResults() {
   justify-content: center;
   align-self: center;
   align-items: center;
+  max-width: 75%;
 }
 .footer {
   position: fixed;
@@ -261,5 +260,11 @@ function clearAuditResults() {
   justify-content: center;
   align-items: center;
   z-index: 9999;
+}
+.error-message {
+  color: red;
+  max-width: 50%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 </style>
