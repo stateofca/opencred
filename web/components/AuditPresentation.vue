@@ -263,7 +263,7 @@ function clearAuditResults() {
 }
 .error-message {
   color: red;
-  max-width: 50%;
+  max-width: 55%;
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
