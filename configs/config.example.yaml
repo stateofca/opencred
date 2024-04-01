@@ -194,6 +194,19 @@ app:
       primary: "#045199"
       header: "#0979c4"
     enableAudit: false
+    auditFields:
+      - type: text
+        id: given_name
+        name: First Name
+        path: "$.credentialSubject.given_name"
+      - type: text
+        id: family_name
+        name: Last Name
+        path: "$.credentialSubject.family_name"
+      - type: date
+        id: birth_date
+        name: Date of Birth
+        path: "$.credentialSubject.birth_date"
     defaultLanguage: en
     translations:
       en:
