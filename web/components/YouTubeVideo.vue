@@ -23,8 +23,8 @@ const explainerVideoLink = computed(() =>
 
 <template>
   <iframe
-    width="300"
-    height="650"
+    width="250"
+    height="542"
     :src="explainerVideoLink"
     frameborder="0"
     allow="autoplay"

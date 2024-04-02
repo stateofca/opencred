@@ -129,6 +129,13 @@ function appOpened() {
         <YouTubeVideo
           v-if="explainerVideo.provider === 'youtube'"
           :id="explainerVideo.id" />
+        <q-card-actions
+          align="right">
+          <q-btn
+            v-close-popup
+            flat
+            label="Close" />
+        </q-card-actions>
       </q-card>
     </q-dialog>
   </div>

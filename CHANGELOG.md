@@ -5,6 +5,9 @@
 ### Fixed
 - Display OAuth validation errors in UI as appropriate.
 
+### Changed
+- Resized video and added close button.
+
 ## 6.3.0 - 2024-03-21
 
 ### Added
