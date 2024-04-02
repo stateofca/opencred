@@ -28,8 +28,6 @@ export const defaultTranslations = {
     qrClickMessage: `The Wallet app must be running in the background.`,
     chapiPageAnotherWay: 'Looking for a QR Code to scan with your wallet app ' +
     'instead?',
-    presentationError: 'An error occurred during presentation. Please ' +
-    'refresh the page to try again.',
     copyright: 'Powered by OpenCred',
     home: 'Home'
   }

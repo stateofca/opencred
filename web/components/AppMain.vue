@@ -13,7 +13,6 @@ import {setCssVar} from 'quasar';
 
 let intervalId;
 const vp = ref(null);
-const error = ref(false);
 const context = ref({
   rp: {
     brand: config.brand,

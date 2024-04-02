@@ -225,7 +225,6 @@ translations:
     loginExplain: "To login with your credential wallet, you will need to have the credential wallet app <with configurable URL to app stores> installed"
     appInstallExplain: "If you don't have a credential wallet yet, you can get one by downloading the credential wallet app <with configurable URL to app stores>"
     appCta: "Open wallet app"
-    presentationError: An error occurred during presentation. Please refresh the page to try again.
     copyright: "Powered by OpenCred"
     pageTitle: "Login"
 ```
@@ -233,7 +232,7 @@ translations:
 ### Run via node
 
 This app uses a `@bedrock/express` server and a Vue 3 UI client application. It
-supports hot reloading for UI changes during development. 
+supports hot reloading for UI changes during development.
 
 Prerequisites:
 
@@ -297,13 +296,13 @@ $ curl https://localhost:22443/health/live
 OpenCred makes it easy to request a credential from a user and return
 information to a connected application or "relying party." This can either be
 done with OpenID Connect or calling OpenCred's HTTP API for more precise
-control. 
+control.
 
 * Choose OpenID Connect if you can redirect the user in a browser to OpenCred
   and want to use a standard protocol for authentication that may already be
   supported in your environment or easy to integrate using a well-known library.
   This method enables you to obtain an `id_token` that contains claims extracted
-  from the credential that the user presents. 
+  from the credential that the user presents.
 * Choose the HTTP API if redirecting the user in a browser is impractical, you
   want to present the credential request to the user via your own interface
   (displaying a QR code and enabling the user to launch a wallet app for
@@ -350,7 +349,7 @@ The OIDC workflow follows this process:
 Notes:
 * You must configure a signing key with the `id_token` purpose in the config to
   use this method of integration. The public key will be published in the
-  `/.well-known/jwks.json` endpoint. 
+  `/.well-known/jwks.json` endpoint.
 * You must configure `claims` of your relyingParty to specify which claims you
   want to extract from the credential and include in the `id_token` result.
 * `ES256` is the only supported signing algorithm for id_tokens to date.
