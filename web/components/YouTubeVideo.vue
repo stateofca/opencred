@@ -23,10 +23,15 @@ const explainerVideoLink = computed(() =>
 
 <template>
   <iframe
-    width="250"
-    height="542"
     :src="explainerVideoLink"
     frameborder="0"
     allow="autoplay"
     allowfullscreen />
 </template>
+
+<style scoped>
+iframe {
+  aspect-ratio: 9/16;
+  height: 70vh;
+}
+</style>
