@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 6.4.0 - 2024-04-xx
+## 6.4.0 - 2024-04-04
 
 ### Added
 - Entra can be used as an exchange backend.
