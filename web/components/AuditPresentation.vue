@@ -50,7 +50,7 @@ function handleFileChange(event) {
   const file = event.target.files[0];
   const reader = new FileReader();
   reader.onload = res => {
-    vpTokenInput.value.data = res.target.result;
+    vpTokenInput.value.data = res.target.result.trim();
   };
   reader.onerror = err => alert(err?.message || err);
   reader.readAsText(file);
