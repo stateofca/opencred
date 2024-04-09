@@ -13,6 +13,7 @@ import {createRouter, createWebHistory} from 'vue-router';
 import App from './App.vue';
 import AppMain from './components/AppMain.vue';
 import ButtonView from './components/ButtonView.vue';
+import {createI18n} from 'vue-i18n';
 import ErrorView from './components/ErrorView.vue';
 import {httpClient} from '@digitalbazaar/http-client';
 import JsonNode from './components/JsonNode.vue';
@@ -25,6 +26,7 @@ import './styles.pcss';
 brVue.initialize({
   async beforeMount({app}) {
     const {data: appConfig} = await httpClient.get('/config/app.json');
+    console.log(appConfig);
     extend({target: config, source: appConfig, deep: true});
 
     app.component('AppMain', AppMain);
@@ -56,6 +58,11 @@ brVue.initialize({
     });
     brVue.augmentRouter({app, router});
     app.use(router);
+    const i18n = createI18n({
+      locale: appConfig.defaultLanguage,
+      messages: appConfig.translations
+    });
+    app.use(i18n);
 
     await brQuasar.initialize({app, quasarOptions: {
       plugins: {

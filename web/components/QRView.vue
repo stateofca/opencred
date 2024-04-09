@@ -60,17 +60,16 @@ function appOpened() {
     <h1
       class="text-3xl mb-12 text-center"
       :style="{color: brand.primary}">
-      {{config.translations[config.defaultLanguage].qrTitle}}
+      {{$t('qrTitle')}}
     </h1>
     <div class="mb-2">
       <p
-        v-if="config.translations[config.defaultLanguage].qrPageExplain"
-        v-html="config.translations[config.defaultLanguage].qrPageExplain" />
+        v-if="$t('qrPageExplain')"
+        v-html="$t('qrPageExplain')" />
       <p
-        v-if="config.translations[config.defaultLanguage].qrPageExplainHelp"
+        v-if="$t('qrPageExplainHelp')"
         class="mt-2"
-        v-html="config.translations[config.defaultLanguage]
-          .qrPageExplainHelp" />
+        v-html="$t('qrPageExplainHelp')" />
     </div>
     <div
       v-if="showDeeplink"
@@ -95,37 +94,36 @@ function appOpened() {
       </div>
     </div>
     <div
-      v-if="showWarningMessage &&
-        config.translations[config.defaultLanguage].qrClickMessage"
+      v-if="showWarningMessage && $t('qrClickMessage')"
       class="mt-2 p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-100"
       role="alert">
       <span class="text-medium pr-2">Note:</span>
-      {{config.translations[config.defaultLanguage].qrClickMessage}}
+      {{$t('qrClickMessage')}}
     </div>
     <div class="mt-2">
       <button
-        v-if="config.translations[config.defaultLanguage].qrExplainerText !== ''
-          && props.explainerVideo.id !== '' && props.explainerVideo.provider"
+        v-if="$t('qrExplainerText') !== '' && props.explainerVideo.id !== ''
+          && props.explainerVideo.provider"
         :style="{color: brand.primary}"
         class="underline"
         @click="showVideo = true">
-        {{config.translations[config.defaultLanguage].qrExplainerText}}
+        {{$t('qrExplainerText')}}
       </button>
       <p
-        v-if="config.translations[config.defaultLanguage].qrFooterHelp"
+        v-if="$t('qrFooterHelp')"
         class="mt-2"
-        v-html="config.translations[config.defaultLanguage].qrFooterHelp" />
+        v-html="$t('qrFooterHelp')" />
     </div>
     <div
-      v-if="config.translations[config.defaultLanguage].qrDisclaimer"
+      v-if="$t('qrDisclaimer')"
       class="mt-12 flex flex-col items-center"
-      v-html="config.translations[config.defaultLanguage].qrDisclaimer" />
+      v-html="$t('qrDisclaimer')" />
     <div v-if="config.options.exchangeProtocols.length > 1">
       <p class="text-center">
         <button
           :style="{color: brand.primary}"
           @click="switchView">
-          {{config.translations[config.defaultLanguage].qrPageAnotherWay}}
+          {{$t('qrPageAnotherWay')}}
         </button>
       </p>
     </div>

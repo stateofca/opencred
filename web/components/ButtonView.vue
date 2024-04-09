@@ -56,23 +56,22 @@ const openChapi = async () => {
     <h1
       class="text-3xl mb-12 text-center font-semibold"
       :style="{ color: rp.brand.primary }">
-      {{config.translations[config.defaultLanguage].loginCta}}
+      {{$t('loginCta')}}
     </h1>
     <p
       class="mb-4"
-      v-html="config.translations[config.defaultLanguage].loginExplain" />
+      v-html="$t('loginExplain')" />
     <p
-      v-if="config.translations[config.defaultLanguage].appInstallExplain"
+      v-if="$t('appInstallExplain')"
       class="mb-6"
-      v-html="config.translations[config.defaultLanguage].appInstallExplain" />
+      v-html="$t('appInstallExplain')" />
     <div class="flex justify-center">
       <button
         v-if="!loading && chapiEnabled"
         class="text-white py-2 px-6 rounded-xl my-8"
         :style="{ background: rp.brand.cta }"
         @click="openChapi">
-        {{config.translations[config.defaultLanguage]['appCta-chapi-label']
-          || config.translations[config.defaultLanguage].appCta}}
+        {{$t('appCta-chapi-label') || $t('appCta')}}
       </button>
       <a
         v-else-if="!loading && !chapiEnabled"
@@ -80,8 +79,7 @@ const openChapi = async () => {
         class="text-white py-2 px-6 rounded-xl my-8"
         :style="{ background: rp.brand.cta }"
         target="_blank">
-        {{config.translations[config.defaultLanguage]['appCta-openid4vp-label']
-          || config.translations[config.defaultLanguage].appCta}}
+        {{$t('appCta-openid4vp-label') || $t('appCta')}}
       </a>
       <div
         v-else
@@ -100,12 +98,12 @@ const openChapi = async () => {
     <div v-if="config.options.exchangeProtocols.length > 1">
       <p
         class="text-center mb-2"
-        v-html="config.translations[config.defaultLanguage].qrExplain" />
+        v-html="$t('qrExplain')" />
       <p class="text-center">
         <button
           :style="{ color: rp.brand.primary }"
           @click="switchView">
-          {{config.translations[config.defaultLanguage].chapiPageAnotherWay}}
+          {{$t('chapiPageAnotherWay')}}
         </button>
       </p>
     </div>

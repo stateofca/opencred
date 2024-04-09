@@ -145,7 +145,7 @@ onMounted(async () => {
             <img src="https://imagedelivery.net/I-hc6FAYxquPgv-npvT
                       cWQ/505d9676-7f3a-49cc-bf9a-883439873d00/public">
           </span>
-          {{config.translations[config.defaultLanguage].translate}}
+          {{$t('translate')}}
         </button> -->
         </div>
       </div>
@@ -156,7 +156,7 @@ onMounted(async () => {
         class="bg-white w-full text-center py-4">
         <h2 class="font-bold">
           <a :href="context.rp.homeLink">
-            {{config.translations[config.defaultLanguage].home}}
+            {{$t('home')}}
           </a>
         </h2>
       </div>
@@ -189,8 +189,6 @@ onMounted(async () => {
         "
         :chapi-enabled="true"
         :rp="context.rp"
-        :translations="config.translations"
-        :default-language="config.defaultLanguage"
         :options="config.options"
         :exchange-data="context.exchangeData"
         @switch-view="switchView" />
@@ -199,9 +197,7 @@ onMounted(async () => {
           config.options.exchangeProtocols[state.currentUXMethodIndex] ===
             'openid4vp'
         "
-        :translations="config.translations"
         :brand="context.rp.brand"
-        :default-language="config.defaultLanguage"
         :exchange-data="context.exchangeData"
         :options="config.options"
         :explainer-video="context.rp?.explainerVideo"
@@ -209,7 +205,7 @@ onMounted(async () => {
     </main>
     <footer
       class="text-left p-3"
-      v-html="config.translations[config.defaultLanguage].copyright" />
+      v-html="$t('copyright')" />
   </div>
 </template>
 
