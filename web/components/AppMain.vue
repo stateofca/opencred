@@ -14,6 +14,7 @@ import {useI18n} from 'vue-i18n';
 
 let intervalId;
 const $cookies = inject('$cookies');
+const useNativeTranslations = ref(false);
 const vp = ref(null);
 const context = ref({
   rp: {
@@ -127,6 +128,25 @@ const replaceExchange = exchange => {
 onMounted(async () => {
   setTimeout(checkStatus, 500);
   intervalId = setInterval(checkStatus, 5000);
+
+  const cdnUrl = (host => {
+    const part = 'dmv.ca.gov/dmv-cdn/';
+    return `https://cdn.${
+      host.substring(0, 4) === 'wsi2' ? `uat.${part}${host.substring(4)}` :
+        `${part}prod`}/`;
+  })(window.location.hostname.split('.')[0]);
+  (() => {
+    const scr = document.createElement('script');
+    scr.src = cdnUrl + 'isam/customelements/GoogleTranslate.js';
+    const styleSheet = document.createElement('style');
+    document.head.appendChild(styleSheet);
+    styleSheet.sheet.insertRule(':root {\
+      --c-overlay-bg: #1e90ff; --c-white: #ffffff;\
+    }');
+
+    document.getElementsByTagName('HEAD')[0].appendChild(scr);
+
+  })();
 });
 </script>
 
@@ -135,7 +155,7 @@ onMounted(async () => {
     <header :style="{ background: context.rp.brand.header }">
       <div
         class="mx-auto flex gap-2 justify-between items-center px-6 py-3
-               max-w-3xl">
+        max-w-3xl">
         <a
           v-if="context.rp.primaryLogo"
           :href="context.rp.primaryLink"
@@ -154,7 +174,7 @@ onMounted(async () => {
         </a>
         <div class="flex-grow flex justify-end">
           <q-btn-dropdown
-            v-if="availableLocales.length > 1"
+            v-if="availableLocales.length > 1 && useNativeTranslations"
             flat
             no-caps
             text-color="white">
@@ -181,6 +201,14 @@ onMounted(async () => {
               </q-item>
             </q-list>
           </q-btn-dropdown>
+          <div
+            v-else
+            class="row items-center no-wrap gap-2 ">
+            <span class="bg-white rounded-full p-1 flex">
+              <img :src="config.translationsIcon">
+            </span>
+            <google-translate />
+          </div>
         </div>
       </div>
     </header>
@@ -242,7 +270,7 @@ onMounted(async () => {
 
 <style>
 a {
-  color: var(--q-primary) !important;
+  color: white !important;
   text-decoration: underline !important;
 }
 </style>
