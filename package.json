@@ -57,6 +57,7 @@
     "@digitalbazaar/vdl-aamva-context": "^1.0.0",
     "@digitalbazaar/vdl-context": "^1.0.0",
     "@peculiar/x509": "^1.9.7",
+    "@quasar/extras": "^1.16.11",
     "autoprefixer": "^10.4.17",
     "base64url": "^3.0.1",
     "bnid": "^3.0.0",

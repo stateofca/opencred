@@ -96,9 +96,6 @@ const openChapi = async () => {
       </div>
     </div>
     <div v-if="config.options.exchangeProtocols.length > 1">
-      <p
-        class="text-center mb-2"
-        v-html="$t('qrExplain')" />
       <p class="text-center">
         <button
           :style="{ color: rp.brand.primary }"

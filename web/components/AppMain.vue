@@ -10,6 +10,7 @@ import {onBeforeMount, onMounted, reactive, ref} from 'vue';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
 import {setCssVar} from 'quasar';
+import {useI18n} from 'vue-i18n';
 
 let intervalId;
 const vp = ref(null);
@@ -26,6 +27,13 @@ const state = reactive({
   currentUXMethodIndex: 0,
   error: null
 });
+
+const {locale, availableLocales} = useI18n({useScope: 'global'});
+
+const switchView = () => {
+  state.currentUXMethodIndex = (state.currentUXMethodIndex + 1) %
+    config.options.exchangeProtocols.length;
+};
 
 onBeforeMount(async () => {
   try {
@@ -54,6 +62,10 @@ onBeforeMount(async () => {
     }
   }
 });
+
+const changeLanguage = lang => {
+  locale.value = lang;
+};
 
 const checkStatus = async () => {
   if(!context.value) {
@@ -105,11 +117,6 @@ const checkStatus = async () => {
   }
 };
 
-const switchView = () => {
-  state.currentUXMethodIndex = (state.currentUXMethodIndex + 1) %
-    config.options.exchangeProtocols.length;
-};
-
 onMounted(async () => {
   intervalId = setInterval(checkStatus, 5000);
 });
@@ -137,16 +144,35 @@ onMounted(async () => {
             :src="context.rp.secondaryLogo"
             alt="logo-image">
         </a>
-        <div class="flex-grow">
-          <!-- <button
-          class="flex flex-row text-white items-center text-xs gap-3
-                hover:underline">
-          <span class="bg-white rounded-full p-1 flex">
-            <img src="https://imagedelivery.net/I-hc6FAYxquPgv-npvT
-                      cWQ/505d9676-7f3a-49cc-bf9a-883439873d00/public">
-          </span>
-          {{$t('translate')}}
-        </button> -->
+        <div class="flex-grow flex justify-end">
+          <q-btn-dropdown
+            v-if="availableLocales.length > 1"
+            flat
+            no-caps
+            text-color="white">
+            <template #label>
+              <div class="row items-center no-wrap gap-2 text-white">
+                <span class="bg-white rounded-full p-1 flex">
+                  <img :src="config.translationsIcon">
+                </span>
+                {{$t('translate')}}
+              </div>
+            </template>
+            <q-list>
+              <q-item
+                v-for="(item, index) in availableLocales"
+                :key="index"
+                v-close-popup
+                clickable
+                @click="changeLanguage(item)">
+                <q-item-section>
+                  <q-item-label>
+                    {{$t(`languages.${item}`)}}
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-btn-dropdown>
         </div>
       </div>
     </header>
@@ -183,20 +209,16 @@ onMounted(async () => {
         </div>
       </div>
       <ButtonView
-        v-else-if="
-          config.options.exchangeProtocols[state.currentUXMethodIndex] ===
-            'chapi'
-        "
+        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex]
+          === 'chapi'"
         :chapi-enabled="true"
         :rp="context.rp"
         :options="config.options"
         :exchange-data="context.exchangeData"
         @switch-view="switchView" />
       <QRView
-        v-else-if="
-          config.options.exchangeProtocols[state.currentUXMethodIndex] ===
-            'openid4vp'
-        "
+        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex]
+          === 'openid4vp'"
         :brand="context.rp.brand"
         :exchange-data="context.exchangeData"
         :options="config.options"

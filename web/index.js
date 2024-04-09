@@ -21,12 +21,12 @@ import JsonView from './components/JsonView.vue';
 import {Notify} from 'quasar';
 import QRView from './components/QRView.vue';
 import YouTubeVideo from './components/YouTubeVideo.vue';
+import '@quasar/extras/material-icons/material-icons.css';
 import './styles.pcss';
 
 brVue.initialize({
   async beforeMount({app}) {
     const {data: appConfig} = await httpClient.get('/config/app.json');
-    console.log(appConfig);
     extend({target: config, source: appConfig, deep: true});
 
     app.component('AppMain', AppMain);
@@ -60,6 +60,8 @@ brVue.initialize({
     app.use(router);
     const i18n = createI18n({
       locale: appConfig.defaultLanguage,
+      legacy: false,
+      warnHtmlMessage: false,
       messages: appConfig.translations
     });
     app.use(i18n);
