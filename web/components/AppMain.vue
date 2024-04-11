@@ -258,7 +258,10 @@ onMounted(async () => {
 
 <style>
 a {
-  color: white !important;
+  color: var(--q-primary) !important;
   text-decoration: underline !important;
+}
+google-translate a {
+  color: white !important;
 }
 </style>
