@@ -14,7 +14,7 @@ import {useI18n} from 'vue-i18n';
 
 let intervalId;
 const $cookies = inject('$cookies');
-const useNativeTranslations = ref(false);
+const useNativeTranslations = ref(true);
 const vp = ref(null);
 const context = ref({
   rp: {
@@ -129,24 +129,12 @@ onMounted(async () => {
   setTimeout(checkStatus, 500);
   intervalId = setInterval(checkStatus, 5000);
 
-  const cdnUrl = (host => {
-    const part = 'dmv.ca.gov/dmv-cdn/';
-    return `https://cdn.${
-      host.substring(0, 4) === 'wsi2' ? `uat.${part}${host.substring(4)}` :
-        `${part}prod`}/`;
-  })(window.location.hostname.split('.')[0]);
-  (() => {
+  if(config.customTranslateScript) {
     const scr = document.createElement('script');
-    scr.src = cdnUrl + 'isam/customelements/GoogleTranslate.js';
-    const styleSheet = document.createElement('style');
-    document.head.appendChild(styleSheet);
-    styleSheet.sheet.insertRule(':root {\
-      --c-overlay-bg: #1e90ff; --c-white: #ffffff;\
-    }');
-
+    scr.src = config.customTranslateScript;
     document.getElementsByTagName('HEAD')[0].appendChild(scr);
-
-  })();
+    useNativeTranslations.value = false;
+  }
 });
 </script>
 
