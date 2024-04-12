@@ -5,6 +5,12 @@
 ### Added
 - Add Translations using `vue-i18n` and config values.
 
+### Changed
+- `redirectUri` can be included as a variable in exchange.
+- Bearer `accessToken` can create exchanges.
+- Create new exchange for same device flow.
+- Save cookies to redirect users to proper exchange after presentation.
+
 ## 6.4.0 - 2024-04-04
 
 ### Added

@@ -6,8 +6,9 @@ SPDX-License-Identifier: BSD-3-Clause
 -->
 
 <script setup>
-import {onMounted, ref} from 'vue';
+import {inject, onMounted, ref} from 'vue';
 import {config} from '@bedrock/web';
+import {httpClient} from '@digitalbazaar/http-client';
 import {useQuasar} from 'quasar';
 
 const props = defineProps({
@@ -33,12 +34,13 @@ const props = defineProps({
     })
   }
 });
-const emit = defineEmits(['switchView']);
+const emit = defineEmits(['switchView', 'replaceExchange']);
 const switchView = () => emit('switchView');
-const showDeeplink = ref(false);
+const showDeeplink = ref(true);
 const showWarningMessage = ref(false);
 const showVideo = ref(false);
 const $q = useQuasar();
+const $cookies = inject('$cookies');
 
 onMounted(() => {
   if($q.platform.is.mobile) {
@@ -46,7 +48,26 @@ onMounted(() => {
   }
 });
 
-function appOpened() {
+async function appOpened() {
+  let exchange = {};
+  ({
+    data: exchange,
+  } = await httpClient.post(
+    `/workflows/${props.exchangeData.workflowId}` +
+    `/exchanges`,
+    {
+      json: {redirectUri: window.location.href},
+      headers: {
+        Authorization: `Bearer ${props.exchangeData.accessToken}`
+      }
+    }
+  ));
+  emit('replaceExchange', exchange);
+  $cookies.set('exchangeId', exchange.id, '15min',
+    '', '', true, 'Strict');
+  $cookies.set('accessToken', exchange.accessToken, '15min',
+    '', '', true, 'Strict');
+  window.location.replace(exchange.OID4VP);
   setTimeout(() => {
     showWarningMessage.value = true;
   }, 1000);
@@ -74,10 +95,11 @@ function appOpened() {
     <div
       v-if="showDeeplink"
       class="mb-4 flex justify-center">
-      <a
+      <button
         v-if="exchangeData"
-        :href="exchangeData.OID4VP"
-        @click="appOpened()"><img :src="exchangeData.QR"></a>
+        @click="appOpened()">
+        <img :src="exchangeData.QR">
+      </button>
     </div>
     <div
       v-else

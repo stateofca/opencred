@@ -20,6 +20,7 @@ import JsonNode from './components/JsonNode.vue';
 import JsonView from './components/JsonView.vue';
 import {Notify} from 'quasar';
 import QRView from './components/QRView.vue';
+import VueCookies from 'vue-cookies';
 import YouTubeVideo from './components/YouTubeVideo.vue';
 import '@quasar/extras/material-icons/material-icons.css';
 import './styles.pcss';
@@ -65,6 +66,7 @@ brVue.initialize({
       messages: appConfig.translations
     });
     app.use(i18n);
+    app.use(VueCookies);
 
     await brQuasar.initialize({app, quasarOptions: {
       plugins: {

@@ -6,13 +6,14 @@ SPDX-License-Identifier: BSD-3-Clause
 -->
 
 <script setup>
-import {onBeforeMount, onMounted, reactive, ref} from 'vue';
+import {inject, onBeforeMount, onMounted, reactive, ref} from 'vue';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
 import {setCssVar} from 'quasar';
 import {useI18n} from 'vue-i18n';
 
 let intervalId;
+const $cookies = inject('$cookies');
 const vp = ref(null);
 const context = ref({
   rp: {
@@ -100,6 +101,8 @@ const checkStatus = async () => {
         });
         const destination = `${context.value.rp.redirectUri}?` +
           `${queryParams.toString()}`;
+        $cookies.remove('accessToken');
+        $cookies.remove('exchangeId');
         window.location.href = destination;
         intervalId = clearInterval(intervalId);
       } else if(exchange.state === 'complete') {
@@ -117,7 +120,12 @@ const checkStatus = async () => {
   }
 };
 
+const replaceExchange = exchange => {
+  context.value = {...context.value, exchangeData: exchange};
+};
+
 onMounted(async () => {
+  setTimeout(checkStatus, 500);
   intervalId = setInterval(checkStatus, 5000);
 });
 </script>
@@ -223,7 +231,8 @@ onMounted(async () => {
         :exchange-data="context.exchangeData"
         :options="config.options"
         :explainer-video="context.rp?.explainerVideo"
-        @switch-view="switchView" />
+        @switch-view="switchView"
+        @replace-exchange="replaceExchange" />
     </main>
     <footer
       class="text-left p-3"

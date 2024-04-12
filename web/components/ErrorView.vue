@@ -6,6 +6,8 @@ SPDX-License-Identifier: BSD-3-Clause
 -->
 
 <script setup>
+import {inject, onMounted} from 'vue';
+
 defineProps({
   title: {
     type: String,
@@ -15,6 +17,12 @@ defineProps({
     type: String,
     default: () => 'An error occurred.',
   },
+});
+const $cookies = inject('$cookies');
+
+onMounted(() => {
+  $cookies.remove('accessToken');
+  $cookies.remove('exchangeId');
 });
 </script>
 
