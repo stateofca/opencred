@@ -70,7 +70,6 @@ describe('OpenCred API - Native Workflow', function() {
   let exchange_jwt;
 
   before(() => {
-    // database.collections.Exchanges = {findOne: {}, insertOne: {}};
     const di = JSON.parse(fs.readFileSync(
       './test/fixtures/oid4vp_di.json'
     ));
@@ -90,13 +89,10 @@ describe('OpenCred API - Native Workflow', function() {
 
   this.beforeEach(() => {
     this.rpStub = sinon.stub(config.opencred, 'relyingParties').value([testRP]);
-    this.isAuditEnabledStub = sinon.stub(config.opencred, 'isAuditEnabled')
-      .returns(false);
   });
 
   this.afterEach(() => {
     this.rpStub.restore();
-    this.isAuditEnabledStub.restore();
   });
 
   it('should return 404 for unknown workflow id', async function() {
@@ -345,13 +341,10 @@ describe('OpenCred API - VC-API Workflow', function() {
         vpr: '{}'
       }
     }]);
-    this.isAuditEnabledStub = sinon.stub(config.opencred, 'isAuditEnabled')
-      .returns(false);
   });
 
   this.afterEach(() => {
     this.rpStub.restore();
-    this.isAuditEnabledStub.restore();
   });
 
   it('should create a new exchange with the workflow', async function() {
@@ -427,13 +420,10 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
         credentialVerificationCallbackAuthEnabled: false
       }
     }]);
-    this.isAuditEnabledStub = sinon.stub(config.opencred, 'isAuditEnabled')
-      .returns(false);
   });
 
   this.afterEach(() => {
     this.rpStub.restore();
-    this.isAuditEnabledStub.restore();
   });
 
   it('should create a new exchange with the workflow', async function() {

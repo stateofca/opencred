@@ -33,13 +33,13 @@ const testRP = {
 describe('Audit Presentation', function() {
   this.beforeEach(() => {
     this.rpStub = sinon.stub(config.opencred, 'relyingParties').value([testRP]);
-    this.isAuditEnabledStub = sinon.stub(config.opencred, 'isAuditEnabled')
-      .returns(true);
+    this.enableAuditStub = sinon.stub(config.opencred, 'enableAudit')
+      .value(true);
   });
 
   this.afterEach(() => {
     this.rpStub.restore();
-    this.isAuditEnabledStub.restore();
+    this.enableAuditStub.restore();
   });
 
   describe('valid JWT VP token', function() {

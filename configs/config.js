@@ -343,11 +343,10 @@ bedrock.events.on('bedrock.init', async () => {
   /**
    * Auditing configuration
    */
-  const enableAudit =
+  opencred.enableAudit =
     typeof opencred.enableAudit === 'boolean' ?
       opencred.enableAudit :
       false;
-  opencred.isAuditEnabled = () => enableAudit;
 
   /**
    * A field to audit in a VP token
