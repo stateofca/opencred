@@ -50,7 +50,7 @@ function handleFileChange(event) {
   const file = event.target.files[0];
   const reader = new FileReader();
   reader.onload = res => {
-    vpTokenInput.value.data = res.target.result.trim();
+    vpTokenInput.value.data = res.target.result;
   };
   reader.onerror = err => alert(err?.message || err);
   reader.readAsText(file);
@@ -64,7 +64,7 @@ async function auditPresentation() {
     response = await httpClient.post(
       '/audit-presentation', {
         json: {
-          vpToken: vpTokenInput.value.data,
+          vpToken: vpTokenInput.value.data.trim(),
           fields: auditFieldValues.value
         }
       }
@@ -177,7 +177,8 @@ function clearAuditResults() {
                   v-model="auditFieldValues[field.path]"
                   :type="field.type"
                   class="col-6 font-md border rounded px-2 py-2 mr-5"
-                  required>
+                  :placeholder="field.required ? 'Required' : 'Optional'"
+                  :required="field.required">
                 <div
                   v-if="Object.entries(auditResults.data.matches).length > 0 &&
                     !auditResults.loading"

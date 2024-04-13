@@ -355,7 +355,8 @@ bedrock.events.on('bedrock.init', async () => {
    * @property {'text' | 'number' | 'date'} type - Type of audit field.
    * @property {string} id - Unique ID of audit field.
    * @property {string} name - Name of audit field.
-   * @property {string} path - Path of the audit field in the VP token.
+   * @property {string} path - Path of audit field in the VP token.
+   * @property {string} required - Whether audit field is required.
    */
 
   /**
@@ -363,7 +364,7 @@ bedrock.events.on('bedrock.init', async () => {
    * @typedef {Array.<AuditField>} AuditFields
    */
 
-  const requiredAuditFieldKeys = ['type', 'id', 'name', 'path'];
+  const requiredAuditFieldKeys = ['type', 'id', 'name', 'path', 'required'];
   const auditFieldTypes = ['text', 'number', 'date'];
   const validateAuditFields = () => {
     if(!opencred.auditFields) {

@@ -252,23 +252,24 @@ auditFields:
 The `enableAudit` field enables support for auditing in an OpenCred deployment.
 If you would also like to check for matching values in the token's credential
 in a web interface, you can specify the following attributes for each
-field of interest via the `auditFields` field:
+field of interest via the `auditFields` field and visit `BASE_URL/audit-vp` in the browser:
 - `type` - the field type (currently, supports `text`, `number`, and `date`)
 - `id` - the field ID (can be anything, but must be unique among other fields)
 - `name` - the field name that appears in the web interface
 - `path` - the field path in the credential (must be unique among other fields)
+- `required` - whether the admin user is required to enter a value for the field in the web interface
 
 If you want to test out the audit feature, follow these steps:
 1. Run an instance of OpenCred using the instructions below.
 2. Follow the steps in the running app to present a credential to OpenCred.
-3. Run `mongosh`.
+3. Run `mongosh mongodb://localhost:27017/opencred_localhost`.
 4. Run `db.Exchanges.find().pretty()`.
 5. Search for `vpToken`.
-6. Run `cp bin/data/vp_token_example.json bin/data/vp_token.json`.
-7. Open `bin/data/vp_token.json` and replace the value in this file with the token from an earlier step.
-8. Run `cp bin/audit_vp_token_example.sh bin/audit_vp_token.sh`.
-9. Run `chmod +x bin/audit_vp_token.sh`.
-10. Run `bin/audit_vp_token.sh`.
+6. Run `cp test/fixtures/audit/vpTokenExample.json test/fixtures/audit/vpToken.json`.
+7. Open `test/fixtures/audit/vpToken.json` and replace the value in the `vpToken` field with the token from an earlier step.
+8. Optionally, add mapping from credential field paths to expected value.
+9. Run `npm run audit-vp BASE_URL`, where `BASE_URL` is the base URL of the running app, configured as `app.server.baseUri` in the config.
+10. Observe verification results.
 
 ### Run via node
 

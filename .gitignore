@@ -16,8 +16,7 @@ node_modules
 package-lock.json
 configs/config.yaml
 configs/*.pem
-bin/audit_vp_token.sh
-bin/data/vp_token.json
+test/fixtures/audit/vpToken.json
 
 dist
 dist-ssr

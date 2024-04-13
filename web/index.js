@@ -57,7 +57,7 @@ brVue.initialize({
           }
         },
         {
-          path: '/audit-presentation',
+          path: '/audit-vp',
           component: () => import('./components/AuditPresentation.vue'),
           meta: {
             title

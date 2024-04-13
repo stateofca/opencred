@@ -19,12 +19,14 @@ export const getIssuerDidsForVpToken = vpToken => {
   const issuerDids = [];
   if(typeof vpToken === 'string') {
     const vpJwtPayload = decodeJwtPayload(vpToken);
-    const issuerDid = vpJwtPayload.iss;
-    if(!issuerDid) {
-      throw new Error('Decoded vp token must contain ' +
-        'an issuer at "$.iss"');
+    const vcTokens = vpJwtPayload.vp?.verifiableCredential;
+    if(vcTokens && Array.isArray(vcTokens)) {
+      for(const vcToken of vcTokens) {
+        const vcJwtPayload = decodeJwtPayload(vcToken);
+        const issuerDid = vcJwtPayload.iss;
+        issuerDids.push(issuerDid);
+      }
     }
-    issuerDids.push(issuerDid);
   } else if(typeof vpToken === 'object') {
     const credentials = vpToken.verifiableCredential;
     if(credentials && Array.isArray(credentials)) {
@@ -114,7 +116,7 @@ export const updateIssuerDidDocumentHistory = async vpToken => {
 };
 
 export const getIssuerDidDocumentOverrides =
-  async (issuerDids, issuanceDate) => {
+  async (issuerDids, presentationDate) => {
     const didDocumentOverrides = {};
     const errors = [];
     for(const issuerDid of issuerDids) {
@@ -138,25 +140,25 @@ export const getIssuerDidDocumentOverrides =
         continue;
       }
 
-      // Check if issuance date is in latest tracked window entry
+      // Check if presentation date is in latest tracked window entry
       const {history} = didDocumentHistoryInfo;
       const latestDidDocumentWindow = history.pop();
       const {
         validFrom: validFromLatest,
         didDocument: didDocumentLatest
       } = latestDidDocumentWindow;
-      if(issuanceDate >= new Date(validFromLatest)) {
+      if(presentationDate >= new Date(validFromLatest)) {
         didDocumentOverrides[issuerDid] = didDocumentLatest;
         continue;
       }
 
-      // Find the window that encompasses the issuance date
+      // Find the window that encompasses the presentation date
       const didDocumentWindow = history.find(w => {
         const {validFrom, validUntil} = w;
-        return validFrom <= issuanceDate && issuanceDate < validUntil;
+        return validFrom <= presentationDate && presentationDate < validUntil;
       });
 
-      // If there is a window that encompasses the issuance date, return it
+      // If there is a window that encompasses the presentation date, return it
       if(didDocumentWindow) {
         didDocumentOverrides[issuerDid] = didDocumentWindow.didDocument;
       }
