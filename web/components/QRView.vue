@@ -56,7 +56,7 @@ async function appOpened() {
     `/workflows/${props.exchangeData.workflowId}` +
     `/exchanges`,
     {
-      json: {redirectUri: window.location.href},
+      json: {redirectUrl: window.location.href},
       headers: {
         Authorization: `Bearer ${props.exchangeData.accessToken}`
       }
