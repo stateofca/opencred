@@ -10,6 +10,7 @@ import {baseUrl} from '../mock-data.js';
 import {config} from '@bedrock/core';
 import {database} from '../../lib/database.js';
 import {domainToDidWeb} from '../../lib/didWeb.js';
+import {generateCertificateChain} from '../utils/x509.js';
 import {generateValidDiVpToken} from '../utils/diVpTokens.js';
 import {generateValidJwtVpToken} from '../utils/jwtVpTokens.js';
 import {httpClient} from '@digitalbazaar/http-client';
@@ -45,9 +46,25 @@ describe('Audit Presentation', function() {
   describe('valid JWT VP token', function() {
     it('should pass audit for single valid cached issuer DID document',
       async function() {
+        const {chain, leafKeyPair} = await generateCertificateChain();
+        const root = chain.pop().toString();
+        const findStub = sinon
+          .stub(database.collections.RootCertificates, 'find')
+          .returns({
+            toArray: () => [{certificate: root}]
+          });
         const {vpToken, issuerDid} =
           await generateValidJwtVpToken({
-            aud: domainToDidWeb(config.server.baseUri)});
+            aud: domainToDidWeb(config.server.baseUri),
+            x5c: chain.map(c => {
+              return c
+                .toString()
+                .split('\n')
+                .slice(1, chain.length - 3)
+                .join('\n');
+            }),
+            leafKeyPair
+          });
 
         const findOneStub = sinon
           .stub(database.collections.DidDocumentHistory, 'findOne')
@@ -72,14 +89,31 @@ describe('Audit Presentation', function() {
         response.status.should.equal(200);
         response.data.verified.should.be.equal(true);
         response.data.message.should.be.equal('Success');
+        findStub.restore();
         findOneStub.restore();
       });
 
     it('should fail audit for issuer DID that has never been encountered',
       async function() {
+        const {chain, leafKeyPair} = await generateCertificateChain();
+        const root = chain.pop().toString();
+        const findStub = sinon
+          .stub(database.collections.RootCertificates, 'find')
+          .returns({
+            toArray: () => [{certificate: root}]
+          });
         const {vpToken, issuerDid} =
           await generateValidJwtVpToken({
-            aud: domainToDidWeb(config.server.baseUri)});
+            aud: domainToDidWeb(config.server.baseUri),
+            x5c: chain.map(c => {
+              return c
+                .toString()
+                .split('\n')
+                .slice(1, chain.length - 3)
+                .join('\n');
+            }),
+            leafKeyPair
+          });
 
         const findOneStub = sinon
           .stub(database.collections.DidDocumentHistory, 'findOne')
@@ -102,6 +136,7 @@ describe('Audit Presentation', function() {
         error.data.verified.should.be.equal(false);
         error.data.message.should.be.equal(
           `The system has never encountered issuer DID ${issuerDid}.`);
+        findStub.restore();
         findOneStub.restore();
       });
   });

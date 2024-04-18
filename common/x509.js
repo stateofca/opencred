@@ -9,14 +9,17 @@ import * as x509 from '@peculiar/x509';
 // import {Certificate, CertificateRevocationList} from 'pkijs';
 import {createPublicKey, X509Certificate} from 'node:crypto';
 import {config} from '@bedrock/core';
+import {database} from '../lib/database.js';
 import {logger} from '../lib/logger.js';
 import ocsp from 'ocsp';
 
-const checkDates = cert => {
-  const now = new Date();
+const checkDates = (cert, presentationDate = new Date()) => {
+  if(!(presentationDate instanceof Date)) {
+    return {verified: false, errors: '"presentationDate" must be a valid date'};
+  }
   const validFrom = new Date(cert.validFrom);
   const validTo = new Date(cert.validTo);
-  if(now < validFrom || now > validTo) {
+  if(presentationDate < validFrom || presentationDate > validTo) {
     return {verified: false, errors: [
       'Certificate is not valid at the current time'
     ]};
@@ -104,7 +107,25 @@ const checkSignature = async (cert, parentCert, i) => {
   return {verified: errors.length === 0, errors};
 };
 
-const checkTrust = async certs => {
+const checkTrust = async (certs, caSource = 'config') => {
+  let rootCerts;
+  switch(caSource) {
+    case 'config':
+      rootCerts = config.opencred.caStore;
+      break;
+    case 'database':
+      rootCerts = (
+        await database.collections.RootCertificates
+          .find()
+          .toArray()
+      ).map(cert => cert.certificate);
+      break;
+    default:
+      return {
+        verified: false,
+        errors: ['"caSource" must be "config" or "database"']
+      };
+  }
   let errors = [];
   for(let i = 0; i < certs.length; i++) {
     if(i < certs.length - 1) {
@@ -124,7 +145,7 @@ const checkTrust = async certs => {
     } else {
       // Issuer in CA Store
       let found = false;
-      for(const caCertRaw of config.opencred.caStore) {
+      for(const caCertRaw of rootCerts) {
         const caCert = new X509Certificate(caCertRaw);
         if(certs[i].checkIssued(caCert)) {
           found = true;
@@ -149,12 +170,12 @@ const checkTrust = async certs => {
   return {verified: errors.length === 0, errors};
 };
 
-export const verifyChain = async certs => {
+export const verifyChain = async (certs, options = {}) => {
   try {
     let errors = [];
     for(const cert of certs) {
       // Verify Expiration Date
-      const datesVerify = checkDates(cert);
+      const datesVerify = checkDates(cert, options?.presentationDate);
       if(!datesVerify.verified) {
         errors = errors.concat(datesVerify.errors);
       }
@@ -167,7 +188,7 @@ export const verifyChain = async certs => {
     }
 
     // Check Trust
-    const trustVerify = await checkTrust(certs);
+    const trustVerify = await checkTrust(certs, options?.caSource);
     if(!trustVerify.verified) {
       errors = errors.concat(trustVerify.errors);
     }

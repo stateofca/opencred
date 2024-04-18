@@ -97,11 +97,13 @@ const verifyJWTVC = async (jwt, options = {}) => {
     ...optionsWithoutResolver
   } = options;
   try {
-    const verification = await verifyCredentialJWT(jwt,
+    const verification = await verifyCredentialJWT(
+      jwt,
       resolver ?
         {resolve: did => resolver.resolve(did)} :
         {resolve: did => didResolver.get({did})},
-      optionsWithoutResolver);
+      optionsWithoutResolver
+    );
     return {...verification, errors: []};
   } catch(e) {
     return {verified: false, errors: [e.message]};
@@ -114,11 +116,13 @@ const verifyJWTVP = async (jwt, options = {}) => {
     ...optionsWithoutResolver
   } = options;
   try {
-    const verification = await verifyPresentationJWT(jwt,
+    const verification = await verifyPresentationJWT(
+      jwt,
       resolver ?
         {resolve: did => resolver.resolve(did)} :
         {resolve: did => didResolver.get({did})},
-      optionsWithoutResolver);
+      optionsWithoutResolver
+    );
     return {...verification, errors: []};
   } catch(e) {
     return {verified: false, errors: [e.message]};
@@ -157,7 +161,7 @@ export const verifyUtils = {
   verifyCredentialDataIntegrity: async options => verifyCredential(options),
   verifyPresentationJWT: async (jwt, options) => verifyJWTVP(jwt, options),
   verifyCredentialJWT: async (jwt, options) => verifyJWTVC(jwt, options),
-  verifyx509JWT: async certs => verifyChain(certs),
+  verifyx509JWT: async (certs, options) => verifyChain(certs, options),
   getVerifyPresentationDataIntegrityErrors:
     vpResult => getVerifyPresentationDiError(vpResult)
 };

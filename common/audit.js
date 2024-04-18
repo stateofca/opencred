@@ -15,6 +15,15 @@ import {
 } from './documentLoader.js';
 import {database} from '../lib/database.js';
 
+export const getVcTokensForVpToken = vpToken => {
+  const vpJwtPayload = decodeJwtPayload(vpToken);
+  const vcTokens = vpJwtPayload.vp?.verifiableCredential;
+  if(vcTokens && Array.isArray(vcTokens)) {
+    return vcTokens;
+  }
+  return [];
+};
+
 export const getIssuerDidsForVpToken = vpToken => {
   const issuerDids = [];
   if(typeof vpToken === 'string') {
@@ -74,7 +83,7 @@ export const updateIssuerDidDocumentHistory = async vpToken => {
             // has encountered an issuer DID at some point in the past.
             []
         });
-        return;
+        continue;
       }
 
       // If there is already a document in DidDocumentHistory for

@@ -5,8 +5,12 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import {exportJWK, generateKeyPair, SignJWT} from 'jose';
+import {generateKeyPair, importJWK, SignJWT} from 'jose';
+import base64url from 'base64url';
+import {Crypto} from '@peculiar/webcrypto';
 import {generateValidCredential} from './credentials.js';
+
+const crypto = new Crypto();
 
 class Signer {
   constructor(privateKey, header) {
@@ -24,13 +28,24 @@ class Signer {
 export const generateValidJwtVpToken = async ({
   alg = 'ES256',
   crv = 'P-256',
-  aud = 'did:web:localhost:8080'
+  aud = 'did:web:localhost:22443',
+  x5c = [],
+  leafKeyPair = null
 } = {}) => {
-  const {privateKey, publicKey} = await generateKeyPair(
-    alg, {crv, extractable: true});
-  const publicKeyJwk = await exportJWK(publicKey);
+  let publicKey;
+  let privateKey;
+  if(leafKeyPair) {
+    ({publicKey, privateKey} = leafKeyPair);
+    const privateKeyJwk = await crypto.subtle.exportKey('jwk', privateKey);
+    privateKey = await importJWK(privateKeyJwk);
+  } else {
+    ({publicKey, privateKey} = await generateKeyPair(
+      alg, {crv, extractable: true}));
+  }
+  const publicKeyJwk = await crypto.subtle.exportKey('jwk', publicKey);
+  publicKeyJwk.x5c = x5c;
 
-  const issuerDidFingerprint = btoa(JSON.stringify(publicKeyJwk));
+  const issuerDidFingerprint = base64url.encode(JSON.stringify(publicKeyJwk));
   const issuerDid = `did:jwk:${issuerDidFingerprint}`;
   const holderDid = issuerDid;
   const keyId = `${issuerDid}#0`;
