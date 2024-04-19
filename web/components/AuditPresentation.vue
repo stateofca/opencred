@@ -145,12 +145,12 @@ function clearAuditResults() {
               fill-color="red"
               size="30" />
           </div>
+          <p
+            v-if="auditResults.data.verified === false && !auditResults.loading"
+            class="error-message font-bold pt-3">
+            Error: {{auditResults.data.message}}
+          </p>
         </div>
-        <p
-          v-if="auditResults.data.verified === false && !auditResults.loading"
-          class="error-message font-bold pt-3">
-          Error: {{auditResults.data.message}}
-        </p>
         <p class="text-lg mt-6 mb-3">
           Please provide the proper values for each of the
           following fields associated with this VP token.
@@ -264,7 +264,7 @@ function clearAuditResults() {
 }
 .error-message {
   color: red;
-  max-width: 55%;
+  max-width: 500px;
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
