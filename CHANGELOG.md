@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 6.5.0 - 2024-04-xx
+## 6.5.0 - 2024-04-19
 
 ### Added
 - Add Translations using `vue-i18n` and config values.
