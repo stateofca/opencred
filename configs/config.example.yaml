@@ -193,20 +193,23 @@ app:
       cta: "#0B669D"
       primary: "#045199"
       header: "#0979c4"
-    enableAudit: false
+    enableAudit: true
     auditFields:
       - type: text
         id: given_name
         name: First Name
         path: "$.credentialSubject.given_name"
+        required: true
       - type: text
         id: family_name
         name: Last Name
         path: "$.credentialSubject.family_name"
+        required: false
       - type: date
         id: birth_date
         name: Date of Birth
         path: "$.credentialSubject.birth_date"
+        required: true
     defaultLanguage: en
     translations:
       en:

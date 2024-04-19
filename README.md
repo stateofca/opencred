@@ -239,14 +239,17 @@ auditFields:
     id: given_name
     name: First Name
     path: "$.credentialSubject.given_name"
+    required: true
   - type: text
     id: family_name
     name: Last Name
     path: "$.credentialSubject.family_name"
+    required: false
   - type: date
     id: birth_date
     name: Date of Birth
     path: "$.credentialSubject.birth_date"
+    required: true
 ```
 
 The `enableAudit` field enables support for auditing in an OpenCred deployment.
