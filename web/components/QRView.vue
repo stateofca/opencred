@@ -23,7 +23,10 @@ const props = defineProps({
     default: () => ({
       QR: '',
       vcapi: '',
-      OID4VP: ''
+      OID4VP: '',
+      oidc: {
+        state: ''
+      }
     })
   },
   explainerVideo: {
@@ -56,7 +59,10 @@ async function appOpened() {
     `/workflows/${props.exchangeData.workflowId}` +
     `/exchanges`,
     {
-      json: {redirectUrl: window.location.href},
+      json: {
+        redirectUrl: window.location.href,
+        oidcState: props.exchangeData.oidc.state
+      },
       headers: {
         Authorization: `Bearer ${props.exchangeData.accessToken}`
       }

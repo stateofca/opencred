@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 6.5.1 - 2024-04-xx
+
+### Fixed
+- Use `oidc.state` from previous exchange on creating new one.
+
 ## 6.5.0 - 2024-04-19
 
 ### Added
