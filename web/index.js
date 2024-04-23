@@ -14,6 +14,7 @@ import App from './App.vue';
 import AppMain from './components/AppMain.vue';
 import AuditPresentation from './components/AuditPresentation.vue';
 import ButtonView from './components/ButtonView.vue';
+import {createHead} from 'unhead';
 import {createI18n} from 'vue-i18n';
 import ErrorView from './components/ErrorView.vue';
 import {httpClient} from '@digitalbazaar/http-client';
@@ -83,7 +84,7 @@ brVue.initialize({
       }
     }});
     await brQuasar.theme({brand: appConfig.brand});
-
+    createHead();
     // create root Vue component
     return App;
   }

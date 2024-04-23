@@ -10,6 +10,7 @@ import {inject, onBeforeMount, onMounted, reactive, ref} from 'vue';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
 import {setCssVar} from 'quasar';
+import {useHead} from 'unhead';
 import {useI18n} from 'vue-i18n';
 
 let intervalId;
@@ -130,10 +131,8 @@ onMounted(async () => {
   intervalId = setInterval(checkStatus, 5000);
 
   if(config.customTranslateScript) {
-    const scr = document.createElement('script');
-    scr.src = config.customTranslateScript;
-    document.getElementsByTagName('HEAD')[0].appendChild(scr);
     useNativeTranslations.value = false;
+    useHead({script: [{src: config.customTranslateScript}]});
   }
 });
 </script>
