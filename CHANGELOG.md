@@ -1,6 +1,9 @@
 # opencred-platform Changelog
 
-## 6.5.1 - 2024-04-xx
+## 6.6.0 - 2024-04-xx
+
+### Added
+- Add custom google translate translations.
 
 ### Fixed
 - Use `oidc.state` from previous exchange on creating new one.
