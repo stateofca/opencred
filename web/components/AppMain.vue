@@ -131,10 +131,25 @@ onMounted(async () => {
   intervalId = setInterval(checkStatus, 5000);
 
   if(config.customTranslateScript) {
+    const transEl = document.createElement('google-translate');
+    if(config.customTranslateScript.indexOf('translate.google.com') >= 0) {
+      transEl.setAttribute('id', 'google_translate_element');
+      transEl.setAttribute('class', 'not-white');
+      window.googleTranslateElementInit = () => {
+        // eslint-disable-next-line no-undef
+        new google.translate.TranslateElement(
+          {pageLanguage: 'en'},
+          'google_translate_element'
+        );
+      };
+    }
+    const currentDiv = document.getElementById('translations-btn');
+    currentDiv.appendChild(transEl);
     useNativeTranslations.value = false;
     useHead({script: [{src: config.customTranslateScript}]});
   }
 });
+
 </script>
 
 <template>
@@ -159,7 +174,9 @@ onMounted(async () => {
             :src="context.rp.secondaryLogo"
             alt="logo-image">
         </a>
-        <div class="flex-grow flex justify-end">
+        <div
+          id="translations-btn"
+          class="flex-grow flex justify-end items-center gap-3">
           <q-btn-dropdown
             v-if="availableLocales.length > 1 && useNativeTranslations"
             flat
@@ -168,7 +185,7 @@ onMounted(async () => {
             <template #label>
               <div class="row items-center no-wrap gap-2 text-white">
                 <span class="bg-white rounded-full p-1 flex">
-                  <img :src="config.translationsIcon">
+                  <TranslateIcon />
                 </span>
                 {{$t('translate')}}
               </div>
@@ -192,9 +209,9 @@ onMounted(async () => {
             v-else
             class="row items-center no-wrap gap-2 ">
             <span class="bg-white rounded-full p-1 flex">
-              <img :src="config.translationsIcon">
+              <TranslateIcon />
             </span>
-            <google-translate />
+            <!-- {{true ? '<div>hello</div>' :'<google-translate />'}} -->
           </div>
         </div>
       </div>
@@ -260,7 +277,28 @@ a {
   color: var(--q-primary) !important;
   text-decoration: underline !important;
 }
-google-translate a {
+google-translate:not(.not-white) a {
   color: white !important;
+  text-decoration: none !important;
+}
+#beforeGTranslateEl {
+  list-style: disc;
+  padding-left: 20px;
+}
+.goog-te-combo {
+  border: 2px;
+}
+.goog-te-gadget {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  background-color: white;
+  padding-right: 5px;
+}
+.goog-te-gadget img {
+  display: inline;
+}
+#js-site-translate p {
+  padding-bottom: 10px;
 }
 </style>

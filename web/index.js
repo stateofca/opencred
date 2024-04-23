@@ -22,6 +22,7 @@ import JsonNode from './components/JsonNode.vue';
 import JsonView from './components/JsonView.vue';
 import {Notify} from 'quasar';
 import QRView from './components/QRView.vue';
+import TranslateIcon from './components/TranslateIcon.vue';
 import VueCookies from 'vue-cookies';
 import YouTubeVideo from './components/YouTubeVideo.vue';
 import '@quasar/extras/material-icons/material-icons.css';
@@ -40,6 +41,7 @@ brVue.initialize({
     app.component('JsonNode', JsonNode);
     app.component('JsonView', JsonView);
     app.component('YouTubeVideo', YouTubeVideo);
+    app.component('TranslateIcon', TranslateIcon);
 
     // ensure CHAPI is available
     await polyfill.loadOnce();

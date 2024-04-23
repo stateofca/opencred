@@ -204,14 +204,21 @@ options:
 If this section is omitted, both protocols (`openid4vp` and `chapi`)
 will be offered, with an OID4VP QR code offered to the user first.
 
-#### Configuring translations
+#### Configuring Translations
 
-The two views of the login page both have text entries
-stored in the translations entries of the config. To configure the text of the login page set the following entries:
+##### With Translations in Configuration
+
+The login page has text entries stored in the translations entries of the
+config. To configure the text of the login page set the following entries with
+the enabled languages as the first level of `translations`:
 
 ```yaml
 translations:
   en:
+    translations:
+      en: English
+      fr: French
+    translate: Translate
     qrTitle: Login with your Wallet app
     qrPageExplain: Scan the following QR Code using the Wallet app on your phone.
     qrPageExplainHelp: (<a href="https://youtube.com">How do I do it?</a>)
@@ -227,6 +234,25 @@ translations:
     appCta: "Open wallet app"
     copyright: "Powered by OpenCred"
     pageTitle: "Login"
+  fr:
+    translations:
+      en: Anglais
+      fr: Français
+    translate: Traduire
+    qrTitle: Connectez-vous avec votre application CA DMV Wallet
+    ...
+```
+
+##### With Google Translate
+
+It is also possible to use an embedded Google Translate widget that will enable
+translations without including all of the translations in the configuration. To
+enable this feature include a `customTranslateScript` property in the config
+with a URL to a script that includes a script for injecting the widget. To use
+the default Google Translate script use the following config:
+
+```yaml
+customTranslateScript: https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit
 ```
 
 #### Configuring Audit
