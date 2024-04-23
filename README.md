@@ -247,9 +247,10 @@ translations:
 
 It is also possible to use an embedded Google Translate widget that will enable
 translations without including all of the translations in the configuration. To
-enable this feature include a `customTranslateScript` property in the config
-with a URL to a script that includes a script for injecting the widget. To use
-the default Google Translate script use the following config:
+enable this feature include a `customTranslateScript` property (which will
+override manual translations) in the config with a URL to a script that includes
+a script for injecting the widget. To use the default Google Translate script
+use the following config:
 
 ```yaml
 customTranslateScript: https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit
