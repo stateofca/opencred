@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 6.6.0 - 2024-04-xx
+## 6.6.0 - 2024-04-24
 
 ### Added
 - Add custom google translate translations.
