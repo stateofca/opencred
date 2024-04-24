@@ -166,17 +166,17 @@ bedrock.events.on('bedrock.init', async () => {
 
   const validateRelyingParty = rp => {
     if(!rp.clientId) {
-      throw new Error('clientId is required for each configured relyingParty');
+      throw new Error('clientId is required for each configured relyingParty.');
     }
     if(!rp.clientSecret) {
-      throw new Error(`clientSecret is required in ${rp.clientId}`);
+      throw new Error(`clientSecret is required in ${rp.clientId}.`);
     }
 
     // Use redirectUri for proxy of OIDC being enabled or not
     if(rp.redirectUri) {
       // if redirectUri doesn't match http or https throw an error
       if(!rp.redirectUri.match(/^https?:\/\//)) {
-        throw new Error(`redirectUri must be a URI in client ${rp.clientId}`);
+        throw new Error(`redirectUri must be a URI in client ${rp.clientId}.`);
       }
 
       if(!rp.scopes || !Array.isArray(rp.scopes)) {
@@ -185,7 +185,7 @@ bedrock.events.on('bedrock.init', async () => {
         );
       }
       if(!rp.scopes.map(s => s.name).includes('openid')) {
-        throw new Error(`scopes in client ${rp.clientId} must include openid`);
+        throw new Error(`scopes in client ${rp.clientId} must include openid.`);
       }
       if(!rp.idTokenExpirySeconds) {
         rp.idTokenExpirySeconds = 3600;
@@ -239,28 +239,28 @@ bedrock.events.on('bedrock.init', async () => {
         acceptedCredentialType
       } = rp.workflow;
       if(!apiBaseUrl) {
-        throw new Error('apiBaseUrl is required');
+        throw new Error('apiBaseUrl is required.');
       }
       if(!apiLoginBaseUrl) {
-        throw new Error('apiLoginBaseUrl is required');
+        throw new Error('apiLoginBaseUrl is required.');
       }
       if(!apiClientId) {
-        throw new Error('apiClientId is required');
+        throw new Error('apiClientId is required.');
       }
       if(!apiClientSecret) {
-        throw new Error('apiClientSecret is required');
+        throw new Error('apiClientSecret is required.');
       }
       if(!apiTenantId) {
-        throw new Error('apiTenantId is required');
+        throw new Error('apiTenantId is required.');
       }
       if(!verifierDid) {
-        throw new Error('verifierDid is required');
+        throw new Error('verifierDid is required.');
       }
       if(!verifierName) {
-        throw new Error('verifierName is required');
+        throw new Error('verifierName is required.');
       }
       if(!acceptedCredentialType) {
-        throw new Error('acceptedCredentialType is required');
+        throw new Error('acceptedCredentialType is required.');
       }
     } else {
       throw new Error(
@@ -409,5 +409,5 @@ bedrock.events.on('bedrock.init', async () => {
    */
   opencred.auditFields = opencred.auditFields ?? [];
 
-  logger.info('OpenCred Config Successfully Validated');
+  logger.info('OpenCred Config Successfully Validated.');
 });
