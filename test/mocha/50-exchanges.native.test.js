@@ -186,4 +186,28 @@ describe('Exchanges (Native)', async () => {
     expect(result.verified).to.be.false;
     expect(result.errors.length).to.be.greaterThan(0);
   });
+
+  it('createNativeExchange should set oidc.state from query param',
+    async () => {
+      const next = sinon.spy();
+      const req = {rp, query: {state: 'test'}};
+
+      await createNativeExchange(req, null, next);
+      expect(next).to.have.property('called');
+      expect(req).to.have.property('exchange');
+      expect(req.exchange.oidc.state).to.be('test');
+      expect(dbStub.called).to.be.true;
+    });
+
+  it('createNativeExchange should set oidc.state from body param',
+    async () => {
+      const next = sinon.spy();
+      const req = {rp, body: {oidcState: 'test'}};
+
+      await createNativeExchange(req, null, next);
+      expect(next).to.have.property('called');
+      expect(req).to.have.property('exchange');
+      expect(req.exchange.oidc.state).to.be('test');
+      expect(dbStub.called).to.be.true;
+    });
 });
