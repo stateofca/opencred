@@ -173,16 +173,16 @@ bedrock.events.on('bedrock.init', async () => {
     }
 
     // if redirectUri doesn't match http or https throw an error
-    if(!rp.redirectUri.match(/^https?:\/\//)) {
+    if(rp.redirectUri && !rp.redirectUri.match(/^https?:\/\//)) {
       throw new Error(`redirectUri must be a URI in client ${rp.clientId}`);
     }
 
-    if(!rp.scopes || !Array.isArray(rp.scopes)) {
+    if(rp.scopes && !Array.isArray(rp.scopes)) {
       throw new Error(
-        `An array of scopes must be defined io client ${rp.clientId}.`
+        `An array of scopes must be defined in client ${rp.clientId}.`
       );
     }
-    if(!rp.scopes.map(s => s.name).includes('openid')) {
+    if(rp.scopes && !rp.scopes.map(s => s.name).includes('openid')) {
       throw new Error(`scopes in client ${rp.clientId} must include openid`);
     }
     if(!rp.idTokenExpirySeconds) {

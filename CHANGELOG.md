@@ -7,6 +7,7 @@
 
 ### Fixed
 - Use `oidc.state` from previous exchange on creating new one.
+- Remove OIDC requirements in config.
 
 ## 6.5.0 - 2024-04-19
 
