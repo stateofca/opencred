@@ -250,3 +250,4 @@ app:
         copyright: "Powered by OpenCred"
         pageTitle: "Login"
         home: "Home"
+        verificationSuccess: "Success! Your credential has been shared."

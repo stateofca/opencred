@@ -12,17 +12,16 @@ import {httpClient} from '@digitalbazaar/http-client';
 import {setCssVar} from 'quasar';
 import {useHead} from 'unhead';
 import {useI18n} from 'vue-i18n';
+import {useRoute} from 'vue-router';
+
+const $cookies = inject('$cookies');
 
 let intervalId;
-const $cookies = inject('$cookies');
 const useNativeTranslations = ref(true);
-const vp = ref(null);
+const completedExchange = ref(null);
 const context = ref({
   rp: {
-    brand: config.brand,
-    rp: {
-      brand: config.brand
-    }
+    brand: config.brand
   }
 });
 
@@ -31,6 +30,7 @@ const state = reactive({
   error: null
 });
 
+const route = useRoute();
 const {locale, availableLocales} = useI18n({useScope: 'global'});
 
 const switchView = () => {
@@ -39,9 +39,10 @@ const switchView = () => {
 };
 
 onBeforeMount(async () => {
+  const exchangeType = route.name;
   try {
     const resp = await httpClient.get(
-      `/context/login${window.location.search}`
+      `/context/${exchangeType}${window.location.search}`
     );
     context.value = resp.data;
     if(resp.data.rp.brand) {
@@ -92,33 +93,15 @@ const checkStatus = async () => {
         }
       }
     ));
-    if(Object.keys(exchange).length > 0) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const preventRedirect = urlParams.has('preventRedirect');
-      if(exchange.state === 'complete' && exchange.oidc?.code &&
-         !preventRedirect) {
-        const queryParams = new URLSearchParams({
-          state: context.value.exchangeData.oidc.state,
-          code: exchange.oidc.code,
-        });
-        const destination = `${context.value.rp.redirectUri}?` +
-          `${queryParams.toString()}`;
-        $cookies.remove('accessToken');
-        $cookies.remove('exchangeId');
-        window.location.href = destination;
-        intervalId = clearInterval(intervalId);
-      } else if(exchange.state === 'complete') {
-        const {verifiablePresentation} =
-          exchange.variables.results[exchange.step];
-        vp.value = verifiablePresentation;
-        intervalId = clearInterval(intervalId);
-      }
+    if(Object.keys(exchange).length > 0 && exchange.state === 'complete') {
+      completedExchange.value = exchange;
+      intervalId = clearInterval(intervalId);
+      $cookies.remove('accessToken');
+      $cookies.remove('exchangeId');
     }
   } catch(e) {
-    const {status} = e;
     console.error('An error occurred while polling the endpoint:', e);
-    state.error = state.error = `Error code ${
-      status}: An error occurred while checking exchange status.`;
+    state.error = `An error occurred while checking exchange status.`;
   }
 };
 
@@ -206,12 +189,11 @@ onMounted(async () => {
             </q-list>
           </q-btn-dropdown>
           <div
-            v-else
+            v-else-if="!useNativeTranslations"
             class="row items-center no-wrap gap-2 ">
             <span class="bg-white rounded-full p-1 flex">
               <TranslateIcon />
             </span>
-            <!-- {{true ? '<div>hello</div>' :'<google-translate />'}} -->
           </div>
         </div>
       </div>
@@ -234,12 +216,10 @@ onMounted(async () => {
 &nbsp;
         </div>
       </div>
-      <div v-if="vp">
-        <div class="flex justify-center">
-          <JsonView
-            :data="{ vp }"
-            title="Verified Credential" />
-        </div>
+      <div v-if="completedExchange">
+        <router-view
+          :exchange="completedExchange"
+          :rp="context.rp" />
       </div>
       <div v-else-if="state.error">
         <div class="flex justify-center pt-8">

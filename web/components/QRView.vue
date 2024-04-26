@@ -39,7 +39,7 @@ const props = defineProps({
 });
 const emit = defineEmits(['switchView', 'replaceExchange']);
 const switchView = () => emit('switchView');
-const showDeeplink = ref(true);
+const showDeeplink = ref(false);
 const showVideo = ref(false);
 const $q = useQuasar();
 const $cookies = inject('$cookies');
