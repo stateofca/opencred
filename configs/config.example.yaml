@@ -53,6 +53,9 @@ app:
         workflow:
           type: native
           id: z1A32xJZGqBeAEcMq56avmw2L
+          params:
+            - exampleParam
+            - exampleParam2
           initialStep: default
           steps:
             default:
