@@ -4,6 +4,8 @@
 
 ### Added
 - Add support for dropdown audit fields.
+- Add new verification page.
+- Add `params` to a workflow to allow custom variables being created.
 
 ## 7.0.0 - 2024-04-30
 
