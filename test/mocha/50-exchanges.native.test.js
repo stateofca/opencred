@@ -19,7 +19,8 @@ import {verifyUtils} from '../../common/utils.js';
 
 const rp = {
   workflow: {
-    type: 'native'
+    type: 'native',
+    params: ['redirectUrl']
   },
   domain: 'http://example.test.com'
 };
