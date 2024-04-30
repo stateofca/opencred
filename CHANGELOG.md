@@ -1,9 +1,9 @@
 # opencred-platform Changelog
 
-## 6.6.1 - 2024-04-xx
+## 7.0.0 - 2024-04-30
 
 ### Changed
-- Remove `qrClickMessage`.
+- **BREAKING**: Remove `qrClickMessage`.
 
 ## 6.6.0 - 2024-04-24
 
