@@ -40,7 +40,6 @@ const props = defineProps({
 const emit = defineEmits(['switchView', 'replaceExchange']);
 const switchView = () => emit('switchView');
 const showDeeplink = ref(true);
-const showWarningMessage = ref(false);
 const showVideo = ref(false);
 const $q = useQuasar();
 const $cookies = inject('$cookies');
@@ -74,9 +73,6 @@ async function appOpened() {
   $cookies.set('accessToken', exchange.accessToken, '15min',
     '', '', true, 'Strict');
   window.location.replace(exchange.OID4VP);
-  setTimeout(() => {
-    showWarningMessage.value = true;
-  }, 1000);
 }
 </script>
 
@@ -120,13 +116,6 @@ async function appOpened() {
           color="primary"
           size="2em" />
       </div>
-    </div>
-    <div
-      v-if="showWarningMessage && $t('qrClickMessage')"
-      class="mt-2 p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-100"
-      role="alert">
-      <span class="text-medium pr-2">Note:</span>
-      {{$t('qrClickMessage')}}
     </div>
     <div class="mt-2">
       <button
