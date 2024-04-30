@@ -6,6 +6,10 @@
  */
 
 export const applyRpDefaults = (allRps, rp, refs = []) => {
+  if(rp.workflow) {
+    rp.workflow.params = rp.workflow.params ?
+      [...new Set([...rp.workflow.params, 'redirectUrl'])] : ['redirectUrl'];
+  }
   if(rp.configFrom) {
     if(typeof rp.configFrom !== 'string') {
       throw new Error(`[${rp.clientId}]: configFrom must be a string`);

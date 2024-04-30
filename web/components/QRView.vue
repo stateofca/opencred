@@ -95,7 +95,7 @@ async function appOpened() {
         v-html="$t('qrPageExplainHelp')" />
     </div>
     <div
-      v-if="showDeeplink"
+      v-if="showDeeplink && exchangeData.QR"
       class="mb-4 flex justify-center">
       <button
         v-if="exchangeData"
@@ -104,18 +104,18 @@ async function appOpened() {
       </button>
     </div>
     <div
-      v-else
+      v-else-if="exchangeData.QR !== ''"
       class="mb-4 flex justify-center">
       <img
         v-if="exchangeData.QR !== ''"
         :src="exchangeData.QR">
-      <div
-        v-else
-        class="p-12 m-12">
-        <q-spinner-tail
-          color="primary"
-          size="2em" />
-      </div>
+    </div>
+    <div
+      v-else
+      class="p-12 m-12 flex justify-center">
+      <q-spinner-tail
+        color="primary"
+        size="2em" />
     </div>
     <div class="mt-2">
       <button

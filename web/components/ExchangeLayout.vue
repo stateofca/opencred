@@ -72,7 +72,7 @@ const changeLanguage = lang => {
 };
 
 const checkStatus = async () => {
-  if(!context.value) {
+  if(!context.value || !context.value.rp?.workflow?.id) {
     return;
   }
   if(state.error && intervalId) {
