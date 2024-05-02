@@ -39,7 +39,7 @@ const props = defineProps({
 });
 const emit = defineEmits(['switchView', 'replaceExchange']);
 const switchView = () => emit('switchView');
-const showDeeplink = ref(false);
+const showDeeplink = ref(true);
 const showVideo = ref(false);
 const $q = useQuasar();
 const $cookies = inject('$cookies');
@@ -51,6 +51,8 @@ onMounted(() => {
 });
 
 async function appOpened() {
+  const {location} = window;
+  const redirectPath = location.href.split(location.origin).at(-1);
   let exchange = {};
   ({
     data: exchange,
@@ -59,7 +61,7 @@ async function appOpened() {
     `/exchanges`,
     {
       json: {
-        redirectUrl: window.location.href,
+        variables: btoa(JSON.stringify({redirectPath})).replace(/=+$/, ''),
         oidcState: props.exchangeData.oidc.state
       },
       headers: {

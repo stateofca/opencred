@@ -10,17 +10,15 @@ import expect from 'expect.js';
 import fs from 'node:fs';
 import {klona} from 'klona';
 
-import {
-  createNativeExchange, verifySubmission
-} from '../../lib/exchanges/native.js';
 import {database} from '../../lib/database.js';
 import {getDocumentLoader} from '../../common/documentLoader.js';
+import {NativeWorkflowService} from '../../lib/workflows/native-workflow.js';
 import {verifyUtils} from '../../common/utils.js';
 
 const rp = {
   workflow: {
     type: 'native',
-    params: ['redirectUrl']
+    untrustedVariableAllowList: ['redirectPath']
   },
   domain: 'http://example.test.com'
 };
@@ -32,8 +30,10 @@ describe('Exchanges (Native)', async () => {
   let verifyStub;
   let verifyCredentialStub;
   let dbStub;
+  let service;
 
   before(() => {
+    service = new NativeWorkflowService({get: () => {}, post: () => {}});
     const oid4vp = JSON.parse(fs.readFileSync(
       './test/fixtures/oid4vp_di.json'));
     vp_token = oid4vp.vp_token;
@@ -64,7 +64,7 @@ describe('Exchanges (Native)', async () => {
       const next = sinon.spy();
       const req = {rp, query: {state: 'test'}};
 
-      await createNativeExchange(req, null, next);
+      await service.createExchange(req, null, next);
       expect(next).to.have.property('called');
       expect(req).to.have.property('exchange');
       expect(req.exchange).to.have.property('vcapi');
@@ -78,7 +78,7 @@ describe('Exchanges (Native)', async () => {
       const next = sinon.spy();
       const req = klona({rp, query: {state: 'test'}});
       req.rp.workflow.type = 'vc-api';
-      await createNativeExchange(req, null, next);
+      await service.createExchange(req, null, next);
       expect(next).to.have.property('called');
       expect(req).to.not.have.property('exchange');
     });
@@ -86,7 +86,8 @@ describe('Exchanges (Native)', async () => {
   it('should get the correct exchange data', async () => {
     const next = sinon.spy();
     const req = {rp, query: {state: 'test'}};
-    await createNativeExchange(req, null, next);
+    await service.createExchange(req, null, next);
+
     expect(next).to.have.property('called');
     expect(req).to.have.property('exchange');
     expect(req.exchange).to.have.property('vcapi');
@@ -95,7 +96,7 @@ describe('Exchanges (Native)', async () => {
   });
 
   it('should verify a submission and return verified true', async () => {
-    const result = await verifySubmission(
+    const result = await service.verifySubmission(
       vp_token, presentation_submission, exchange
     );
 
@@ -120,7 +121,7 @@ describe('Exchanges (Native)', async () => {
     const vp_token_jwt = oid4vpJWT.vp_token;
     const presentation_submission_jwt = oid4vpJWT.presentation_submission;
 
-    const result = await verifySubmission(
+    const result = await service.verifySubmission(
       vp_token_jwt, presentation_submission_jwt, exchange
     );
 
@@ -136,7 +137,7 @@ describe('Exchanges (Native)', async () => {
 
   it('should return an error if definition_id does not match', async () => {
     presentation_submission.definition_id = 'incorrect';
-    const result = await verifySubmission(
+    const result = await service.verifySubmission(
       vp_token, presentation_submission, exchange
     );
 
@@ -150,7 +151,7 @@ describe('Exchanges (Native)', async () => {
     verifyStub.restore();
     verifyStub = sinon.stub(verifyUtils, 'verifyPresentationDataIntegrity')
       .resolves({verified: false, error: 'invalid vp'});
-    const result = await verifySubmission(
+    const result = await service.verifySubmission(
       vp_token, presentation_submission, exchange
     );
 
@@ -165,7 +166,7 @@ describe('Exchanges (Native)', async () => {
     verifyCredentialStub = sinon.stub(
       verifyUtils, 'verifyCredentialDataIntegrity')
       .resolves({verified: false, error: 'invalid vc'});
-    const result = await verifySubmission(
+    const result = await service.verifySubmission(
       vp_token, presentation_submission, exchange
     );
 
@@ -177,7 +178,7 @@ describe('Exchanges (Native)', async () => {
 
   it('should return an error if vc fails challenge', async () => {
     verifyStub.restore();
-    const result = await verifySubmission(
+    const result = await service.verifySubmission(
       vp_token, presentation_submission, {
         ...exchange,
         challenge: `incorrect`
@@ -188,24 +189,24 @@ describe('Exchanges (Native)', async () => {
     expect(result.errors.length).to.be.greaterThan(0);
   });
 
-  it('createNativeExchange should set oidc.state from query param',
+  it('createExchange should set oidc.state from query param',
     async () => {
       const next = sinon.spy();
       const req = {rp, query: {state: 'test'}};
 
-      await createNativeExchange(req, null, next);
+      await service.createExchange(req, null, next);
       expect(next).to.have.property('called');
       expect(req).to.have.property('exchange');
       expect(req.exchange.oidc.state).to.be('test');
       expect(dbStub.called).to.be.true;
     });
 
-  it('createNativeExchange should set oidc.state from body param',
+  it('createExchange should set oidc.state from body param',
     async () => {
       const next = sinon.spy();
       const req = {rp, body: {oidcState: 'test'}};
 
-      await createNativeExchange(req, null, next);
+      await service.createExchange(req, null, next);
       expect(next).to.have.property('called');
       expect(req).to.have.property('exchange');
       expect(req.exchange.oidc.state).to.be('test');

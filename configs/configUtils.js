@@ -7,8 +7,12 @@
 
 export const applyRpDefaults = (allRps, rp, refs = []) => {
   if(rp.workflow) {
-    rp.workflow.params = rp.workflow.params ?
-      [...new Set([...rp.workflow.params, 'redirectUrl'])] : ['redirectUrl'];
+    const {untrustedVariableAllowList} = rp.workflow;
+    rp.workflow.untrustedVariableAllowList =
+      untrustedVariableAllowList ? [...new Set([
+        ...untrustedVariableAllowList,
+        'redirectPath'
+      ])] : ['redirectPath'];
   }
   if(rp.configFrom) {
     if(typeof rp.configFrom !== 'string') {

@@ -232,7 +232,6 @@ describe('OpenCred API - Native Workflow', function() {
     } catch(e) {
       err = e;
     }
-
     should.not.exist(err);
     result.status.should.be.equal(200);
 
@@ -338,7 +337,8 @@ describe('OpenCred API - VC-API Workflow', function() {
         type: 'vc-api',
         capability: '{}',
         clientSecret: 'vcapiclientsecret',
-        vpr: '{}'
+        vpr: '{}',
+        untrustedVariableAllowList: ['redirectPath']
       }
     }]);
   });
@@ -368,7 +368,6 @@ describe('OpenCred API - VC-API Workflow', function() {
     } catch(e) {
       err = e;
     }
-
     should.not.exist(err);
     result.status.should.be.equal(200);
     result.data.id.should.be.a('string');
