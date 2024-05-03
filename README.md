@@ -56,7 +56,7 @@ export BEDROCK_CONFIG=$(cat combined.yaml | base64)
 
 Update the `relyingParties` section of the config file to include a relying
 party with a workflow of type `native`. The `native` workflow type is used to
-implement a VC-API exchange on this instance of OpenCred. This results in a QR
+implement an OID4VP or VC-API exchange on this instance of OpenCred. This results in a QR
 code being displayed to the user or returned through the initiate exchange API
 endpoint that can be scanned by a wallet app. The wallet app will then present
 the user with a list of credentials that can be used to satisfy the request.
@@ -186,6 +186,30 @@ In the workflow, you can use the method appropriate to the workflow type to
 specify which Verifiable Credential type, context, and/or issuers you will
 accept. This enables the specification of a plaintext `path` relative to
 `credentialSubject` to source the claim value from.
+
+#### Configuring Exchange Variables
+
+It is possible to include additional variables that will be passed along with an
+exchange. These can be passed through to the exchange creation process via query
+parameters or as JSON body properties. It is important to note that these params
+originate from the client side application and so should be treated as
+"untrusted".
+
+While configuring a relying party workflow an `untrustedVariableAllowList`
+property contains a list of variables that are allowed to be passed in this
+manner. There is a default `redirectPath` variable that will always be included.
+
+```yaml
+relyingParties:
+  - clientId: example
+    workflow:
+      type: native
+      id: example-workflow
+      untrustedVariableAllowList:
+        - caseId
+        - color
+```
+
 
 #### Configuring Exchange UX Methods
 
