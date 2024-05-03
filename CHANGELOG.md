@@ -5,8 +5,8 @@
 ### Added
 - Add support for dropdown audit fields.
 - Add new verification page.
-- Add `untrustedVariableAllowList` to a workflow to allow custom variables to be
-  created.
+- Add `untrustedVariableAllowList` to a workflow to allow specific custom
+  variables to be provided via untrusted user input.
 
 ## 7.0.0 - 2024-04-30
 
