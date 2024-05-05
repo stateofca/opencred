@@ -9,6 +9,8 @@ organizations can ask for proof of certain information, like a driver's license,
 and an individual can decide if they want to provide that information from their
 digital wallet.
 
+![image](https://github.com/stateofca/opencred/assets/108611/ace09a1c-a409-4371-81cf-ea578a2fea1e)
+
 ## Features
 
 OpenCred supports the following list of features:
