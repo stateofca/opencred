@@ -12,10 +12,12 @@ import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
 import {ref} from 'vue';
 
+const NON_STANDARD_TYPES = ['dropdown'];
+
 const auditFieldValues = ref(
   Object.fromEntries(
     config.auditFields
-      .map(f => [f.path, null])
+      .map(f => [f.path, undefined])
   )
 );
 
@@ -169,16 +171,34 @@ function clearAuditResults() {
                       'row mb-5'">
                 <label
                   :for="[field.id]"
-                  class="col-2 font-md font-bold mr-3">
+                  class="col-3 font-md font-bold mr-3">
                   {{field.name}}
                 </label>
                 <input
+                  v-if="!NON_STANDARD_TYPES.includes(field.type)"
                   :id="field.id"
                   v-model="auditFieldValues[field.path]"
                   :type="field.type"
                   class="col-6 font-md border rounded px-2 py-2 mr-5"
                   :placeholder="field.required ? 'Required' : 'Optional'"
                   :required="field.required">
+                <select
+                  v-else-if="field.type === 'dropdown'"
+                  v-model="auditFieldValues[field.path]"
+                  class="col-6 font-md border rounded px-2 py-2 mr-5"
+                  :required="field.required">
+                  <option
+                    disabled
+                    value="">
+                    Please select one
+                  </option>
+                  <option
+                    v-for="option in Object.entries(field.options)"
+                    :key="option[0]"
+                    :value="option[1]">
+                    {{option[0]}}
+                  </option>
+                </select>
                 <div
                   v-if="Object.entries(auditResults.data.matches).length > 0 &&
                     !auditResults.loading"

@@ -351,11 +351,13 @@ bedrock.events.on('bedrock.init', async () => {
   /**
    * A field to audit in a VP token
    * @typedef {Object} AuditField
-   * @property {'text' | 'number' | 'date'} type - Type of audit field.
+   * @property {'text' | 'number' | 'date' | 'dropdown'} type
+   * - Type of audit field.
    * @property {string} id - Unique ID of audit field.
    * @property {string} name - Name of audit field.
    * @property {string} path - Path of audit field in the VP token.
    * @property {string} required - Whether audit field is required.
+   * @property {string} options - Options for dropdown fields.
    */
 
   /**
@@ -364,7 +366,7 @@ bedrock.events.on('bedrock.init', async () => {
    */
 
   const requiredAuditFieldKeys = ['type', 'id', 'name', 'path', 'required'];
-  const auditFieldTypes = ['text', 'number', 'date'];
+  const auditFieldTypes = ['text', 'number', 'date', 'dropdown'];
   const validateAuditFields = () => {
     if(!opencred.auditFields) {
       return;

@@ -279,17 +279,41 @@ auditFields:
     name: Date of Birth
     path: "$.credentialSubject.birth_date"
     required: true
+  - type: number
+    id: height
+    name:	Height (cm)
+    path: "$.credentialSubject.height"
+    required: false
+  - type: dropdown
+    id: sex
+    name:	Sex
+    path: "$.credentialSubject.sex"
+    required: false
+    options:
+      "Male": 1
+      "Female": 2
+  - type: dropdown
+    id: senior_citizen
+    name:	Are you a senior citizen?
+    path: "$.credentialSubject.senior_citizen"
+    required: true
+    options:
+      "Yes": 1
+      "No": null
 ```
 
 The `enableAudit` field enables support for auditing in an OpenCred deployment.
 If you would also like to check for matching values in the token's credential
 in a web interface, you can specify the following attributes for each
 field of interest via the `auditFields` field and visit `BASE_URL/audit-vp` in the browser:
-- `type` - the field type (currently, supports `text`, `number`, and `date`)
-- `id` - the field ID (can be anything, but must be unique among other fields)
-- `name` - the field name that appears in the web interface
-- `path` - the field path in the credential (must be unique among other fields)
-- `required` - whether the admin user is required to enter a value for the field in the web interface
+- `type` - The field type (currently, supports `text`, `number`, `date`, and `dropdown`).
+- `id` - The field ID (can be anything, but must be unique among other fields).
+- `name` - The field name that appears in the web interface.
+- `path` - The field path in the credential (must be unique among other fields).
+- `required` - Whether the admin user is required to enter a value for the field in the web interface.
+- `options` - Data binding from user-friendly name to associated value for the field in the web interface. This property is used whenever a field can have one of multiple possible machine-readable values in a discrete set of options (e.g., `Male` -> `1`, `Female` -> `2`). The input for this field will be presented as a dropdown selection element. If one of the options is the absence of the field from the credential, you can represent this by binding the field to `null`. For example, here are the expectations for each selection for the field named `Are you a senior citizen?` in the sample snippet above:
+  - `Yes` - There exists a field with path `$.credentialSubject.senior_citizen` containing value `1` in the credential.
+  - `No` - There does **not** exist a field with path `$.credentialSubject.senior_citizen` in the credential.
 
 If you want to test out the audit feature, follow these steps:
 1. Run an instance of OpenCred using the instructions below.

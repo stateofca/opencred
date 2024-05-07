@@ -210,6 +210,27 @@ app:
         name: Date of Birth
         path: "$.credentialSubject.birth_date"
         required: true
+      - type: number
+        id: height
+        name:	Height (cm)
+        path: "$.credentialSubject.height"
+        required: false
+      - type: dropdown
+        id: sex
+        name:	Sex
+        path: "$.credentialSubject.sex"
+        required: false
+        options:
+          "Male": 1
+          "Female": 2
+      - type: dropdown
+        id: senior_citizen
+        name:	Are you a senior citizen?
+        path: "$.credentialSubject.senior_citizen"
+        required: true
+        options:
+          "Yes": 1
+          "No": null
     defaultLanguage: en
     translations:
       en:

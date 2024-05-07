@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 7.1.0 - 2024-05-xx
+
+### Added
+- Add support for dropdown audit fields.
+
 ## 7.0.0 - 2024-04-30
 
 ### Changed
