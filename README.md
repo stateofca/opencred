@@ -510,7 +510,7 @@ The HTTP API workflow follows this process:
   expire after a 15 minutes and may be made available to a browser client,
   whereas the `clientId` should only be held server-side.
 * The response will contain an `exchange` object with a `state` that is either
-  `pending`, `complete`, or `invalid` with additional results.
+  `pending`, `active`, `complete`, or `invalid` with additional results.
 
 ## Testing
 
