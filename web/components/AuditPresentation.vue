@@ -12,7 +12,7 @@ import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
 import {ref} from 'vue';
 
-const NON_STANDARD_TYPES = ['dropdown'];
+const NON_INPUT_TYPES = ['dropdown'];
 
 const auditFieldValues = ref(
   Object.fromEntries(
@@ -175,7 +175,7 @@ function clearAuditResults() {
                   {{field.name}}
                 </label>
                 <input
-                  v-if="!NON_STANDARD_TYPES.includes(field.type)"
+                  v-if="!NON_INPUT_TYPES.includes(field.type)"
                   :id="field.id"
                   v-model="auditFieldValues[field.path]"
                   :type="field.type"
