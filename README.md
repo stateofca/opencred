@@ -281,12 +281,12 @@ auditFields:
     required: true
   - type: number
     id: height
-    name:	Height (cm)
+    name: Height (cm)
     path: "$.credentialSubject.height"
     required: false
   - type: dropdown
     id: sex
-    name:	Sex
+    name: Sex
     path: "$.credentialSubject.sex"
     required: false
     options:
@@ -294,7 +294,7 @@ auditFields:
       "Female": 2
   - type: dropdown
     id: senior_citizen
-    name:	Are you a senior citizen?
+    name: Are you a senior citizen?
     path: "$.credentialSubject.senior_citizen"
     required: true
     options:
