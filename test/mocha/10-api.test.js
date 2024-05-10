@@ -28,7 +28,7 @@ const testRP = {
     type: 'native',
     id: 'testworkflow',
     steps: {
-      waiting: {
+      default: {
         verifiablePresentationRequest: JSON.stringify({
           query: {
             type: 'QueryByExample',
@@ -185,12 +185,12 @@ describe('OpenCred API - Native Workflow', function() {
     } catch(e) {
       err = e;
     }
-    const jwt = decodeJwt(await result.text());
     should.not.exist(err);
     result.status.should.equal(200);
     result.headers.get('content-type').should.equal(
       'application/oauth-authz-req+jwt; charset=utf-8'
     );
+    const jwt = decodeJwt(await result.text());
     jwt.client_id.should.have.string('did:web:example.com');
 
     baseUri.restore();
@@ -298,7 +298,7 @@ describe('OpenCred API - Native Workflow', function() {
       );
     const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
       .resolves({verified: true, signer: {}});
-    const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
+    const updateStub = sinon.stub(database.collections.Exchanges, 'replaceOne')
       .resolves();
     const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
     let result;
@@ -416,7 +416,10 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
         verifierDid: 'did:web:example.com',
         verifierName: 'Test Entra Verifier',
         acceptedCredentialType: 'Iso18013DriversLicenseCredential',
-        credentialVerificationCallbackAuthEnabled: false
+        credentialVerificationCallbackAuthEnabled: false,
+        steps: {
+          default: {}
+        }
       }
     }]);
   });
@@ -496,8 +499,8 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
     async function() {
       const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
         .resolves(exchange);
-      const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
-        .resolves();
+      const replaceStub = sinon.stub(database.collections.Exchanges,
+        'replaceOne').resolves();
       const dateStub = sinon.stub(Date, 'now').returns(1699635246762);
       const testVpToken = {
         '@context': [
@@ -569,11 +572,11 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
       should.not.exist(err);
       result.status.should.be.equal(200);
       findStub.called.should.be.equal(true);
-      updateStub.called.should.be.equal(true);
+      replaceStub.called.should.be.equal(true);
       dateStub.called.should.be.equal(true);
 
       findStub.restore();
-      updateStub.restore();
+      replaceStub.restore();
       dateStub.restore();
     });
 
@@ -581,8 +584,8 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
     async function() {
       const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
         .resolves(exchange);
-      const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
-        .resolves();
+      const updateStub = sinon.stub(database.collections.Exchanges,
+        'replaceOne').resolves();
       const dateStub = sinon.stub(Date, 'now').returns(1699635246762);
       const testVpToken = `
         eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtp

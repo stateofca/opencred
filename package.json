@@ -20,7 +20,7 @@
     "preview": "vite preview",
     "start": "node --preserve-symlinks dev.js",
     "test": "npm run lint && npm run test-node",
-    "test-node": "cross-env NODE_ENV=test node --preserve-symlinks test.js test",
+    "test-node": "cross-env NODE_ENV=test node --trace-warnings --preserve-symlinks test.js test",
     "test:load": "artillery run ./test/load/artillery.yaml",
     "test:load:qa": "env-cmd artillery run -e qa ./test/load/artillery.yaml"
   },
@@ -32,6 +32,7 @@
     "@bedrock/express-browser-fixes": "^3.1.0",
     "@bedrock/health": "^4.1.0",
     "@bedrock/mongodb": "^10.2.0",
+    "@bedrock/oauth2-client": "^7.1.0",
     "@bedrock/quasar": "^10.0.0",
     "@bedrock/server": "^5.1.0",
     "@bedrock/views": "^11.1.0",

@@ -32,6 +32,7 @@ bedrock.events.on('bedrock.configure', async () => {
   await import(path.join(config.paths.config, 'server.js'));
   await import(path.join(config.paths.config, 'database.js'));
   await import(path.join(config.paths.config, 'https-agent.js'));
+  await import(path.join(config.paths.config, 'authorization.js'));
 });
 
 config.views.bundle.packages.push({

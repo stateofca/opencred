@@ -56,15 +56,16 @@ app:
           untrustedVariableAllowList:
             - exampleParam
             - exampleParam2
-          callback:
-            url: http://localhost:9000/callback
-            oauth:
-              token_url: http://example.com/token
-              client_secret: exampleClientSecret
-              client_id: exampleClientId
           initialStep: default
           steps:
             default:
+              callback:
+                url: http://localhost:9000/callback
+                headersVariable: callbackHeaders
+                oauth:
+                  token_url: http://example.com/token
+                  client_secret: exampleClientSecret
+                  client_id: exampleClientId
               createChallenge: true
               verifiablePresentationRequest: >
                 {

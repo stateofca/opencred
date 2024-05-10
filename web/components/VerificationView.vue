@@ -7,18 +7,6 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import CheckDecagramIcon from 'vue-material-design-icons/CheckDecagram.vue';
-
-defineProps({
-  exchange: {
-    type: Object,
-    default: () => ({})
-  },
-  rp: {
-    type: Object,
-    default: () => ({})
-  }
-});
-
 </script>
 
 <template>

@@ -7,6 +7,7 @@
 - Add new verification page.
 - Add `untrustedVariableAllowList` to a workflow to allow specific custom
   variables to be provided via untrusted user input.
+- Add callbacks to workflow steps.
 
 ## 7.0.0 - 2024-04-30
 

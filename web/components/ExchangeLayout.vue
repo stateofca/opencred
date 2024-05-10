@@ -7,8 +7,10 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import {inject, onBeforeMount, onMounted, reactive, ref} from 'vue';
+import CHAPIView from './CHAPIView.vue';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
+import OID4VPView from './OID4VPView.vue';
 import {setCssVar} from 'quasar';
 import {useHead} from 'unhead';
 import {useI18n} from 'vue-i18n';
@@ -27,6 +29,7 @@ const context = ref({
 
 const state = reactive({
   currentUXMethodIndex: 0,
+  active: false,
   error: null
 });
 
@@ -98,6 +101,8 @@ const checkStatus = async () => {
       intervalId = clearInterval(intervalId);
       $cookies.remove('accessToken');
       $cookies.remove('exchangeId');
+    } else if(exchange.state === 'active') {
+      state.active = true;
     }
   } catch(e) {
     console.error('An error occurred while polling the endpoint:', e);
@@ -146,6 +151,7 @@ onMounted(async () => {
           :href="context.rp.primaryLink"
           class="flex items-center gap-3">
           <img
+            class="max-h-[50px]"
             :src="context.rp.primaryLogo"
             alt="logo-image">
         </a>
@@ -154,6 +160,7 @@ onMounted(async () => {
           :href="context.rp.secondaryLink"
           class="flex items-center gap-3">
           <img
+            class="max-h-[50px]"
             :src="context.rp.secondaryLogo"
             alt="logo-image">
         </a>
@@ -228,7 +235,7 @@ onMounted(async () => {
             :error="state.error.message" />
         </div>
       </div>
-      <ButtonView
+      <CHAPIView
         v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex]
           === 'chapi'"
         :chapi-enabled="true"
@@ -236,13 +243,14 @@ onMounted(async () => {
         :options="config.options"
         :exchange-data="context.exchangeData"
         @switch-view="switchView" />
-      <QRView
+      <OID4VPView
         v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex]
           === 'openid4vp'"
         :brand="context.rp.brand"
         :exchange-data="context.exchangeData"
         :options="config.options"
         :explainer-video="context.rp?.explainerVideo"
+        :active="state.active"
         @switch-view="switchView"
         @replace-exchange="replaceExchange" />
     </main>

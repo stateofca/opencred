@@ -7,11 +7,14 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import {inject, onMounted, ref} from 'vue';
-import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
 import {useQuasar} from 'quasar';
 
 const props = defineProps({
+  active: {
+    type: Boolean,
+    default: false
+  },
   brand: {
     type: Object,
     default: () => ({
@@ -37,12 +40,15 @@ const props = defineProps({
     })
   }
 });
-const emit = defineEmits(['switchView', 'replaceExchange']);
-const switchView = () => emit('switchView');
-const showDeeplink = ref(true);
+const emit = defineEmits(['replaceExchange']);
+const showDeeplink = ref(false);
 const showVideo = ref(false);
 const $q = useQuasar();
 const $cookies = inject('$cookies');
+
+const switchView = () => {
+  showDeeplink.value = !showDeeplink.value;
+};
 
 onMounted(() => {
   if($q.platform.is.mobile) {
@@ -52,6 +58,8 @@ onMounted(() => {
 
 async function appOpened() {
   const {location} = window;
+  const searchParams = new URLSearchParams(location.search);
+  const variables = JSON.parse(atob(searchParams.get('variables'))) ?? {};
   const redirectPath = location.href.split(location.origin).at(-1);
   let exchange = {};
   ({
@@ -61,7 +69,10 @@ async function appOpened() {
     `/exchanges`,
     {
       json: {
-        variables: btoa(JSON.stringify({redirectPath})).replace(/=+$/, ''),
+        variables: btoa(JSON.stringify({
+          ...variables,
+          redirectPath
+        })).replace(/=+$/, ''),
         oidcState: props.exchangeData.oidc.state
       },
       headers: {
@@ -97,31 +108,39 @@ async function appOpened() {
         v-html="$t('qrPageExplainHelp')" />
     </div>
     <div
-      v-if="showDeeplink && exchangeData.QR"
-      class="mb-4 flex justify-center">
-      <button
-        v-if="exchangeData"
-        @click="appOpened()">
-        <img :src="exchangeData.QR">
-      </button>
+      v-if="active || !exchangeData.QR"
+      class="p-12 m-12 flex justify-center">
+      <q-spinner-tail
+        color="primary"
+        size="2em" />
     </div>
     <div
-      v-else-if="exchangeData.QR !== ''"
+      v-else-if="!showDeeplink && exchangeData.QR !== ''"
       class="mb-4 flex justify-center">
       <img
         v-if="exchangeData.QR !== ''"
         :src="exchangeData.QR">
     </div>
     <div
-      v-else
-      class="p-12 m-12 flex justify-center">
-      <q-spinner-tail
+      v-else-if="exchangeData.QR"
+      class="mb-4 flex justify-center">
+      <q-btn
         color="primary"
-        size="2em" />
+        @click="appOpened()">
+        {{$t('appCta')}}
+      </q-btn>
     </div>
     <div class="mt-2">
       <button
-        v-if="$t('qrExplainerText') !== '' && props.explainerVideo.id !== ''
+        v-if="showDeeplink"
+        class="mt-2"
+        :style="{color: brand.primary}"
+        @click="switchView">
+        {{$t('qrPageAnotherWay')}}
+      </button>
+      <button
+        v-else-if="$t('qrExplainerText') !== ''
+          && props.explainerVideo.id !== ''
           && props.explainerVideo.provider"
         :style="{color: brand.primary}"
         class="underline"
@@ -137,15 +156,6 @@ async function appOpened() {
       v-if="$t('qrDisclaimer')"
       class="mt-12 flex flex-col items-center"
       v-html="$t('qrDisclaimer')" />
-    <div v-if="config.options.exchangeProtocols.length > 1">
-      <p class="text-center">
-        <button
-          :style="{color: brand.primary}"
-          @click="switchView">
-          {{$t('qrPageAnotherWay')}}
-        </button>
-      </p>
-    </div>
 
     <q-dialog
       v-model="showVideo">
