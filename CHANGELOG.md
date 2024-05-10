@@ -8,6 +8,8 @@
 - Add `untrustedVariableAllowList` to a workflow to allow specific custom
   variables to be provided via untrusted user input.
 - Add callbacks to workflow steps.
+- Add new `active` state once authorization request has been retrieved.
+- Add button view in mobile view with QR code option.
 
 ## 7.0.0 - 2024-04-30
 
