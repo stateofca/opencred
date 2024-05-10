@@ -133,7 +133,7 @@ async function appOpened() {
     <div class="mt-2">
       <button
         v-if="showDeeplink"
-        class="mt-2"
+        class="mt-2 underline"
         :style="{color: brand.primary}"
         @click="switchView">
         {{$t('qrPageAnotherWay')}}

@@ -210,6 +210,29 @@ relyingParties:
         - color
 ```
 
+#### Configuring a Workflow Step
+
+A workflow step configures the specifics of how a presentation is requested.
+The step contains a `verifiablePresentationRequest` which uses a [VPR](https://w3c-ccg.github.io/vp-request-spec/) to create a [Presentation Exchange (PE)](https://identity.foundation/presentation-exchange/) object to be included in the request. If for whatever
+reason the constraints need to be overwritten that can be accomplished using the
+`constraintsOverride` property.
+
+##### Callbacks
+
+A step can also include a callback that will be sent an http POST request with
+the `id`, `variables` and `step` of the exchange. The callback URL can
+optionally be protected by oauth2 and can include headers using a customizable
+variable.
+
+```yaml
+callback:
+  url: http://localhost:9000/callback
+  headersVariable: callbackHeaders
+  oauth:
+    token_url: http://example.com/token
+    client_secret: exampleClientSecret
+    client_id: exampleClientId
+```
 
 #### Configuring Exchange UX Methods
 
