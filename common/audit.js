@@ -187,10 +187,10 @@ const getFieldMatchesDiVp = (vpToken, fields) => {
       Object.entries(fields)
         .map(([path, value]) => {
           const credentialMatches = credentials.some(c => {
-            let [credentialValue] = jp.query(c, path);
-            credentialValue = credentialValue === undefined ?
-              null :
-              credentialValue;
+            const credentialQueryResult = jp.query(c, path);
+            const [credentialValue] = credentialQueryResult.length > 0 ?
+              credentialQueryResult :
+              [null];
             return value === credentialValue;
           });
           return [path, credentialMatches];
