@@ -59,7 +59,7 @@ onMounted(() => {
 async function appOpened() {
   const {location} = window;
   const searchParams = new URLSearchParams(location.search);
-  const variables = JSON.parse(atob(searchParams.get('variables'))) ?? {};
+  const variables = JSON.parse(atob(searchParams.get('variables') ?? 'e30='));
   const redirectPath = location.href.split(location.origin).at(-1);
   let exchange = {};
   ({

@@ -229,9 +229,12 @@ callback:
   url: http://localhost:9000/callback
   headersVariable: callbackHeaders
   oauth:
+    issuer: http://example.com
     token_url: http://example.com/token
     client_secret: exampleClientSecret
     client_id: exampleClientId
+    scope:
+      - default
 ```
 
 #### Configuring Exchange UX Methods
