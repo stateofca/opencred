@@ -1,5 +1,7 @@
 import * as bedrock from '@bedrock/core';
 const {config} = bedrock;
+const c = bedrock.util.config.main;
+const cc = c.computer();
 
 const getOAuthConfigs = workflow => {
   const configs = [];
@@ -21,6 +23,6 @@ const getOAuthConfigs = workflow => {
   return configs;
 };
 
-config.opencred.authorization = config.opencred.relyingParties.flatMap(
+cc('opencred.authorization', () => config.opencred.relyingParties.flatMap(
   rp => getOAuthConfigs(rp.workflow)
-).filter(c => c);
+).filter(c => c));
