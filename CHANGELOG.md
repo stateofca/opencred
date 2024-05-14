@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 7.2.0 - 2024-05-xx
+
+### Added
+- Add RP specific translations override.
+
 ## 7.1.1 - 2024-05-14
 
 ### Fixed

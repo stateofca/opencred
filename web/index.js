@@ -32,7 +32,8 @@ import './styles.pcss';
 
 brVue.initialize({
   async beforeMount({app}) {
-    const {data: appConfig} = await httpClient.get('/config/app.json');
+    const {data: appConfig} =
+      await httpClient.get('/config/app.json' + window.location.search);
     extend({target: config, source: appConfig, deep: true});
 
     app.component('LoginView', LoginView);
