@@ -11,7 +11,6 @@ import {klona} from 'klona';
 import path from 'node:path';
 import 'dotenv/config';
 import '@bedrock/views';
-import '../lib/index.js';
 
 import {applyRpDefaults} from './configUtils.js';
 import {combineTranslations} from './translation.js';
