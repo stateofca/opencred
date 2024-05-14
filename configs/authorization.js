@@ -21,6 +21,6 @@ const getOAuthConfigs = workflow => {
   return configs;
 };
 
-config.app.opencred.authorization = config.app.opencred.relyingParties.flatMap(
+config.opencred.authorization = config.opencred.relyingParties.flatMap(
   rp => getOAuthConfigs(rp.workflow)
 ).filter(c => c);
