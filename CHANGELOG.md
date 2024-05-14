@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 7.1.1 - TBD
+## 7.1.1 - 2024-05-14
 
 ### Fixed
 - Apply fixes to the `authorization.js` config.
