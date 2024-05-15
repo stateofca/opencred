@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 7.2.1 - 2024-05-xx
+## 7.2.1 - 2024-05-15
 
 ### Fixed
 - Fix `client_id` requirement on `/config/app.json`.
