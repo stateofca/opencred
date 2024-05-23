@@ -98,7 +98,7 @@ async function appOpened() {
       :style="{color: brand.primary}">
       {{$t('qrTitle')}}
     </h1>
-    <div class="mb-2">
+    <div class="mb-4">
       <p
         v-if="$t('qrPageExplain')"
         v-html="$t('qrPageExplain')" />
@@ -123,11 +123,21 @@ async function appOpened() {
     </div>
     <div
       v-else-if="exchangeData.QR"
-      class="mb-4 flex justify-center">
+      class="flex justify-center">
       <q-btn
+        v-if="!active"
         color="primary"
         @click="appOpened()">
         {{$t('appCta')}}
+      </q-btn>
+      <q-btn
+        v-else
+        color="primary"
+        class="px-16 py-4"
+        @click="appOpened()">
+        <q-spinner-tail
+          color="white"
+          size="1em" />
       </q-btn>
     </div>
     <div class="mt-2">

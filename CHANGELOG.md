@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 7.2.2 - 2024-05-xx
+
+### Fixed
+- Fix ability to create a new authorization request when in mobile active state.
+
 ## 7.2.1 - 2024-05-15
 
 ### Fixed
