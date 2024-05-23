@@ -415,10 +415,12 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow', function() {
         apiLoginBaseUrl: 'https://login.entra.microsoft.example.com',
         verifierDid: 'did:web:example.com',
         verifierName: 'Test Entra Verifier',
-        acceptedCredentialType: 'Iso18013DriversLicenseCredential',
         credentialVerificationCallbackAuthEnabled: false,
+        initialStep: 'default',
         steps: {
-          default: {}
+          default: {
+            acceptedCredentialType: 'Iso18013DriversLicenseCredential',
+          }
         }
       }
     }]);

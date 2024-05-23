@@ -236,7 +236,8 @@ bedrock.events.on('bedrock.init', async () => {
         apiTenantId,
         verifierDid,
         verifierName,
-        acceptedCredentialType
+        steps,
+        initialStep
       } = rp.workflow;
       if(!apiBaseUrl) {
         throw new Error('apiBaseUrl is required.');
@@ -259,6 +260,13 @@ bedrock.events.on('bedrock.init', async () => {
       if(!verifierName) {
         throw new Error('verifierName is required.');
       }
+      if(!steps) {
+        throw new Error('steps is required.');
+      }
+      if(!initialStep) {
+        throw new Error('initialStep is required.');
+      }
+      const {acceptedCredentialType} = steps[initialStep];
       if(!acceptedCredentialType) {
         throw new Error('acceptedCredentialType is required.');
       }

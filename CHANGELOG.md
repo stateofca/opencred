@@ -4,6 +4,7 @@
 
 ### Fixed
 - Fix ability to create a new authorization request when in mobile active state.
+- Fix missing "step" functionality in Entra flow.
 
 ## 7.2.1 - 2024-05-15
 
