@@ -108,7 +108,7 @@ async function appOpened() {
         v-html="$t('qrPageExplainHelp')" />
     </div>
     <div
-      v-if="active || !exchangeData.QR && !showDeeplink"
+      v-if="(active && !showDeeplink) || !exchangeData.QR"
       class="p-12 m-12 flex justify-center">
       <q-spinner-tail
         color="primary"
