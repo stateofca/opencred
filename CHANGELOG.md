@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 7.2.4 - 2024-05-xx
+
+### Fixed
+- Fixed old spinner showing in mobile view.
+
 ## 7.2.3 - 2024-05-23
 
 ### Changed
