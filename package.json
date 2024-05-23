@@ -1,6 +1,6 @@
 {
   "name": "opencred-platform",
-  "version": "7.2.2",
+  "version": "7.2.3",
   "type": "module",
   "license": "BSD-3-Clause",
   "engines": {
