@@ -1,6 +1,9 @@
 # opencred-platform Changelog
 
-## 7.2.3 - 2024-05-xx
+## 7.2.3 - 2024-05-23
+
+### Changed
+- Improve error handling in config validation.
 
 ### Fixed
 - Fix missing "step" functionality in Entra flow.
