@@ -240,35 +240,45 @@ bedrock.events.on('bedrock.init', async () => {
         initialStep
       } = rp.workflow;
       if(!apiBaseUrl) {
-        throw new Error('apiBaseUrl is required.');
+        throw new Error(
+          `apiBaseUrl is missing for workflow in client ${rp.clientId}.`);
       }
       if(!apiLoginBaseUrl) {
-        throw new Error('apiLoginBaseUrl is required.');
+        throw new Error(
+          `apiLoginBaseUrl is missing for workflow in client ${rp.clientId}.`);
       }
       if(!apiClientId) {
-        throw new Error('apiClientId is required.');
+        throw new Error(
+          `apiClientId is missing for workflow in client ${rp.clientId}.`);
       }
       if(!apiClientSecret) {
-        throw new Error('apiClientSecret is required.');
+        throw new Error(
+          `apiClientSecret is missing for workflow in client ${rp.clientId}.`);
       }
       if(!apiTenantId) {
-        throw new Error('apiTenantId is required.');
+        throw new Error(
+          `apiTenantId is missing for workflow in client ${rp.clientId}.`);
       }
       if(!verifierDid) {
-        throw new Error('verifierDid is required.');
+        throw new Error(
+          `verifierDid is missing for workflow in client  ${rp.clientId}.`);
       }
       if(!verifierName) {
-        throw new Error('verifierName is required.');
+        throw new Error(
+          `verifierName is missing for workflow in client ${rp.clientId}.`);
       }
       if(!steps) {
-        throw new Error('steps is required.');
+        throw new Error(
+          `steps is missing for workflow in client ${rp.clientId}.`);
       }
       if(!initialStep) {
-        throw new Error('initialStep is required.');
+        throw new Error(
+          `initialStep is missing for workflow in client  ${rp.clientId}.`);
       }
       const {acceptedCredentialType} = steps[initialStep];
       if(!acceptedCredentialType) {
-        throw new Error('acceptedCredentialType is required.');
+        throw new Error(
+          `acceptedCredentialType is missing for workflow in ${rp.clientId}.`);
       }
     } else {
       throw new Error(
