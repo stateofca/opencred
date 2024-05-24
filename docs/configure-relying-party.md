@@ -22,23 +22,23 @@ Ensure you have:
 Copy the example configuration file to the required location:
 
 ```sh
-cp configs/config.example.yaml /etc/bedrock-config/combined.yaml
+cp configs/config.example.yaml configs/config.yaml
 ```
 
-#### Configure Environment Variable (optional)
-
-If you prefer to use an environment variable for configuration:
+Whenever changes are made to the `config.yaml` you will need to export an
+environment variable:
 
 ```sh
-export BEDROCK_CONFIG=$(cat /etc/bedrock-config/combined.yaml | base64)
+export BEDROCK_CONFIG=$(cat configs/config.yaml | base64)
 ```
 
 ### 2. Run a Local Tunnel
 
-For the wallet to communicate with your local OpenCred server, run a local
-tunnel:
+For the wallet to communicate with your local OpenCred server, install and run
+`localtunnel`:
 
 ```sh
+npm install -g localtunnel
 npm run tunnel
 ```
 
