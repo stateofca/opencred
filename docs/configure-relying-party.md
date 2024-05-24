@@ -44,7 +44,7 @@ npm run tunnel
 
 ### 3. Update the Configuration File
 
-Edit the `/etc/bedrock-config/combined.yaml` file and update the details of the
+Edit the `configs/config.yaml` file and update the details of the
 OpenCred deployment.
 
 - Input the full local tunnel URI as the `app.server.baseUri` property.
