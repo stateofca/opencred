@@ -1,15 +1,18 @@
 # opencred-platform Changelog
 
-## 7.2.6 - 2024-06-XX
+## 7.3.0 - 2024-06-XX
+
+### Added
+- Add tutorial documents.
+
+### Changed
+- Use red asterisks to denote required fields in the audit form.
+- Changed example config to show "steps" in Entra config.
 
 ### Fixed
 - Updated `credential-handler-polyfill` to experimental branch to incorporate
   module change.
 - Remove all whitespace from VP token before submitting audit.
-
-### Changed
-- Use red asterisks to denote required fields in the audit form.
-- Changed example config to show "steps" in Entra config.
 
 ## 7.2.5 - 2024-05-24
 
