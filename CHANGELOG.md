@@ -9,6 +9,7 @@
 
 ### Changed
 - Use red asterisks to denote required fields in the audit form.
+- Changed example config to show "steps" in Entra config.
 
 ## 7.2.5 - 2024-05-24
 
