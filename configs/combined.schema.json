@@ -128,7 +128,8 @@
             "defaultLanguage": {
               "type": "string",
               "description": "The default language for the UI.",
-              "pattern": "^[a-z]{2}(\\-[A-Z]{2})?$"
+              "pattern": "^[a-z]{2}(\\-[A-Z]{2})?$",
+              "examples": ["en", "en-US"]
             },
             "defaultBrand": {
               "$ref": "#/definitions/BrandConfiguration"
