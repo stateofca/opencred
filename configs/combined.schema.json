@@ -258,6 +258,11 @@
             {
               "$ref": "#/definitions/VcApiWorkflow"
             }
+          ],
+          "allOf": [
+            {
+              "$ref": "#/definitions/BaseWorkflow"
+            }
           ]
         },
         "translations": {
@@ -339,17 +344,30 @@
       },
       "required": ["cta", "primary", "header"]
     },
+    "BaseWorkflow": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The ID of the workflow. Must be unique across all RPs."
+        },
+        "untrustedVariableAllowList": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "A list of query params whose values passed in on initialization will be saved to the DB with the exchange for later reporting.",
+          "default": []
+        }
+      },
+      "required": ["id"]
+    },
     "EntraWorkflow": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "type": {
           "type": "string",
           "enum": ["microsoft-entra-verified-id"]
-        },
-        "id": {
-          "type": "string",
-          "description": "The ID of the workflow. Must be unique across all RPs."
         },
         "apiBaseUrl": {
           "type": "string",
@@ -442,7 +460,7 @@
     },
     "NativeWorkflow": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "type": {
           "type": "string",
@@ -466,7 +484,7 @@
                 "createChallenge": { "type": "boolean" },
                 "verifiablePresentationRequest": {
                   "type": "string",
-                  "description": "JSON string of a VPR, such as an object with a 'query' object of type 'QueryByExample'"
+                  "description": "JSON string of a VPR, such as an object with a 'query' object of type 'QueryByExample'."
                 },
                 "constraintsOverride": {
                   "type": "string",
@@ -481,7 +499,7 @@
     },
     "VcApiWorkflow": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "type": {
           "type": "string",
@@ -490,9 +508,25 @@
         "id": {
           "type": "string",
           "description": "The ID of the workflow. Must be unique across all RPs."
+        },
+        "baseUrl": {
+          "type": "string",
+          "description": "The base URL of the VC API used for the exchange."
+        },
+        "vpr": {
+          "type": "string",
+          "description": "JSON string of a VPR, such as an object with a 'query' object of type 'QueryByExample'."
+        },
+        "capability": {
+          "type": "string",
+          "description": "The capability to use for exchange API auth."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "The client secret key seed for the VC API."
         }
       },
-      "required": ["id", "type"]
+      "required": ["id", "type", "capability", "clientSecret", "baseUrl", "vpr"]
     },
     "Translations": {
       "type": "object",

@@ -69,15 +69,20 @@ bedrock.events.on('bedrock.init', async () => {
   /**
    * @typedef {Object} VcApiWorkflow
    * @property {'vc-api'} type - The type of the workflow.
-   * @property {boolean} createChallenge - Whether to create a challenge?
-   * @property {string} verifiablePresentationRequest - What to request
+   * @property {string} id - The ID of the workflow.
+   * @property {string[]} untrustedVariableAllowList - List of initialization
+   * variables to save
+   * @property {string} baseUrl - The base URL of the workflow.
+   * @property {string} capability - The capability of the workflow.
+   * @property {string} clientSecret - The client secret of the workflow.
+   * @property {string} vpr - Verifiable Presentation Request JSON string.
    */
 
   /**
    * @typedef {Object} WorkflowStep
    * @property {boolean} createChallenge - Whether to create a challenge?
    * @property {string} verifiablePresentationRequest - What to request
-   * @property {string} constraintsOverride - Override presentation definition \
+   * @property {string} constraintsOverride - Override presentation definition
    * constraints with value
   * @property {Object.<string, WorkflowStep>} steps - Steps to execute
   */
@@ -86,6 +91,8 @@ bedrock.events.on('bedrock.init', async () => {
    * @typedef {Object} NativeWorkflow
    * @property {'native'} type - The type of the workflow.
    * @property {string} id - The ID of the workflow.
+   * @property {string[]} untrustedVariableAllowList - List of initialization
+   * variables to save
    * @property {string} initialStep - The id of the first step.
    * @property {Object.<string, WorkflowStep>} steps - The steps of the \
    * workflow.
@@ -95,10 +102,15 @@ bedrock.events.on('bedrock.init', async () => {
    * @typedef {Object} EntraWorkflow
    * @property {'microsoft-entra-verified-id'} type - The type of the workflow.
    * @property {string} id - The ID of the workflow.
-   * @property {string} baseUrl - The base URL of the workflow.
-   * @property {string} capability - The capability of the workflow.
-   * @property {string} clientSecret - The client secret of the workflow.
-   * @property {Object} vpr - Verifiable Presentation Request JSON
+   * @property {string[]} untrustedVariableAllowList - List of initialization
+   * variables to save
+   * @property {string} apiBaseUrl - The base URL of the workflow.
+   * @property {string} apiLoginBaseUrl - The base URL of the auth domain
+   * @property {string} apiTenantId - The Tenant ID for the Entra API
+   * @property {string} apiClientId - The client ID for the App within tenant
+   * @property {string} apiClientSecret - The client secret for the App
+   * @property {string} verifierDid - The DID of the verifier, this app
+   * @property {string} verifierName - The name of the verifier app
    */
 
   /**
