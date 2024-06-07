@@ -21,7 +21,8 @@
     "test": "npm run lint && npm run test-node",
     "test-node": "cross-env NODE_ENV=test node --trace-warnings --preserve-symlinks test.js test",
     "test:load": "artillery run ./test/load/artillery.yaml",
-    "test:load:qa": "env-cmd artillery run -e qa ./test/load/artillery.yaml"
+    "test:load:qa": "env-cmd artillery run -e qa ./test/load/artillery.yaml",
+    "validateConfig": "npx ajv-cli validate -d configs/combined.yaml -s configs/combined.schema.json -c ajv-formats --spec=draft7"
   },
   "dependencies": {
     "@azure/msal-node": "^2.6.4",
@@ -96,6 +97,8 @@
   "devDependencies": {
     "@bedrock/test": "^8.2.0",
     "@peculiar/webcrypto": "^1.4.5",
+    "ajv-cli": "^5.0.0",
+    "ajv-formats": "^3.0.1",
     "asn1js": "^3.0.5",
     "cross-env": "^7.0.3",
     "env-cmd": "^10.1.0",

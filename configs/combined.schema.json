@@ -128,7 +128,7 @@
             "defaultLanguage": {
               "type": "string",
               "description": "The default language for the UI.",
-              "pattern": "^[a-z]{2}$"
+              "pattern": "^[a-z]{2}(\\-[A-Z]{2})?$"
             },
             "defaultBrand": {
               "$ref": "#/definitions/BrandConfiguration"
@@ -532,7 +532,7 @@
       "type": "object",
       "additionalProperties": false,
       "patternProperties": {
-        "^[a-z]{2}$": {
+        "^[a-z]{2}(\\-[A-Z]{2})?$": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
@@ -663,7 +663,7 @@
     },
     "AuditFieldText": {
       "type": "object",
-      "descriptions": "An Audit Field for a text field",
+      "description": "An Audit Field for a text field",
       "allOf": [
         {
           "$ref": "#/definitions/AuditFieldBase"
@@ -681,7 +681,7 @@
     },
     "AuditFieldDate": {
       "type": "object",
-      "descriptions": "An Audit Field for a date picker field",
+      "description": "An Audit Field for a date picker field",
       "allOf": [
         {
           "$ref": "#/definitions/AuditFieldBase"
@@ -699,7 +699,7 @@
     },
     "AuditFieldDropdown": {
       "type": "object",
-      "descriptions": "An Audit Field with options for a dropdown",
+      "description": "An Audit Field with options for a dropdown",
       "allOf": [
         {
           "$ref": "#/definitions/AuditFieldBase"
