@@ -15,6 +15,7 @@ dist
 node_modules
 package-lock.json
 configs/config.yaml
+configs/combined.yaml
 configs/*.pem
 test/fixtures/audit/vpToken.json
 

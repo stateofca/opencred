@@ -1,0 +1,712 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OpenCred Config Schema - Combined Format",
+  "description": "A schema for configuration of OpenCred via YAML. This can be used by VS Code to more easily autocomplete and check configurations.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "app": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "express": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "httpOnly": {
+              "type": "boolean",
+              "description": "Whether to use HTTP only (avoid also opening an HTTPS port). Used when behind a reverse proxy. Set to false for local development on HTTPS, which is needed for some features.",
+              "default": true
+            }
+          }
+        },
+        "mongodb": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "The connection string for the MongoDB database including database name."
+            }
+          }
+        },
+        "opencred": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "relyingParties": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/RelyingParty" }
+            },
+            "signingKeys": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["ES256"]
+                  },
+                  "purpose": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["id_token", "authorization_request"]
+                    }
+                  },
+                  "privateKeyPem": {
+                    "type": "string",
+                    "description": "The private key in PEM format."
+                  },
+                  "publicKeyPem": {
+                    "type": "string",
+                    "description": "The public key in PEM format."
+                  }
+                }
+              }
+            },
+            "didWeb": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Whether to enable DID Web document endpoint."
+                },
+                "services": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "The ID (typically base URL) of the service."
+                      },
+                      "type": {
+                        "type": "string",
+                        "description": "The type of the service."
+                      },
+                      "serviceEndpoint": {
+                        "type": "string",
+                        "description": "The service endpoint."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "enableAudit": {
+              "type": "boolean",
+              "description": "Whether to enable the Audit Presentation feature, which allows re-checking of a previously delivered and stored presentation. If enabled, access at /audit-vp"
+            },
+            "auditFields": {
+              "type": "array",
+              "description": "The fields to include in the audit presentation.",
+              "items": {
+                "$ref": "#/definitions/AuditField"
+              }
+            },
+            "options": {
+              "type": "object",
+              "description": "Additional options that control operation across all relying parties.",
+              "additionalProperties": false,
+              "properties": {
+                "exchangeProtocols": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": ["chapi", "openid4vp"]
+                  }
+                }
+              }
+            },
+            "translations": {
+              "$ref": "#/definitions/Translations"
+            },
+            "defaultLanguage": {
+              "type": "string",
+              "description": "The default language for the UI.",
+              "pattern": "^[a-z]{2}$"
+            },
+            "defaultBrand": {
+              "$ref": "#/definitions/BrandConfiguration"
+            }
+          }
+        },
+        "server": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "baseUri": {
+              "type": "string",
+              "description": "The base URI of the OpenCred server."
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "RelyingPartyBase": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the relying party."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the relying party, not prominently displayed in the app"
+        },
+        "clientId": {
+          "type": "string",
+          "description": "The client ID (primary identifier) for the relying party."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "The client secret for the relying party, used as an API key."
+        },
+        "icon": {
+          "type": "string",
+          "format": "uri",
+          "description": "The URL of the icon for the relying party."
+        },
+        "backgroundImage": {
+          "type": "string",
+          "format": "uri",
+          "description": "The URL of the header background image for the relying party."
+        },
+        "brand": {
+          "$ref": "#/definitions/BrandConfiguration"
+        },
+        "redirectUri": {
+          "type": "string",
+          "description": "The redirect URI for the relying party, if OIDC integration is being used."
+        },
+        "explainerVideo": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "provider": {
+              "type": "string",
+              "description": "The hosting provider of the video. Currently only 'youtube' is supported.",
+              "enum": ["youtube"]
+            },
+            "id": {
+              "type": "string",
+              "description": "The ID of the video on the hosting provider, a unique identifier.",
+              "examples": [
+                "dQw4w9WgXcQ"
+              ]
+            }
+          }
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The name of the scope.",
+                "enum": ["openid"]
+              },
+              "description": {
+                "type": "string",
+                "description": "A description of the scope."
+              }
+            }
+          }
+        },
+        "idTokenExpirySeconds": {
+          "type": "integer",
+          "description": "The number of seconds for which an id_token is valid. Default: 3600 (1 hour)"
+        },
+        "claims": {
+          "type": "array",
+          "description": "If OIDC integration is used, this is a set of claims that will be added to the id_token subject and information on where in a credential the values will be sourced.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The name of the claim as it will appear within 'sub' of an id_token."
+              },
+              "sourcePath": {
+                "type": "string",
+                "description": "The path to the claim in the credential from an assumed root of credentialSubject.",
+                "examples": [
+                  "driversLicense.document_number",
+                  "birthDate",
+                  "achievement.id"
+                ]
+              }
+            }
+          }
+        },
+        "workflow": {
+          "type": "object",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/EntraWorkflow"
+            },
+            {
+              "$ref": "#/definitions/NativeWorkflow"
+            },
+            {
+              "$ref": "#/definitions/VcApiWorkflow"
+            }
+          ]
+        },
+        "translations": {
+          "$ref": "#/definitions/Translations"
+        }
+      }
+    },
+    "RelyingPartyFrom": {
+      "type": "object",
+      "properties": {
+        "configFrom": {
+          "type": "string",
+          "description": "The clientId of the relying party from which to copy configuration."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "The client ID (primary identifier) for the relying party."
+        },
+        "workflow": {
+          "type": "object",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/EntraWorkflow"
+            },
+            {
+              "$ref": "#/definitions/NativeWorkflow"
+            },
+            {
+              "$ref": "#/definitions/VcApiWorkflow"
+            }
+          ]
+        }
+      },
+      "required": ["configFrom", "clientId", "workflow"]
+    },
+    "RelyingParty": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/RelyingPartyBase"
+        }
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/definitions/RelyingPartyFrom"
+        },
+        {
+          "type": "object",
+          "allOf": [
+            {
+              "$ref": "#/definitions/RelyingPartyBase"
+            }
+          ],
+          "not": {
+            "$ref": "#/definitions/RelyingPartyFrom"
+          },
+          "required": ["clientId", "clientSecret", "workflow"]
+        }
+      ]
+    },
+    "BrandConfiguration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cta": {
+          "type": "string",
+          "description": "The call to action color for primary links and interactive content.",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "primary": {
+          "type": "string",
+          "description": "The primary color for the brand.",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "header": {
+          "type": "string",
+          "description": "The color for the header.",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        }
+      },
+      "required": ["cta", "primary", "header"]
+    },
+    "EntraWorkflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["microsoft-entra-verified-id"]
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the workflow. Must be unique across all RPs."
+        },
+        "apiBaseUrl": {
+          "type": "string",
+          "description": "The base URL of the Entra API"
+        },
+        "apiLoginBaseUrl": {
+          "type": "string",
+          "description": "The base URL of the domain used for login"
+        },
+        "apiTenantId": {
+          "type": "string",
+          "description": "The Tenant ID for the Entra API"
+        },
+        "apiClientId": {
+          "type": "string",
+          "description": "The client ID for an application authorized to use the Entra API within the tenant"
+        },
+        "apiClientSecret": {
+          "type": "string",
+          "description": "The client secret for the Entra API"
+        },
+        "verifierDid": {
+          "type": "string",
+          "description": "The DID of the verifier, already registered with the Entra API"
+        },
+        "verifierName": {
+          "type": "string",
+          "description": "The name of the verifier, already registered with the Entra API"
+        },
+        "steps": {
+          "type": "object",
+          "patternProperties": {
+            "^.+$": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "acceptedCredentialType": {
+                  "type": "string",
+                  "description": "The type of credential accepted by this step, required in the initial step."
+                }
+              }
+            }
+          }
+        },
+        "initialStep": {
+          "type": "string",
+          "description": "The ID of the initial step in the workflow"
+        },
+        "credentialVerificationCallbackAuthEnabled": {
+          "type": "boolean",
+          "description": "Whether to require authentication for the credential verification callback.",
+          "default": true
+        },
+        "acceptedCredentialIssuers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "The list of issuer DIDs whose credentials are accepted by this RP.",
+          "default": null
+        },
+        "allowRevokedCredentials": {
+          "type": "boolean",
+          "description": "Whether to allow credentials that have been revoked by their issuer.",
+          "default": false
+        },
+        "validateLinkedDomain": {
+          "type": "boolean",
+          "description": "Whether to validate a linked domain that may be related to the credential issuer.",
+          "default": false
+        },
+        "untrustedVariableAllowList": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "A list of query params whose values passed in on initialization will be saved to the DB with the exchange for later reporting.",
+          "default": []
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "apiBaseUrl",
+        "apiLoginBaseUrl",
+        "apiTenantId",
+        "apiClientId",
+        "apiClientSecret",
+        "verifierDid",
+        "verifierName",
+        "steps",
+        "initialStep"
+      ]
+    },
+    "NativeWorkflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["native"]
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the workflow. Must be unique across all RPs."
+        },
+        "initialStep": {
+          "type": "string",
+          "description": "The ID of the initial step in the workflow."
+        },
+        "steps": {
+          "type": "object",
+          "patternProperties": {
+            "^.+$": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "createChallenge": { "type": "boolean" },
+                "verifiablePresentationRequest": {
+                  "type": "string",
+                  "description": "JSON string of a VPR, such as an object with a 'query' object of type 'QueryByExample'"
+                },
+                "constraintsOverride": {
+                  "type": "string",
+                  "description": "Optional JSON string expressing constraints that combine with or may partially override the VPR."
+                }
+              }
+            }
+          }
+        }
+      },
+      "required": ["id", "type"]
+    },
+    "VcApiWorkflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["vc-api"]
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the workflow. Must be unique across all RPs."
+        }
+      },
+      "required": ["id", "type"]
+    },
+    "Translations": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[a-z]{2}$": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "loginCta": {
+              "type": "string",
+              "description": "The text for the call to action on the login page."
+            },
+            "loginExplain": {
+              "type": "string",
+              "description": "The text explaining the login process."
+            },
+            "appInstallExplain": {
+              "type": "string",
+              "description": "The text explaining the app installation process."
+            },
+            "appCta": {
+              "type": "string",
+              "description": "The text for the call to action on the app installation page."
+            },
+            "appCta-chapi-label": {
+              "type": "string",
+              "description": "The text for the call to action on the app installation page for CHAPI."
+            },
+            "appCta-openid4vp-label": {
+              "type": "string",
+              "description": "The text for the call to action on the app installation page for OpenID4VP."
+            },
+            "chapiPageAnotherWay": {
+              "type": "string",
+              "description": "The text for the link to the CHAPI page on the app installation page."
+            },
+            "qrExplain": {
+              "type": "string",
+              "description": "The text explaining the QR code scanning process."
+            },
+            "openid4vpAnotherWay": {
+              "type": "string",
+              "description": "The text for the link to the QR code page on the app installation page."
+            },
+            "openid4vpAnotherWayLabel": {
+              "type": "string",
+              "description": "A snippet of text prior to the openid4vpAnotherWay link."
+            },
+            "openid4vpQrAnotherWay": {
+              "type": "string",
+              "description": "The text for the link to the QR code page on the app installation page."
+            },
+            "openid4vpQrAnotherWayLabel": {
+              "type": "string",
+              "description": "A snippet of text prior to the openid4vpQrAnotherWay link."
+            },
+            "qrPageExplain": {
+              "type": "string",
+              "description": "The text explaining the QR code page."
+            },
+            "qrExplainerText": {
+              "type": "string",
+              "description": "Text used as an action link to bring up a video that shows how to use the QR code. Video configured at opencred.relyingParties[].exlplainerVideo"
+            },
+            "qrPageExplainHelp": {
+              "type": "string",
+              "description": "Text or HTML above a QR code to provide additional help to the user on what to do with it."
+            },
+            "qrPageCta": {
+              "type": "string",
+              "description": "The text for the call to action on the QR code page."
+            },
+            "qrDisclaimer": {
+              "type": "string",
+              "description": "The disclaimer text for the QR code page."
+            },
+            "copyright": {
+              "type": "string",
+              "description": "The text for the copyright notice in the footer."
+            },
+            "translate": {
+              "type": "string",
+              "description": "The text for the language selector."
+            },
+            "qrTitle": {
+              "type": "string",
+              "description": "The title for the QR code page."
+            },
+            "qrFooter": {
+              "type": "string",
+              "description": "The footer text for the QR code page."
+            },
+            "qrFooterHelp": {
+              "type": "string",
+              "description": "An additional location for help text or HTML below the QR code."
+            },
+            "qrClickMessage": {
+              "type": "string",
+              "description": "The message to display when the QR code is clicked."
+            },
+            "home": {
+              "type": "string",
+              "description": "The text for the home link in the header."
+            }
+          }
+        }
+      }
+    },
+    "AuditFieldBase": {
+      "type": "object",
+      "description": "Configuration of a specific field available for presentation auditing",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unclear what this field does. TODO: clarify."
+        },
+        "name": {
+          "type": "string",
+          "description": "The display name of the field when an audit is presented",
+          "examples": ["Issue Date"]
+        },
+        "path": {
+          "type": "string",
+          "description": "The path from credential root as $ for a credential contained within an audited presentation",
+          "examples": ["$.credentialSubject.driversLicense.issue_date"]
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Whether the field is required for audits to pass on this server"
+        }
+      },
+      "required": ["id", "name", "path", "required"]
+    },
+    "AuditFieldText": {
+      "type": "object",
+      "descriptions": "An Audit Field for a text field",
+      "allOf": [
+        {
+          "$ref": "#/definitions/AuditFieldBase"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["text"]
+            }
+          },
+          "required": ["type"]
+        }
+      ]
+    },
+    "AuditFieldDate": {
+      "type": "object",
+      "descriptions": "An Audit Field for a date picker field",
+      "allOf": [
+        {
+          "$ref": "#/definitions/AuditFieldBase"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["date"]
+            }
+          },
+          "required": ["type"]
+        }
+      ]
+    },
+    "AuditFieldDropdown": {
+      "type": "object",
+      "descriptions": "An Audit Field with options for a dropdown",
+      "allOf": [
+        {
+          "$ref": "#/definitions/AuditFieldBase"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["dropdown"]
+            },
+            "options": {
+              "type": "object",
+              "patternProperties": {
+                "^.+$": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    { "type": "null" },
+                    { "type": "number" }
+                  ]
+                }
+              }
+            }
+          },
+          "required": ["type", "options"]
+        }
+      ]
+    },
+    "AuditField": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/AuditFieldText"
+        },
+        {
+          "$ref": "#/definitions/AuditFieldDate"
+        },
+        {
+          "$ref": "#/definitions/AuditFieldDropdown"
+        }
+      ]
+    }
+  }
+}

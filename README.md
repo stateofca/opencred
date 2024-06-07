@@ -38,14 +38,17 @@ OpenCred supports the following list of features:
 
 ### Configuration
 
-The app is configured via a YAML file. See
-[configs/config.example.yaml](configs/config.example.yaml) for an example.
+The app is configured via a YAML file compatible with 
+[@bedrock/config-yaml](https://www.npmjs.com/package/@bedrock/config-yaml). See
+[configs/combined.example.yaml](configs/combined.example.yaml) for an example.
 
-Copy the example to the config location `cp configs/config.example.yaml
-/etc/bedrock-config/combined.yaml` and edit the file. Configure the details of
-your relying party.
+Copy the example to the default config location `cp configs/combined.example.yaml
+configs/combined.yaml` and edit the file. Configure the details for your relying
+party and any of the OpenCred features below.
 
-#### Configure with an Environment Variable
+> 💡 **Tip:** When using VS Code with the YAML extension, you'll get type hints
+> as you edit your `configs/combined.yaml` file.
+
 If a `BEDROCK_CONFIG` environment variable is set, the config specified in
 the environment variable will supersede any file based configuration. The
 environment variable must be a Base64 encoded string based on a YAML config

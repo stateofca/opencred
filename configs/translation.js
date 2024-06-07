@@ -10,10 +10,10 @@ export const defaultTranslations = {
     translate: 'Translate',
     loginCta: 'Login with your credential wallet',
     loginExplain: 'To login with your credential wallet, you will need ' +
-    'to have a credential wallet app installed',
+      'to have a credential wallet app installed',
     appInstallExplain: 'If you don\'t have a credential wallet yet, ' +
-    'see suggested wallets at the ' +
-    '<a href="https://vcplayground.org/">Verifiable Credentials Playground</a>',
+      'see suggested wallets at the <a href="https://vcplayground.org/">' +
+      'Verifiable Credentials Playground</a>',
     appCta: 'Open wallet app',
     'appCta-chapi-label': '',
     'appCta-openid4vp-label': '',
@@ -21,7 +21,8 @@ export const defaultTranslations = {
     qrPageExplain: 'Scan the following QR Code using a Wallet app on your ' +
     'phone.',
     qrFooter: 'Note: Already on your phone with a Wallet app? Open the ' +
-    'Wallet app, then come back and tap on the QR code above.',
+      'Wallet app, then come back and tap on the QR code above.',
+    qrFooterHelp: '',
     qrDisclaimer: `If you don't have a Wallet app download it from the` +
     `app store.`,
     openid4vpAnotherWay: 'Scan a QR code',
@@ -30,7 +31,7 @@ export const defaultTranslations = {
     openid4vpQrAnotherWayLabel: '',
     qrClickMessage: `The Wallet app must be running in the background.`,
     chapiPageAnotherWay: 'Looking for a QR Code to scan with your wallet app ' +
-    'instead?',
+      'instead?',
     copyright: 'Powered by OpenCred',
     home: 'Home'
   }
