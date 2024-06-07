@@ -57,6 +57,31 @@ file. The environment variable may be set with the following command:
 export BEDROCK_CONFIG=$(cat combined.yaml | base64)
 ```
 
+#### Optional Config File Validation in VS Code
+
+If you're using VS Code as your editing environment, you can install an
+extension and configure automatic schema validation for your `combined.yaml`
+file. This will provide you with real-time feedback as you type in your
+configuration file. Errors on missing required properties, descriptions and
+example values for configuration fields, auto-complete of fields are supported. 
+
+To configure your VS Code workspace to use auto-completion, install the plugin
+[redhat.vscode-yaml](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)
+and add settings to a `.vscode/settings.json` file at the root of this repo. If
+the file does not exist, create it. Add the following content to the file:
+```json
+{
+  "yaml.schemas": {
+    "./configs/combined.schema.json": "combined.yaml"
+  },
+  "yaml.format.enable": true,
+  "yaml.completion": true,
+  "yaml.validate": true,
+  "yaml.format.proseWrap": "preserve",
+  "yaml.format.printWidth": 80
+}
+```
+
 #### Configuring a Native workflow
 
 Update the `relyingParties` section of the config file to include a relying
