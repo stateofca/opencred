@@ -70,30 +70,21 @@
               "type": "object",
               "additionalProperties": false,
               "properties": {
-                "enabled": {
+                "mainEnabled": {
                   "type": "boolean",
                   "description": "Whether to enable DID Web document endpoint."
                 },
-                "services": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "properties": {
-                      "id": {
-                        "type": "string",
-                        "description": "The ID (typically base URL) of the service."
-                      },
-                      "type": {
-                        "type": "string",
-                        "description": "The type of the service."
-                      },
-                      "serviceEndpoint": {
-                        "type": "string",
-                        "description": "The service endpoint."
-                      }
-                    }
-                  }
+                "mainDocument": {
+                  "type": "string",
+                  "description": "If specified, a JSON string of the base of a DID Document to serve at /.well-known/did.json with any signingKeys of purpose authorization_request added in automatically -- Otherwise a dynamically generated document will be served if mainEnabled is true."
+              },
+                "linkageEnabled": {
+                  "type": "boolean",
+                  "description": "Whether to enable the DID Configuration endpoint to serve DomainLinkageCredentials."
+                },
+                "linkageDocument": {
+                  "type": "string",
+                  "description": "If specified, a JSON string of a static set of DomainLinkageCredentials to serve at /.well-known/did-configuration.json -- An empty array of linked_dids will be served if a linkageDocument is not specified but linkageEnabled is true."
                 }
               }
             },
