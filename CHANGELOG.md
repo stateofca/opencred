@@ -5,6 +5,10 @@
 ### Fixed
 - Updated `credential-handler-polyfill` to experimental branch to incorporate
   module change.
+- Remove all whitespace from VP token before submitting audit.
+
+### Changed
+- Use red asterisks to denote required fields in the audit form.
 
 ## 7.2.5 - 2024-05-24
 

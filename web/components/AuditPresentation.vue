@@ -66,7 +66,7 @@ async function auditPresentation() {
     response = await httpClient.post(
       '/audit-presentation', {
         json: {
-          vpToken: vpTokenInput.value.data.trim(),
+          vpToken: vpTokenInput.value.data.replace(/\s+/g, ''),
           fields: auditFieldValues.value
         }
       }
@@ -99,10 +99,13 @@ function clearAuditResults() {
         v-if="config.auditFields && config.auditFields.length > 0"
         class="px-6 py-8 border rounded"
         @submit.prevent="auditPresentation">
-        <h1 class="text-center text-xl font-bold">
+        <h1 class="text-center text-xl font-bold mb-3">
           Audit Verifiable Presentation
         </h1>
-        <p class="text-lg mt-6 mb-3">
+        <p class='required-asterisk mb-6'>
+          * Required
+        </p>
+        <p class="text-lg mb-3">
           Please provide the VP token
           that you would like to audit.
         </p>
@@ -111,6 +114,7 @@ function clearAuditResults() {
             for="vpToken"
             class="font-md font-bold mr-5">
             VP Token
+            <span class='required-asterisk'>*</span>
           </label>
           <button
             class="text-white py-2 px-2 my-8 mr-5 rounded-xl"
@@ -173,6 +177,7 @@ function clearAuditResults() {
                   :for="[field.id]"
                   class="col-3 font-md font-bold mr-3">
                   {{field.name}}
+                  <span v-if="field.required" class='required-asterisk'>*</span>
                 </label>
                 <input
                   v-if="!NON_INPUT_TYPES.includes(field.type)"
@@ -180,7 +185,6 @@ function clearAuditResults() {
                   v-model="auditFieldValues[field.path]"
                   :type="field.type"
                   class="col-6 font-md border rounded px-2 py-2 mr-5"
-                  :placeholder="field.required ? 'Required' : 'Optional'"
                   :required="field.required">
                 <select
                   v-else-if="field.type === 'dropdown'"
@@ -287,5 +291,9 @@ function clearAuditResults() {
   max-width: 500px;
   word-wrap: break-word;
   overflow-wrap: break-word;
+}
+.required-asterisk {
+  color: red;
+  font-weight: bold;
 }
 </style>
