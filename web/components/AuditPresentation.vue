@@ -102,7 +102,7 @@ function clearAuditResults() {
         <h1 class="text-center text-xl font-bold mb-3">
           Audit Verifiable Presentation
         </h1>
-        <p class='required-asterisk mb-6'>
+        <p class="required-asterisk mb-6">
           * Required
         </p>
         <p class="text-lg mb-3">
@@ -114,7 +114,7 @@ function clearAuditResults() {
             for="vpToken"
             class="font-md font-bold mr-5">
             VP Token
-            <span class='required-asterisk'>*</span>
+            <span class="required-asterisk">*</span>
           </label>
           <button
             class="text-white py-2 px-2 my-8 mr-5 rounded-xl"
@@ -177,7 +177,9 @@ function clearAuditResults() {
                   :for="[field.id]"
                   class="col-3 font-md font-bold mr-3">
                   {{field.name}}
-                  <span v-if="field.required" class='required-asterisk'>*</span>
+                  <span
+                    v-if="field.required"
+                    class="required-asterisk">*</span>
                 </label>
                 <input
                   v-if="!NON_INPUT_TYPES.includes(field.type)"
