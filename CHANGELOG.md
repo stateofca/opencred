@@ -1,5 +1,11 @@
 # opencred-platform Changelog
 
+## 7.2.6 - 2024-06-XX
+
+### Fixed
+- Updated and pinned `credential-handler-polyfill` to fix install issue with
+  failed `patch-package` execution.
+
 ## 7.2.5 - 2024-05-24
 
 ### Fixed
