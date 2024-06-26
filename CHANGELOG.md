@@ -3,8 +3,8 @@
 ## 7.2.6 - 2024-06-XX
 
 ### Fixed
-- Updated and pinned `credential-handler-polyfill` to fix install issue with
-  failed `patch-package` execution.
+- Updated `credential-handler-polyfill` to experimental branch to incorporate
+  module change.
 
 ## 7.2.5 - 2024-05-24
 
