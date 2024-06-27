@@ -11,6 +11,7 @@
 - Use red asterisks to denote required fields in the audit form.
 - Changed example config to show "steps" in Entra config.
 - Compress audit config fields into single object.
+- Enabled more precise control of text when switching OID4VP views.
 
 ### Fixed
 - Updated `credential-handler-polyfill` to experimental branch to incorporate
