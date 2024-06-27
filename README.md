@@ -1,3 +1,5 @@
+![OpenCred Logo](./docs/OpenCred_Final.png)
+
 # OpenCred: The Open Credentials Platform
 
 OpenCred is a system designed to make it easy for organizations (verifiers) to

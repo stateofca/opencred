@@ -4,6 +4,7 @@
 
 ### Added
 - Add tutorial documents.
+- Add logo to Readme
 
 ### Changed
 - Use red asterisks to denote required fields in the audit form.
