@@ -116,23 +116,26 @@ async function appOpened() {
     </div>
     <div
       v-else-if="!showDeeplink && exchangeData.QR !== ''"
-      class="mb-4 flex justify-center">
+      class="mb-4 justify-center">
       <div>
         <img
           v-if="exchangeData.QR !== ''"
-          :src="exchangeData.QR">
+          :src="exchangeData.QR"
+          class="mx-auto">
       </div>
-      <p>
-        <span v-if="$t('openid4vp-anotherWay-label')">
-          {{$t('openid4vp-anotherWay-label')}}
-        </span>
-        <button
-          class="mt-2 underline pl-1 inline-block"
-          :style="{color: brand.primary}"
-          @click="switchView">
-          {{$t('openid4vp-anotherWay')}}
-        </button>
-      </p>
+      <div>
+        <p>
+          <span v-if="$t('openid4vp-qr-anotherWay-label')">
+            {{$t('openid4vp-qr-anotherWay-label')}}
+          </span>
+          <button
+            class="mt-2 underline pl-1 inline-block"
+            :style="{color: brand.primary}"
+            @click="switchView">
+            {{$t('openid4vp-qr-anotherWay')}}
+          </button>
+        </p>
+      </div>
     </div>
     <div
       v-else-if="exchangeData.QR"
