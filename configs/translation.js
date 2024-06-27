@@ -25,6 +25,8 @@ export const defaultTranslations = {
     qrDisclaimer: `If you don't have a Wallet app download it from the` +
     `app store.`,
     qrPageAnotherWay: `Want to try another way?`,
+    'qrPageAnotherWay-label': '',
+    'openid4vp-anotherWay-label': '',
     qrClickMessage: `The Wallet app must be running in the background.`,
     chapiPageAnotherWay: 'Looking for a QR Code to scan with your wallet app ' +
     'instead?',

@@ -117,9 +117,22 @@ async function appOpened() {
     <div
       v-else-if="!showDeeplink && exchangeData.QR !== ''"
       class="mb-4 flex justify-center">
-      <img
-        v-if="exchangeData.QR !== ''"
-        :src="exchangeData.QR">
+      <div>
+        <img
+          v-if="exchangeData.QR !== ''"
+          :src="exchangeData.QR">
+      </div>
+      <p>
+        <span v-if="$t('openid4vp-anotherWay-label')">
+          {{$t('openid4vp-anotherWay-label')}}
+        </span>
+        <button
+          class="mt-2 underline pl-1 inline-block"
+          :style="{color: brand.primary}"
+          @click="switchView">
+          {{$t('openid4vp-anotherWay')}}
+        </button>
+      </p>
     </div>
     <div
       v-else-if="exchangeData.QR"
@@ -141,13 +154,17 @@ async function appOpened() {
       </q-btn>
     </div>
     <div class="mt-2">
-      <button
-        v-if="showDeeplink"
-        class="mt-2 underline"
-        :style="{color: brand.primary}"
-        @click="switchView">
-        {{$t('qrPageAnotherWay')}}
-      </button>
+      <p v-if="showDeeplink && exchangeData.QR !== ''">
+        <span v-if="$t('openid4vp-anotherWay-label')">
+          {{$t('openid4vp-anotherWay-label')}}
+        </span>
+        <button
+          class="mt-2 underline pl-1 inline-block"
+          :style="{color: brand.primary}"
+          @click="switchView">
+          {{$t('openid4vp-anotherWay')}}
+        </button>
+      </p>
       <button
         v-else-if="$t('qrExplainerText') !== ''
           && props.explainerVideo.id !== ''
