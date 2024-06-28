@@ -1,4 +1,4 @@
-![OpenCred Logo](./docs/OpenCred_Final.png)
+![OpenCred Logo](./docs/OpenCred_Logo.png)
 
 # OpenCred: The Open Credentials Platform
 
