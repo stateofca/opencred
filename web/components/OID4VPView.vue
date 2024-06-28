@@ -110,6 +110,7 @@ async function appOpened() {
     <div
       v-if="(active && !showDeeplink) || !exchangeData.QR"
       class="p-12 m-12 flex justify-center">
+      <!-- Exchange is active: Loading spinner -->
       <q-spinner-tail
         color="primary"
         size="2em" />
@@ -117,6 +118,7 @@ async function appOpened() {
     <div
       v-else-if="!showDeeplink && exchangeData.QR !== ''"
       class="mb-4 justify-center">
+      <!-- Show QR code to scan from a wallet app -->
       <div>
         <img
           v-if="exchangeData.QR !== ''"
@@ -125,14 +127,15 @@ async function appOpened() {
       </div>
       <div>
         <p>
-          <span v-if="$t('openid4vp-qr-anotherWay-label')">
-            {{$t('openid4vp-qr-anotherWay-label')}}
+          <!-- A button to switch to a deep link button -->
+          <span v-if="$t('openid4vpQrAnotherWayLabel')">
+            {{$t('openid4vpQrAnotherWayLabel')}}
           </span>
           <button
-            class="mt-2 underline pl-1 inline-block"
+            class="mt-2 underline pl-1 inline"
             :style="{color: brand.primary}"
             @click="switchView">
-            {{$t('openid4vp-qr-anotherWay')}}
+            {{$t('openid4vpQrAnotherWay')}}
           </button>
         </p>
       </div>
@@ -140,6 +143,7 @@ async function appOpened() {
     <div
       v-else-if="exchangeData.QR"
       class="flex justify-center">
+      <!-- A button to launch a same-device wallet -->
       <q-btn
         v-if="!active"
         color="primary"
@@ -158,14 +162,15 @@ async function appOpened() {
     </div>
     <div class="mt-2">
       <p v-if="showDeeplink && exchangeData.QR !== ''">
-        <span v-if="$t('openid4vp-anotherWay-label')">
-          {{$t('openid4vp-anotherWay-label')}}
+        <!-- A button to switch (back) to a QR code -->
+        <span v-if="$t('openid4vpAnotherWayLabel')">
+          {{$t('openid4vpAnotherWayLabel')}}
         </span>
         <button
-          class="mt-2 underline pl-1 inline-block"
+          class="mt-2 underline pl-1 inline"
           :style="{color: brand.primary}"
           @click="switchView">
-          {{$t('openid4vp-anotherWay')}}
+          {{$t('openid4vpAnotherWay')}}
         </button>
       </p>
       <button

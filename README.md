@@ -280,7 +280,8 @@ translations:
     qrFooterHelp: Difficulty using the Wallet app to login? revert to using password <a href="#">here</a>
     qrDisclaimer: If you don't have a Wallet app download it from the app store.
     qrClickMessage: The Wallet app must be running in the background.
-    qrPageAnotherWay: Want to try another way?
+    openid4vpAnotherWay: Want to try another way?
+    openid4vpQrAnotherWay: Use a wallet on this device
     chapiPageAnotherWay: "Looking for a QR Code to scan with you wallet app instead?"
     loginCta: "Login with your credential wallet"
     loginExplain: "To login with your credential wallet, you will need to have the credential wallet app <with configurable URL to app stores> installed"
