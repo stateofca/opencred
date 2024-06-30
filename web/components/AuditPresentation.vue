@@ -15,9 +15,11 @@ import {ref} from 'vue';
 
 const NON_INPUT_TYPES = ['dropdown'];
 
+const enableAuditReCaptcha = config.reCaptcha.enable.includes('audit');
+
 const auditFieldValues = ref(
   Object.fromEntries(
-    config.auditFields
+    config.audit.fields
       .map(f => [f.path, undefined])
   )
 );
@@ -37,7 +39,11 @@ const auditResults = ref({
   loading: false
 });
 
-const isReCaptchaVerified = ref(config.enableAuditReCaptcha ? false : true);
+const isReCaptchaVerified = ref(
+  enableAuditReCaptcha ?
+    false :
+    true
+);
 
 function onReCaptchaVerify(response) {
   console.log('reCAPTCHA verified:', response);
@@ -114,7 +120,7 @@ function clearAuditResults() {
     <main
       class="main relative flex-grow mt-20">
       <form
-        v-if="config.auditFields && config.auditFields.length > 0"
+        v-if="config.audit.fields && config.audit.fields.length > 0"
         class="px-6 py-8 border rounded"
         @submit.prevent="auditPresentation">
         <h1 class="text-center text-xl font-bold mb-3">
@@ -182,7 +188,7 @@ function clearAuditResults() {
         <div class="container">
           <ul>
             <li
-              v-for="field in config.auditFields"
+              v-for="field in config.audit.fields"
               :key="field.id">
               <div
                 :class="
@@ -271,11 +277,11 @@ function clearAuditResults() {
       class="footer text-left p-3"
       v-html="config.translations[config.defaultLanguage].copyright" />
     <div
-      v-if="config.enableAuditReCaptcha"
+      v-if="enableAuditReCaptcha"
       class="recaptcha">
       <ReCaptcha
-        :version="config.reCaptchaVersion"
-        :site-key="config.reCaptchaSiteKey"
+        :version="config.reCaptcha.version"
+        :site-key="config.reCaptcha.siteKey"
         action="audit"
         @verify="onReCaptchaVerify"
         @expired="onReCaptchaExpired"

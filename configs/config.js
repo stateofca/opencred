@@ -364,20 +364,31 @@ bedrock.events.on('bedrock.init', async () => {
   /**
    * Auditing configuration
    */
-  opencred.enableAudit = opencred.enableAudit === true;
-  opencred.enableAuditReCaptcha = opencred.enableAuditReCaptcha === true;
-  const validateAuditReCaptcha = () => {
-    if(opencred.enableAuditReCaptcha) {
-      if(!opencred.reCaptchaVersion || !opencred.reCaptchaSiteKey) {
+  if(!opencred.audit) {
+    opencred.audit = {};
+  }
+  if(!opencred.audit.fields) {
+    opencred.audit.fields = [];
+  }
+  if(!opencred.reCaptcha) {
+    opencred.reCaptcha = {};
+  }
+  if(!opencred.reCaptcha.enable) {
+    opencred.reCaptcha.enable = [];
+  }
+  opencred.audit.enable = opencred.audit.enable === true;
+  const validateReCaptcha = () => {
+    if(opencred.reCaptcha.enable.includes('audit')) {
+      if(!opencred.reCaptcha.version || !opencred.reCaptcha.siteKey) {
         throw new Error(
-          'When the "enableAuditReCaptcha" config value is "true", ' +
-          'the "reCaptchaVersion" and "reCaptchaSiteKey" config values ' +
+          'When the "audit.enable" config value is "true", ' +
+          'the "reCaptcha.version" and "reCaptcha.siteKey" config values ' +
           'must also be provided.'
         );
       }
     }
   };
-  validateAuditReCaptcha();
+  validateReCaptcha();
 
   /**
    * A field to audit in a VP token
@@ -391,56 +402,46 @@ bedrock.events.on('bedrock.init', async () => {
    * @property {string} options - Options for dropdown fields.
    */
 
-  /**
-   * A list of fields to audit in a VP token
-   * @typedef {Array.<AuditField>} AuditFields
-   */
-
   const requiredAuditFieldKeys = ['type', 'id', 'name', 'path', 'required'];
   const auditFieldTypes = ['text', 'number', 'date', 'dropdown'];
   const validateAuditFields = () => {
-    if(!opencred.auditFields) {
+    if(opencred.audit.fields.length === 0) {
       return;
     }
-    if(!Array.isArray(opencred.auditFields)) {
-      throw new Error('The "auditFields" config value must be an array.');
+    if(!Array.isArray(opencred.audit.fields)) {
+      throw new Error('The "audit.fields" config value must be an array.');
     }
-    for(const field of opencred.auditFields) {
+    for(const field of opencred.audit.fields) {
       if(!requiredAuditFieldKeys.every(f => Object.keys(field).includes(f))) {
-        throw new Error('Each object in "auditFields" must have the ' +
+        throw new Error('Each object in "audit.fields" must have the ' +
           'following keys: ' +
           requiredAuditFieldKeys.map(k => `"${k}"`).join(', '));
       }
       if(!auditFieldTypes.includes(field.type)) {
-        throw new Error('Each object in "auditFields" must have one of the ' +
+        throw new Error('Each object in "audit.fields" must have one of the ' +
           'following types: ' +
           auditFieldTypes.map(t => `"${t}"`).join(', '));
       }
     }
-    const auditFieldHaveUniqueIds = klona(opencred.auditFields)
+    const auditFieldsHaveUniqueIds = klona(opencred.audit.fields)
       .map(k => k.id)
       .sort()
       .reduce((unique, currentId, currentIndex, ids) =>
         unique && currentId !== ids[currentIndex - 1], true);
-    if(!auditFieldHaveUniqueIds) {
-      throw new Error('Each object in "auditFields" must have a unique "id".');
+    if(!auditFieldsHaveUniqueIds) {
+      throw new Error('Each object in "audit.fields" must have a unique "id".');
     }
-    const auditFieldHaveUniquePaths = klona(opencred.auditFields)
+    const auditFieldsHaveUniquePaths = klona(opencred.audit.fields)
       .map(k => k.id)
       .sort()
       .reduce((unique, currentPath, currentIndex, paths) =>
         unique && currentPath !== paths[currentIndex - 1], true);
-    if(!auditFieldHaveUniquePaths) {
-      throw new Error('Each object in "auditFields" must have ' +
+    if(!auditFieldsHaveUniquePaths) {
+      throw new Error('Each object in "audit.fields" must have ' +
         'a unique "path".');
     }
   };
   validateAuditFields();
-  /**
-   * A list of fields to audit in a VP token
-   * @type {AuditFields}
-   */
-  opencred.auditFields = opencred.auditFields ?? [];
 
   logger.info('OpenCred Config Successfully Validated.');
 });

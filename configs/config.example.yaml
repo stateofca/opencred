@@ -209,47 +209,50 @@ app:
       cta: "#0B669D"
       primary: "#045199"
       header: "#0979c4"
-    enableAudit: true
-    auditFields:
-      - type: text
-        id: given_name
-        name: First Name
-        path: "$.credentialSubject.given_name"
-        required: true
-      - type: text
-        id: family_name
-        name: Last Name
-        path: "$.credentialSubject.family_name"
-        required: false
-      - type: date
-        id: birth_date
-        name: Date of Birth
-        path: "$.credentialSubject.birth_date"
-        required: true
-      - type: number
-        id: height
-        name:	Height (cm)
-        path: "$.credentialSubject.height"
-        required: false
-      - type: dropdown
-        id: sex
-        name:	Sex
-        path: "$.credentialSubject.sex"
-        required: false
-        options:
-          "Male": 1
-          "Female": 2
-      - type: dropdown
-        id: senior_citizen
-        name:	Are you a senior citizen?
-        path: "$.credentialSubject.senior_citizen"
-        required: true
-        options:
-          "Yes": 1
-          "No": null
-    enableAuditReCaptcha: true
-    reCaptchaVersion: SETUP_IN_RECAPTCHA_ADMIN_DASHBOARD
-    reCaptchaSiteKey: SETUP_IN_RECAPTCHA_ADMIN_DASHBOARD
+    audit:
+      enable: true
+      fields:
+        - type: text
+          id: given_name
+          name: First Name
+          path: "$.credentialSubject.given_name"
+          required: true
+        - type: text
+          id: family_name
+          name: Last Name
+          path: "$.credentialSubject.family_name"
+          required: false
+        - type: date
+          id: birth_date
+          name: Date of Birth
+          path: "$.credentialSubject.birth_date"
+          required: true
+        - type: number
+          id: height
+          name:	Height (cm)
+          path: "$.credentialSubject.height"
+          required: false
+        - type: dropdown
+          id: sex
+          name:	Sex
+          path: "$.credentialSubject.sex"
+          required: false
+          options:
+            "Male": 1
+            "Female": 2
+        - type: dropdown
+          id: senior_citizen
+          name:	Are you a senior citizen?
+          path: "$.credentialSubject.senior_citizen"
+          required: true
+          options:
+            "Yes": 1
+            "No": null
+    reCaptcha:
+      version: 2
+      siteKey: 6LcNDSjdAAAAAAAAIe2uy0gavf0reiuhfer12345
+      enable:
+        - audit
     defaultLanguage: en
     translations:
       en:

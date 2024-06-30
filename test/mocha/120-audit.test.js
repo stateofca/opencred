@@ -34,7 +34,7 @@ const testRP = {
 describe('Audit Presentation', function() {
   this.beforeEach(() => {
     this.rpStub = sinon.stub(config.opencred, 'relyingParties').value([testRP]);
-    this.enableAuditStub = sinon.stub(config.opencred, 'enableAudit')
+    this.enableAuditStub = sinon.stub(config.opencred.audit, 'enable')
       .value(true);
   });
 

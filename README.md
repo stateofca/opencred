@@ -311,56 +311,59 @@ customTranslateScript: https://translate.google.com/translate_a/element.js?cb=go
 ```
 
 #### Configuring Audit
-You can add auditing support to OpenCred to ensure that a VP token presented in the past was valid at the time it was presented. The VP token can be one of two formats: (1) JWT or (2) Data Integrity. In order to enable this feature, use the boolean field `enableAudit` and the array field `auditFields` in the config file. Additionally, you may optionally configure the boolean field `enableAuditReCaptcha`, the numeric field `reCaptchaVersion`, and the string field `reCaptchaSiteKey` (more on these later). Here is a sample audit configuration:
+You can add auditing support to OpenCred to ensure that a VP token presented in the past was valid at the time it was presented. The VP token can be one of two formats: (1) JWT or (2) Data Integrity. In order to enable this feature, use the boolean field `audit.enable` and the array field `audit.fields` in the config file. Additionally, you may optionally configure the array field `reCaptcha.enable`, the numeric field `reCaptcha.version`, and the string field `reCaptcha.siteKey` (more on these later). Here is a sample audit configuration:
 
 ```yaml
-enableAudit: true
-auditFields:
-  - type: text
-    id: given_name
-    name: First Name
-    path: "$.credentialSubject.given_name"
-    required: true
-  - type: text
-    id: family_name
-    name: Last Name
-    path: "$.credentialSubject.family_name"
-    required: false
-  - type: date
-    id: birth_date
-    name: Date of Birth
-    path: "$.credentialSubject.birth_date"
-    required: true
-  - type: number
-    id: height
-    name: Height (cm)
-    path: "$.credentialSubject.height"
-    required: false
-  - type: dropdown
-    id: sex
-    name: Sex
-    path: "$.credentialSubject.sex"
-    required: false
-    options:
-      "Male": 1
-      "Female": 2
-  - type: dropdown
-    id: senior_citizen
-    name: Are you a senior citizen?
-    path: "$.credentialSubject.senior_citizen"
-    required: true
-    options:
-      "Yes": 1
-      "No": null
-enableAuditReCaptcha: true
-reCaptchaVersion: 2
-reCaptchaSiteKey: 6LcNDSjdAAAAAAAAIe2uy0gavf0reiuhfer12345
+audit:
+  enable: true
+  fields:
+    - type: text
+      id: given_name
+      name: First Name
+      path: "$.credentialSubject.given_name"
+      required: true
+    - type: text
+      id: family_name
+      name: Last Name
+      path: "$.credentialSubject.family_name"
+      required: false
+    - type: date
+      id: birth_date
+      name: Date of Birth
+      path: "$.credentialSubject.birth_date"
+      required: true
+    - type: number
+      id: height
+      name: Height (cm)
+      path: "$.credentialSubject.height"
+      required: false
+    - type: dropdown
+      id: sex
+      name: Sex
+      path: "$.credentialSubject.sex"
+      required: false
+      options:
+        "Male": 1
+        "Female": 2
+    - type: dropdown
+      id: senior_citizen
+      name: Are you a senior citizen?
+      path: "$.credentialSubject.senior_citizen"
+      required: true
+      options:
+        "Yes": 1
+        "No": null
+reCaptcha:
+  version: 2
+  siteKey: 6LcNDSjdAAAAAAAAIe2uy0gavf0reiuhfer12345
+  enable:
+    - audit
 ```
 
-The `enableAudit` field enables support for auditing in an OpenCred deployment.
+The `audit.enable` field enables support for auditing in an OpenCred deployment.
 If you would also like to check for matching values in the token's credential
 in a web interface, you can specify the following attributes for each
-field of interest via the `auditFields` field and visit `BASE_URL/audit-vp` in the browser:
+field of interest via the `audit.fields` field and visit `BASE_URL/audit-vp` in the browser:
 - `type` - The field type (currently, supports `text`, `number`, `date`, and `dropdown`).
 - `id` - The field ID (can be anything, but must be unique among other fields).
 - `name` - The field name that appears in the web interface.
@@ -370,10 +373,10 @@ field of interest via the `auditFields` field and visit `BASE_URL/audit-vp` in t
   - `Yes` - There exists a field with path `$.credentialSubject.senior_citizen` containing value `1` in the credential.
   - `No` - There does **not** exist a field with path `$.credentialSubject.senior_citizen` in the credential.
 
-If you would like to enable reCAPTCHA in the web interface, you should specify the following fields after registering your OpenCred domain in the [reCAPTCHA registration page](https://www.google.com/recaptcha/admin/create) (Note: you may register `localhost` for local development):
-- `enableAuditReCaptcha` - Whether to enable reCAPTCHA (default: `false`).
-- `reCaptchaVersion` - The version of reCAPTCHA that you registered for the domain (required if `enableAuditReCaptcha` is `true`). At the time of this writing, the only available versions are `2` and `3`.
-- `reCaptchaSiteKey` - The reCAPTCHA site key that you registered for the domain (required if `enableAuditReCaptcha` is `true`).
+If you would like to enable reCAPTCHA in the audit web interface, you should specify the following fields after registering your OpenCred domain in the [reCAPTCHA registration page](https://www.google.com/recaptcha/admin/create) (Note: you may register `localhost` for local development):
+- `reCaptcha.enable` - Array of page IDs for which to enable reCAPTCHA (`audit` in the case of the audit web interface).
+- `reCaptcha.version` - The version of reCAPTCHA that you registered for the domain (required if `reCaptcha.enable` is non-empty). At the time of this writing, the only available versions are `2` and `3`.
+- `reCaptcha.siteKey` - The reCAPTCHA site key that you registered for the domain (required if `reCaptcha.enable` is non-empty).
 
 If you want to test out the audit feature, follow these steps:
 1. Run an instance of OpenCred using the instructions below.
