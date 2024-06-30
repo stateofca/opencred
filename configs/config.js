@@ -362,6 +362,38 @@ bedrock.events.on('bedrock.init', async () => {
     .map(cert => cert.pem);
 
   /**
+   * reCAPTCHA configuration
+   */
+  if(!opencred.reCaptcha) {
+    opencred.reCaptcha = {};
+  }
+  if(!opencred.reCaptcha.pages) {
+    opencred.reCaptcha.pages = [];
+  }
+  opencred.reCaptcha.enable =
+    opencred.reCaptcha.enable === true ||
+    opencred.reCaptcha.pages.length !== 0;
+  const availableReCaptchaVersions = [2, 3];
+
+  const validateReCaptcha = () => {
+    if(opencred.reCaptcha.enable) {
+      if(!opencred.reCaptcha.version || !opencred.reCaptcha.siteKey) {
+        throw new Error(
+          'When the "reCaptcha.enable" config value is "true", ' +
+          'the "reCaptcha.version" and "reCaptcha.siteKey" config values ' +
+          'must also be provided.'
+        );
+      }
+      if(!availableReCaptchaVersions.includes(opencred.reCaptcha.version)) {
+        throw new Error('The config value of "reCaptcha.version" must be ' +
+          'one of the following values: ' +
+          availableReCaptchaVersions.map(v => `"${v}"`).join(', '));
+      }
+    }
+  };
+  validateReCaptcha();
+
+  /**
    * Auditing configuration
    */
   if(!opencred.audit) {
@@ -370,25 +402,9 @@ bedrock.events.on('bedrock.init', async () => {
   if(!opencred.audit.fields) {
     opencred.audit.fields = [];
   }
-  if(!opencred.reCaptcha) {
-    opencred.reCaptcha = {};
-  }
-  if(!opencred.reCaptcha.enable) {
-    opencred.reCaptcha.enable = [];
-  }
-  opencred.audit.enable = opencred.audit.enable === true;
-  const validateReCaptcha = () => {
-    if(opencred.reCaptcha.enable.includes('audit')) {
-      if(!opencred.reCaptcha.version || !opencred.reCaptcha.siteKey) {
-        throw new Error(
-          'When the "audit.enable" config value is "true", ' +
-          'the "reCaptcha.version" and "reCaptcha.siteKey" config values ' +
-          'must also be provided.'
-        );
-      }
-    }
-  };
-  validateReCaptcha();
+  opencred.audit.enable =
+    opencred.audit.enable === true ||
+    opencred.audit.fields.length !== 0;
 
   /**
    * A field to audit in a VP token
@@ -404,6 +420,7 @@ bedrock.events.on('bedrock.init', async () => {
 
   const requiredAuditFieldKeys = ['type', 'id', 'name', 'path', 'required'];
   const auditFieldTypes = ['text', 'number', 'date', 'dropdown'];
+
   const validateAuditFields = () => {
     if(opencred.audit.fields.length === 0) {
       return;

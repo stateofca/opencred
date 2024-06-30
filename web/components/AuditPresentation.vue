@@ -15,7 +15,7 @@ import {ref} from 'vue';
 
 const NON_INPUT_TYPES = ['dropdown'];
 
-const enableAuditReCaptcha = config.reCaptcha.enable.includes('audit');
+const enableAuditReCaptcha = config.reCaptcha.pages.includes('audit');
 
 const auditFieldValues = ref(
   Object.fromEntries(

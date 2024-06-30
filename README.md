@@ -311,7 +311,7 @@ customTranslateScript: https://translate.google.com/translate_a/element.js?cb=go
 ```
 
 #### Configuring Audit
-You can add auditing support to OpenCred to ensure that a VP token presented in the past was valid at the time it was presented. The VP token can be one of two formats: (1) JWT or (2) Data Integrity. In order to enable this feature, use the boolean field `audit.enable` and the array field `audit.fields` in the config file. Additionally, you may optionally configure the array field `reCaptcha.enable`, the numeric field `reCaptcha.version`, and the string field `reCaptcha.siteKey` (more on these later). Here is a sample audit configuration:
+You can add auditing support to OpenCred to ensure that a VP token presented in the past was valid at the time it was presented. The VP token can be one of two formats: (1) JWT or (2) Data Integrity. In order to enable this feature, use the boolean field `audit.enable` and the array field `audit.fields` in the config file. Additionally, you may optionally configure the boolean field `reCaptcha.enable`, the numeric field `reCaptcha.version`, the string field `reCaptcha.siteKey`, and the array field `reCaptcha.pages` (more on these later). Here is a sample audit configuration:
 
 ```yaml
 audit:
@@ -354,13 +354,14 @@ audit:
         "Yes": 1
         "No": null
 reCaptcha:
+  enable: true
   version: 2
   siteKey: 6LcNDSjdAAAAAAAAIe2uy0gavf0reiuhfer12345
-  enable:
+  pages:
     - audit
 ```
 
-The `audit.enable` field enables support for auditing in an OpenCred deployment.
+The `audit.enable` field enables support for auditing in an OpenCred deployment (default: `false`).
 If you would also like to check for matching values in the token's credential
 in a web interface, you can specify the following attributes for each
 field of interest via the `audit.fields` field and visit `BASE_URL/audit-vp` in the browser:
@@ -374,9 +375,10 @@ field of interest via the `audit.fields` field and visit `BASE_URL/audit-vp` in 
   - `No` - There does **not** exist a field with path `$.credentialSubject.senior_citizen` in the credential.
 
 If you would like to enable reCAPTCHA in the audit web interface, you should specify the following fields after registering your OpenCred domain in the [reCAPTCHA registration page](https://www.google.com/recaptcha/admin/create) (Note: you may register `localhost` for local development):
-- `reCaptcha.enable` - Array of page IDs for which to enable reCAPTCHA (`audit` in the case of the audit web interface).
-- `reCaptcha.version` - The version of reCAPTCHA that you registered for the domain (required if `reCaptcha.enable` is non-empty). At the time of this writing, the only available versions are `2` and `3`.
-- `reCaptcha.siteKey` - The reCAPTCHA site key that you registered for the domain (required if `reCaptcha.enable` is non-empty).
+- `reCaptcha.enable` - Whether to enable reCAPTCHA (default: `false`).
+- `reCaptcha.version` - The version of reCAPTCHA that you registered for the domain (required if `reCaptcha.enable` is `true` or `reCaptcha.pages` is non-empty). At the time of this writing, the only available versions are `2` and `3`.
+- `reCaptcha.siteKey` - The reCAPTCHA site key that you registered for the domain (required if `reCaptcha.enable` is `true` or `reCaptcha.pages` is non-empty).
+- `reCaptcha.pages` - Array of page IDs for which to enable reCAPTCHA (`audit` in the case of the audit web interface).
 
 If you want to test out the audit feature, follow these steps:
 1. Run an instance of OpenCred using the instructions below.

@@ -249,9 +249,10 @@ app:
             "Yes": 1
             "No": null
     reCaptcha:
+      enable: true
       version: 2
       siteKey: 6LcNDSjdAAAAAAAAIe2uy0gavf0reiuhfer12345
-      enable:
+      pages:
         - audit
     defaultLanguage: en
     translations:
