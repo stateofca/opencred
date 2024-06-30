@@ -1,5 +1,7 @@
 <script setup>
-import {ref, onMounted} from 'vue';
+// Necessary for grecaptcha
+/* eslint-disable no-undef */
+import {onMounted, ref} from 'vue';
 import {config} from '@bedrock/web';
 
 const props = defineProps({
@@ -51,13 +53,13 @@ function loadReCaptchaScript() {
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();
-    script.onerror = (error) => reject(error);
+    script.onerror = error => reject(error);
     document.head.appendChild(script);
   });
 }
 
 function renderReCaptcha() {
-  setTimeout(function () {
+  setTimeout(() => {
     if(typeof grecaptcha === 'undefined' ||
       typeof grecaptcha.render === 'undefined') {
       renderReCaptcha();
@@ -73,17 +75,19 @@ function renderReCaptcha() {
 }
 
 function executeReCaptcha() {
-  setTimeout(function () {
+  setTimeout(() => {
     if(typeof grecaptcha === 'undefined' ||
       typeof grecaptcha.render === 'undefined') {
       executeReCaptcha();
     } else {
       grecaptcha.ready(() => {
-        grecaptcha.execute(props.siteKey, {action: props.action}).then((token) => {
-          emit('verify', token);
-        }).catch((error) => {
-          emit('error', error);
-        });
+        grecaptcha.execute(props.siteKey, {action: props.action})
+          .then(token => {
+            emit('verify', token);
+          })
+          .catch(error => {
+            emit('error', error);
+          });
       });
     }
   }, 100);
@@ -103,5 +107,5 @@ function onError() {
 </script>
 
 <template>
-  <div :id="elementId"></div>
+  <div :id="elementId" />
 </template>

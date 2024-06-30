@@ -275,12 +275,11 @@ function clearAuditResults() {
       class="recaptcha">
       <ReCaptcha
         :version="config.reCaptchaVersion"
-        :siteKey="config.reCaptchaSiteKey"
+        :site-key="config.reCaptchaSiteKey"
         action="audit"
         @verify="onReCaptchaVerify"
         @expired="onReCaptchaExpired"
-        @error="onReCaptchaError"
-      />
+        @error="onReCaptchaError" />
     </div>
   </div>
 </template>
