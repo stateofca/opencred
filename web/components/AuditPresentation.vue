@@ -10,6 +10,7 @@ import CheckCircleIcon from 'vue-material-design-icons/CheckCircle.vue';
 import CloseCircleIcon from 'vue-material-design-icons/CloseCircle.vue';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
+import ReCaptcha from './ReCaptcha.vue';
 import {ref} from 'vue';
 
 const NON_INPUT_TYPES = ['dropdown'];
@@ -35,6 +36,23 @@ const auditResults = ref({
   },
   loading: false
 });
+
+const isReCaptchaVerified = ref(config.enableAuditReCaptcha ? false : true);
+
+function onReCaptchaVerify(response) {
+  console.log('reCAPTCHA verified:', response);
+  isReCaptchaVerified.value = true;
+}
+
+function onReCaptchaExpired() {
+  console.log('reCAPTCHA expired');
+  isReCaptchaVerified.value = false;
+}
+
+function onReCaptchaError() {
+  console.log('reCAPTCHA error');
+  isReCaptchaVerified.value = false;
+}
 
 function toggleVpTokenInputType() {
   vpTokenInput.value.type =
@@ -234,7 +252,8 @@ function clearAuditResults() {
           type="submit"
           class="centered-x text-white text-lg font-bold
             rounded-xl py-3 px-6 mt-5"
-          :style="{ background: '#0979c4' }">
+          :style="{ background: '#0979c4' }"
+          :disabled="!isReCaptchaVerified">
       </form>
       <div
         v-if="auditResults.loading"
@@ -251,6 +270,18 @@ function clearAuditResults() {
     <footer
       class="footer text-left p-3"
       v-html="config.translations[config.defaultLanguage].copyright" />
+    <div
+      v-if="config.enableAuditReCaptcha"
+      class="recaptcha">
+      <ReCaptcha
+        :version="config.reCaptchaVersion"
+        :siteKey="config.reCaptchaSiteKey"
+        action="audit"
+        @verify="onReCaptchaVerify"
+        @expired="onReCaptchaExpired"
+        @error="onReCaptchaError"
+      />
+    </div>
   </div>
 </template>
 
@@ -297,5 +328,10 @@ function clearAuditResults() {
 .required-asterisk {
   color: red;
   font-weight: bold;
+}
+.recaptcha {
+  position: fixed;
+  bottom: 10%;
+  right: 10%
 }
 </style>

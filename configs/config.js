@@ -365,6 +365,19 @@ bedrock.events.on('bedrock.init', async () => {
    * Auditing configuration
    */
   opencred.enableAudit = opencred.enableAudit === true;
+  opencred.enableAuditReCaptcha = opencred.enableAuditReCaptcha === true;
+  const validateAuditReCaptcha = () => {
+    if(opencred.enableAuditReCaptcha) {
+      if(!opencred.reCaptchaVersion || !opencred.reCaptchaSiteKey) {
+        throw new Error(
+          'When the "enableAuditReCaptcha" config value is "true", ' +
+          'the "reCaptchaVersion" and "reCaptchaSiteKey" config values ' +
+          'must also be provided.'
+        );
+      }
+    }
+  };
+  validateAuditReCaptcha();
 
   /**
    * A field to audit in a VP token

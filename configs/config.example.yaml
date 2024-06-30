@@ -247,6 +247,9 @@ app:
         options:
           "Yes": 1
           "No": null
+    enableAuditReCaptcha: true
+    reCaptchaVersion: SETUP_IN_RECAPTCHA_ADMIN_DASHBOARD
+    reCaptchaSiteKey: SETUP_IN_RECAPTCHA_ADMIN_DASHBOARD
     defaultLanguage: en
     translations:
       en:
