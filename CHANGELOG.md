@@ -10,6 +10,7 @@
 ### Changed
 - Use red asterisks to denote required fields in the audit form.
 - Changed example config to show "steps" in Entra config.
+- Compress audit config fields into single object.
 
 ### Fixed
 - Updated `credential-handler-polyfill` to experimental branch to incorporate
