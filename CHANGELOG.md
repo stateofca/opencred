@@ -5,6 +5,7 @@
 ### Added
 - Add tutorial documents.
 - Add logo to README.
+- Add reCAPTCHA to the audit form.
 
 ### Changed
 - Use red asterisks to denote required fields in the audit form.
