@@ -371,8 +371,7 @@ bedrock.events.on('bedrock.init', async () => {
     opencred.reCaptcha.pages = [];
   }
   opencred.reCaptcha.enable =
-    opencred.reCaptcha.enable === true ||
-    opencred.reCaptcha.pages.length !== 0;
+    opencred.reCaptcha.enable === true;
   const availableReCaptchaVersions = [2, 3];
 
   const validateReCaptcha = () => {
@@ -403,8 +402,7 @@ bedrock.events.on('bedrock.init', async () => {
     opencred.audit.fields = [];
   }
   opencred.audit.enable =
-    opencred.audit.enable === true ||
-    opencred.audit.fields.length !== 0;
+    opencred.audit.enable === true;
 
   /**
    * A field to audit in a VP token

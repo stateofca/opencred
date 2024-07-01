@@ -376,8 +376,8 @@ field of interest via the `audit.fields` field and visit `BASE_URL/audit-vp` in 
 
 If you would like to enable reCAPTCHA in the audit web interface, you should specify the following fields after registering your OpenCred domain in the [reCAPTCHA registration page](https://www.google.com/recaptcha/admin/create) (Note: you may register `localhost` for local development):
 - `reCaptcha.enable` - Whether to enable reCAPTCHA (default: `false`).
-- `reCaptcha.version` - The version of reCAPTCHA that you registered for the domain (required if `reCaptcha.enable` is `true` or `reCaptcha.pages` is non-empty). At the time of this writing, the only available versions are `2` and `3`.
-- `reCaptcha.siteKey` - The reCAPTCHA site key that you registered for the domain (required if `reCaptcha.enable` is `true` or `reCaptcha.pages` is non-empty).
+- `reCaptcha.version` - The version of reCAPTCHA that you registered for the domain (required if `reCaptcha.enable` is `true`). At the time of this writing, the only available versions are `2` and `3`.
+- `reCaptcha.siteKey` - The reCAPTCHA site key that you registered for the domain (required if `reCaptcha.enable` is `true`).
 - `reCaptcha.pages` - Array of page IDs for which to enable reCAPTCHA (`audit` in the case of the audit web interface).
 
 If you want to test out the audit feature, follow these steps:
