@@ -252,6 +252,7 @@ app:
       enable: true
       version: 2
       siteKey: 6LcNDSjdAAAAAAAAIe2uy0gavf0reiuhfer12345
+      secretKey: 6LcNDSjdAAAAAAAAIe3uy1gavf1reiuhfer67890
       pages:
         - audit
     defaultLanguage: en

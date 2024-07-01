@@ -376,11 +376,13 @@ bedrock.events.on('bedrock.init', async () => {
 
   const validateReCaptcha = () => {
     if(opencred.reCaptcha.enable) {
-      if(!opencred.reCaptcha.version || !opencred.reCaptcha.siteKey) {
+      if(!opencred.reCaptcha.version ||
+        !opencred.reCaptcha.siteKey ||
+        !opencred.reCaptcha.secretKey) {
         throw new Error(
           'When the "reCaptcha.enable" config value is "true", ' +
-          'the "reCaptcha.version" and "reCaptcha.siteKey" config values ' +
-          'must also be provided.'
+          'the following config values must also be provided: ' +
+          '"reCaptcha.version", "reCaptcha.siteKey", and "reCaptcha.secretKey"'
         );
       }
       if(!availableReCaptchaVersions.includes(opencred.reCaptcha.version)) {

@@ -39,25 +39,26 @@ const auditResults = ref({
   loading: false
 });
 
-const isReCaptchaVerified = ref(
-  enableAuditReCaptcha ?
+const reCaptchaResults = ref({
+  verified: enableAuditReCaptcha ?
     false :
-    true
-);
+    true,
+  token: null
+});
 
 function onReCaptchaVerify(response) {
-  console.log('reCAPTCHA verified:', response);
-  isReCaptchaVerified.value = true;
+  reCaptchaResults.value.verified = true;
+  reCaptchaResults.value.token = response;
 }
 
 function onReCaptchaExpired() {
-  console.log('reCAPTCHA expired');
-  isReCaptchaVerified.value = false;
+  reCaptchaResults.value.verified = false;
+  reCaptchaResults.value.token = null;
 }
 
 function onReCaptchaError() {
-  console.log('reCAPTCHA error');
-  isReCaptchaVerified.value = false;
+  reCaptchaResults.value.verified = false;
+  reCaptchaResults.value.token = null;
 }
 
 function toggleVpTokenInputType() {
@@ -91,7 +92,8 @@ async function auditPresentation() {
       '/audit-presentation', {
         json: {
           vpToken: vpTokenInput.value.data.replace(/\s+/g, ''),
-          fields: auditFieldValues.value
+          fields: auditFieldValues.value,
+          reCaptchaToken: reCaptchaResults.value.token
         }
       }
     );
@@ -259,7 +261,7 @@ function clearAuditResults() {
           class="centered-x text-white text-lg font-bold
             rounded-xl py-3 px-6 mt-5"
           :style="{ background: '#0979c4' }"
-          :disabled="!isReCaptchaVerified">
+          :disabled="!reCaptchaResults.verified">
       </form>
       <div
         v-if="auditResults.loading"

@@ -311,7 +311,7 @@ customTranslateScript: https://translate.google.com/translate_a/element.js?cb=go
 ```
 
 #### Configuring Audit
-You can add auditing support to OpenCred to ensure that a VP token presented in the past was valid at the time it was presented. The VP token can be one of two formats: (1) JWT or (2) Data Integrity. In order to enable this feature, use the boolean field `audit.enable` and the array field `audit.fields` in the config file. Additionally, you may optionally configure the boolean field `reCaptcha.enable`, the numeric field `reCaptcha.version`, the string field `reCaptcha.siteKey`, and the array field `reCaptcha.pages` (more on these later). Here is a sample audit configuration:
+You can add auditing support to OpenCred to ensure that a VP token presented in the past was valid at the time it was presented. The VP token can be one of two formats: (1) JWT or (2) Data Integrity. In order to enable this feature, use the boolean field `audit.enable` and the array field `audit.fields` in the config file. Additionally, you may optionally configure the following fields: `reCaptcha.enable` (boolean), `reCaptcha.version` (number), `reCaptcha.siteKey` (string), `reCaptcha.secretKey` (string), and `reCaptcha.pages` (array) (more on these later). Here is a sample audit configuration:
 
 ```yaml
 audit:
@@ -357,6 +357,7 @@ reCaptcha:
   enable: true
   version: 2
   siteKey: 6LcNDSjdAAAAAAAAIe2uy0gavf0reiuhfer12345
+  secretKey: 6LcNDSjdAAAAAAAAIe3uy1gavf1reiuhfer67890
   pages:
     - audit
 ```
@@ -378,6 +379,7 @@ If you would like to enable reCAPTCHA in the audit web interface, you should spe
 - `reCaptcha.enable` - Whether to enable reCAPTCHA (default: `false`).
 - `reCaptcha.version` - The version of reCAPTCHA that you registered for the domain (required if `reCaptcha.enable` is `true`). At the time of this writing, the only available versions are `2` and `3`.
 - `reCaptcha.siteKey` - The reCAPTCHA site key that you registered for the domain (required if `reCaptcha.enable` is `true`).
+- `reCaptcha.secretKey` - The reCAPTCHA secret key that you registered for the domain (required if `reCaptcha.enable` is `true`).
 - `reCaptcha.pages` - Array of page IDs for which to enable reCAPTCHA (`audit` in the case of the audit web interface).
 
 If you want to test out the audit feature, follow these steps:
