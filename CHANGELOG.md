@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 8.0.0 - 2024-06-XX
+## 8.0.0 - 2024-07-02
 
 ### Added
 - Add tutorial documents.
