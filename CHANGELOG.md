@@ -1,12 +1,14 @@
 # opencred-platform Changelog
 
+## 8.1.1 - 2024-07-XX
+
+## Changed
+- Updated `credential-handler-polyfill` to released version.
+
 ## 8.1.0 - 2024-07-02
 
 ### Added
 - Add better reCAPTCHA logging to audit feature.
-
-## Changed
-- Updated `credential-handler-polyfill` to released version.
 
 ### Fixed
 - Add missing return statement to /context/verification endpoint.
