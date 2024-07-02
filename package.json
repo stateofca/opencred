@@ -63,7 +63,7 @@
     "base64url": "^3.0.1",
     "bnid": "^3.0.0",
     "cors": "^2.8.5",
-    "credential-handler-polyfill": "4.0.0",
+    "credential-handler-polyfill": "^4.0.0",
     "credentials-context": "^2.0.0",
     "did-context": "^3.1.1",
     "did-jwt-vc": "^3.2.15",
