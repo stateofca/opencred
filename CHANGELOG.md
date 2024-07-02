@@ -1,5 +1,13 @@
 # opencred-platform Changelog
 
+## 8.1.0 - 2024-xx-xx
+
+### Added
+- Add better reCAPTCHA logging to audit feature.
+
+### Fixed
+- Add missing return statement to /context/verification endpoint.
+
 ## 8.0.0 - 2024-07-02
 
 ### Added
