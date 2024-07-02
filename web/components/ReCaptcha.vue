@@ -48,7 +48,7 @@ function loadReCaptchaScript() {
     script.src =
       `https://www.google.com/recaptcha/api.js?hl=${config.defaultLanguage}`;
     if(props.version === 3) {
-      script.src += `?render=${props.siteKey}`;
+      script.src += `&render=${props.siteKey}`;
     }
     script.async = true;
     script.defer = true;
