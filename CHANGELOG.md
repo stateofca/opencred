@@ -5,6 +5,9 @@
 ### Added
 - Add better reCAPTCHA logging to audit feature.
 
+## Changed
+- Updated `credential-handler-polyfill` to released version.
+
 ### Fixed
 - Add missing return statement to /context/verification endpoint.
 
