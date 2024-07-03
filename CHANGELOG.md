@@ -5,6 +5,10 @@
 ## Changed
 - Updated `credential-handler-polyfill` to released version.
 
+## Fixed
+- End the spinner if the exchange fails (enters an invalid state), and show an
+  error message.
+
 ## 8.1.0 - 2024-07-02
 
 ### Added
