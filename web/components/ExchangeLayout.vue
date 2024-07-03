@@ -103,10 +103,23 @@ const checkStatus = async () => {
       $cookies.remove('exchangeId');
     } else if(exchange.state === 'active') {
       state.active = true;
+    } else if(exchange.state === 'invalid') {
+      state.error = {
+        title: 'The exchange failed.',
+        message: Object.values(exchange.variables?.results ?? {}).find(
+          v => !!v.errors)?.errors.join(', ') ??
+          'An error occurred while processing the exchange.'
+      };
+      intervalId = clearInterval(intervalId);
+      $cookies.remove('accessToken');
+      $cookies.remove('exchangeId');
     }
   } catch(e) {
     console.error('An error occurred while polling the endpoint:', e);
-    state.error = `An error occurred while checking exchange status.`;
+    state.error = {
+      title: 'error',
+      message: 'An error occurred while checking exchange status.'
+    };
   }
 };
 
