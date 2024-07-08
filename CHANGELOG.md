@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 8.1.1 - 2024-07-XX
+## 8.1.1 - 2024-07-08
 
 ## Changed
 - Updated `credential-handler-polyfill` to released version.
