@@ -120,15 +120,54 @@
                 }
               }
             },
-            "enableAudit": {
-              "type": "boolean",
-              "description": "Whether to enable the Audit Presentation feature, which allows re-checking of a previously delivered and stored presentation. If enabled, access at /audit-vp"
+            "audit": {
+              "type": "object",
+              "description": "Configuration for the Audit Presentation feature.",
+              "additionalProperties": false,
+              "properties": {
+                "enable": {
+                  "type": "boolean",
+                  "description": "Whether to enable the Audit Presentation feature, which allows re-checking of a previously delivered and stored presentation. If enabled, access at /audit-vp"
+                },
+                "fields": {
+                  "type": "array",
+                  "description": "The fields to include in the audit presentation.",
+                  "items": {
+                    "$ref": "#/definitions/AuditField"
+                  }
+                }
+              }
             },
-            "auditFields": {
-              "type": "array",
-              "description": "The fields to include in the audit presentation.",
-              "items": {
-                "$ref": "#/definitions/AuditField"
+            "reCaptcha": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enable": {
+                  "type": "boolean",
+                  "description": "Whether to enable reCaptcha for the login page."
+                },
+                "version": {
+                  "type": "number",
+                  "description": "Which version of reCaptcha to use. Currently only 2 and 3 are supported. Default: 2",
+                  "enum": [2, 3],
+                  "default": 2
+                },
+                "siteKey": {
+                  "type": "string",
+                  "description": "The site key for reCaptcha."
+                },
+                "secretKey": {
+                  "type": "string",
+                  "description": "The secret key for reCaptcha, for server-side verification."
+                },
+                "pages": {
+                  "type": "array",
+                  "description": "Which pages on which reCaptcha is used. Currently only 'audit' is supported.",
+                  "items": {
+                    "type": "string",
+                    "enum": ["audit"]
+                  }
+                }
               }
             },
             "options": {
@@ -151,7 +190,7 @@
             "defaultLanguage": {
               "type": "string",
               "description": "The default language for the UI.",
-              "pattern": "^[a-z]{2}(\\-[A-Z]{2})?$",
+              "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
               "examples": ["en", "en-US"]
             },
             "customTranslateScript": {
@@ -479,7 +518,7 @@
                   "type": "string",
                   "description": "The type of credential accepted by this step, required in the initial step."
                 },
-                "callback": { "$ref": "#/definitions/Callback"}
+                "callback": { "$ref": "#/definitions/Callback" }
               }
             }
           }
@@ -549,7 +588,7 @@
         "steps": {
           "type": "object",
           "patternProperties": {
-            "^+$": {
+            "^.+$": {
               "type": "object",
               "additionalProperties": false,
               "properties": {
@@ -605,7 +644,7 @@
       "type": "object",
       "additionalProperties": false,
       "patternProperties": {
-        "^[a-z]{2}(\\-[A-Z]{2})?$": {
+        "^[a-z]{2}(-[A-Z]{2})?$": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
@@ -844,13 +883,17 @@
             "issuer": {
               "type": "string",
               "description": "The issuer of the OAuth token.",
-              "examples": ["https://login.microsoftonline.com/1b0201d7-f9c6-4271-a6fa-fe6a0064de8a/oauth2/v2.0"]
+              "examples": [
+                "https://login.microsoftonline.com/1b0201d7-f9c6-4271-a6fa-fe6a0064de8a/oauth2/v2.0"
+              ]
             },
             "tokenUrl": {
               "type": "string",
               "description": "The URL to which to send the token request.",
               "format": "uri",
-              "examples": ["https://login.microsoftonline.com/1b0201d7-f9c6-4271-a6fa-fe6a0064de8a/oauth2/v2.0/token"]
+              "examples": [
+                "https://login.microsoftonline.com/1b0201d7-f9c6-4271-a6fa-fe6a0064de8a/oauth2/v2.0/token"
+              ]
             },
             "clientId": {
               "type": "string",
@@ -870,7 +913,7 @@
             }
           }
         }
-      }    
+      }
     }
   }
 }
