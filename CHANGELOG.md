@@ -6,6 +6,9 @@
 - Add support for config validation and VS Code schema-based config completion.
 - Add default values for audit fields.
 
+## Fixed
+- Avoid reCaptcha timeout by waiting to invoke it until the user submits.
+
 ## 8.1.1 - 2024-07-08
 
 ## Changed

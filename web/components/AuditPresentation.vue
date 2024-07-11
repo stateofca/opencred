@@ -26,6 +26,7 @@ const getDefaultValueForField = f => {
   }
   return f.default ?? undefined;
 };
+const mainContent = ref(null);
 const auditFieldValues = ref(
   Object.fromEntries(
     config.audit.fields
@@ -51,6 +52,7 @@ const auditResults = ref({
 });
 
 const reCaptchaResults = ref({
+  loading: false,
   verified: enableAuditReCaptcha ?
     false :
     true,
@@ -60,14 +62,18 @@ const reCaptchaResults = ref({
 function onReCaptchaVerify(response) {
   reCaptchaResults.value.verified = true;
   reCaptchaResults.value.token = response;
+  reCaptchaResults.value.loading = false;
+  auditPresentation();
 }
 
 function onReCaptchaExpired() {
+  reCaptchaResults.value.loading = false;
   reCaptchaResults.value.verified = false;
   reCaptchaResults.value.token = null;
 }
 
 function onReCaptchaError() {
+  reCaptchaResults.value.loading = false;
   reCaptchaResults.value.verified = false;
   reCaptchaResults.value.token = null;
 }
@@ -94,9 +100,24 @@ function handleFileChange(event) {
   reader.readAsText(file);
 }
 
-async function auditPresentation() {
+async function requestSubmit() {
+  // prevent double submission
+  if(reCaptchaResults.value.loading) {
+    return;
+  }
+
+  // disable button while checking
+  reCaptchaResults.value.loading = true;
+  reCaptchaResults.value.verified = false;
   clearAuditResults();
-  auditResults.value.loading = true;
+}
+
+async function auditPresentation() {
+  // Prevent submission if recaptcha is still going
+  if(!reCaptchaResults.value.verified) {
+    return;
+  }
+
   let response;
   try {
     response = await httpClient.post(
@@ -113,6 +134,7 @@ async function auditPresentation() {
     auditResults.value.data = error.data;
   } finally {
     auditResults.value.loading = false;
+    mainContent.value.scrollIntoView({behavior: 'smooth'});
   }
 }
 
@@ -131,12 +153,14 @@ function clearAuditResults() {
 <template>
   <div class="flex flex-col">
     <main
+      ref="mainContent"
       class="main relative flex-grow mt-20">
       <form
         v-if="config.audit.fields && config.audit.fields.length > 0"
         class="px-6 py-8 border rounded"
-        @submit.prevent="auditPresentation">
-        <h1 class="text-center text-xl font-bold mb-3">
+        @submit.prevent="requestSubmit">
+        <h1
+          class="text-center text-xl font-bold mb-3">
           Audit Verifiable Presentation
         </h1>
         <p class="required-asterisk mb-6">
@@ -272,7 +296,7 @@ function clearAuditResults() {
           class="centered-x text-white text-lg font-bold
             rounded-xl py-3 px-6 mt-5"
           :style="{ background: '#0979c4' }"
-          :disabled="!reCaptchaResults.verified">
+          :disabled="reCaptchaResults.loading || auditResults.loading">
       </form>
       <div
         v-if="auditResults.loading"
@@ -290,7 +314,7 @@ function clearAuditResults() {
       class="footer text-left p-3"
       v-html="config.translations[config.defaultLanguage].copyright" />
     <div
-      v-if="enableAuditReCaptcha"
+      v-if="reCaptchaResults.loading"
       class="recaptcha">
       <ReCaptcha
         :version="config.reCaptcha.version"
