@@ -40,7 +40,7 @@ const props = defineProps({
     })
   }
 });
-const emit = defineEmits(['replaceExchange']);
+const emit = defineEmits(['replaceExchange', 'overrideActive']);
 const showDeeplink = ref(false);
 const showVideo = ref(false);
 const $q = useQuasar();
@@ -81,12 +81,16 @@ async function appOpened() {
     }
   ));
   emit('replaceExchange', exchange);
-  $cookies.set('exchangeId', exchange.id, '15min',
+  $cookies.set('exchangeId', exchange.id, '1min',
     '', '', true, 'Strict');
-  $cookies.set('accessToken', exchange.accessToken, '15min',
+  $cookies.set('accessToken', exchange.accessToken, '1min',
     '', '', true, 'Strict');
   window.location.replace(exchange.OID4VP);
 }
+
+const handleGoBack = () => {
+  emit('overrideActive');
+};
 </script>
 
 <template>
@@ -109,11 +113,18 @@ async function appOpened() {
     </div>
     <div
       v-if="(active && !showDeeplink) || !exchangeData.QR"
-      class="p-12 m-12 flex justify-center">
+      class="p-12 m-12 justify-center">
       <!-- Exchange is active: Loading spinner -->
-      <q-spinner-tail
-        color="primary"
-        size="2em" />
+      <div class="mx-auto w-7 mb-4">
+        <q-spinner-tail
+          color="primary"
+          size="2em" />
+      </div>
+      <button
+        class="mx-auto max-w-prose text-sm underline"
+        @click="handleGoBack">
+        {{$t('exchangeActiveGoBack')}}
+      </button>
     </div>
     <div
       v-else-if="!showDeeplink && exchangeData.QR !== ''"

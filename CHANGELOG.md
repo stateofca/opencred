@@ -8,6 +8,11 @@
 
 ## Fixed
 - Avoid reCaptcha timeout by waiting to invoke it until the user submits.
+- Enable user to reset exchange from failed back to pending to try submitting again.
+
+## Changed
+- Changed cookie timeout from 15m to 1m
+- Exchange is updated to invalid state upon invalid JWT presentation. (resettable)
 
 ## 8.1.1 - 2024-07-08
 

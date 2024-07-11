@@ -17,6 +17,8 @@ export const defaultTranslations = {
     appCta: 'Open wallet app',
     'appCta-chapi-label': '',
     'appCta-openid4vp-label': '',
+    exchangeActiveGoBack: 'Go back',
+    exchangeReset: 'Reset and try again',
     qrTitle: 'Login with your Wallet app',
     qrPageExplain: 'Scan the following QR Code using a Wallet app on your ' +
     'phone.',

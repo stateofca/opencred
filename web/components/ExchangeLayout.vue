@@ -20,7 +20,6 @@ const $cookies = inject('$cookies');
 
 let intervalId;
 const useNativeTranslations = ref(true);
-const completedExchange = ref(null);
 const context = ref({
   rp: {
     brand: config.brand
@@ -30,8 +29,25 @@ const context = ref({
 const state = reactive({
   currentUXMethodIndex: 0,
   active: false,
+  activeOverride: false,
+  exchange: null,
   error: null
 });
+
+/**
+ * Set state.error to the given error object, with defaults applied.
+ * @param {Object} error
+ * @param {string?} error.title
+ * @param {string?} error.message
+ * @param {boolean?} error.resettable
+ */
+const handleError = error => {
+  state.error = {
+    title: error?.title || 'Error',
+    message: error?.message || 'An unexpected error occurred.',
+    resettable: !!error?.resettable || false
+  };
+};
 
 const route = useRoute();
 const {locale, availableLocales} = useI18n({useScope: 'global'});
@@ -57,15 +73,15 @@ onBeforeMount(async () => {
     const {status, data} = e;
     console.error('An error occurred while loading the application:', e);
     if(data && data.error_description) {
-      state.error = {
+      handleError({
         title: `${data.error} error`,
         message: data.error_description
-      };
+      });
     } else {
-      state.error = {
+      handleError({
         title: `Error code ${status}`,
         message: 'An error occurred while loading the application.'
-      };
+      });
     }
   }
 });
@@ -97,30 +113,60 @@ const checkStatus = async () => {
       }
     ));
     if(Object.keys(exchange).length > 0 && exchange.state === 'complete') {
-      completedExchange.value = exchange;
+      state.exchange = exchange;
       intervalId = clearInterval(intervalId);
       $cookies.remove('accessToken');
       $cookies.remove('exchangeId');
-    } else if(exchange.state === 'active') {
+    } else if(exchange.state === 'active' && !state.activeOverride) {
       state.active = true;
     } else if(exchange.state === 'invalid') {
-      state.error = {
+      handleError({
         title: 'The exchange failed.',
-        message: Object.values(exchange.variables?.results ?? {}).find(
-          v => !!v.errors)?.errors.join(', ') ??
-          'An error occurred while processing the exchange.'
-      };
+        message: Object.values(exchange.variables.results ?? {})
+          .filter(v => !!v.errors?.length)?.map(r => r.errors)
+          .flat()
+          .join(', ') ?? 'An error occurred while processing the exchange.',
+        resettable: true
+      });
       intervalId = clearInterval(intervalId);
       $cookies.remove('accessToken');
       $cookies.remove('exchangeId');
     }
   } catch(e) {
     console.error('An error occurred while polling the endpoint:', e);
-    state.error = {
+    handleError({
       title: 'error',
       message: 'An error occurred while checking exchange status.'
-    };
+    });
   }
+};
+
+const handleResetExchange = async () => {
+  state.active = true;
+  state.activeOverride = false;
+
+  try {
+    const resetResult = await httpClient.post(
+      `/workflows/${context.value.rp.workflow.id}/exchanges/` +
+    `${context.value.exchangeData.id}/reset`,
+      {
+        headers: {
+          Authorization: `Bearer ${context.value.exchangeData.accessToken}`
+        }
+      }
+    );
+    state.exchange = resetResult.data;
+    state.error = null;
+    intervalId = setInterval(checkStatus, 5000);
+  } catch(e) {
+    handleError({
+      title: 'Error',
+      message: 'An error occurred while resetting the exchange.'
+    });
+  }
+
+  state.active = false;
+  state.activeOverride = false;
 };
 
 const replaceExchange = exchange => {
@@ -236,16 +282,18 @@ onMounted(async () => {
 &nbsp;
         </div>
       </div>
-      <div v-if="completedExchange">
+      <div v-if="state.exchange?.state == 'complete'">
         <router-view
-          :exchange="completedExchange"
+          :exchange="state.exchange"
           :rp="context.rp" />
       </div>
       <div v-else-if="state.error">
         <div class="flex justify-center pt-8">
           <ErrorView
             :title="state.error.title"
-            :error="state.error.message" />
+            :message="state.error.message"
+            :resettable="state.error.resettable"
+            @reset="handleResetExchange" />
         </div>
       </div>
       <CHAPIView
@@ -263,8 +311,9 @@ onMounted(async () => {
         :exchange-data="context.exchangeData"
         :options="config.options"
         :explainer-video="context.rp?.explainerVideo"
-        :active="state.active"
+        :active="state.active && !state.activeOverride"
         @switch-view="switchView"
+        @override-active="state.activeOverride = true"
         @replace-exchange="replaceExchange" />
     </main>
     <footer
