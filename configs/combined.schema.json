@@ -793,6 +793,10 @@
             "type": {
               "type": "string",
               "enum": ["text"]
+            },
+            "default": {
+              "type": "string",
+              "description": "The default value for the field"
             }
           },
           "required": ["type"]
@@ -811,6 +815,12 @@
             "type": {
               "type": "string",
               "enum": ["date"]
+            },
+            "default": {
+              "type": "string",
+              "description": "The default value for the field yyyy-MM-dd",
+              "format": "date",
+              "examples": ["2021-01-01"]
             }
           },
           "required": ["type"]
@@ -835,14 +845,17 @@
               "patternProperties": {
                 "^.+$": {
                   "oneOf": [
-                    {
-                      "type": "string"
-                    },
+                    { "type": "string" },
                     { "type": "null" },
                     { "type": "number" }
                   ]
                 }
               }
+            },
+            "default": {
+              "type": "string",
+              "description": "The LABEL of the default value for the field",
+              "examples": ["Option 1"]
             }
           },
           "required": ["type", "options"]

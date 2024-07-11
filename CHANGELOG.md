@@ -4,6 +4,7 @@
 
 ## Added
 - Add support for config validation and VS Code schema-based config completion.
+- Add default values for audit fields.
 
 ## 8.1.1 - 2024-07-08
 

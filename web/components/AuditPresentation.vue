@@ -17,10 +17,21 @@ const NON_INPUT_TYPES = ['dropdown'];
 
 const enableAuditReCaptcha = config.reCaptcha.pages.includes('audit');
 
+const getDefaultValueForField = f => {
+  if(f.type == 'dropdown') {
+    return f.default ?
+      Object.entries(f.options ?? []).find(
+        v => v[0] == f.default)?.[1] :
+      undefined;
+  }
+  return f.default ?? undefined;
+};
 const auditFieldValues = ref(
   Object.fromEntries(
     config.audit.fields
-      .map(f => [f.path, undefined])
+      .map(f => [
+        f.path, getDefaultValueForField(f)
+      ])
   )
 );
 
