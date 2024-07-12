@@ -862,6 +862,29 @@
         }
       ]
     },
+    "AuditFieldNumber": {
+      "type": "object",
+      "description": "An Audit Field for a date picker field",
+      "allOf": [
+        {
+          "$ref": "#/definitions/AuditFieldBase"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["number"]
+            },
+            "default": {
+              "type": "number",
+              "description": "The default value for the field yyyy-MM-dd",
+              "examples": [1, 1.5, 2]
+            }
+          },
+          "required": ["type"]
+        }
+      ]
+    },
     "AuditField": {
       "oneOf": [
         {
@@ -872,6 +895,9 @@
         },
         {
           "$ref": "#/definitions/AuditFieldDropdown"
+        },
+        {
+          "$ref": "#/definitions/AuditFieldNumber"
         }
       ]
     },
