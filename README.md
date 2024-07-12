@@ -32,7 +32,7 @@ OpenCred supports the following list of features:
 * Native/local verifier support that is not dependent on any external services.
 * Remote/external verifier support using either the Verifiable Credential
   Verification API (VC API) or Microsoft Entra
-* Storage of historical DID Documents to enable auditing (coming soon)
+* Storage of historical DID Documents to enable auditing of past presentations.
 
 ## Usage
 
@@ -382,6 +382,7 @@ audit:
       options:
         "Yes": 1
         "No": null
+      default: "No"
 reCaptcha:
   enable: true
   version: 2
@@ -403,6 +404,7 @@ field of interest via the `audit.fields` field and visit `BASE_URL/audit-vp` in 
 - `options` - Data binding from user-friendly name to associated value for the field in the web interface. This property is used whenever a field can have one of multiple possible machine-readable values in a discrete set of options (e.g., `Male` -> `1`, `Female` -> `2`). The input for this field will be presented as a dropdown selection element. If one of the options is the absence of the field from the credential, you can represent this by binding the field to `null`. For example, here are the expectations for each selection for the field named `Are you a senior citizen?` in the sample snippet above:
   - `Yes` - There exists a field with path `$.credentialSubject.senior_citizen` containing value `1` in the credential.
   - `No` - There does **not** exist a field with path `$.credentialSubject.senior_citizen` in the credential.
+- `default` - The default value for the field in the web interface (if not required). For a dropdown-type field, use the string label of the field, not the value.
 
 If you would like to enable reCAPTCHA in the audit web interface, you should specify the following fields after registering your OpenCred domain in the [reCAPTCHA registration page](https://www.google.com/recaptcha/admin/create) (Note: you may register `localhost` for local development):
 - `reCaptcha.enable` - Whether to enable reCAPTCHA (default: `false`).

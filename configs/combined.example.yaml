@@ -248,6 +248,7 @@ app:
           options:
             "Yes": 1
             "No": null
+          default: "No"
     reCaptcha:
       enable: true
       version: 2
