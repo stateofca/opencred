@@ -878,7 +878,7 @@
             "default": {
               "type": "number",
               "description": "The default value for the field yyyy-MM-dd",
-              "examples": [1, 1.5, 2]
+              "examples": [1, 2]
             }
           },
           "required": ["type"]
