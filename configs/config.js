@@ -161,6 +161,9 @@ bedrock.events.on('bedrock.init', async () => {
       `Available: [${availableExchangeProtocols}]`);
   }
 
+  if(!opencred.relyingParties) {
+    opencred.relyingParties = [];
+  }
   /**
    * A list of relying parties (connected apps or workflows) in use by OpenCred
    * @type {RelyingParty[]}
