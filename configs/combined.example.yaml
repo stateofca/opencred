@@ -123,12 +123,12 @@ app:
           baseUrl: https://example.org/exchanges/123
           capability: "example"
           clientSecret: "example"
-      - client_id: 4e3a8b7b4b7b4b7b4b7b
+      - clientId: 4e3a8b7b4b7b4b7b4b7b
         # Microsoft Entra Verified Id workflow config
         # Many of these config fields map to request fields in the APIs linked below:
         #   https://learn.microsoft.com/en-us/entra/verified-id/get-started-request-api
         #   https://learn.microsoft.com/en-us/entra/verified-id/presentation-request-api
-        configFrom: 32bb6cec384b # client_id of another relying party to serve as default values
+        configFrom: 32bb6cec384b # clientId of another relying party to serve as default values
         workflow:
           type: microsoft-entra-verified-id
           apiBaseUrl: https://api.entra.microsoft.example.com/v1.0 # required (will generally be https://verifiedid.did.msidentity.com/v1.0)
