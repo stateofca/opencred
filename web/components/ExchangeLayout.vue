@@ -163,6 +163,7 @@ const handleResetExchange = async () => {
       title: 'Error',
       message: 'An error occurred while resetting the exchange.'
     });
+    // Fall through to clear the active state after causing the error to display
   }
 
   state.active = false;
