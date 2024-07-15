@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 8.2.0 - 2024-07-XX
+## 9.0.0 - 2024-07-XX
 
 ## Added
 - Add support for config validation and VS Code schema-based config completion.
@@ -13,6 +13,8 @@
 ## Changed
 - Changed cookie timeout from 15m to 1m
 - Exchange is updated to invalid state upon invalid JWT presentation. (resettable)
+- Fix Entra security bug, by using a different secret access token
+  for an exchange's verification callback endpoint.
 
 ## 8.1.1 - 2024-07-08
 
