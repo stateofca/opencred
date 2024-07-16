@@ -25,7 +25,7 @@
     "validateConfig": "npx ajv-cli validate -d configs/combined.yaml -s configs/combined.schema.json -c ajv-formats --spec=draft7"
   },
   "dependencies": {
-    "@azure/msal-node": "^2.6.4",
+    "@azure/msal-node": "^2.11.0",
     "@bedrock/config-yaml": "^4.2.0",
     "@bedrock/core": "^6.1.2",
     "@bedrock/express": "^8.3.0",
