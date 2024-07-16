@@ -62,6 +62,12 @@ const exchange = JSON.parse(fs.readFileSync(
 exchange.createdAt = new Date();
 exchange.recordExpiresAt = new Date();
 
+const entraExchange = JSON.parse(fs.readFileSync(
+  './test/fixtures/entra-exchange.json'
+));
+entraExchange.createdAt = new Date();
+entraExchange.recordExpiresAt = new Date();
+
 describe('OpenCred API - Native Workflow', function() {
   let vp_token_di;
   let presentation_submission_di;
@@ -479,14 +485,14 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
 
     it('should return status on exchange', async function() {
       const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
-        .resolves(exchange);
+        .resolves(entraExchange);
       let result;
       let err;
       try {
         result = await client
           .get(`${baseUrl}/workflows/${testRP.workflow.id}/exchanges/` +
-            `${exchange.id}`, {
-            headers: {Authorization: `Bearer ${exchange.accessToken}`}
+            `${entraExchange.id}`, {
+            headers: {Authorization: `Bearer ${entraExchange.accessToken}`}
           });
       } catch(e) {
         err = e;
@@ -494,7 +500,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
 
       should.not.exist(err);
       result.status.should.be.equal(200);
-      result.data.exchange.id.should.be.equal(exchange.id);
+      result.data.exchange.id.should.be.equal(entraExchange.id);
 
       findStub.restore();
     });
@@ -502,14 +508,14 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
     it('should not expose apiAccessToken to status endpoint',
       async function() {
         const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
-          .resolves(exchange);
+          .resolves(entraExchange);
         let result;
         let err;
         try {
           result = await client
             .get(`${baseUrl}/workflows/${testRP.workflow.id}/exchanges/` +
-              `${exchange.id}`, {
-              headers: {Authorization: `Bearer ${exchange.accessToken}`}
+              `${entraExchange.id}`, {
+              headers: {Authorization: `Bearer ${entraExchange.accessToken}`}
             });
         } catch(e) {
           err = e;
@@ -525,7 +531,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
     it('should not expose apiAccessToken to login endpoint',
       async function() {
         const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
-          .resolves(exchange);
+          .resolves(entraExchange);
         let result;
         let err;
         try {
@@ -534,8 +540,8 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
               '?client_id=test&scope=openid' +
               '&redirect_uri=https%3A%2F%2Fexample.com', {
               headers: {
-                Cookie: `exchangeId=${exchange.id}; ` +
-                `accessToken=${exchange.accessToken}`
+                Cookie: `exchangeId=${entraExchange.id}; ` +
+                `accessToken=${entraExchange.accessToken}`
               }
             });
         } catch(e) {
@@ -552,7 +558,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
     it('should not expose apiAccessToken to context verification endpoint',
       async function() {
         const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
-          .resolves(exchange);
+          .resolves(entraExchange);
         let result;
         let err;
         try {
@@ -561,8 +567,8 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
               '?client_id=test&scope=openid' +
               '&redirect_uri=https%3A%2F%2Fexample.com', {
               headers: {
-                Cookie: `exchangeId=${exchange.id}; ` +
-                `accessToken=${exchange.accessToken}`
+                Cookie: `exchangeId=${entraExchange.id}; ` +
+                `accessToken=${entraExchange.accessToken}`
               }
             });
         } catch(e) {
@@ -579,7 +585,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
     it('should update exchange status after verification with DI VP token',
       async function() {
         const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
-          .resolves(exchange);
+          .resolves(entraExchange);
         const replaceStub = sinon.stub(database.collections.Exchanges,
           'replaceOne').resolves();
         const dateStub = sinon.stub(Date, 'now').returns(1699635246762);
@@ -637,7 +643,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
         try {
           result = await client.post(`${baseUrl}/verification/callback`, {
             headers: {
-              Authorization: `Bearer ${exchange.accessToken}`
+              Authorization: `Bearer ${entraExchange.accessToken}`
             },
             json: {
               requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
@@ -664,7 +670,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
     it('should update exchange status after verification with JWT VP token',
       async function() {
         const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
-          .resolves(exchange);
+          .resolves(entraExchange);
         const updateStub = sinon.stub(database.collections.Exchanges,
           'replaceOne').resolves();
         const dateStub = sinon.stub(Date, 'now').returns(1699635246762);
@@ -737,7 +743,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
         try {
           result = await client
             .post(`${baseUrl}/verification/callback`, {
-              headers: {Authorization: `Bearer ${exchange.accessToken}`},
+              headers: {Authorization: `Bearer ${entraExchange.accessToken}`},
               json: {
                 requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
                 requestStatus: 'presentation_verified',
