@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 8.2.0 - 2024-07-XX
+## 8.2.0 - 2024-07-17
 
 ## Added
 - Add support for config validation and VS Code schema-based config completion.
