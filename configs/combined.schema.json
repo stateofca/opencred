@@ -527,11 +527,6 @@
           "type": "string",
           "description": "The ID of the initial step in the workflow"
         },
-        "credentialVerificationCallbackAuthEnabled": {
-          "type": "boolean",
-          "description": "Whether to require authentication for the credential verification callback.",
-          "default": true
-        },
         "acceptedCredentialIssuers": {
           "type": "array",
           "items": { "type": "string" },

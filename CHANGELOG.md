@@ -8,13 +8,17 @@
 
 ## Fixed
 - Avoid reCaptcha timeout by waiting to invoke it until the user submits.
-- Enable user to reset exchange from failed back to pending to try submitting again.
-- Fix Entra security bug, by using a different secret access token
-  for an exchange's verification callback endpoint.
+- Enable user to reset exchange from failed back to pending to try submitting
+  again.
+- Fix Entra security bug, by using a different secret access token for an
+  exchange's verification callback endpoint.
 
 ## Changed
 - Changed cookie timeout from 15m to 1m
-- Exchange is updated to invalid state upon invalid JWT presentation. (resettable)
+- Exchange is updated to invalid state upon invalid JWT presentation.
+  (resettable)
+- Removed development-only optional `credentialVerificationCallbackAuthEnabled`
+  Entra workflow configuration option.
 
 ## 8.1.1 - 2024-07-08
 
