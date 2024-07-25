@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 8.3.0 - 2024-xx-xx
+
+## Fixed
+- Fix breaking change in `BaseWorkflowService.getExchange`.
+
 ## 8.2.0 - 2024-07-17
 
 ## Added
