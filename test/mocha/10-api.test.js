@@ -665,6 +665,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
           err = e;
         }
 
+        should.not.exist(result);
         should.exist(err);
         err.status.should.be.equal(404);
         err.data?.message.should.be.equal('Exchange not found');
