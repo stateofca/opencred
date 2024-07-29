@@ -356,6 +356,12 @@
             }
           }
         },
+        "trustedCredentialIssuers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "The set of trusted issuers whose credentials are admissible by this RP.",
+          "default": []
+        },
         "workflow": {
           "type": "object",
           "oneOf": [
@@ -526,12 +532,6 @@
         "initialStep": {
           "type": "string",
           "description": "The ID of the initial step in the workflow"
-        },
-        "acceptedCredentialIssuers": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "The list of issuer DIDs whose credentials are accepted by this RP.",
-          "default": null
         },
         "allowRevokedCredentials": {
           "type": "boolean",

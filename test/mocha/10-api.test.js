@@ -14,10 +14,12 @@ import {msalUtils, verifyUtils} from '../../common/utils.js';
 import {baseUrl} from '../mock-data.js';
 import {config} from '@bedrock/core';
 import {database} from '../../lib/database.js';
+import {domainToDidWeb} from '../../lib/didWeb.js';
 import {
   EntraVerifiedIdWorkflowService
 } from '../../lib/workflows/entra-verified-id-workflow.js';
 import {exampleKey2} from '../fixtures/signingKeys.js';
+import {generateValidJwtVpToken} from '../utils/jwtVpTokens.js';
 import '../../lib/index.js';
 
 import {httpClient} from '@digitalbazaar/http-client';
@@ -377,6 +379,12 @@ describe('OpenCred API - Native Workflow', function() {
     const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
     let result;
     let err;
+    ({vpToken: vp_token_jwt} = await generateValidJwtVpToken({
+      aud: domainToDidWeb(config.server.baseUri)
+    }));
+    const oid4vpJWT = JSON.parse(fs.readFileSync(
+      './test/fixtures/oid4vp_jwt.json'));
+    presentation_submission_jwt = oid4vpJWT.presentation_submission;
     try {
       const searchParams = new URLSearchParams();
       searchParams.set('vp_token', JSON.stringify(vp_token_jwt));

@@ -201,7 +201,7 @@ export const verifyChain = async (certs, options = {}) => {
 
 export const extractCertsFromX5C = async jwk => {
   try {
-    const certs = jwk.x5c.map(x5c =>
+    const certs = jwk.x5c?.map(x5c =>
       new X509Certificate(Buffer.from(x5c, 'base64')));
 
     if(!certs) {

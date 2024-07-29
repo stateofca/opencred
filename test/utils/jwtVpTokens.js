@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import {generateKeyPair, importJWK, SignJWT} from 'jose';
+import {exportJWK, generateKeyPair, importJWK, SignJWT} from 'jose';
 import base64url from 'base64url';
 import {Crypto} from '@peculiar/webcrypto';
 import {generateValidCredential} from './credentials.js';
@@ -30,19 +30,22 @@ export const generateValidJwtVpToken = async ({
   crv = 'P-256',
   aud = 'did:web:localhost:22443',
   x5c = [],
-  leafKeyPair = null
+  leafKeyPair = null,
+  innerIssuerDid = null
 } = {}) => {
   let publicKey;
   let privateKey;
+  let publicKeyJwk;
   if(leafKeyPair) {
     ({publicKey, privateKey} = leafKeyPair);
     const privateKeyJwk = await crypto.subtle.exportKey('jwk', privateKey);
     privateKey = await importJWK(privateKeyJwk);
+    publicKeyJwk = await crypto.subtle.exportKey('jwk', publicKey);
   } else {
     ({publicKey, privateKey} = await generateKeyPair(
       alg, {crv, extractable: true}));
+    publicKeyJwk = await exportJWK(publicKey);
   }
-  const publicKeyJwk = await crypto.subtle.exportKey('jwk', publicKey);
   publicKeyJwk.x5c = x5c;
 
   const issuerDidFingerprint = base64url.encode(JSON.stringify(publicKeyJwk));
@@ -73,7 +76,7 @@ export const generateValidJwtVpToken = async ({
     iss: issuerDid,
     sub: holderDid,
     vc: generateValidCredential({
-      issuerDid,
+      issuerDid: innerIssuerDid ?? issuerDid,
       holderDid
     })
   };

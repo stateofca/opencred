@@ -36,8 +36,59 @@ export const createId = async (bitLength = 128) => {
   return id;
 };
 
-export const decodeJwtPayload = jwtToken => {
-  const [, encodedPayloadString] = jwtToken.split('.');
+export const isValidJwt = jwt => {
+  if(typeof jwt !== 'string') {
+    return false;
+  }
+  const parts = jwt.split('.');
+  if(parts.length !== 3) {
+    return false;
+  }
+  try {
+    const [encodedHeaderString, encodedPayloadString] = parts;
+    const encodedHeader = JSON.parse(base64url.decode(encodedHeaderString));
+    const encodedPayload = JSON.parse(base64url.decode(encodedPayloadString));
+    return typeof encodedHeader === 'object' &&
+      typeof encodedPayload === 'object';
+  } catch (error) {
+    return false;
+  }
+};
+
+export const isValidJson = json => {
+  if(typeof json === 'object') {
+    return !Array.isArray(json);
+  }
+  try {
+    if(typeof json === 'string') {
+      JSON.parse(json);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const getValidJson = json => {
+  if(typeof json === 'object') {
+    if(Array.isArray(json)) {
+      return null;
+    }
+    return json;
+  }
+  try {
+    if(typeof json === 'string') {
+      return JSON.parse(json);
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
+};
+
+export const decodeJwtPayload = jwt => {
+  const [, encodedPayloadString] = jwt.split('.');
   const decodedPayloadString = base64url.decode(encodedPayloadString);
   return JSON.parse(decodedPayloadString);
 };

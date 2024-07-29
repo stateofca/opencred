@@ -130,6 +130,7 @@ bedrock.events.on('bedrock.init', async () => {
    * @property {string} brand.cta - The call to action color, hex like "#6A5ACD"
    * @property {string} brand.primary - The primary color hex.
    * @property {string} brand.header - The header color hex.
+   * @property {Array<string>} trustedCredentialIssuers - Accepted credential issuers
    * @property {Array<Object>} scopes - OAuth2 scopes
    * @property {string} scopes[].name - The name of the scope.
    * @property {string} scopes[].description - The description of the scope.
@@ -369,6 +370,38 @@ bedrock.events.on('bedrock.init', async () => {
       brand
     };
   });
+
+  /**
+   * A list of trusted issuers
+   */
+  const validateTrustedCredentialIssuers = (scope) => {
+    if(!scope.trustedCredentialIssuers) {
+      return;
+    }
+    if(!Array.isArray(scope.trustedCredentialIssuers)) {
+      throw new Error('trustedCredentialIssuers must be an array');
+    }
+    for(const issuer of scope.trustedCredentialIssuers) {
+      if(typeof issuer !== 'string') {
+        throw new Error('Each issuer in trustedCredentialIssuers ' +
+        'must be a string');
+      }
+    }
+  };
+  const combineTrustedCredentialIssuers = () => {
+    opencred.trustedCredentialIssuers = opencred.trustedCredentialIssuers ?? [];
+    validateTrustedCredentialIssuers(opencred);
+    const rpsWithTrustedCredentialIssuers = klona(opencred.relyingParties);
+    for(const rp of rpsWithTrustedCredentialIssuers) {
+      rp.trustedCredentialIssuers = rp.trustedCredentialIssuers ?? [];
+      validateTrustedCredentialIssuers(rp);
+      rp.trustedCredentialIssuers = rp.trustedCredentialIssuers.length === 0 ?
+        opencred.trustedCredentialIssuers :
+        rp.trustedCredentialIssuers;
+    }
+    opencred.relyingParties = rpsWithTrustedCredentialIssuers;
+  };
+  combineTrustedCredentialIssuers();
 
   /**
    * A list of trusted root certificates

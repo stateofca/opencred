@@ -282,3 +282,17 @@ export async function generateCertificateChain({
   }
   return {chain, crl, leafKeyPair};
 }
+
+export function convertDerCertificateToPem(derBuffer, stripBoundaries = false) {
+  // Convert DER buffer to a base64 string
+  const base64String = derBuffer.toString('base64');
+
+  // Split the base64 string into lines of 64 characters
+  let pem = base64String.match(/.{1,64}/g).join('\n');
+
+  // Format the base64 string as a PEM string
+  if(!stripBoundaries) {
+    pem = `-----BEGIN CERTIFICATE-----\n${pem}-----END CERTIFICATE-----`
+  }
+  return pem;
+}
