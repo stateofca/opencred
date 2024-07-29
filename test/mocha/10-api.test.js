@@ -12,12 +12,10 @@ import {zcapClient} from '../../common/zcap.js';
 
 import {msalUtils, verifyUtils} from '../../common/utils.js';
 import {baseUrl} from '../mock-data.js';
+import {BaseWorkflowService} from '../../lib/workflows/base.js';
 import {config} from '@bedrock/core';
 import {database} from '../../lib/database.js';
 import {domainToDidWeb} from '../../lib/didWeb.js';
-import {
-  EntraVerifiedIdWorkflowService
-} from '../../lib/workflows/entra-verified-id-workflow.js';
 import {exampleKey2} from '../fixtures/signingKeys.js';
 import {generateValidJwtVpToken} from '../utils/jwtVpTokens.js';
 import '../../lib/index.js';
@@ -682,8 +680,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
         findStub.restore();
       });
 
-    // TODO - Please fix this test
-    it.skip('should handle expired exchange when getting status',
+    it('should handle expired exchange when getting status',
       async function() {
         const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
           .resolves({
@@ -691,11 +688,15 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
             createdAt: new Date('2023-11-14'),
             recordExpiresAt: new Date('2023-11-15')
           });
-        const getExchangeStub = sinon.stub(EntraVerifiedIdWorkflowService,
-          'getExchange')
-          .callsFake(args => {
-            return {...args, allowExpired: false};
-          });
+        const getExchangeStub = sinon.stub(
+          BaseWorkflowService.prototype,
+          'getExchange').callsFake(function(args) {
+          const newArgs = {...args, allowExpired: false};
+          return getExchangeStub.wrappedMethod.call(this, newArgs);
+        });
+        getExchangeStub.wrappedMethod =
+          BaseWorkflowService.prototype.getExchange.wrappedMethod ??
+          BaseWorkflowService.prototype.getExchange;
         let result;
         let err;
         try {

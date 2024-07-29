@@ -292,7 +292,7 @@ export function convertDerCertificateToPem(derBuffer, stripBoundaries = false) {
 
   // Format the base64 string as a PEM string
   if(!stripBoundaries) {
-    pem = `-----BEGIN CERTIFICATE-----\n${pem}-----END CERTIFICATE-----`
+    pem = `-----BEGIN CERTIFICATE-----\n${pem}-----END CERTIFICATE-----`;
   }
   return pem;
 }

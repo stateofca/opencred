@@ -130,7 +130,7 @@ bedrock.events.on('bedrock.init', async () => {
    * @property {string} brand.cta - The call to action color, hex like "#6A5ACD"
    * @property {string} brand.primary - The primary color hex.
    * @property {string} brand.header - The header color hex.
-   * @property {Array<string>} trustedCredentialIssuers - Accepted credential issuers
+   * @property {Array<string>} trustedCredentialIssuers - Trusted issuers
    * @property {Array<Object>} scopes - OAuth2 scopes
    * @property {string} scopes[].name - The name of the scope.
    * @property {string} scopes[].description - The description of the scope.
@@ -374,7 +374,7 @@ bedrock.events.on('bedrock.init', async () => {
   /**
    * A list of trusted issuers
    */
-  const validateTrustedCredentialIssuers = (scope) => {
+  const validateTrustedCredentialIssuers = scope => {
     if(!scope.trustedCredentialIssuers) {
       return;
     }

@@ -50,7 +50,7 @@ export const isValidJwt = jwt => {
     const encodedPayload = JSON.parse(base64url.decode(encodedPayloadString));
     return typeof encodedHeader === 'object' &&
       typeof encodedPayload === 'object';
-  } catch (error) {
+  } catch(error) {
     return false;
   }
 };
@@ -65,7 +65,7 @@ export const isValidJson = json => {
       return true;
     }
     return false;
-  } catch (error) {
+  } catch(error) {
     return false;
   }
 };
@@ -82,7 +82,7 @@ export const getValidJson = json => {
       return JSON.parse(json);
     }
     return null;
-  } catch (error) {
+  } catch(error) {
     return null;
   }
 };

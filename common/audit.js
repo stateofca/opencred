@@ -27,7 +27,7 @@ export const getVpTokenMetadata = vpToken => {
     let vpJwtPayload;
     try {
       vpJwtPayload = decodeJwtPayload(vpToken);
-    } catch (error) {
+    } catch(error) {
       return {
         valid: false,
         error: 'Unable to decode vp token: ' + error.message,
@@ -40,7 +40,7 @@ export const getVpTokenMetadata = vpToken => {
         let vcJwtPayload;
         try {
           vcJwtPayload = decodeJwtPayload(vcToken);
-        } catch (error) {
+        } catch(error) {
           return {
             valid: false,
             error: 'Unable to decode vc token: ' + error.message,
@@ -106,7 +106,9 @@ export const getVcTokensForVpToken = vpToken => {
 
 export const updateIssuerDidDocumentHistory = async vpToken => {
   const {valid, issuerDids} = getVpTokenMetadata(vpToken);
-  if(!valid) return;
+  if(!valid) {
+    return;
+  }
   try {
     for(const did of issuerDids) {
       const didDocumentLive = await didResolver.get({did});
