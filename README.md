@@ -310,7 +310,7 @@ translations:
     qrClickMessage: The Wallet app must be running in the background.
     openid4vpAnotherWay: Want to try another way?
     openid4vpQrAnotherWay: Use a wallet on this device
-    chapiPageAnotherWay: "Looking for a QR Code to scan with you wallet app instead?"
+    chapiPageAnotherWay: "Looking for a QR code to scan with your wallet app instead?"
     loginCta: "Login with your credential wallet"
     loginExplain: "To login with your credential wallet, you will need to have the credential wallet app <with configurable URL to app stores> installed"
     appInstallExplain: "If you don't have a credential wallet yet, you can get one by downloading the credential wallet app <with configurable URL to app stores>"

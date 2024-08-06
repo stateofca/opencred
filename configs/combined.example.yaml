@@ -129,6 +129,8 @@ app:
         #   https://learn.microsoft.com/en-us/entra/verified-id/get-started-request-api
         #   https://learn.microsoft.com/en-us/entra/verified-id/presentation-request-api
         configFrom: 32bb6cec384b # clientId of another relying party to serve as default values
+        trustedCredentialIssuers:
+          - did:web:example.com
         workflow:
           type: microsoft-entra-verified-id
           apiBaseUrl: https://api.entra.microsoft.example.com/v1.0 # required (will generally be https://verifiedid.did.msidentity.com/v1.0)
@@ -138,7 +140,6 @@ app:
           apiTenantId: "TODO" # required
           verifierDid: "TODO" # required
           verifierName: "TODO" # required
-          acceptedCredentialIssuers: [] # optional (default populated in middleware unless overridden here)
           credentialVerificationPurpose: "So that we can evaluate your permission to access the requested resource" # optional (default populated in middleware unless overridden here)
           allowRevokedCredentials: false # optional (default populated in middleware unless overridden here)
           validateLinkedDomain: false # optional (default populated in middleware unless overridden here)
@@ -265,7 +266,7 @@ app:
         qrFooterHelp: Difficulty using the Wallet app to login? revert to using password <a href="#">here</a>
         qrDisclaimer: If you don't have a Wallet app download it from the app store.
         qrExplainerText: (How do I do it?)
-        chapiPageAnotherWay: "Looking for a QR Code to scan with you wallet app instead?"
+        chapiPageAnotherWay: "Looking for a QR code to scan with your wallet app instead?"
         loginCta: "Login with your credential wallet"
         loginExplain: "To login with your credential wallet, you will need to have the credential wallet app <with configurable URL to app stores> installed"
         appInstallExplain: "If you don't have a credential wallet yet, you can get one by downloading the credential wallet app <with configurable URL to app stores>"

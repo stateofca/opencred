@@ -32,7 +32,7 @@ export const defaultTranslations = {
     openid4vpQrAnotherWay: 'Use a wallet on this device.',
     openid4vpQrAnotherWayLabel: '',
     qrClickMessage: `The Wallet app must be running in the background.`,
-    chapiPageAnotherWay: 'Looking for a QR Code to scan with your wallet app ' +
+    chapiPageAnotherWay: 'Looking for a QR code to scan with your wallet app ' +
       'instead?',
     copyright: 'Powered by OpenCred',
     home: 'Home'
