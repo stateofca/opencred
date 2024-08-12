@@ -746,6 +746,26 @@
             "verificationSuccess": {
               "type": "string",
               "description": "The text for the verification success message."
+            },
+            "exchangeActiveGoBack": {
+              "type": "string",
+              "description": "The label of the button that cancels an active exchange."
+            },
+            "exchangeErrorTitle": {
+              "type": "string",
+              "description": "The title of the error page."
+            },
+            "exchangeErrorSubtitle": {
+              "type": "string",
+              "description": "The subtitle of the error page."
+            },
+            "exchangeResetTitle": {
+              "type": "string",
+              "description": "The title message preceeding the exchange retry button."
+            },
+            "exchangeReset": {
+              "type": "string",
+              "description": "The label of the exchange retry button."
             }
           }
         }

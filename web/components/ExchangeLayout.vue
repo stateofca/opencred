@@ -121,7 +121,6 @@ const checkStatus = async () => {
       state.active = true;
     } else if(exchange.state === 'invalid') {
       handleError({
-        title: 'The exchange failed.',
         message: Object.values(exchange.variables.results ?? {})
           .filter(v => !!v.errors?.length)?.map(r => r.errors)
           .flat()
@@ -135,7 +134,7 @@ const checkStatus = async () => {
   } catch(e) {
     console.error('An error occurred while polling the endpoint:', e);
     handleError({
-      title: 'error',
+      title: 'Error',
       message: 'An error occurred while checking exchange status.'
     });
   }

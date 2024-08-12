@@ -18,7 +18,10 @@ export const defaultTranslations = {
     'appCta-chapi-label': '',
     'appCta-openid4vp-label': '',
     exchangeActiveGoBack: 'Go back',
-    exchangeReset: 'Reset and try again',
+    exchangeErrorTitle: 'The exchange failed.',
+    exchangeErrorSubtitle: 'The following error was encountered:',
+    exchangeResetTitle: 'You may try again once the issue is corrected.',
+    exchangeReset: 'Retry',
     qrTitle: 'Login with your Wallet app',
     qrPageExplain: 'Scan the following QR Code using a Wallet app on your ' +
     'phone.',
