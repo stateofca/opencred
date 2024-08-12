@@ -57,9 +57,8 @@ export const getVpTokenMetadata = vpToken => {
               'of the contained credential',
             issuerDids
           };
-        } else {
-          issuerDids.push(issuerDidJwt);
         }
+        issuerDids.push(issuerDidJwt);
       }
     }
   } else if(isValidJson(vpToken)) {
