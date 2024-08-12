@@ -21,77 +21,87 @@ import {
 } from './documentLoader.js';
 import {database} from '../lib/database.js';
 
-export const getVpTokenMetadata = vpToken => {
+const _getVpTokenMetadataJwt = vpToken => {
   const issuerDids = [];
-  if(isValidJwt(vpToken)) {
-    let vpJwtPayload;
-    try {
-      vpJwtPayload = decodeJwtPayload(vpToken);
-    } catch(error) {
-      return {
-        valid: false,
-        error: 'Unable to decode vp token: ' + error.message,
-        issuerDids
-      };
-    }
-    const vcTokens = vpJwtPayload?.vp?.verifiableCredential;
-    if(vcTokens && Array.isArray(vcTokens)) {
-      for(const vcToken of vcTokens) {
-        let vcJwtPayload;
-        try {
-          vcJwtPayload = decodeJwtPayload(vcToken);
-        } catch(error) {
-          return {
-            valid: false,
-            error: 'Unable to decode vc token: ' + error.message,
-            issuerDids
-          };
-        }
-        const issuerDidJwt = vcJwtPayload?.iss;
-        const issuerDidVc = typeof vcJwtPayload?.vc?.issuer === 'string' ?
-          vcJwtPayload.vc.issuer : vcJwtPayload?.vc?.issuer?.id;
-        if(!issuerDidJwt || !issuerDidVc || issuerDidJwt !== issuerDidVc) {
-          return {
-            valid: false,
-            error: 'Each vc token issuer must match the issuer ' +
-              'of the contained credential',
-            issuerDids
-          };
-        }
-        issuerDids.push(issuerDidJwt);
-      }
-    }
-  } else if(isValidJson(vpToken)) {
-    vpToken = getValidJson(vpToken);
-    const credentials = vpToken.verifiableCredential;
-    if(credentials && Array.isArray(credentials)) {
-      for(const credential of credentials) {
-        const issuerDidCandidate = credential?.issuer;
-        const issuerDidHasValidFormat =
-          typeof issuerDidCandidate === 'string' ||
-          (typeof issuerDidCandidate === 'object' &&
-            !Array.isArray(issuerDidCandidate) && issuerDidCandidate?.id);
-        if(!issuerDidCandidate || !issuerDidHasValidFormat) {
-          return {
-            valid: false,
-            error: 'Each credential in the vp token must have ' +
-              'an issuer defined at "$.issuer".',
-            issuerDids
-          };
-        }
-        const issuerDid = typeof issuerDidCandidate === 'string' ?
-          issuerDidCandidate : issuerDidCandidate?.id;
-        issuerDids.push(issuerDid);
-      }
-    }
-  } else {
+  let vpJwtPayload;
+  try {
+    vpJwtPayload = decodeJwtPayload(vpToken);
+  } catch(error) {
     return {
       valid: false,
-      error: 'Received invalid vp token format.',
+      error: 'Unable to decode vp token: ' + error.message,
       issuerDids
     };
   }
+  const vcTokens = vpJwtPayload?.vp?.verifiableCredential;
+  if(vcTokens && Array.isArray(vcTokens)) {
+    for(const vcToken of vcTokens) {
+      let vcJwtPayload;
+      try {
+        vcJwtPayload = decodeJwtPayload(vcToken);
+      } catch(error) {
+        return {
+          valid: false,
+          error: 'Unable to decode vc token: ' + error.message,
+          issuerDids
+        };
+      }
+      const issuerDidJwt = vcJwtPayload?.iss;
+      const issuerDidVc = typeof vcJwtPayload?.vc?.issuer === 'string' ?
+        vcJwtPayload.vc.issuer : vcJwtPayload?.vc?.issuer?.id;
+      if(!issuerDidJwt || !issuerDidVc || issuerDidJwt !== issuerDidVc) {
+        return {
+          valid: false,
+          error: 'Each vc token issuer must match the issuer ' +
+            'of the contained credential',
+          issuerDids
+        };
+      }
+      issuerDids.push(issuerDidJwt);
+    }
+  }
   return {valid: true, error: null, issuerDids};
+};
+
+const _getVpTokenMetadataJson = vpToken => {
+  const issuerDids = [];
+  vpToken = getValidJson(vpToken);
+  const credentials = vpToken.verifiableCredential;
+  if(credentials && Array.isArray(credentials)) {
+    for(const credential of credentials) {
+      const issuerDidCandidate = credential?.issuer;
+      const issuerDidHasValidFormat =
+        typeof issuerDidCandidate === 'string' ||
+        (typeof issuerDidCandidate === 'object' &&
+          !Array.isArray(issuerDidCandidate) && issuerDidCandidate?.id);
+      if(!issuerDidCandidate || !issuerDidHasValidFormat) {
+        return {
+          valid: false,
+          error: 'Each credential in the vp token must have ' +
+            'an issuer defined at "$.issuer".',
+          issuerDids
+        };
+      }
+      const issuerDid = typeof issuerDidCandidate === 'string' ?
+        issuerDidCandidate : issuerDidCandidate?.id;
+      issuerDids.push(issuerDid);
+    }
+  }
+  return {valid: true, error: null, issuerDids};
+};
+
+export const getVpTokenMetadata = vpToken => {
+  if(isValidJwt(vpToken)) {
+    return _getVpTokenMetadataJwt(vpToken);
+  }
+  if(isValidJson(vpToken)) {
+    return _getVpTokenMetadataJson(vpToken);
+  }
+  return {
+    valid: false,
+    error: 'Received invalid VP token format.',
+    issuerDids: []
+  };
 };
 
 export const getVcTokensForVpToken = vpToken => {
