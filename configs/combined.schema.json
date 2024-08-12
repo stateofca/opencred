@@ -98,6 +98,9 @@
                 }
               }
             },
+            "trustedCredentialIssuers": {
+              "$ref": "#/definitions/TrustedCredentialIssuers"
+            },
             "didWeb": {
               "type": "object",
               "additionalProperties": false,
@@ -357,10 +360,7 @@
           }
         },
         "trustedCredentialIssuers": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "The set of trusted issuers whose credentials are admissible by this RP.",
-          "default": []
+          "$ref": "#/definitions/TrustedCredentialIssuers"
         },
         "workflow": {
           "type": "object",
@@ -948,6 +948,12 @@
           }
         }
       }
+    },
+    "TrustedCredentialIssuers": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "The set of trusted issuers whose credentials are admissible by this RP.",
+      "default": []
     }
   }
 }
