@@ -50,7 +50,7 @@ export const getVpTokenMetadata = vpToken => {
         const issuerDidJwt = vcJwtPayload?.iss;
         const issuerDidVc = typeof vcJwtPayload?.vc?.issuer === 'string' ?
           vcJwtPayload.vc.issuer : vcJwtPayload?.vc?.issuer?.id;
-        if(issuerDidJwt !== issuerDidVc) {
+        if(!issuerDidJwt || !issuerDidVc || issuerDidJwt !== issuerDidVc) {
           return {
             valid: false,
             error: 'Each vc token issuer must match the issuer ' +
