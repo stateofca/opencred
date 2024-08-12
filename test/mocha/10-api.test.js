@@ -10,6 +10,10 @@ import {decodeJwt} from 'jose';
 import fs from 'node:fs';
 import {zcapClient} from '../../common/zcap.js';
 
+import {
+  convertDerCertificateToPem,
+  generateCertificateChain
+} from '../utils/x509.js';
 import {msalUtils, verifyUtils} from '../../common/utils.js';
 import {baseUrl} from '../mock-data.js';
 import {BaseWorkflowService} from '../../lib/workflows/base.js';
@@ -844,7 +848,20 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
           .resolves(entraExchange);
         const updateStub = sinon.stub(database.collections.Exchanges,
           'replaceOne').resolves();
-        const dateStub = sinon.stub(Date, 'now').returns(1699635246762);
+
+        const {chain, leafKeyPair} = await generateCertificateChain({
+          length: 3
+        });
+        const root = chain.pop();
+        const caStoreStub = sinon.stub(config.opencred, 'caStore').value([
+          convertDerCertificateToPem(root.raw, false)
+        ]);
+        const {vpToken} = await generateValidJwtVpToken({
+          aud: domainToDidWeb(config.server.baseUri),
+          x5c: chain.map(c => convertDerCertificateToPem(c.raw, true)),
+          leafKeyPair
+        });
+
         let result;
         let err;
         try {
@@ -858,7 +875,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
                 requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
                 requestStatus: 'presentation_verified',
                 receipt: {
-                  vp_token: testVpToken
+                  vp_token: vpToken
                 }
               }
             });
@@ -870,10 +887,160 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
         result.status.should.be.equal(200);
         findStub.called.should.be.equal(true);
         updateStub.called.should.be.equal(true);
-        dateStub.called.should.be.equal(true);
 
+        caStoreStub.restore();
         findStub.restore();
         updateStub.restore();
-        dateStub.restore();
       });
+
+    it('should fail X.509 validation with invalid x5c chain ' +
+      'after verification with JWT VP token', async () => {
+      const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+        .resolves(entraExchange);
+      const replaceStub = sinon.stub(database.collections.Exchanges,
+        'replaceOne').resolves();
+
+      const {chain} = await generateCertificateChain({
+        length: 3
+      });
+      chain.pop();
+      const {vpToken} = await generateValidJwtVpToken({
+        aud: domainToDidWeb(config.server.baseUri),
+        x5c: chain.map(c => convertDerCertificateToPem(c.raw, true))
+      });
+
+      let result;
+      let err;
+      try {
+        result = await client
+          .post(`${baseUrl}/verification/callback`, {
+            headers: {Authorization: `Bearer ${entraExchange.apiAccessToken}`},
+            json: {
+              requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
+              requestStatus: 'presentation_verified',
+              receipt: {
+                vp_token: vpToken
+              }
+            }
+          });
+      } catch(e) {
+        err = e;
+      }
+
+      should.not.exist(result);
+      err.status.should.be.equal(400);
+      err.message.should.be.equal('Invalid certificate in x5c claim');
+      findStub.called.should.be.equal(true);
+      replaceStub.called.should.be.equal(true);
+
+      findStub.restore();
+      replaceStub.restore();
+    });
+
+    it('should fail X.509 validation with valid x5c chain ' +
+      'and invalid did:jwk issuer after verification with JWT VP token',
+    async () => {
+      const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+        .resolves(entraExchange);
+      const replaceStub = sinon.stub(database.collections.Exchanges,
+        'replaceOne').resolves();
+
+      const {vpToken} = await generateValidJwtVpToken({
+        aud: domainToDidWeb(config.server.baseUri),
+        x5c: [
+          'MIICaDCCAg6gAwIBAgIUHOO2dIyATRbAfyt3AcBO6DHawhEwCgYIKoZIzj0E' +
+          'AwIwUDELMAkGA1UEBhMCVVMxDjAMBgNVBAgMBVVTLUNBMQwwCgYDVQQKDANE' +
+          'TVYxIzAhBgNVBAMMGkNhbGlmb3JuaWEgRE1WIFJvb3QgQ0EgVUFUMB4XDTI0' +
+          'MDEyMzE3NDc1MFoXDTI1MDEyMjE3NDc1MFowVjELMAkGA1UEBhMCVVMxDjAM' +
+          'BgNVBAgMBVVTLUNBMQwwCgYDVQQKDANETVYxKTAnBgNVBAMMIHZjIG1kbCBT' +
+          'aWduZXIgQ2FsaWZvcm5pYSBETVYgVUFUMFkwEwYHKoZIzj0CAQYIKoZIzj0D' +
+          'AQcDQgAEfvsjCYeH1nRBf0N4vmw4IvVAnv+j82gJmwgvI0gXdyo4DjCg5Ks1' +
+          'onZ1ClIwQpubx7Mvgy6ssCQUVwWbk6fJBaOBvzCBvDAdBgNVHQ4EFgQUprYJ' +
+          'EADWkvGMda2GQgbKYfTXLWYwHwYDVR0jBBgwFoAUSWhCfS8C3wEPseC28Scm' +
+          'Fn0j25UwHQYJYIZIAYb4QgENBBAWDkNhbGlmb3JuaWEgRE1WMA4GA1UdDwEB' +
+          '/wQEAwIHgDAdBgNVHRIEFjAUgRJleGFtcGxlQGRtdi5jYS5nb3YwLAYDVR0f' +
+          'BCUwIzAhoB+gHYYbaHR0cHM6Ly9tZGxzLmRtdi5jYS5nb3YvY3JsMAoGCCqG' +
+          'SM49BAMCA0gAMEUCIQCGn0U8a0sdEUY7mjB0HYOnenqBNxC2sbX0tdm/lfpX' +
+          'pwIgdFTNrjOJJEYDCbzvsjh832SZlK7nk2Hcl+EncyfraYY='
+        ]
+      });
+
+      let result;
+      let err;
+      try {
+        result = await client
+          .post(`${baseUrl}/verification/callback`, {
+            headers: {Authorization: `Bearer ${entraExchange.apiAccessToken}`},
+            json: {
+              requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
+              requestStatus: 'presentation_verified',
+              receipt: {
+                vp_token: vpToken
+              }
+            }
+          });
+      } catch(e) {
+        err = e;
+      }
+
+      should.not.exist(result);
+      err.status.should.be.equal(400);
+      err.message.should.be.equal('Invalid certificate in x5c claim');
+      findStub.called.should.be.equal(true);
+      replaceStub.called.should.be.equal(true);
+
+      findStub.restore();
+      replaceStub.restore();
+    });
+
+    it('should pass X.509 validation with valid x5c chain ' +
+      'after verification with JWT VP token',
+    async () => {
+      const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+        .resolves(entraExchange);
+      const replaceStub = sinon.stub(database.collections.Exchanges,
+        'replaceOne').resolves();
+
+      const {chain, leafKeyPair} = await generateCertificateChain({
+        length: 3
+      });
+      const root = chain.pop();
+      const caStoreStub = sinon.stub(config.opencred, 'caStore').value([
+        convertDerCertificateToPem(root.raw, false)
+      ]);
+
+      const {vpToken} = await generateValidJwtVpToken({
+        aud: domainToDidWeb(config.server.baseUri),
+        x5c: chain.map(c => convertDerCertificateToPem(c.raw, true)),
+        leafKeyPair
+      });
+
+      let result;
+      let err;
+      try {
+        result = await client
+          .post(`${baseUrl}/verification/callback`, {
+            headers: {Authorization: `Bearer ${entraExchange.apiAccessToken}`},
+            json: {
+              requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
+              requestStatus: 'presentation_verified',
+              receipt: {
+                vp_token: vpToken
+              }
+            }
+          });
+      } catch(e) {
+        err = e;
+      }
+
+      should.not.exist(err);
+      result.status.should.be.equal(200);
+      result.data.message.should.be.equal('Success');
+      findStub.called.should.be.equal(true);
+      replaceStub.called.should.be.equal(true);
+
+      findStub.restore();
+      replaceStub.restore();
+      caStoreStub.restore();
+    });
   });

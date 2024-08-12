@@ -405,6 +405,50 @@ describe('Exchanges (Native)', async () => {
     verifyUtilsStub2.restore();
   });
 
+  it('should pass X.509 validation with valid x5c chain', async () => {
+    const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+      [{...rp, trustedCredentialIssuers: []}]
+    );
+    const oid4vpJWT = JSON.parse(fs.readFileSync(
+      './test/fixtures/oid4vp_jwt.json'));
+    const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
+      .resolves({
+        verified: true,
+        verifiablePresentation: {vc: {proof: {jwt: '...'}}}}
+      );
+    const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
+      .resolves({verified: true, signer: {}});
+    const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
+      .resolves();
+
+    const {chain, leafKeyPair} = await generateCertificateChain({
+      length: 3
+    });
+    const root = chain.pop();
+    const caStoreStub = sinon.stub(config.opencred, 'caStore').value([
+      convertDerCertificateToPem(root.raw, false)
+    ]);
+    const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
+      aud: domainToDidWeb(config.server.baseUri),
+      x5c: chain.map(c => convertDerCertificateToPem(c.raw, true)),
+      leafKeyPair
+    });
+    const presentation_submission_jwt = oid4vpJWT.presentation_submission;
+
+    const result = await service.verifySubmission(
+      vp_token_jwt, presentation_submission_jwt, exchange
+    );
+
+    expect(result.verified).to.be.false;
+    expect(result.errors.length).to.be(1);
+
+    rpStub.restore();
+    caStoreStub.restore();
+    updateStub.restore();
+    verifyUtilsStub.restore();
+    verifyUtilsStub2.restore();
+  });
+
   it('createExchange should set oidc.state from query param', async () => {
     const next = sinon.spy();
     const req = {rp, query: {state: 'test'}};
