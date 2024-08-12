@@ -49,7 +49,7 @@ export const getVpTokenMetadata = vpToken => {
         }
         const issuerDidJwt = vcJwtPayload?.iss;
         const issuerDidVc = typeof vcJwtPayload?.vc?.issuer === 'string' ?
-          vcJwtPayload?.vc?.issuer : vcJwtPayload?.vc?.issuer?.id;
+          vcJwtPayload.vc.issuer : vcJwtPayload?.vc?.issuer?.id;
         if(issuerDidJwt !== issuerDidVc) {
           return {
             valid: false,
