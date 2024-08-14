@@ -203,7 +203,6 @@ onMounted(async () => {
 </script>
 
 <template>
-  <!-- eslint-disable max-len -->
   <div class="flex flex-col min-h-screen">
     <header :style="{ background: context.rp.brand.header }">
       <div
@@ -308,6 +307,7 @@ onMounted(async () => {
         :options="config.options"
         :exchange-data="context.exchangeData"
         @switch-view="switchView" />
+      <!-- eslint-disable max-len -->
       <OID4VPView
         v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex]
           === 'openid4vp'"
@@ -320,6 +320,7 @@ onMounted(async () => {
         @switch-view="switchView"
         @override-active="state.activeOverride = true"
         @replace-exchange="replaceExchange" />
+      <!-- eslint-enable max-len -->
     </main>
     <footer
       class="text-left p-3"
