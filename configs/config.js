@@ -418,20 +418,18 @@ bedrock.events.on('bedrock.init', async () => {
     }
   };
 
-  const combineExchangeActiveExpirySeconds = () => {
+  const applyDefaultExchangeActiveExpirySeconds = () => {
     opencred.exchangeActiveExpirySeconds =
       opencred.exchangeActiveExpirySeconds ?? 60;
     validateExchangeActiveExpirySeconds(opencred);
-    const rpsWithExchangeActiveExpirySeconds = klona(opencred.relyingParties);
-    for(const rp of rpsWithExchangeActiveExpirySeconds) {
+    for(const rp of opencred.relyingParties) {
       validateExchangeActiveExpirySeconds(rp);
       rp.exchangeActiveExpirySeconds = rp.exchangeActiveExpirySeconds ?
         rp.exchangeActiveExpirySeconds :
         opencred.exchangeActiveExpirySeconds;
     }
-    opencred.relyingParties = rpsWithExchangeActiveExpirySeconds;
   };
-  combineExchangeActiveExpirySeconds();
+  applyDefaultExchangeActiveExpirySeconds();
 
   /**
    * A list of trusted root certificates
