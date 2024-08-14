@@ -1,5 +1,14 @@
 # opencred-platform Changelog
 
+## 8.3.0 - 2024-xx-xx
+
+# Added
+- Add additional validation for trusted issuers.
+- Add X.509 validation to Entra workflows, in case Entra doesn't do it natively.
+
+## Changed
+- Replace `decodeJwtPayload` with `jose.decodeJwt`.
+
 ## 8.2.1 - 2024-07-25
 
 ## Fixed
