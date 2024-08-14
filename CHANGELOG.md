@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 8.3.0 - 2024-xx-xx
+## 8.3.0 - 2024-08-14
 
 # Added
 - Add additional validation for trusted issuers.
