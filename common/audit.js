@@ -10,7 +10,6 @@ import jp from 'jsonpath';
 
 import {
   convertJwtVpTokenToDiVp,
-  decodeJwtPayload,
   getValidJson,
   isValidJson,
   isValidJwt
@@ -20,12 +19,13 @@ import {
   didResolver
 } from './documentLoader.js';
 import {database} from '../lib/database.js';
+import {decodeJwt} from 'jose';
 
 const _getVpTokenMetadataJwt = vpToken => {
   const issuerDids = [];
   let vpJwtPayload;
   try {
-    vpJwtPayload = decodeJwtPayload(vpToken);
+    vpJwtPayload = decodeJwt(vpToken);
   } catch(error) {
     return {
       valid: false,
@@ -38,7 +38,7 @@ const _getVpTokenMetadataJwt = vpToken => {
     for(const vcToken of vcTokens) {
       let vcJwtPayload;
       try {
-        vcJwtPayload = decodeJwtPayload(vcToken);
+        vcJwtPayload = decodeJwt(vcToken);
       } catch(error) {
         return {
           valid: false,
@@ -105,7 +105,7 @@ export const getVpTokenMetadata = vpToken => {
 };
 
 export const getVcTokensForVpToken = vpToken => {
-  const vpJwtPayload = decodeJwtPayload(vpToken);
+  const vpJwtPayload = decodeJwt(vpToken);
   const vcTokens = vpJwtPayload.vp?.verifiableCredential;
   if(vcTokens && Array.isArray(vcTokens)) {
     return vcTokens;

@@ -18,6 +18,7 @@ import {
 } from 'did-jwt-vc';
 import base64url from 'base64url';
 import {ConfidentialClientApplication} from '@azure/msal-node';
+import {decodeJwt} from 'jose';
 import {didResolver} from './documentLoader.js';
 import {generateId} from 'bnid';
 import {httpClient} from '@digitalbazaar/http-client';
@@ -37,19 +38,9 @@ export const createId = async (bitLength = 128) => {
 };
 
 export const isValidJwt = jwt => {
-  if(typeof jwt !== 'string') {
-    return false;
-  }
-  const parts = jwt.split('.');
-  if(parts.length !== 3) {
-    return false;
-  }
   try {
-    const [encodedHeaderString, encodedPayloadString] = parts;
-    const encodedHeader = JSON.parse(base64url.decode(encodedHeaderString));
-    const encodedPayload = JSON.parse(base64url.decode(encodedPayloadString));
-    return typeof encodedHeader === 'object' &&
-      typeof encodedPayload === 'object';
+    decodeJwt(jwt);
+    return true;
   } catch(error) {
     return false;
   }
@@ -87,18 +78,12 @@ export const getValidJson = json => {
   }
 };
 
-export const decodeJwtPayload = jwt => {
-  const [, encodedPayloadString] = jwt.split('.');
-  const decodedPayloadString = base64url.decode(encodedPayloadString);
-  return JSON.parse(decodedPayloadString);
-};
-
 const _convertJwtVcTokenToDiVcs = vcTokens => {
-  return vcTokens.map(t => decodeJwtPayload(t).vc);
+  return vcTokens.map(t => decodeJwt(t).vc);
 };
 
 export const convertJwtVpTokenToDiVp = vpToken => {
-  const decodedVpPayloadWithEncodedVcs = decodeJwtPayload(vpToken).vp;
+  const decodedVpPayloadWithEncodedVcs = decodeJwt(vpToken).vp;
   const decodedVpPayload = {
     ...decodedVpPayloadWithEncodedVcs,
     verifiableCredential: _convertJwtVcTokenToDiVcs(
