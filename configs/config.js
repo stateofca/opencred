@@ -402,6 +402,38 @@ bedrock.events.on('bedrock.init', async () => {
   applyDefaultTrustedCredentialIssuers();
 
   /**
+   * Exchange expiry timeout in seconds
+   */
+  const validateExchangeActiveExpirySeconds = scope => {
+    if(!scope.exchangeActiveExpirySeconds) {
+      return;
+    }
+    if(
+      typeof scope.exchangeActiveExpirySeconds !== 'number' ||
+      scope.exchangeActiveExpirySeconds < 60 ||
+      scope.exchangeActiveExpirySeconds > 60 * 30
+    ) {
+      throw new Error('exchangeActiveExpirySeconds must be a number between ' +
+        '60 (1 minute) and 3600 (1 hour)');
+    }
+  };
+
+  const combineExchangeActiveExpirySeconds = () => {
+    opencred.exchangeActiveExpirySeconds =
+      opencred.exchangeActiveExpirySeconds ?? 60;
+    validateExchangeActiveExpirySeconds(opencred);
+    const rpsWithExchangeActiveExpirySeconds = klona(opencred.relyingParties);
+    for(const rp of rpsWithExchangeActiveExpirySeconds) {
+      validateExchangeActiveExpirySeconds(rp);
+      rp.exchangeActiveExpirySeconds = rp.exchangeActiveExpirySeconds ?
+        rp.exchangeActiveExpirySeconds :
+        opencred.exchangeActiveExpirySeconds;
+    }
+    opencred.relyingParties = rpsWithExchangeActiveExpirySeconds;
+  };
+  combineExchangeActiveExpirySeconds();
+
+  /**
    * A list of trusted root certificates
    */
   opencred.caStore = (opencred.caStore ?? [])

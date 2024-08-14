@@ -11,6 +11,10 @@ defineProps({
     type: String,
     default: () => 'Error',
   },
+  subtitle: {
+    type: String,
+    default: () => 'The following error was encountered:',
+  },
   message: {
     type: String,
     default: () => 'An error occurred.',
@@ -27,18 +31,18 @@ defineEmits(['reset']);
 <template>
   <div class="p-4 md:p-5 space-y-2">
     <h2 class="text-3xl font-extrabold">
-      {{$t('exchangeErrorTitle') ?? title}}
+      {{title}}
     </h2>
 
     <h4 class="text-xl font-extrabold">
-      {{$t('exchangeErrorSubtitle')}}
+      {{subtitle}}
     </h4>
 
     <p class="mb-4 text-lg font-normal text-gray-500">
       {{message}}
     </p>
 
-    <p v-if="resettable">
+    <div v-if="resettable">
       <p class="mb-4 text-lg font-normal text-500">
         {{$t('exchangeResetTitle')}}
       </p>
@@ -47,6 +51,6 @@ defineEmits(['reset']);
         @click="$emit('reset')">
         {{$t('exchangeReset')}}
       </button>
-    </p>
+    </div>
   </div>
 </template>

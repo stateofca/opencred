@@ -32,6 +32,10 @@ const props = defineProps({
       }
     })
   },
+  exchangeActiveExpirySeconds: {
+    type: Number,
+    default: () => 60,
+  },
   explainerVideo: {
     type: Object,
     default: () => ({
@@ -55,6 +59,23 @@ onMounted(() => {
     showDeeplink.value = true;
   }
 });
+
+const formatExchangeActiveExpiryTime = seconds => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  const result = [];
+  if(hours > 0) {
+    result.push(`${hours} hour${hours !== 1 ? 's' : ''}`);
+  }
+  if(minutes > 0) {
+    result.push(`${minutes} minute${minutes !== 1 ? 's' : ''}`);
+  }
+  if(secs > 0 || (hours === 0 && minutes === 0)) {
+    result.push(`${secs} second${secs !== 1 ? 's' : ''}`);
+  }
+  return result.join(', ');
+};
 
 async function appOpened() {
   const {location} = window;
@@ -81,9 +102,11 @@ async function appOpened() {
     }
   ));
   emit('replaceExchange', exchange);
-  $cookies.set('exchangeId', exchange.id, '1min',
+  $cookies.set('exchangeId', exchange.id,
+    `${props.exchangeActiveExpirySeconds}s`,
     '', '', true, 'Strict');
-  $cookies.set('accessToken', exchange.accessToken, '1min',
+  $cookies.set('accessToken', exchange.accessToken,
+    `${props.exchangeActiveExpirySeconds}s`,
     '', '', true, 'Strict');
   window.location.replace(exchange.OID4VP);
 }
@@ -120,6 +143,10 @@ const handleGoBack = () => {
           color="primary"
           size="2em" />
       </div>
+      <p>{{$t('exchangeActiveExpiryMessage')}}</p>
+      <p>
+        {{formatExchangeActiveExpiryTime(props.exchangeActiveExpirySeconds)}}
+      </p>
       <button
         class="mx-auto max-w-prose text-sm underline"
         @click="handleGoBack">
@@ -161,15 +188,20 @@ const handleGoBack = () => {
         @click="appOpened()">
         {{$t('appCta')}}
       </q-btn>
-      <q-btn
-        v-else
-        color="primary"
-        class="px-16 py-4"
-        @click="appOpened()">
-        <q-spinner-tail
-          color="white"
-          size="1em" />
-      </q-btn>
+      <div v-else>
+        <p>{{$t('exchangeActiveExpiryMessage')}}</p>
+        <p>
+          {{formatExchangeActiveExpiryTime(props.exchangeActiveExpirySeconds)}}
+        </p>
+        <q-btn
+          color="primary"
+          class="px-16 py-4"
+          @click="appOpened()">
+          <q-spinner-tail
+            color="white"
+            size="1em" />
+        </q-btn>
+      </div>
     </div>
     <div class="mt-2">
       <p v-if="showDeeplink && exchangeData.QR !== ''">

@@ -751,6 +751,14 @@
               "type": "string",
               "description": "The label of the button that cancels an active exchange."
             },
+            "exchangeActiveExpiryMessage": {
+              "type": "string",
+              "description": "The message before the exchange active expiry timer."
+            },
+            "exchangeActiveExpirySeconds": {
+              "type": "number",
+              "description": "The number of seconds that a user has to complete an exchange."
+            },
             "exchangeErrorTitle": {
               "type": "string",
               "description": "The title of the error page."

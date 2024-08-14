@@ -5,6 +5,10 @@
 # Added
 - Add additional validation for trusted issuers.
 - Add X.509 validation to Entra workflows, in case Entra doesn't do it natively.
+- Make exchange error title and subtitle messages configurable.
+- Make reset title message configurable.
+- Make exchange active expiry time configurable.
+- Render exchange active expiry time in UI.
 
 ## Changed
 - Replace `decodeJwtPayload` with `jose.decodeJwt`.

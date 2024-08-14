@@ -18,6 +18,8 @@ export const defaultTranslations = {
     'appCta-chapi-label': '',
     'appCta-openid4vp-label': '',
     exchangeActiveGoBack: 'Go back',
+    exchangeActiveExpiryMessage:
+      'Please complete the exchange in the allotted time:',
     exchangeErrorTitle: 'The exchange failed.',
     exchangeErrorSubtitle: 'The following error was encountered:',
     exchangeResetTitle: 'You may try again once the issue is corrected.',

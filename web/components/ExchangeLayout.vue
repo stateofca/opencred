@@ -44,13 +44,14 @@ const state = reactive({
 const handleError = error => {
   state.error = {
     title: error?.title || 'Error',
+    subtitle: error?.subtitle || 'The following error was encountered:',
     message: error?.message || 'An unexpected error occurred.',
     resettable: !!error?.resettable || false
   };
 };
 
 const route = useRoute();
-const {locale, availableLocales} = useI18n({useScope: 'global'});
+const {locale, availableLocales, t: translate} = useI18n({useScope: 'global'});
 
 const switchView = () => {
   state.currentUXMethodIndex = (state.currentUXMethodIndex + 1) %
@@ -121,6 +122,8 @@ const checkStatus = async () => {
       state.active = true;
     } else if(exchange.state === 'invalid') {
       handleError({
+        title: translate('exchangeErrorTitle'),
+        subtitle: translate('exchangeErrorSubtitle'),
         message: Object.values(exchange.variables.results ?? {})
           .filter(v => !!v.errors?.length)?.map(r => r.errors)
           .flat()
@@ -200,6 +203,7 @@ onMounted(async () => {
 </script>
 
 <template>
+  <!-- eslint-disable max-len -->
   <div class="flex flex-col min-h-screen">
     <header :style="{ background: context.rp.brand.header }">
       <div
@@ -307,9 +311,10 @@ onMounted(async () => {
       <OID4VPView
         v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex]
           === 'openid4vp'"
-        :brand="context.rp.brand"
+        :brand="context.rp?.brand"
         :exchange-data="context.exchangeData"
         :options="config.options"
+        :exchange-active-expiry-seconds="context.rp?.exchangeActiveExpirySeconds"
         :explainer-video="context.rp?.explainerVideo"
         :active="state.active && !state.activeOverride"
         @switch-view="switchView"
