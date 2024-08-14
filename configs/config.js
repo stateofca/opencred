@@ -388,20 +388,18 @@ bedrock.events.on('bedrock.init', async () => {
       }
     }
   };
-  const combineTrustedCredentialIssuers = () => {
+  const applyDefaultTrustedCredentialIssuers = () => {
     opencred.trustedCredentialIssuers = opencred.trustedCredentialIssuers ?? [];
     validateTrustedCredentialIssuers(opencred);
-    const rpsWithTrustedCredentialIssuers = klona(opencred.relyingParties);
-    for(const rp of rpsWithTrustedCredentialIssuers) {
+    for(const rp of opencred.relyingParties) {
       rp.trustedCredentialIssuers = rp.trustedCredentialIssuers ?? [];
       validateTrustedCredentialIssuers(rp);
       rp.trustedCredentialIssuers = rp.trustedCredentialIssuers.length === 0 ?
         opencred.trustedCredentialIssuers :
         rp.trustedCredentialIssuers;
     }
-    opencred.relyingParties = rpsWithTrustedCredentialIssuers;
   };
-  combineTrustedCredentialIssuers();
+  applyDefaultTrustedCredentialIssuers();
 
   /**
    * A list of trusted root certificates
