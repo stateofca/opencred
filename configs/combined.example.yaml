@@ -275,3 +275,9 @@ app:
         pageTitle: "Login"
         home: "Home"
         verificationSuccess: "Success! Your credential has been shared."
+        exchangeActiveGoBack: Back
+        exchangeActiveExpiryMessage: "Please complete within the allotted time:"
+        exchangeErrorTitle: Exchange failed
+        exchangeErrorSubtitle: "Error details:"
+        exchangeResetTitle: Please try again.
+        exchangeReset: Retry exchange
