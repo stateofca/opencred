@@ -417,7 +417,6 @@ bedrock.events.on('bedrock.init', async () => {
         '60 (1 minute) and 3600 (1 hour)');
     }
   };
-
   const applyDefaultExchangeActiveExpirySeconds = () => {
     opencred.exchangeActiveExpirySeconds =
       opencred.exchangeActiveExpirySeconds ?? 60;
