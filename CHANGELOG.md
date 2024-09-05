@@ -4,6 +4,7 @@
 
 # Added
 - Add Entra verification callback logs.
+- Add logging for successful and failed presentation attempts.
 
 ## 8.3.0 - 2024-08-14
 
