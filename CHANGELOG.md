@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 8.4.0 - 2024-09-xx
+
+# Added
+- Add Entra verification callback logs.
+
 ## 8.3.0 - 2024-08-14
 
 # Added
