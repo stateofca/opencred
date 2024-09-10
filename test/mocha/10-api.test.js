@@ -893,6 +893,45 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
         updateStub.restore();
       });
 
+    it('should fail the exchange on presentation_error', async function() {
+      const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+        .resolves(entraExchange);
+      const updateStub = sinon.stub(database.collections.Exchanges,
+        'replaceOne').resolves();
+
+      let err;
+      try {
+        await client
+          .post(`${baseUrl}/verification/callback`, {
+
+            headers: {
+              Authorization: `Bearer ${entraExchange.apiAccessToken}`
+            },
+            json: {
+              requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
+              requestStatus: 'presentation_error',
+            }
+          });
+      } catch(e) {
+        err = e;
+      }
+
+      should.exist(err);
+      findStub.called.should.be.equal(true);
+      updateStub.called.should.be.equal(true);
+
+      const updateData = updateStub.getCalls()[0].args[1];
+      should.exist(updateData);
+      should.equal(updateData.state, 'invalid');
+      should.equal(
+        updateData.variables.results.default.errors[0],
+        'Unknown Entra verification error');
+
+      findStub.restore();
+      updateStub.restore();
+
+    });
+
     it('should fail X.509 validation with invalid x5c chain ' +
       'after verification with JWT VP token', async () => {
       const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
