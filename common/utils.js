@@ -303,15 +303,15 @@ const getPresentationEvent = (eventType, clientId) => {
   };
 };
 
-const getPresentationStartEvent = (clientId) => {
+const getPresentationStartEvent = clientId => {
   return getPresentationEvent(PresentationEvent.PresentationStart, clientId);
 };
 
-const getPresentationSuccessEvent = (clientId) => {
+const getPresentationSuccessEvent = clientId => {
   return getPresentationEvent(PresentationEvent.PresentationSuccess, clientId);
 };
 
-const getPresentationErrorEvent = (clientId) => {
+const getPresentationErrorEvent = clientId => {
   return getPresentationEvent(PresentationEvent.PresentationSuccess, clientId);
 };
 
