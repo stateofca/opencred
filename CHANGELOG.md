@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 8.4.0 - 2024-09-xx
+## 8.4.0 - 2024-09-11
 
 ### Added
 - Add logging for successful and failed presentation attempts.
