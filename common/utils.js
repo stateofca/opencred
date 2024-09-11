@@ -287,7 +287,7 @@ export const msalUtils = {
   makeHttpPostRequest
 };
 
-// Presentation Utilities
+// Presentation Logging Utilities
 
 // Domain of values for presentation event
 const PresentationEvent = {
@@ -299,24 +299,39 @@ const PresentationEvent = {
 const getPresentationEvent = (eventType, clientId) => {
   return {
     type: eventType,
-    relyingParty: clientId
+    relyingParty: clientId ?? 'unknown'
   };
 };
 
-const getPresentationStartEvent = clientId => {
+/**
+ * Gets a consistent presentation start event object.
+ * @param {string | undefined} clientId the relying party identifier
+ * @returns {object}
+ */
+const presentationStart = clientId => {
   return getPresentationEvent(PresentationEvent.PresentationStart, clientId);
 };
 
-const getPresentationSuccessEvent = clientId => {
+/**
+ * Gets a consistent presentation success event object.
+ * @param {string | undefined} clientId the relying party identifier
+ * @returns {object}
+ */
+const presentationSuccess = clientId => {
   return getPresentationEvent(PresentationEvent.PresentationSuccess, clientId);
 };
 
-const getPresentationErrorEvent = clientId => {
+/**
+ * Gets a consistent presentation error event object.
+ * @param {string | undefined} clientId the relying party identifier
+ * @returns {object}
+ */
+const presentationError = clientId => {
   return getPresentationEvent(PresentationEvent.PresentationSuccess, clientId);
 };
 
-export const presentationUtils = {
-  getPresentationStartEvent,
-  getPresentationSuccessEvent,
-  getPresentationErrorEvent
+export const logEvents = {
+  presentationStart,
+  presentationSuccess,
+  presentationError
 };
