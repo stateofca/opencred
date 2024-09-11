@@ -38,7 +38,7 @@ OpenCred supports the following list of features:
 
 ### Configuration
 
-The app is configured via a YAML file compatible with 
+The app is configured via a YAML file compatible with
 [@bedrock/config-yaml](https://www.npmjs.com/package/@bedrock/config-yaml). See
 [configs/combined.example.yaml](configs/combined.example.yaml) for an example.
 
@@ -63,7 +63,7 @@ If you're using VS Code as your editing environment, you can install an
 extension and configure automatic schema validation for your `combined.yaml`
 file. This will provide you with real-time feedback as you type in your
 configuration file. Errors on missing required properties, descriptions and
-example values for configuration fields, auto-complete of fields are supported. 
+example values for configuration fields, auto-complete of fields are supported.
 
 To configure your VS Code workspace to use auto-completion, install the plugin
 [redhat.vscode-yaml](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)
@@ -435,11 +435,10 @@ Prerequisites:
 * Node v20
 * MongoDB v5
 
-Install dependencies, compile the UI, and run the server:
+Install dependencies and run the server:
 
 ```sh
 $ npm i
-$ npm run build
 $ npm run start
 ```
 
