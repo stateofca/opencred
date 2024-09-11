@@ -286,3 +286,37 @@ export const msalUtils = {
   acquireAccessToken,
   makeHttpPostRequest
 };
+
+// Presentation Utilities
+
+// Domain of values for presentation event
+const PresentationEvent = {
+  PresentationStart: 'presentation_start',
+  PresentationSuccess: 'presentation_success',
+  PresentationError: 'presentation_error'
+};
+
+const getPresentationEvent = (eventType, clientId) => {
+  return {
+    type: eventType,
+    relyingParty: clientId
+  };
+};
+
+const getPresentationStartEvent = (clientId) => {
+  return getPresentationEvent(PresentationEvent.PresentationStart, clientId);
+};
+
+const getPresentationSuccessEvent = (clientId) => {
+  return getPresentationEvent(PresentationEvent.PresentationSuccess, clientId);
+};
+
+const getPresentationErrorEvent = (clientId) => {
+  return getPresentationEvent(PresentationEvent.PresentationSuccess, clientId);
+};
+
+export const presentationUtils = {
+  getPresentationStartEvent,
+  getPresentationSuccessEvent,
+  getPresentationErrorEvent
+};
