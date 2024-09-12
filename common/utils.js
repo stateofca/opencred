@@ -296,10 +296,12 @@ const PresentationEvent = {
   PresentationError: 'presentation_error'
 };
 
-const getPresentationEvent = (eventType, clientId) => {
+const getPresentationEvent = (eventType, clientId, exchangeId, error) => {
   return {
     type: eventType,
-    relyingParty: clientId ?? 'unknown'
+    clientId: clientId ?? 'unknown',
+    exchangeId: exchangeId ?? 'unknown',
+    error
   };
 };
 
@@ -308,8 +310,9 @@ const getPresentationEvent = (eventType, clientId) => {
  * @param {string | undefined} clientId the relying party identifier
  * @returns {object}
  */
-const presentationStart = clientId => {
-  return getPresentationEvent(PresentationEvent.PresentationStart, clientId);
+const presentationStart = (clientId, exchangeId) => {
+  return getPresentationEvent(
+    PresentationEvent.PresentationStart, clientId, exchangeId);
 };
 
 /**
@@ -317,8 +320,9 @@ const presentationStart = clientId => {
  * @param {string | undefined} clientId the relying party identifier
  * @returns {object}
  */
-const presentationSuccess = clientId => {
-  return getPresentationEvent(PresentationEvent.PresentationSuccess, clientId);
+const presentationSuccess = (clientId, exchangeId) => {
+  return getPresentationEvent(
+    PresentationEvent.PresentationSuccess, clientId, exchangeId);
 };
 
 /**
@@ -326,8 +330,9 @@ const presentationSuccess = clientId => {
  * @param {string | undefined} clientId the relying party identifier
  * @returns {object}
  */
-const presentationError = clientId => {
-  return getPresentationEvent(PresentationEvent.PresentationSuccess, clientId);
+const presentationError = (clientId, exchangeId, error) => {
+  return getPresentationEvent(
+    PresentationEvent.PresentationError, clientId, exchangeId, error);
 };
 
 export const logEvents = {
