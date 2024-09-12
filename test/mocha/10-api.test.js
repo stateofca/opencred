@@ -429,6 +429,14 @@ describe('OpenCred API - Native Workflow', function() {
           }
         }
       }]);
+      const httpClientStub = sinon.stub(httpClient, 'post');
+      httpClientStub.withArgs('https://api.callback.example.com', sinon.match.any)
+        .rejects({
+          status: 400,
+          name: 'InvalidRequestError',
+          requestUrl: 'https://api.callback.example.com',
+          message: 'Invalid request structure',
+        });
       const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
         .resolves(exchange_jwt);
       const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
@@ -476,6 +484,7 @@ describe('OpenCred API - Native Workflow', function() {
       result.status.should.be.equal(204);
 
       this.rpStub.restore();
+      httpClientStub.restore();
       findStub.restore();
       updateStub.restore();
       verifyUtilsStub.restore();
