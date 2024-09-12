@@ -3,7 +3,7 @@
 ## 8.4.1 - 2024-09-xx
 
 ### Fixed
-- Report error upon callback error.
+- Report error upon encountering a callback error.
 
 ## 8.4.0 - 2024-09-11
 
