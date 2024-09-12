@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 8.4.2 - 2024-09-xx
+
+### Fixed
+- Redact callback error log.
+
 ## 8.4.1 - 2024-09-12
 
 ### Fixed
