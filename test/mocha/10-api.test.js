@@ -7,6 +7,7 @@
 
 import * as sinon from 'sinon';
 import {decodeJwt} from 'jose';
+import expect from 'expect.js';
 import fs from 'node:fs';
 import {zcapClient} from '../../common/zcap.js';
 
@@ -410,6 +411,77 @@ describe('OpenCred API - Native Workflow', function() {
     verifyUtilsStub2.restore();
     caStoreStub.restore();
   });
+
+  it('should fail callback after submitting presentation',
+    async function() {
+      this.rpStub = sinon.stub(config.opencred, 'relyingParties').value([{
+        ...testRP,
+        workflow: {
+          ...testRP.workflow,
+          steps: {
+            ...testRP.workflow.steps,
+            default: {
+              ...testRP.workflow.steps.default,
+              callback: {
+                url: 'https://api.callback.example.com'
+              }
+            }
+          }
+        }
+      }]);
+      const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+        .resolves(exchange_jwt);
+      const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
+        .resolves({
+          verified: true,
+          verifiablePresentation: {vc: {proof: {jwt: '...'}}}}
+        );
+      const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
+        .resolves({verified: true, signer: {}});
+      const updateStub =
+        sinon.stub(database.collections.Exchanges, 'replaceOne').resolves();
+      const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
+      let result;
+      let err;
+      ({vpToken: vp_token_jwt} = await generateValidJwtVpToken({
+        aud: domainToDidWeb(config.server.baseUri)
+      }));
+      const oid4vpJWT = JSON.parse(fs.readFileSync(
+        './test/fixtures/oid4vp_jwt.json'));
+      presentation_submission_jwt = oid4vpJWT.presentation_submission;
+      try {
+        const searchParams = new URLSearchParams();
+        searchParams.set('vp_token', JSON.stringify(vp_token_jwt));
+        searchParams.set('presentation_submission',
+          JSON.stringify(presentation_submission_jwt));
+        result = await client
+          .post(`${baseUrl}/workflows/${testRP.workflow.id}/exchanges/` +
+            `${exchange.id}/openid/client/authorization/response`, {
+            body: searchParams,
+            headers: {'content-type': 'application/x-www-form-urlencoded'}
+          });
+      } catch(e) {
+        err = e;
+      }
+      const updatedExchange = updateStub.getCall(0)?.args[1];
+      should.exist(updatedExchange);
+      const updatedExchangeErrors =
+        updatedExchange.variables?.results?.default?.errors;
+      should.exist(updatedExchangeErrors);
+      expect(Array.isArray(updatedExchangeErrors)).to.be.true;
+      const [updatedExchangeError] = updatedExchangeErrors;
+      expect(updatedExchangeError).to.equal('Callback failed to send.');
+
+      should.not.exist(err);
+      result.status.should.be.equal(204);
+
+      this.rpStub.restore();
+      findStub.restore();
+      updateStub.restore();
+      verifyUtilsStub.restore();
+      verifyUtilsStub2.restore();
+      caStoreStub.restore();
+    });
 });
 
 describe('OpenCred API - VC-API Workflow', function() {
