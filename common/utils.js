@@ -296,6 +296,9 @@ const PresentationEvent = {
   PresentationError: 'presentation_error'
 };
 
+// Presentation event log name
+const PRESENTATION_EVENT_LOG_NAME = 'presentation_event';
+
 const getPresentationEvent = (eventType, clientId, exchangeId, error) => {
   return {
     type: eventType,
@@ -311,8 +314,9 @@ const getPresentationEvent = (eventType, clientId, exchangeId, error) => {
  * @returns {object}
  */
 const presentationStart = (clientId, exchangeId) => {
-  return getPresentationEvent(
+  const startEvent = getPresentationEvent(
     PresentationEvent.PresentationStart, clientId, exchangeId);
+  logger.info(PRESENTATION_EVENT_LOG_NAME, startEvent);
 };
 
 /**
@@ -321,8 +325,9 @@ const presentationStart = (clientId, exchangeId) => {
  * @returns {object}
  */
 const presentationSuccess = (clientId, exchangeId) => {
-  return getPresentationEvent(
+  const successEvent = getPresentationEvent(
     PresentationEvent.PresentationSuccess, clientId, exchangeId);
+  logger.info(PRESENTATION_EVENT_LOG_NAME, successEvent);
 };
 
 /**
@@ -331,11 +336,12 @@ const presentationSuccess = (clientId, exchangeId) => {
  * @returns {object}
  */
 const presentationError = (clientId, exchangeId, error) => {
-  return getPresentationEvent(
+  const errorEvent = getPresentationEvent(
     PresentationEvent.PresentationError, clientId, exchangeId, error);
+  logger.info(PRESENTATION_EVENT_LOG_NAME, errorEvent);
 };
 
-export const logEvents = {
+export const logUtils = {
   presentationStart,
   presentationSuccess,
   presentationError
