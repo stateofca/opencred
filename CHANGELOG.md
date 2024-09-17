@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 8.4.3 - 2024-09-xx
+
+### Fixed
+- Remove successful logging and repeated error logging for callback errors.
+
 ## 8.4.2 - 2024-09-13
 
 ### Fixed
