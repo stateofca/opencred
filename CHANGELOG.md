@@ -3,7 +3,8 @@
 ## 8.4.3 - 2024-09-xx
 
 ### Fixed
-- Remove successful logging and repeated error logging for callback errors.
+- Remove success log event for Entra callback error.
+- Remove extra error log event for Entra callback error.
 
 ## 8.4.2 - 2024-09-13
 
