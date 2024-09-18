@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 8.4.3 - 2024-09-xx
+## 8.4.3 - 2024-09-18
 
 ### Fixed
 - Remove success log event for Entra callback error.
