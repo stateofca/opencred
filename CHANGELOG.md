@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 8.4.4 - 2024-mm-dd
+
+### Added
+- Log Entra callback explicitly.
+
 ## 8.4.3 - 2024-09-18
 
 ### Fixed
