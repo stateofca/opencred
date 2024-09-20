@@ -283,6 +283,10 @@
           "type": "string",
           "description": "The client secret for the relying party, used as an API key."
         },
+        "enforcex5cCert": {
+          "type": "boolean",
+          "description": "Whether to verify x5c certificate chain for this RP."
+        },
         "icon": {
           "type": "string",
           "format": "uri",

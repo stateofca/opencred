@@ -52,6 +52,20 @@ OpenCred deployment.
 certificate in the `pem` property under `caStore`. If not, remove the `caStore`
 property and its children.
 
+#### Conditional x509 enforcement
+
+If the VC is not expected to include a x509 certicate but you wish to keep the certificate (e.g., if another relying party requires it), you can disable the requirement by adding a `enforcex5cCert: false` property to the relying party configuration.
+
+```yaml
+relyingParties:
+  - clientId: exampleClient
+    enforcex5cCert: false
+```
+
+This will disable the requirement for a valid x509 certificate even if `caStore` is defined for other reasons.
+
+Important: if at any point a x509 is provided and `caStore` is defined then the certificate will be verified and a warning log emitted regardless of the `enforcex5cCert` value.
+
 ### 4. Configure the Relying Party
 
 Remove all of the example relying parties under the `relyingParties` section and

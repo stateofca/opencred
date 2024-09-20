@@ -221,3 +221,13 @@ export const extractCertsFromX5C = async jwk => {
     return null;
   }
 };
+
+export const shouldEnforceRpCertCheck = rp => {
+  if('enforcex5cCert' in rp) {
+    if(typeof rp.enforcex5cCert == 'boolean' && !rp.enforcex5cCert) {
+      return false;
+    }
+  }
+
+  return true;
+};

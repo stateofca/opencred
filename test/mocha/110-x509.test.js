@@ -8,7 +8,11 @@
 import * as sinon from 'sinon';
 import fs from 'node:fs';
 
-import {extractCertsFromX5C, verifyChain} from '../../common/x509.js';
+import {
+  extractCertsFromX5C,
+  shouldEnforceRpCertCheck,
+  verifyChain
+} from '../../common/x509.js';
 import {config} from '@bedrock/core';
 import expect from 'expect.js';
 import {generateCertificateChain} from '../utils/x509.js';
@@ -210,5 +214,30 @@ describe('x509', async () => {
       ]});
 
     should.not.exist(certs);
+  });
+
+  describe('Configuration', function() {
+    describe('shouldEnforceRpCertCheck', function() {
+      it('should return "true" if "enforcex5cCert" is "null"', function() {
+        const rpConfig = {
+          clientId: 'test',
+          enforcex5cCert: null
+        };
+
+        const result = shouldEnforceRpCertCheck(rpConfig);
+
+        expect(result).to.equal(true);
+      });
+      it('should return "false" if "enforcex5cCert" is "false"', function() {
+        const rpConfig = {
+          clientId: 'test',
+          enforcex5cCert: false
+        };
+
+        const result = shouldEnforceRpCertCheck(rpConfig);
+
+        expect(result).to.equal(false);
+      });
+    });
   });
 });

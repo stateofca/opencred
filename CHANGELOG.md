@@ -1,5 +1,15 @@
 # opencred-platform Changelog
 
+## 8.6.0 - 2024-mm-dd
+
+### Added
+- Add `enforcex5cCert` to relying party config and documentation.
+
+### Changed
+- Make x5c check conditional for Entra exchange.
+- Add config-based override for x5c enforcement to native exchange.
+- Align x5c handling logic for Entra and native exchanges.
+
 ## 8.5.0 - 2024-09-19
 
 ### Added
