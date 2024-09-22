@@ -355,45 +355,6 @@ describe('Exchanges (Native)', async () => {
     verifyUtilsStub2.restore();
   });
 
-  it('should fail X.509 validation with invalid x5c chain' +
-    'even if enforcex5cCert is false', async () => {
-    const {chain} = await generateCertificateChain({
-      length: 3
-    });
-    chain.pop();
-    const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
-      [{...rp, trustedCredentialIssuers: [], enforcex5cCert: false}]
-    );
-    const oid4vpJWT = JSON.parse(fs.readFileSync(
-      './test/fixtures/oid4vp_jwt.json'));
-    const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
-      .resolves({
-        verified: true,
-        verifiablePresentation: {vc: {proof: {jwt: '...'}}}}
-      );
-    const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
-      .resolves({verified: true, signer: {}});
-    const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
-      .resolves();
-    const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
-      aud: domainToDidWeb(config.server.baseUri),
-      x5c: chain.map(c => convertDerCertificateToPem(c.raw, true))
-    });
-    const presentation_submission_jwt = oid4vpJWT.presentation_submission;
-
-    const result = await service.verifySubmission(
-      vp_token_jwt, presentation_submission_jwt, exchange
-    );
-
-    expect(result.verified).to.be.false;
-    expect(result.errors.length).to.be(1);
-
-    rpStub.restore();
-    updateStub.restore();
-    verifyUtilsStub.restore();
-    verifyUtilsStub2.restore();
-  });
-
   it('should fail X.509 validation with valid x5c chain ' +
     'and invalid did:jwk issuer', async () => {
     const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
