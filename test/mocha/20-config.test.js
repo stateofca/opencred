@@ -13,6 +13,7 @@ const app1 = {
   clientId: 'test1',
   clientSecret: 'shhh',
   redirectUri: 'https://example.com',
+  caStore: false,
   scopes: [{name: 'openid'}],
   workflow: {
     type: 'native',
@@ -52,6 +53,7 @@ describe('Config - setting defaults with configFrom', function() {
     const result = applyRpDefaults([app1, app2, app3], app3);
     expect(result.brand.cta).to.equal('#222222');
     expect(result.clientSecret).to.equal('three is a crowd');
+    expect(result.caStore ?? true).to.equal(false);
   });
 
   it('should throw an error for circular configFrom refs', function() {

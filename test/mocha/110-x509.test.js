@@ -10,7 +10,7 @@ import fs from 'node:fs';
 
 import {
   extractCertsFromX5C,
-  shouldEnforceRpCertCheck,
+  fetchCaStoreFromConfig,
   verifyChain
 } from '../../common/x509.js';
 import {config} from '@bedrock/core';
@@ -217,26 +217,97 @@ describe('x509', async () => {
   });
 
   describe('Configuration', function() {
-    describe('shouldEnforceRpCertCheck', function() {
-      it('should return "true" if "enforcex5cCert" is "null"', function() {
+    describe('fetchCaStoreFromConfig', function() {
+      it('should fallback to root config if undefined by rp', function() {
         const rpConfig = {
-          clientId: 'test',
-          enforcex5cCert: null
+          clientId: 'test_rp'
         };
 
-        const result = shouldEnforceRpCertCheck(rpConfig);
+        const config = {
+          opencred: {
+            caStore: ['ROOT'],
+            relyingParties: {
+              test: {
+                ...rpConfig
+              }
+            }
+          }
+        };
 
-        expect(result).to.equal(true);
+        const result = fetchCaStoreFromConfig(
+          config.opencred.caStore, rpConfig
+        );
+
+        expect(result.length).to.be(1);
+        expect(result[0]).to.equal('ROOT');
       });
-      it('should return "false" if "enforcex5cCert" is "false"', function() {
+      it('should return empty array if defined by rp as "false"', function() {
         const rpConfig = {
-          clientId: 'test',
-          enforcex5cCert: false
+          clientId: 'test_rp',
+          caStore: false
         };
 
-        const result = shouldEnforceRpCertCheck(rpConfig);
+        const config = {
+          opencred: {
+            caStore: ['ROOT'],
+            relyingParties: {
+              test: {
+                ...rpConfig
+              }
+            }
+          }
+        };
 
-        expect(result).to.equal(false);
+        const result = fetchCaStoreFromConfig(
+          config.opencred.caStore, rpConfig
+        );
+
+        expect(result).to.be.empty();
+      });
+      it('should fallback to root config if "true"', function() {
+        const rpConfig = {
+          clientId: 'test_rp',
+          caStore: true
+        };
+
+        const config = {
+          opencred: {
+            caStore: ['ROOT'],
+            relyingParties: {
+              test: {
+                ...rpConfig
+              }
+            }
+          }
+        };
+
+        const result = fetchCaStoreFromConfig(
+          config.opencred.caStore, rpConfig
+        );
+
+        expect(result.length).to.be(1);
+        expect(result[0]).to.equal('ROOT');
+      });
+      it('should return empty array if undefined', function() {
+        const rpConfig = {
+          clientId: 'test_rp'
+        };
+
+        const config = {
+          opencred: {
+            relyingParties: {
+              test: {
+                ...rpConfig
+              }
+            }
+          }
+        };
+
+        const result = fetchCaStoreFromConfig(
+          config.opencred.caStore, rpConfig
+        );
+
+        expect(result).to.be.empty();
       });
     });
   });

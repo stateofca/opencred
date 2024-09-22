@@ -222,12 +222,12 @@ export const extractCertsFromX5C = async jwk => {
   }
 };
 
-export const shouldEnforceRpCertCheck = rp => {
-  if('enforcex5cCert' in rp) {
-    if(typeof rp.enforcex5cCert == 'boolean' && !rp.enforcex5cCert) {
-      return false;
-    }
+export const fetchCaStoreFromConfig = (defaultCaStore, rpConfig) => {
+  if('caStore' in rpConfig &&
+    typeof rpConfig.caStore === 'boolean' &&
+    rpConfig.caStore === false) {
+    return [];
   }
 
-  return true;
+  return defaultCaStore ?? [];
 };

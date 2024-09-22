@@ -431,10 +431,13 @@ bedrock.events.on('bedrock.init', async () => {
   applyDefaultExchangeActiveExpirySeconds();
 
   /**
-   * A list of trusted root certificates
+   * Prepare a list of trusted root certificates
    */
-  opencred.caStore = (opencred.caStore ?? [])
-    .map(cert => cert.pem);
+  const applyCaStoreDefaults = () => {
+    opencred.caStore = (opencred.caStore ?? [])
+      .map(cert => cert.pem);
+  };
+  applyCaStoreDefaults();
 
   /**
    * reCAPTCHA configuration

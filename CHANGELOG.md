@@ -3,7 +3,7 @@
 ## 8.6.0 - 2024-mm-dd
 
 ### Added
-- Add `enforcex5cCert` to relying party config and documentation.
+- Add `caStore` to relying party config.
 
 ### Changed
 - Make x5c check conditional for Entra exchange.

@@ -128,6 +128,7 @@ app:
         # Many of these config fields map to request fields in the APIs linked below:
         #   https://learn.microsoft.com/en-us/entra/verified-id/get-started-request-api
         #   https://learn.microsoft.com/en-us/entra/verified-id/presentation-request-api
+        caStore: false
         configFrom: 32bb6cec384b # clientId of another relying party to serve as default values
         trustedCredentialIssuers:
           - did:web:example.com
