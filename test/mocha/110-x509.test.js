@@ -9,8 +9,8 @@ import * as sinon from 'sinon';
 import fs from 'node:fs';
 
 import {
+  allowAnyCA,
   extractCertsFromX5C,
-  fetchCaStoreFromConfig,
   verifyChain
 } from '../../common/x509.js';
 import {config} from '@bedrock/core';
@@ -217,97 +217,25 @@ describe('x509', async () => {
   });
 
   describe('Configuration', function() {
-    describe('fetchCaStoreFromConfig', function() {
-      it('should fallback to root config if undefined by rp', function() {
+    describe('allowAnyCA', function() {
+      it('should return false if caStore undefined by rp', function() {
         const rpConfig = {
           clientId: 'test_rp'
         };
 
-        const config = {
-          opencred: {
-            caStore: ['ROOT'],
-            relyingParties: {
-              test: {
-                ...rpConfig
-              }
-            }
-          }
-        };
+        const result = allowAnyCA(rpConfig);
 
-        const result = fetchCaStoreFromConfig(
-          config.opencred.caStore, rpConfig
-        );
-
-        expect(result.length).to.be(1);
-        expect(result[0]).to.equal('ROOT');
+        expect(result).to.be(false);
       });
-      it('should return empty array if defined by rp as "false"', function() {
+      it('should return true if caStore defined by rp as "false"', function() {
         const rpConfig = {
           clientId: 'test_rp',
           caStore: false
         };
 
-        const config = {
-          opencred: {
-            caStore: ['ROOT'],
-            relyingParties: {
-              test: {
-                ...rpConfig
-              }
-            }
-          }
-        };
+        const result = allowAnyCA(rpConfig);
 
-        const result = fetchCaStoreFromConfig(
-          config.opencred.caStore, rpConfig
-        );
-
-        expect(result).to.be.empty();
-      });
-      it('should fallback to root config if "true"', function() {
-        const rpConfig = {
-          clientId: 'test_rp',
-          caStore: true
-        };
-
-        const config = {
-          opencred: {
-            caStore: ['ROOT'],
-            relyingParties: {
-              test: {
-                ...rpConfig
-              }
-            }
-          }
-        };
-
-        const result = fetchCaStoreFromConfig(
-          config.opencred.caStore, rpConfig
-        );
-
-        expect(result.length).to.be(1);
-        expect(result[0]).to.equal('ROOT');
-      });
-      it('should return empty array if undefined', function() {
-        const rpConfig = {
-          clientId: 'test_rp'
-        };
-
-        const config = {
-          opencred: {
-            relyingParties: {
-              test: {
-                ...rpConfig
-              }
-            }
-          }
-        };
-
-        const result = fetchCaStoreFromConfig(
-          config.opencred.caStore, rpConfig
-        );
-
-        expect(result).to.be.empty();
+        expect(result).to.be(true);
       });
     });
   });

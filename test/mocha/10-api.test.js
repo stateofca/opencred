@@ -1008,7 +1008,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
       should.equal(updateData.state, 'invalid');
       should.equal(
         updateData.variables.results.default.errors[0],
-        'Unknown Entra verification error');
+        'Entra error: received unknown presentation error');
 
       findStub.restore();
       updateStub.restore();
@@ -1164,5 +1164,78 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
       findStub.restore();
       replaceStub.restore();
       caStoreStub.restore();
+    });
+
+    it('should pass X.509 validation with invalid x5c chain ' +
+      'if caConfig on rp is false ' +
+      'after verification with JWT VP token',
+    async () => {
+      const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+        .resolves(entraExchange);
+      const replaceStub = sinon.stub(database.collections.Exchanges,
+        'replaceOne').resolves();
+
+      const {chain, leafKeyPair} = await generateCertificateChain({
+        length: 3
+      });
+      const root = chain.pop();
+      const caStoreStub = sinon.stub(config.opencred, 'caStore').value([
+        convertDerCertificateToPem(root.raw, false)
+      ]);
+      const rpConfigStub = sinon.stub(config.opencred, 'relyingParties')
+        .value([{
+          ...testRP,
+          workflow: {
+            id: testRP.workflow.id,
+            type: 'microsoft-entra-verified-id',
+            apiBaseUrl: 'https://api.entra.microsoft.example.com/v1.0',
+            apiLoginBaseUrl: 'https://login.entra.microsoft.example.com',
+            verifierDid: 'did:web:example.com',
+            verifierName: 'Test Entra Verifier',
+            initialStep: 'default',
+            steps: {
+              default: {
+                acceptedCredentialType: 'Iso18013DriversLicenseCredential',
+              }
+            }
+          },
+          // Bypass CA checks
+          caStore: false
+        }]);
+
+      const {vpToken} = await generateValidJwtVpToken({
+        aud: domainToDidWeb(config.server.baseUri),
+        x5c: 'BAD',
+        leafKeyPair
+      });
+
+      let result;
+      let err;
+      try {
+        result = await client
+          .post(`${baseUrl}/verification/callback`, {
+            headers: {Authorization: `Bearer ${entraExchange.apiAccessToken}`},
+            json: {
+              requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
+              requestStatus: 'presentation_verified',
+              receipt: {
+                vp_token: vpToken
+              }
+            }
+          });
+      } catch(e) {
+        err = e;
+      }
+
+      should.not.exist(err);
+      result.status.should.be.equal(200);
+      result.data.message.should.be.equal('Success');
+      findStub.called.should.be.equal(true);
+      replaceStub.called.should.be.equal(true);
+
+      findStub.restore();
+      replaceStub.restore();
+      caStoreStub.restore();
+      rpConfigStub.restore();
     });
   });

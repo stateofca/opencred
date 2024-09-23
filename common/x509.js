@@ -222,12 +222,6 @@ export const extractCertsFromX5C = async jwk => {
   }
 };
 
-export const fetchCaStoreFromConfig = (defaultCaStore, rpConfig) => {
-  if('caStore' in rpConfig &&
-    typeof rpConfig.caStore === 'boolean' &&
-    rpConfig.caStore === false) {
-    return [];
-  }
-
-  return defaultCaStore ?? [];
+export const allowAnyCA = rpConfig => {
+  return rpConfig.caStore === false;
 };

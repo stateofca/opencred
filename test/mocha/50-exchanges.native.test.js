@@ -78,7 +78,7 @@ describe('Exchanges (Native)', async () => {
       expect(req.exchange).to.have.property('vcapi');
       expect(req.exchange).to.have.property('OID4VP');
       expect(req.exchange).to.have.property('id');
-      expect(dbStub.called).to.be.true;
+      expect(dbStub.called).to.be(true);
     });
 
   it('should not set req.exchange for vc-api workflow in createNativeExchange',
@@ -112,9 +112,9 @@ describe('Exchanges (Native)', async () => {
       vp_token, presentation_submission, exchange
     );
 
-    expect(verifyStub.called).to.be.true;
-    expect(verifyCredentialStub.called).to.be.true;
-    expect(result.verified).to.be.true;
+    expect(verifyStub.called).to.be(true);
+    expect(verifyCredentialStub.called).to.be(true);
+    expect(result.verified).to.be(true);
     expect(result.errors.length).to.be(0);
 
     rpStub.restore();
@@ -142,11 +142,13 @@ describe('Exchanges (Native)', async () => {
       vp_token_jwt, presentation_submission_jwt, exchange
     );
 
-    expect(verifyStub.called).to.be.true;
-    expect(verifyCredentialStub.called).to.be.true;
-    expect(result.verified).to.be.false;
-    expect(result.errors.includes('Invalid certificate in x5c claim'))
-      .to.be.true;
+    const expectedError = 'Each vc token issuer must match the issuer' +
+      ' of the contained credential';
+
+    expect(verifyStub.called).to.be(true);
+    expect(verifyCredentialStub.called).to.be(true);
+    expect(result.verified).to.be(false);
+    expect(result.errors.includes(expectedError)).to.be(true);
 
     rpStub.restore();
     updateStub.restore();
@@ -155,14 +157,14 @@ describe('Exchanges (Native)', async () => {
   });
 
   it('should return an error if definition_id does not match', async () => {
-    presentation_submission.definition_id = 'incorrect';
+    presentation_submission.definition_id = 'invalid';
     const result = await service.verifySubmission(
       vp_token, presentation_submission, exchange
     );
 
     expect(verifyStub.called).to.be.false;
     expect(verifyCredentialStub.called).to.be.false;
-    expect(result.verified).to.be.false;
+    expect(result.verified).to.be(false);
     expect(result.errors.length).to.be.greaterThan(0);
   });
 
@@ -176,7 +178,7 @@ describe('Exchanges (Native)', async () => {
 
     expect(verifyStub.called).to.be.true;
     expect(verifyCredentialStub.called).to.be.false;
-    expect(result.verified).to.be.false;
+    expect(result.verified).to.be(false);
     expect(result.errors.length).to.be.greaterThan(0);
   });
 
@@ -191,7 +193,7 @@ describe('Exchanges (Native)', async () => {
 
     expect(verifyStub.called).to.be.true;
     expect(verifyCredentialStub.called).to.be.true;
-    expect(result.verified).to.be.false;
+    expect(result.verified).to.be(false);
     expect(result.errors.length).to.be.greaterThan(0);
   });
 
@@ -204,124 +206,15 @@ describe('Exchanges (Native)', async () => {
       }
     );
 
-    expect(result.verified).to.be.false;
+    expect(result.verified).to.be(false);
     expect(result.errors.length).to.be.greaterThan(0);
-  });
-
-  it('should not fail trusted issuer check if issuer allowlist is empty',
-    async () => {
-      const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
-      const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
-        [{...rp, trustedCredentialIssuers: []}]
-      );
-      const oid4vpJWT = JSON.parse(fs.readFileSync(
-        './test/fixtures/oid4vp_jwt.json'));
-      const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
-        .resolves({
-          verified: true,
-          verifiablePresentation: {vc: {proof: {jwt: '...'}}}}
-        );
-      const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
-        .resolves({verified: true, signer: {}});
-      const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
-        .resolves();
-      const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
-        aud: domainToDidWeb(config.server.baseUri)
-      });
-      const presentation_submission_jwt = oid4vpJWT.presentation_submission;
-
-      const result = await service.verifySubmission(
-        vp_token_jwt, presentation_submission_jwt, exchange
-      );
-
-      expect(result.verified).to.be.true;
-      expect(result.errors.length).to.be(0);
-
-      rpStub.restore();
-      caStoreStub.restore();
-      updateStub.restore();
-      verifyUtilsStub.restore();
-      verifyUtilsStub2.restore();
-    });
-
-  it('should return an error if issuer allowlist is not empty and ' +
-    'vc issuer is not in allowlist', async () => {
-    const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
-    const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
-      [{...rp, trustedCredentialIssuers: ['did:jwk:123']}]
-    );
-    const oid4vpJWT = JSON.parse(fs.readFileSync(
-      './test/fixtures/oid4vp_jwt.json'));
-    const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
-      .resolves({
-        verified: true,
-        verifiablePresentation: {vc: {proof: {jwt: '...'}}}}
-      );
-    const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
-      .resolves({verified: true, signer: {}});
-    const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
-      .resolves();
-    const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
-      aud: domainToDidWeb(config.server.baseUri)
-    });
-    const presentation_submission_jwt = oid4vpJWT.presentation_submission;
-
-    const result = await service.verifySubmission(
-      vp_token_jwt, presentation_submission_jwt, exchange
-    );
-
-    expect(result.verified).to.be.false;
-    expect(result.errors.length).to.be(1);
-
-    rpStub.restore();
-    caStoreStub.restore();
-    updateStub.restore();
-    verifyUtilsStub.restore();
-    verifyUtilsStub2.restore();
-  });
-
-  it('should return an error if issuer of inner credential ' +
-    'is in allowlist, but VC-JWT issuer is not', async () => {
-    const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
-    const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
-      [{...rp, trustedCredentialIssuers: ['did:jwk:123']}]
-    );
-    const oid4vpJWT = JSON.parse(fs.readFileSync(
-      './test/fixtures/oid4vp_jwt.json'));
-    const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
-      .resolves({
-        verified: true,
-        verifiablePresentation: {vc: {proof: {jwt: '...'}}}}
-      );
-    const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
-      .resolves({verified: true, signer: {}});
-    const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
-      .resolves();
-    const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
-      aud: domainToDidWeb(config.server.baseUri),
-      innerIssuerDid: 'did:jwk:123'
-    });
-    const presentation_submission_jwt = oid4vpJWT.presentation_submission;
-
-    const result = await service.verifySubmission(
-      vp_token_jwt, presentation_submission_jwt, exchange
-    );
-
-    expect(result.verified).to.be.false;
-    expect(result.errors.length).to.be(1);
-
-    rpStub.restore();
-    caStoreStub.restore();
-    updateStub.restore();
-    verifyUtilsStub.restore();
-    verifyUtilsStub2.restore();
   });
 
   it('should fail X.509 validation with invalid x5c chain', async () => {
     const {chain} = await generateCertificateChain({
       length: 3
     });
-    chain.pop();
+    const root = chain.pop();
     const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
       [{...rp, trustedCredentialIssuers: []}]
     );
@@ -341,15 +234,19 @@ describe('Exchanges (Native)', async () => {
       x5c: chain.map(c => convertDerCertificateToPem(c.raw, true))
     });
     const presentation_submission_jwt = oid4vpJWT.presentation_submission;
+    const caStoreStub = sinon.stub(config.opencred, 'caStore').value([
+      convertDerCertificateToPem(root.raw, false)
+    ]);
 
     const result = await service.verifySubmission(
       vp_token_jwt, presentation_submission_jwt, exchange
     );
 
-    expect(result.verified).to.be.false;
+    expect(result.verified).to.be(false);
     expect(result.errors.length).to.be(1);
 
     rpStub.restore();
+    caStoreStub.restore();
     updateStub.restore();
     verifyUtilsStub.restore();
     verifyUtilsStub2.restore();
@@ -392,14 +289,23 @@ describe('Exchanges (Native)', async () => {
     });
     const presentation_submission_jwt = oid4vpJWT.presentation_submission;
 
+    const {chain} = await generateCertificateChain({
+      length: 3
+    });
+    const root = chain.pop();
+    const caStoreStub = sinon.stub(config.opencred, 'caStore').value([
+      convertDerCertificateToPem(root.raw, false)
+    ]);
+
     const result = await service.verifySubmission(
       vp_token_jwt, presentation_submission_jwt, exchange
     );
 
-    expect(result.verified).to.be.false;
+    expect(result.verified).to.be(false);
     expect(result.errors.length).to.be(1);
 
     rpStub.restore();
+    caStoreStub.restore();
     updateStub.restore();
     verifyUtilsStub.restore();
     verifyUtilsStub2.restore();
@@ -439,7 +345,164 @@ describe('Exchanges (Native)', async () => {
       vp_token_jwt, presentation_submission_jwt, exchange
     );
 
-    expect(result.verified).to.be.false;
+    expect(result.verified).to.be(false);
+    expect(result.errors.length).to.be(1);
+
+    rpStub.restore();
+    caStoreStub.restore();
+    updateStub.restore();
+    verifyUtilsStub.restore();
+    verifyUtilsStub2.restore();
+  });
+
+  it('should pass X.509 validation with invalid x5c chain if' +
+    ' caStore is false in rp', async () => {
+    const {chain} = await generateCertificateChain({
+      length: 3
+    });
+    const root = chain.pop();
+    const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+      [{...rp, trustedCredentialIssuers: [],
+        // Bypass CA checks
+        caStore: false
+      }]
+    );
+    const oid4vpJWT = JSON.parse(fs.readFileSync(
+      './test/fixtures/oid4vp_jwt.json'));
+    const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
+      .resolves({
+        verified: true,
+        verifiablePresentation: {vc: {proof: {jwt: '...'}}}}
+      );
+    const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
+      .resolves({verified: true, signer: {}});
+    const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
+      .resolves();
+    const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
+      aud: domainToDidWeb(config.server.baseUri),
+      x5c: chain.map(c => convertDerCertificateToPem(c.raw, true))
+    });
+    const presentation_submission_jwt = oid4vpJWT.presentation_submission;
+    const caStoreStub = sinon.stub(config.opencred, 'caStore').value([
+      convertDerCertificateToPem(root.raw, false)
+    ]);
+
+    try {
+      const result = await service.verifySubmission(
+        vp_token_jwt, presentation_submission_jwt, exchange
+      );
+
+      expect(result.verified).to.be(true);
+      expect(result.errors.length).to.be(0);
+    } finally {
+      rpStub.restore();
+      caStoreStub.restore();
+      updateStub.restore();
+      verifyUtilsStub.restore();
+      verifyUtilsStub2.restore();
+    }
+  });
+
+  it('should not fail trusted issuer check if issuer allowlist is empty',
+    async () => {
+      const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
+      const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+        [{...rp, trustedCredentialIssuers: []}]
+      );
+      const oid4vpJWT = JSON.parse(fs.readFileSync(
+        './test/fixtures/oid4vp_jwt.json'));
+      const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
+        .resolves({
+          verified: true,
+          verifiablePresentation: {vc: {proof: {jwt: '...'}}}}
+        );
+      const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
+        .resolves({verified: true, signer: {}});
+      const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
+        .resolves();
+      const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
+        aud: domainToDidWeb(config.server.baseUri)
+      });
+      const presentation_submission_jwt = oid4vpJWT.presentation_submission;
+
+      const result = await service.verifySubmission(
+        vp_token_jwt, presentation_submission_jwt, exchange
+      );
+
+      expect(result.verified).to.be(true);
+      expect(result.errors.length).to.be(0);
+
+      rpStub.restore();
+      caStoreStub.restore();
+      updateStub.restore();
+      verifyUtilsStub.restore();
+      verifyUtilsStub2.restore();
+    });
+
+  it('should return an error if issuer allowlist is not empty and ' +
+    'vc issuer is not in allowlist', async () => {
+    const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
+    const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+      [{...rp, trustedCredentialIssuers: ['did:jwk:123']}]
+    );
+    const oid4vpJWT = JSON.parse(fs.readFileSync(
+      './test/fixtures/oid4vp_jwt.json'));
+    const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
+      .resolves({
+        verified: true,
+        verifiablePresentation: {vc: {proof: {jwt: '...'}}}}
+      );
+    const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
+      .resolves({verified: true, signer: {}});
+    const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
+      .resolves();
+    const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
+      aud: domainToDidWeb(config.server.baseUri)
+    });
+    const presentation_submission_jwt = oid4vpJWT.presentation_submission;
+
+    const result = await service.verifySubmission(
+      vp_token_jwt, presentation_submission_jwt, exchange
+    );
+
+    expect(result.verified).to.be(false);
+    expect(result.errors.length).to.be(1);
+
+    rpStub.restore();
+    caStoreStub.restore();
+    updateStub.restore();
+    verifyUtilsStub.restore();
+    verifyUtilsStub2.restore();
+  });
+
+  it('should return an error if issuer of inner credential ' +
+    'is in allowlist, but VC-JWT issuer is not', async () => {
+    const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
+    const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+      [{...rp, trustedCredentialIssuers: ['did:jwk:123']}]
+    );
+    const oid4vpJWT = JSON.parse(fs.readFileSync(
+      './test/fixtures/oid4vp_jwt.json'));
+    const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
+      .resolves({
+        verified: true,
+        verifiablePresentation: {vc: {proof: {jwt: '...'}}}}
+      );
+    const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
+      .resolves({verified: true, signer: {}});
+    const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
+      .resolves();
+    const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
+      aud: domainToDidWeb(config.server.baseUri),
+      innerIssuerDid: 'did:jwk:123'
+    });
+    const presentation_submission_jwt = oid4vpJWT.presentation_submission;
+
+    const result = await service.verifySubmission(
+      vp_token_jwt, presentation_submission_jwt, exchange
+    );
+
+    expect(result.verified).to.be(false);
     expect(result.errors.length).to.be(1);
 
     rpStub.restore();
@@ -457,7 +520,7 @@ describe('Exchanges (Native)', async () => {
     expect(next).to.have.property('called');
     expect(req).to.have.property('exchange');
     expect(req.exchange.oidc.state).to.be('test');
-    expect(dbStub.called).to.be.true;
+    expect(dbStub.called).to.be(true);
   });
 
   it('createExchange should set oidc.state from body param',
@@ -469,6 +532,6 @@ describe('Exchanges (Native)', async () => {
       expect(next).to.have.property('called');
       expect(req).to.have.property('exchange');
       expect(req.exchange.oidc.state).to.be('test');
-      expect(dbStub.called).to.be.true;
+      expect(dbStub.called).to.be(true);
     });
 });
