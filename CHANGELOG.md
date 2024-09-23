@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 8.6.0 - 2024-mm-dd
+## 8.6.0 - 2024-09-23
 
 ### Added
 - Add `caStore` to relying party config.
