@@ -274,7 +274,8 @@
           "description": "The client secret for the relying party, used as an API key."
         },
         "caStore": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "If false, bypasses CA checks for this RP."
         },
         "icon": {
           "type": "string",

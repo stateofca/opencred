@@ -52,6 +52,8 @@ OpenCred deployment.
 certificate in the `pem` property under `caStore`. If not, remove the `caStore`
 property and its children.
 
+If you need to keep the `caStore` for other relying parties you can selectively bypass the CA checks 
+
 ### 4. Configure the Relying Party
 
 Remove all of the example relying parties under the `relyingParties` section and
