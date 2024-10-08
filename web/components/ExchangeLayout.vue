@@ -106,7 +106,7 @@ const checkStatus = async () => {
       data: {exchange},
     } = await httpClient.get(
       `/workflows/${context.value.rp.workflow.id}/exchanges/` +
-      `${context.value.exchangeData.id}`,
+      `${encodeURIComponent(context.value.exchangeData.id)}`,
       {
         headers: {
           Authorization: `Bearer ${context.value.exchangeData.accessToken}`
