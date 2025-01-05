@@ -13,6 +13,25 @@ digital wallet.
 
 ![image](https://github.com/stateofca/opencred/assets/108611/ace09a1c-a409-4371-81cf-ea578a2fea1e)
 
+```mermaid
+  sequenceDiagram
+    Participant Wallet as Digital Wallet
+    Actor User as User
+    participant Browser as Web Browser
+    Participant Website as Your Website
+    Participant OpenCred
+
+    User ->> Browser: Visit your website
+    Browser ->> Website: Initiate user verification process
+    Website ->> OpenCred: Generate QR code
+    OpenCred ->> Browser: Display QR code
+    %%Browser -->> User: ;
+    User ->> Wallet: Scan QR Code
+    Wallet ->> OpenCred: Present digital credential
+    OpenCred ->> OpenCred: Verify digital credential
+    OpenCred ->> Website: return verified data
+```
+
 ## Features
 
 OpenCred supports the following list of features:
@@ -38,7 +57,7 @@ OpenCred supports the following list of features:
 
 ### Configuration
 
-The app is configured via a YAML file compatible with 
+The app is configured via a YAML file compatible with
 [@bedrock/config-yaml](https://www.npmjs.com/package/@bedrock/config-yaml). See
 [configs/combined.example.yaml](configs/combined.example.yaml) for an example.
 
@@ -63,7 +82,7 @@ If you're using VS Code as your editing environment, you can install an
 extension and configure automatic schema validation for your `combined.yaml`
 file. This will provide you with real-time feedback as you type in your
 configuration file. Errors on missing required properties, descriptions and
-example values for configuration fields, auto-complete of fields are supported. 
+example values for configuration fields, auto-complete of fields are supported.
 
 To configure your VS Code workspace to use auto-completion, install the plugin
 [redhat.vscode-yaml](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)
