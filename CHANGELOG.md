@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 8.6.1 - 2025-mm-dd
+
+### Fixed
+- Fix leak of recaptcha secret in web config.
+
 ## 8.6.0 - 2024-09-23
 
 ### Added
