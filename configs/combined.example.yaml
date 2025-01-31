@@ -64,9 +64,9 @@ app:
                 headersVariable: callbackHeaders
                 oauth:
                   issuer: http://example.com
-                  token_url: http://example.com/token
-                  client_secret: exampleClientSecret
-                  client_id: exampleClientId
+                  tokenUrl: http://example.com/token
+                  clientSecret: exampleClientSecret
+                  clientId: exampleClientId
                   scope:
                     - default
               createChallenge: true
@@ -120,6 +120,19 @@ app:
             path: "email"
         workflow:
           type: vc-api
+          id: 32bb6cec384b
+          vpr: >
+            query: {
+              "type": "QueryByExample",
+              "credentialQuery": {
+                "reason": "Please present your VC.",
+                "example": {
+                  "type": [
+                    "Iso18013DriversLicenseCredential"
+                  ]
+                }
+              }
+            }
           baseUrl: https://example.org/exchanges/123
           capability: "example"
           clientSecret: "example"
@@ -134,6 +147,7 @@ app:
           - did:web:example.com
         workflow:
           type: microsoft-entra-verified-id
+          id: 4e3a8b7b4b7b4b7b4b7b
           apiBaseUrl: https://api.entra.microsoft.example.com/v1.0 # required (will generally be https://verifiedid.did.msidentity.com/v1.0)
           apiLoginBaseUrl: https://login.entra.microsoft.example.com # required (will generally be https://login.microsoftonline.com)
           apiClientId: "TODO" # required
