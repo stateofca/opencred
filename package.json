@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@azure/msal-node": "^2.11.0",
-    "@bedrock/config-yaml": "^4.2.0",
+    "@bedrock/config-yaml": "^4.3.3",
     "@bedrock/core": "^6.1.2",
     "@bedrock/express": "^8.3.0",
     "@bedrock/express-browser-fixes": "^3.1.0",

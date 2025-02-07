@@ -1,5 +1,11 @@
 # opencred-platform Changelog
 
+## 8.6.2 - 2025-02-dd
+
+### Changed
+- Updated dependencies:
+  - `@bedrock/config-yaml@4.3.3` (do not log config on read failure)
+
 ## 8.6.1 - 2025-01-28
 
 ### Fixed
