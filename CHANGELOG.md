@@ -1,8 +1,11 @@
 # opencred-platform Changelog
 
-## 8.6.2 - 2025-02-dd
+## 8.7.0 - 2025-03-XX
 
 ### Changed
+- Updated dependency `@digitalbazaar/vc` to support 2.0 VCDM credentials
+- Improved handling for `EnvelopedVerifiableCredentials` and clarified function
+  names.
 - Updated dependencies:
   - `@bedrock/config-yaml@4.3.3` (do not log config on read failure)
 

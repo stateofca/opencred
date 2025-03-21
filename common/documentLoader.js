@@ -8,6 +8,7 @@
 import * as DidJwk from '@digitalbazaar/did-method-jwk';
 import * as DidKey from '@digitalbazaar/did-method-key';
 import * as DidWeb from '@digitalbazaar/did-method-web';
+import * as EcdsaMultikey from '@digitalbazaar/ecdsa-multikey';
 
 import {
   CONTEXT as CRED_CONTEXT,
@@ -55,6 +56,10 @@ const didJwkDriver = DidJwk.driver();
 didJwkDriver.use({
   algorithm: 'EdDSA',
   handler: Ed25519VerificationKey2020.from
+});
+didKeyDriver.use({
+  fromMultibase: EcdsaMultikey.from,
+  multibaseMultikeyHeader: 'zDna',
 });
 
 export const didResolver = new CachedResolver();

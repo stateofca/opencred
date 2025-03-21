@@ -78,15 +78,28 @@ export const getValidJson = json => {
   }
 };
 
-const _convertJwtVcTokenToDiVcs = vcTokens => {
-  return vcTokens.map(t => decodeJwt(t).vc);
+const _unenvelopeVcJwtVc = vcTokens => {
+  return vcTokens.map(t => {
+    if(typeof t === 'object') {
+      const credentialId = t.id ?? t['@id'];
+      // Handle EnvelopedVerifiableCredential
+      if(typeof credentialId === 'string' &&
+          credentialId.startsWith('data:application/jwt')) {
+        return decodeJwt(credentialId.split(',')[1]).vc;
+      }
+      // VerifiableCredential already decoded
+      return t;
+    }
+    // JWT in Compact Serialization
+    return decodeJwt(t).vc;
+  });
 };
 
-export const convertJwtVpTokenToDiVp = vpToken => {
+export const unenvelopeJwtVp = vpToken => {
   const decodedVpPayloadWithEncodedVcs = decodeJwt(vpToken).vp;
   const decodedVpPayload = {
     ...decodedVpPayloadWithEncodedVcs,
-    verifiableCredential: _convertJwtVcTokenToDiVcs(
+    verifiableCredential: _unenvelopeVcJwtVc(
       decodedVpPayloadWithEncodedVcs.verifiableCredential
     )
   };

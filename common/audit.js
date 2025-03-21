@@ -9,15 +9,15 @@ import {canonicalize} from 'json-canonicalize';
 import jp from 'jsonpath';
 
 import {
-  convertJwtVpTokenToDiVp,
-  getValidJson,
-  isValidJson,
-  isValidJwt
-} from './utils.js';
-import {
   didRequiresHistoricalTracking,
   didResolver
 } from './documentLoader.js';
+import {
+  getValidJson,
+  isValidJson,
+  isValidJwt,
+  unenvelopeJwtVp
+} from './utils.js';
 import {database} from '../lib/database.js';
 import {decodeJwt} from 'jose';
 
@@ -262,7 +262,7 @@ export const getFieldMatches = (vpToken, fields) => {
   if(typeof vpToken === 'object') {
     diVp = vpToken;
   } else if(typeof vpToken === 'string') {
-    diVp = convertJwtVpTokenToDiVp(vpToken);
+    diVp = unenvelopeJwtVp(vpToken);
   }
   return getFieldMatchesDiVp(diVp, fields);
 };

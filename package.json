@@ -54,7 +54,7 @@
     "@digitalbazaar/http-client": "^4.1.1",
     "@digitalbazaar/minimal-jwt": "^2.1.0",
     "@digitalbazaar/oid4-client": "^3.3.0",
-    "@digitalbazaar/vc": "^6.2.0",
+    "@digitalbazaar/vc": "^7.1.2",
     "@digitalbazaar/vc-status-list-context": "^3.1.1",
     "@digitalbazaar/vdl-aamva-context": "^1.0.0",
     "@digitalbazaar/vdl-context": "^1.0.0",
