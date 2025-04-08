@@ -425,6 +425,14 @@ If you want to test out the audit feature, follow these steps:
 9. Run `npm run audit-vp BASE_URL`, where `BASE_URL` is the base URL of the running app, configured as `app.server.baseUri` in the config.
 10. Observe verification results.
 
+#### Configuring database record expiration
+OpenCred aims to retain little information about credential exchanges beyond when these records are needed. By default, records are retained for 24 hours (86400000 ms). This retention limit is configurable via `options.recordExpiresDurationMs` in milliseconds. For example, to retain records for 1 hour, set `options.recordExpiresDurationMs` to `3600000`. The `options` section of the config file appears within `opencred`. See [combined.example.yaml](./configs/combined.example.yaml) for an example.
+
+```yaml
+options:
+  recordExpiresDurationMs: 3600000
+```
+
 ### Run via node
 
 This app uses a `@bedrock/express` server and a Vue 3 UI client application. It

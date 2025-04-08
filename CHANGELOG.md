@@ -2,6 +2,9 @@
 
 ## 8.7.0 - 2025-04-XX
 
+### Added
+- New configurable timeout for exchanges `options.recordExpiresDurationMs`.
+
 ### Changed
 - Improved handling for `EnvelopedVerifiableCredentials` and clarified function
   names.

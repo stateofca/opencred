@@ -206,6 +206,7 @@ app:
       exchangeProtocols:
         - chapi
         - openid4vp
+      recordExpiresDurationMs: 86400000
     defaultBrand:
       cta: "#0B669D"
       primary: "#045199"
