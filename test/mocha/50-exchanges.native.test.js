@@ -103,6 +103,22 @@ describe('Exchanges (Native)', async () => {
     expect(req.exchange).to.have.property('id');
   });
 
+  it('should set the right ttl and recordExpiresAt', async () => {
+    const optionsConfigStub = sinon.stub(config.opencred, 'options').value({
+      ...config.opencred.options,
+      recordExpiresDurationMs: 5000 // 5 seconds
+    });
+    const next = sinon.spy();
+    const req = {rp, query: {state: 'test'}};
+    await service.createExchange(req, null, next);
+
+    // TTL should be 5 seconds not 900 default
+    // because it will be the smaller of the default & db cache timeout
+    expect(dbStub.lastCall?.args[0].ttl).to.be(5);
+
+    optionsConfigStub.restore();
+  });
+
   it('should verify a submission and return verified true', async () => {
     const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
       [{...rp, trustedCredentialIssuers: []}]

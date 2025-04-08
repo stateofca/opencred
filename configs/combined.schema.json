@@ -174,6 +174,10 @@
                     "type": "string",
                     "enum": ["chapi", "openid4vp"]
                   }
+                },
+                "recordExpiresDurationMs": {
+                  "type": "integer",
+                  "description": "The number of milliseconds after which a record will expire. Default: 86400000 (24hrs)"
                 }
               }
             },

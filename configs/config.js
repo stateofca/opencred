@@ -152,8 +152,10 @@ bedrock.events.on('bedrock.init', async () => {
    * exchangeProtocols: ['openid4vp', 'chapi']
    * @type {Options}
    */
-  opencred.options = opencred.options || {
-    exchangeProtocols: availableExchangeProtocols
+  opencred.options = {
+    exchangeProtocols: availableExchangeProtocols,
+    recordExpiresDurationMs: 86400000, // 1 day in milliseconds
+    ...(opencred.options || {})
   };
   if(!opencred.options.exchangeProtocols
     .every(el => availableExchangeProtocols.includes(el))) {
@@ -310,7 +312,6 @@ bedrock.events.on('bedrock.init', async () => {
   }
 
   opencred.defaultLanguage = opencred.defaultLanguage || 'en';
-
   opencred.translations = combineTranslations(opencred.translations || {});
 
   const defaultBrand = opencred.defaultBrand ?? {
