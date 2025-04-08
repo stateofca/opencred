@@ -22,6 +22,7 @@ export const defaultTranslations = {
       'Please complete the exchange in the allotted time:',
     exchangeErrorTitle: 'The exchange failed.',
     exchangeErrorSubtitle: 'The following error was encountered:',
+    exchangeErrorTtlExpird: 'The exchange has expired.',
     exchangeResetTitle: 'You may try again once the issue is corrected.',
     exchangeReset: 'Retry',
     qrTitle: 'Login with your Wallet app',

@@ -18,7 +18,6 @@ import {useRoute} from 'vue-router';
 
 const $cookies = inject('$cookies');
 
-let intervalId;
 const useNativeTranslations = ref(true);
 const context = ref({
   rp: {
@@ -31,7 +30,9 @@ const state = reactive({
   active: false,
   activeOverride: false,
   exchange: null,
-  error: null
+  error: null,
+  intervalId: null,
+  statusCheckCount: 0
 });
 
 /**
@@ -59,6 +60,9 @@ const switchView = () => {
 };
 
 onBeforeMount(async () => {
+  if(context.value?.exchangeData?.id) {
+    return;
+  }
   const exchangeType = route.name;
   try {
     const resp = await httpClient.get(
@@ -92,13 +96,15 @@ const changeLanguage = lang => {
 };
 
 const checkStatus = async () => {
-  if(!context.value || !context.value.rp?.workflow?.id) {
+  if(!context.value || !context.value.rp?.workflow?.id ||
+    !context.value.exchangeData?.id) {
     return;
   }
-  if(state.error && intervalId) {
-    intervalId = clearInterval(intervalId);
+  if(state.error && state.intervalId) {
+    state.intervalId = clearInterval(state.intervalId);
     return;
   }
+  state.statusCheckCount++;
 
   try {
     let exchange = {};
@@ -106,7 +112,7 @@ const checkStatus = async () => {
       data: {exchange},
     } = await httpClient.get(
       `/workflows/${context.value.rp.workflow.id}/exchanges/` +
-      `${context.value.exchangeData.id}`,
+      `${context.value?.exchangeData?.id}`,
       {
         headers: {
           Authorization: `Bearer ${context.value.exchangeData.accessToken}`
@@ -114,8 +120,8 @@ const checkStatus = async () => {
       }
     ));
     if(Object.keys(exchange).length > 0 && exchange.state === 'complete') {
-      state.exchange = exchange;
-      intervalId = clearInterval(intervalId);
+      context.value.exchangeData = exchange;
+      state.intervalId = clearInterval(state.intervalId);
       $cookies.remove('accessToken');
       $cookies.remove('exchangeId');
     } else if(exchange.state === 'active' && !state.activeOverride) {
@@ -130,10 +136,22 @@ const checkStatus = async () => {
           .join(', ') ?? 'An error occurred while processing the exchange.',
         resettable: true
       });
-      intervalId = clearInterval(intervalId);
+      state.intervalId = clearInterval(state.intervalId);
       $cookies.remove('accessToken');
       $cookies.remove('exchangeId');
     }
+
+    // Check if exchange TTL has expired and show appropriate error if so
+    const ttlDate = new Date(exchange.createdAt) + exchange.ttl * 1000;
+    if(exchange.state !== 'complete' && ttlDate < new Date()) {
+      handleError({
+        title: translate('exchangeErrorTitle'),
+        subtitle: translate('exchangeErrorSubtitle'),
+        message: translate('exchangeErrorTtlExpired'),
+        resettable: true
+      });
+    }
+
   } catch(e) {
     console.error('An error occurred while polling the endpoint:', e);
     handleError({
@@ -141,6 +159,11 @@ const checkStatus = async () => {
       message: 'An error occurred while checking exchange status.'
     });
   }
+};
+
+const startStatusCheck = () => {
+  state.statusCheckCount = 0;
+  state.intervalId = setInterval(checkStatus, 5000);
 };
 
 const handleResetExchange = async () => {
@@ -157,9 +180,9 @@ const handleResetExchange = async () => {
         }
       }
     );
-    state.exchange = resetResult.data;
+    context.value.exchangeData = resetResult.data;
     state.error = null;
-    intervalId = setInterval(checkStatus, 5000);
+    startStatusCheck();
   } catch(e) {
     handleError({
       title: 'Error',
@@ -178,7 +201,7 @@ const replaceExchange = exchange => {
 
 onMounted(async () => {
   setTimeout(checkStatus, 500);
-  intervalId = setInterval(checkStatus, 5000);
+  startStatusCheck();
 
   if(config.customTranslateScript) {
     const transEl = document.createElement('google-translate');
@@ -285,9 +308,9 @@ onMounted(async () => {
 &nbsp;
         </div>
       </div>
-      <div v-if="state.exchange?.state == 'complete'">
+      <div v-if="context.value?.exchangeData?.state == 'complete'">
         <router-view
-          :exchange="state.exchange"
+          :exchange="context.value?.exchangeData"
           :rp="context.rp" />
       </div>
       <div v-else-if="state.error">
@@ -321,6 +344,32 @@ onMounted(async () => {
         @override-active="state.activeOverride = true"
         @replace-exchange="replaceExchange" />
       <!-- eslint-enable max-len -->
+
+      <div
+        v-if="context.value?.exchangeData?.state != 'complete' &&
+          state.statusCheckCount > 10"
+        class="fixed inset-0 flex items-center justify-center
+              bg-gray-800 bg-opacity-75 z-50">
+        <div class="bg-white rounded-lg p-6 max-w-2xl mx-auto relative">
+          <p class="text-sm text-center">
+            <span class="text-bold">Are you still there? </span>
+            Status checking is paused.
+          </p>
+          <div class="flex justify-center mt-4 space-x-4">
+            <button
+              class="bg-blue-700 text-white py-2 px-4 rounded"
+              @click="startStatusCheck">
+              Resume checking
+            </button>
+            <button
+              class="bg-white text-red-700 border border-red-700
+                 py-2 px-4 rounded"
+              @click="handleResetExchange">
+              Reset Session
+            </button>
+          </div>
+        </div>
+      </div>
     </main>
     <footer
       class="text-left p-3"

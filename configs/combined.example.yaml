@@ -120,7 +120,7 @@ app:
             path: "email"
         workflow:
           type: vc-api
-          baseUrl: https://example.org/exchanges/123
+          baseUrl: https://example.org/workflows/123
           capability: "example"
           clientSecret: "example"
       - clientId: 4e3a8b7b4b7b4b7b4b7b
