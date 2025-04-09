@@ -5,7 +5,8 @@
 ### Added
 - New configurable timeout for exchanges `options.recordExpiresDurationMs` and
   `options.exchangeTtlSeconds`.
-- Added support for `ecdsa-rdfc-2019` Data Integrity cryptosuite.
+- Added support for `ecdsa-rdfc-2019` Data Integrity cryptosuite, replacing
+  deprecated `ecdsa-2019`.
 - Customizable image height/width for header primary & secondary logos.
 
 ### Changed
