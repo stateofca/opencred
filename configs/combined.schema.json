@@ -755,7 +755,7 @@
             },
             "exchangeActiveExpirySeconds": {
               "type": "number",
-              "description": "The number of seconds that a user has to complete an exchange."
+              "description": "DEPRECATED: The number of seconds that a user has to complete an exchange."
             },
             "exchangeErrorTitle": {
               "type": "string",

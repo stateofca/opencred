@@ -258,7 +258,6 @@ app:
       secretKey: 6LcNDSjdAAAAAAAAIe3uy1gavf1reiuhfer67890
       pages:
         - audit
-    exchangeActiveExpirySeconds: 300
     defaultLanguage: en
     translations:
       en:

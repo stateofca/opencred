@@ -6,11 +6,13 @@ SPDX-License-Identifier: BSD-3-Clause
 -->
 
 <script setup>
-import {inject, onBeforeMount, onMounted, reactive, ref} from 'vue';
+import {inject, onBeforeMount, onMounted, onUnmounted, reactive,
+  ref} from 'vue';
 import CHAPIView from './CHAPIView.vue';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
 import OID4VPView from './OID4VPView.vue';
+import QRCode from 'qrcode';
 import {setCssVar} from 'quasar';
 import {useHead} from 'unhead';
 import {useI18n} from 'vue-i18n';
@@ -29,7 +31,6 @@ const state = reactive({
   currentUXMethodIndex: 0,
   active: false,
   activeOverride: false,
-  exchange: null,
   error: null,
   intervalId: null,
   statusCheckCount: 0
@@ -43,12 +44,18 @@ const state = reactive({
  * @param {boolean?} error.resettable
  */
 const handleError = error => {
+  state.intervalId = clearInterval(state.intervalId);
   state.error = {
     title: error?.title || 'Error',
     subtitle: error?.subtitle || 'The following error was encountered:',
     message: error?.message || 'An unexpected error occurred.',
     resettable: !!error?.resettable || false
   };
+  state.active = false;
+  state.activeOverride = false;
+  state.statusCheckCount = 0;
+  $cookies.remove('accessToken');
+  $cookies.remove('exchangeId');
 };
 
 const route = useRoute();
@@ -100,11 +107,28 @@ const checkStatus = async () => {
     !context.value.exchangeData?.id) {
     return;
   }
+
+  // Check if exchange TTL has expired and show appropriate error if so
+  const ttlDate = new Date(
+    new Date(context.value.exchangeData.createdAt).getTime() +
+      context.value.exchangeData.ttl * 1000);
+  if(ttlDate < new Date()) {
+    handleError({
+      title: translate('exchangeErrorTitle'),
+      subtitle: translate('exchangeErrorSubtitle'),
+      message: translate('exchangeErrorTtlExpired'),
+      resettable: true
+    });
+  }
+
   if(state.error && state.intervalId) {
     state.intervalId = clearInterval(state.intervalId);
     return;
   }
   state.statusCheckCount++;
+  if(state.statusCheckCount > 10) {
+    state.intervalId = clearInterval(state.intervalId);
+  }
 
   try {
     let exchange = {};
@@ -122,6 +146,8 @@ const checkStatus = async () => {
     if(Object.keys(exchange).length > 0 && exchange.state === 'complete') {
       context.value.exchangeData = exchange;
       state.intervalId = clearInterval(state.intervalId);
+      state.active = false;
+      state.activeOverride = false;
       $cookies.remove('accessToken');
       $cookies.remove('exchangeId');
     } else if(exchange.state === 'active' && !state.activeOverride) {
@@ -134,20 +160,6 @@ const checkStatus = async () => {
           .filter(v => !!v.errors?.length)?.map(r => r.errors)
           .flat()
           .join(', ') ?? 'An error occurred while processing the exchange.',
-        resettable: true
-      });
-      state.intervalId = clearInterval(state.intervalId);
-      $cookies.remove('accessToken');
-      $cookies.remove('exchangeId');
-    }
-
-    // Check if exchange TTL has expired and show appropriate error if so
-    const ttlDate = new Date(exchange.createdAt) + exchange.ttl * 1000;
-    if(exchange.state !== 'complete' && ttlDate < new Date()) {
-      handleError({
-        title: translate('exchangeErrorTitle'),
-        subtitle: translate('exchangeErrorSubtitle'),
-        message: translate('exchangeErrorTtlExpired'),
         resettable: true
       });
     }
@@ -180,7 +192,10 @@ const handleResetExchange = async () => {
         }
       }
     );
-    context.value.exchangeData = resetResult.data;
+    context.value.exchangeData = {
+      ...resetResult.data,
+      QR: await QRCode.toDataURL(resetResult.data.OID4VP)
+    };
     state.error = null;
     startStatusCheck();
   } catch(e) {
@@ -223,6 +238,11 @@ onMounted(async () => {
   }
 });
 
+onUnmounted(() => {
+  if(state.intervalId) {
+    state.intervalId = clearInterval(state.intervalId);
+  }
+});
 </script>
 
 <template>
@@ -308,7 +328,7 @@ onMounted(async () => {
 &nbsp;
         </div>
       </div>
-      <div v-if="context.value?.exchangeData?.state == 'complete'">
+      <div v-if="context.exchangeData?.state == 'complete'">
         <router-view
           :exchange="context.value?.exchangeData"
           :rp="context.rp" />
@@ -337,12 +357,12 @@ onMounted(async () => {
         :brand="context.rp?.brand"
         :exchange-data="context.exchangeData"
         :options="config.options"
-        :exchange-active-expiry-seconds="context.rp?.exchangeActiveExpirySeconds"
         :explainer-video="context.rp?.explainerVideo"
         :active="state.active && !state.activeOverride"
         @switch-view="switchView"
         @override-active="state.activeOverride = true"
-        @replace-exchange="replaceExchange" />
+        @replace-exchange="replaceExchange"
+        @error="handleError" />
       <!-- eslint-enable max-len -->
 
       <div

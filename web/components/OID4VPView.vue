@@ -7,6 +7,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import {inject, onMounted, ref} from 'vue';
+import CountdownDisplay from './CountdownDisplay.vue';
 import {httpClient} from '@digitalbazaar/http-client';
 import {useQuasar} from 'quasar';
 
@@ -27,14 +28,12 @@ const props = defineProps({
       QR: '',
       vcapi: '',
       OID4VP: '',
+      ttl: 900,
+      createdAt: new Date(),
       oidc: {
         state: ''
       }
     })
-  },
-  exchangeActiveExpirySeconds: {
-    type: Number,
-    default: () => 60,
   },
   explainerVideo: {
     type: Object,
@@ -44,7 +43,7 @@ const props = defineProps({
     })
   }
 });
-const emit = defineEmits(['replaceExchange', 'overrideActive']);
+const emit = defineEmits(['replaceExchange', 'overrideActive', 'error']);
 const showDeeplink = ref(false);
 const showVideo = ref(false);
 const $q = useQuasar();
@@ -60,27 +59,10 @@ onMounted(() => {
   }
 });
 
-const formatExchangeActiveExpiryTime = seconds => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  const result = [];
-  if(hours > 0) {
-    result.push(`${hours} hour${hours !== 1 ? 's' : ''}`);
-  }
-  if(minutes > 0) {
-    result.push(`${minutes} minute${minutes !== 1 ? 's' : ''}`);
-  }
-  if(secs > 0 || (hours === 0 && minutes === 0)) {
-    result.push(`${secs} second${secs !== 1 ? 's' : ''}`);
-  }
-  return result.join(', ');
-};
-
 async function appOpened() {
   const {location} = window;
   const searchParams = new URLSearchParams(location.search);
-  const variables = JSON.parse(atob(searchParams.get('variables') ?? 'e30='));
+  const variables = JSON.parse(atob(searchParams.get('variables') || 'e30='));
   const redirectPath = location.href.split(location.origin).at(-1);
   let exchange = {};
   ({
@@ -103,11 +85,22 @@ async function appOpened() {
   ));
   emit('replaceExchange', exchange);
   $cookies.set('exchangeId', exchange.id,
-    `${props.exchangeActiveExpirySeconds}s`,
+    `${props.exchangeData.ttl}s`,
     '', '', true, 'Strict');
   $cookies.set('accessToken', exchange.accessToken,
-    `${props.exchangeActiveExpirySeconds}s`,
+    `${props.exchangeData.ttl}s`,
     '', '', true, 'Strict');
+
+  // If we're still on the page after 2 seconds, the app failed to launch.
+  setTimeout(() => {
+    if(window.location !== exchange.OID4VP) {
+      emit('error', {
+        message: 'The wallet app may not be installed on this device.',
+        title: 'Could not launch app',
+        resettable: true
+      });
+    }
+  }, 2000);
   window.location.replace(exchange.OID4VP);
 }
 
@@ -135,7 +128,7 @@ const handleGoBack = () => {
         v-html="$t('qrPageExplainHelp')" />
     </div>
     <div
-      v-if="(active && !showDeeplink) || !exchangeData.QR"
+      v-if="(active && !showDeeplink)"
       class="p-12 m-12 justify-center">
       <!-- Exchange is active: Loading spinner -->
       <div class="mx-auto w-7 mb-4">
@@ -143,9 +136,11 @@ const handleGoBack = () => {
           color="primary"
           size="2em" />
       </div>
-      <p>{{$t('exchangeActiveExpiryMessage')}}</p>
       <p>
-        {{formatExchangeActiveExpiryTime(props.exchangeActiveExpirySeconds)}}
+        {{$t('exchangeActiveExpiryMessage')}}
+        <CountdownDisplay
+          :created-at="props.exchangeData.createdAt"
+          :ttl="props.exchangeData.ttl" />
       </p>
       <button
         class="mx-auto max-w-prose text-sm underline"
@@ -177,6 +172,12 @@ const handleGoBack = () => {
           </button>
         </p>
       </div>
+      <p>
+        {{$t('exchangeActiveExpiryMessage')}}
+        <CountdownDisplay
+          :created-at="props.exchangeData.createdAt"
+          :ttl="props.exchangeData.ttl" />
+      </p>
     </div>
     <div
       v-else-if="exchangeData.QR"
@@ -189,9 +190,11 @@ const handleGoBack = () => {
         {{$t('appCta')}}
       </q-btn>
       <div v-else>
-        <p>{{$t('exchangeActiveExpiryMessage')}}</p>
         <p>
-          {{formatExchangeActiveExpiryTime(props.exchangeActiveExpirySeconds)}}
+          {{$t('exchangeActiveExpiryMessage')}}
+          <CountdownDisplay
+            :created-at="props.exchangeData.createdAt"
+            :ttl="props.exchangeData.ttl" />
         </p>
         <q-btn
           color="primary"
