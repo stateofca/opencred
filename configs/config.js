@@ -114,16 +114,25 @@ bedrock.events.on('bedrock.init', async () => {
    */
 
   /**
+   * @typedef {Object} Img
+   * @property {string} id - The URL of the image.
+   * @property {string} [alt] - The alt text of the image.
+   * @property {string} [height] - The height of the image HTML element.
+   * @property {string} [width] - The width of the image HTML element.
+   * @property {string} [href] - Overrides link in parent RP if this is present.
+   */
+
+  /**
    * @typedef {Object} RelyingParty
    * @property {string} name - The name of the relying party.
    * @property {string} clientId - The client ID, urlsafe.
    * @property {string} clientSecret - The client secret, urlsafe.
    * @property {string} redirectUri - The redirect URI of the relying party.
    * @property {string} description - The description of the relying party.
-   * @property {string} primaryLogo - The primary logo of the relying party.
+   * @property {string | Img} primaryLogo - The primary logo of the RP.
    * @property {string} primaryLink - The primary link of the relying party.
-   * @property {string} secondaryLogo - The secondary logo of the relying party.
-   * @property {string} secondaryLogo - The secondary link of the relying party.
+   * @property {string | Img } secondaryLogo - The secondary logo of the RP.
+   * @property {string} secondaryLink - The secondary link of the relying party.
    * @property {string} homeLink - The home link of the relying party.
    * @property {string} backgroundImage - Background image URL.
    * @property {Object} brand - The brand of the relying party.

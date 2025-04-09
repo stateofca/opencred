@@ -5,6 +5,7 @@
 ### Added
 - New configurable timeout for exchanges `options.recordExpiresDurationMs`.
 - Added support for `ecdsa-rdfc-2019`.
+- Customizable image height/width for header primary & secondary logos.
 
 ### Changed
 - Deprecated `exchangeActiveExpirySeconds` config parameter.

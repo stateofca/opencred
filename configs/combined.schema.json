@@ -281,10 +281,11 @@
           "type": "boolean",
           "description": "If false, bypasses CA checks for this RP."
         },
-        "icon": {
-          "type": "string",
-          "format": "uri",
-          "description": "The URL of the icon for the relying party."
+        "primaryLogo": {
+          "$ref": "#/definitions/Img"
+        },
+        "secondaryLogo": {
+          "$ref": "#/definitions/Img"
         },
         "backgroundImage": {
           "type": "string",
@@ -457,6 +458,44 @@
         }
       },
       "required": ["cta", "primary", "header"]
+    },
+    "Img": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uri",
+              "description": "The URL of the image."
+            },
+            "alt": {
+              "type": "string",
+              "description": "The alt text for the image."
+            },
+            "height": {
+              "type": "string",
+              "description": "The height of the image in pixels."
+            },
+            "width": {
+              "type": "string",
+              "description": "The width of the image in pixels."
+            },
+            "href": {
+              "type": "string",
+              "format": "uri",
+              "description": "The URL to which the image links. Overrides RP"
+            }
+          },
+          "required": ["id"]
+        },
+        {
+          "type": "string",
+          "format": "uri",
+          "description": "The URL of the image."
+        }
+      ]
     },
     "BaseWorkflow": {
       "type": "object",
@@ -765,6 +804,10 @@
               "type": "string",
               "description": "The subtitle of the error page."
             },
+            "exchangeErrorTtlExpired": {
+              "type": "string",
+              "description": "The message when the exchange has expired."
+            },
             "exchangeResetTitle": {
               "type": "string",
               "description": "The title message preceeding the exchange retry button."
@@ -772,6 +815,14 @@
             "exchangeReset": {
               "type": "string",
               "description": "The label of the exchange retry button."
+            },
+            "noSchemeHandlerTitle": {
+              "type": "string",
+              "description": "The title of the error component when no scheme handler is found."
+            },
+            "noSchemeHandlerMessage": {
+              "type": "string",
+              "description": "The subtitle of the error component when no scheme handler is found."
             }
           }
         }

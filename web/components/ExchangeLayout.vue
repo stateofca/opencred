@@ -253,21 +253,25 @@ onUnmounted(() => {
         max-w-3xl">
         <a
           v-if="context.rp.primaryLogo"
-          :href="context.rp.primaryLink"
+          :href="context.rp.primaryLogo?.href ?? context.rp.primaryLink"
           class="flex items-center gap-3">
           <img
-            class="max-h-[50px]"
-            :src="context.rp.primaryLogo"
-            alt="logo-image">
+            :height="context.rp.primaryLogo?.height || null"
+            :width="context.rp.primaryLogo?.width || null"
+            :src="typeof context.rp.primaryLogo === 'string' ?
+              context.rp.primaryLogo : context.rp.primaryLogo?.id"
+            :alt="context.rp.primaryLogo?.alt || 'logo-image'">
         </a>
         <a
           v-if="context.rp.secondaryLogo"
-          :href="context.rp.secondaryLink"
+          :href="context.rp.secondaryLogo?.href ?? context.rp.secondaryLink"
           class="flex items-center gap-3">
           <img
-            class="max-h-[50px]"
-            :src="context.rp.secondaryLogo"
-            alt="logo-image">
+            :height="context.rp.secondaryLogo?.height || null"
+            :width="context.rp.secondaryLogo?.width || null"
+            :src="typeof context.rp.secondaryLogo === 'string' ?
+              context.rp.secondaryLogo : context.rp.secondaryLogo?.id"
+            :alt="context.rp.secondaryLogo?.alt || 'logo-image'">
         </a>
         <div
           id="translations-btn"

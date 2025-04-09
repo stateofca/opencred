@@ -9,7 +9,10 @@ SPDX-License-Identifier: BSD-3-Clause
 import {inject, onMounted, ref} from 'vue';
 import CountdownDisplay from './CountdownDisplay.vue';
 import {httpClient} from '@digitalbazaar/http-client';
+import {useI18n} from 'vue-i18n';
 import {useQuasar} from 'quasar';
+
+const {t} = useI18n({useScope: 'global'});
 
 const props = defineProps({
   active: {
@@ -95,8 +98,8 @@ async function appOpened() {
   setTimeout(() => {
     if(window.location !== exchange.OID4VP) {
       emit('error', {
-        message: 'The wallet app may not be installed on this device.',
-        title: 'Could not launch app',
+        message: t('noSchemeHandlerMessage'),
+        title: t('noSchemeHandlerTitle'),
         resettable: true
       });
     }
