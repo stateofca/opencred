@@ -57,6 +57,10 @@ didJwkDriver.use({
   algorithm: 'EdDSA',
   handler: Ed25519VerificationKey2020.from
 });
+didJwkDriver.use({
+  algorithm: 'P-256',
+  handler: EcdsaMultikey.from
+});
 didKeyDriver.use({
   fromMultibase: EcdsaMultikey.from,
   multibaseMultikeyHeader: 'zDna',
