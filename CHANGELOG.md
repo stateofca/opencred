@@ -3,14 +3,16 @@
 ## 8.7.0 - 2025-04-XX
 
 ### Added
-- New configurable timeout for exchanges `options.recordExpiresDurationMs`.
-- Added support for `ecdsa-rdfc-2019`.
+- New configurable timeout for exchanges `options.recordExpiresDurationMs` and
+  `options.exchangeTtlSeconds`.
+- Added support for `ecdsa-rdfc-2019` Data Integrity cryptosuite.
 - Customizable image height/width for header primary & secondary logos.
 
 ### Changed
 - Deprecated `exchangeActiveExpirySeconds` config parameter.
 - Improved handling for `EnvelopedVerifiableCredentials` and clarified function
   names.
+- Improved same-device handoff with not-installed detection and warning.
 - Updated dependencies:
   - `@bedrock/config-yaml@4.3.3` (do not log config on read failure)
   - Update `did-jwt-vc` dependency to latest major version.

@@ -113,6 +113,8 @@ const checkStatus = async () => {
     new Date(context.value.exchangeData.createdAt).getTime() +
       context.value.exchangeData.ttl * 1000);
   if(ttlDate < new Date()) {
+    $cookies.remove('accessToken');
+    $cookies.remove('exchangeId');
     handleError({
       title: translate('exchangeErrorTitle'),
       subtitle: translate('exchangeErrorSubtitle'),
@@ -125,7 +127,7 @@ const checkStatus = async () => {
     state.intervalId = clearInterval(state.intervalId);
     return;
   }
-  state.statusCheckCount++;
+
   if(state.statusCheckCount > 10) {
     state.intervalId = clearInterval(state.intervalId);
   }
@@ -143,8 +145,22 @@ const checkStatus = async () => {
         }
       }
     ));
-    if(Object.keys(exchange).length > 0 && exchange.state === 'complete') {
-      context.value.exchangeData = exchange;
+    if(!Object.keys(exchange).length) {
+      handleError({
+        title: translate('exchangeErrorTitle'),
+        subtitle: translate('exchangeErrorSubtitle'),
+        message: 'An error occurred while checking exchange status.'
+      });
+      return;
+    }
+    if(context.value.exchangeData?.state != exchange.state) {
+      // if the exchange has just changed state, it is pretty active
+      // so reset the status check count to avoid bothering the user soon.
+      state.statusCheckCount = 0;
+    }
+    context.value.exchangeData = {...context.value.exchangeData, ...exchange};
+
+    if(exchange.state === 'complete') {
       state.intervalId = clearInterval(state.intervalId);
       state.active = false;
       state.activeOverride = false;
@@ -171,11 +187,19 @@ const checkStatus = async () => {
       message: 'An error occurred while checking exchange status.'
     });
   }
+
+  state.statusCheckCount++;
 };
 
-const startStatusCheck = () => {
+const startStatusCheck = (hurry = false) => {
   state.statusCheckCount = 0;
+  if(state.intervalId) {
+    state.intervalId = clearInterval(state.intervalId);
+  }
   state.intervalId = setInterval(checkStatus, 5000);
+  if(hurry) {
+    checkStatus();
+  }
 };
 
 const handleResetExchange = async () => {
@@ -317,7 +341,7 @@ onUnmounted(() => {
     <main class="relative flex-grow">
       <div
         v-if="context.rp.homeLink"
-        class="bg-white w-full text-center py-4">
+        class="bg-white w-full text-center">
         <h2 class="font-bold">
           <a :href="context.rp.homeLink">
             {{$t('home')}}
@@ -365,8 +389,7 @@ onUnmounted(() => {
         :active="state.active && !state.activeOverride"
         @switch-view="switchView"
         @override-active="state.activeOverride = true"
-        @replace-exchange="replaceExchange"
-        @error="handleError" />
+        @replace-exchange="replaceExchange" />
       <!-- eslint-enable max-len -->
 
       <div
@@ -380,17 +403,17 @@ onUnmounted(() => {
             Status checking is paused.
           </p>
           <div class="flex justify-center mt-4 space-x-4">
-            <button
+            <q-btn
               class="bg-blue-700 text-white py-2 px-4 rounded"
-              @click="startStatusCheck">
+              @click="startStatusCheck(true)">
               Resume checking
-            </button>
-            <button
-              class="bg-white text-red-700 border border-red-700
-                 py-2 px-4 rounded"
+            </q-btn>
+            <q-btn
+              color="white"
+              text-color="black"
               @click="handleResetExchange">
               Reset Session
-            </button>
+            </q-btn>
           </div>
         </div>
       </div>

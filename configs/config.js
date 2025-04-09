@@ -153,6 +153,10 @@ bedrock.events.on('bedrock.init', async () => {
   /**
    * @typedef {Object} Options
    * @property {Array.<string>} [exchangeProtocols]
+   * @property {number} [recordExpiresDurationMs]
+   * - The duration of the exchange record in milliseconds.
+   * @property {string} [exchangeTtlSeconds] - The duration of the exchange
+   * record in seconds. (Default/max 900)
    */
 
   const availableExchangeProtocols = ['openid4vp', 'chapi'];
@@ -164,8 +168,21 @@ bedrock.events.on('bedrock.init', async () => {
   opencred.options = {
     exchangeProtocols: availableExchangeProtocols,
     recordExpiresDurationMs: 86400000, // 1 day in milliseconds
+    exchangeTtlSeconds: 900, // 15 minutes in seconds
     ...(opencred.options || {})
   };
+
+  // Clamp recordExpiresDurationMs between 1 min and 30 days
+  opencred.options.recordExpiresDurationMs = Math.floor(Math.max(
+    Math.min(opencred.options.recordExpiresDurationMs, 86400000 * 30),
+    60000
+  ));
+
+  // Clamp exchange TTL between 10 and 900/recordDuration seconds
+  opencred.options.exchangeTtlSeconds = Math.floor(Math.min(
+    Math.max(opencred.options.exchangeTtlSeconds, 10),
+    Math.min(900, opencred.options.recordExpiresDurationMs / 1000)));
+
   if(!opencred.options.exchangeProtocols
     .every(el => availableExchangeProtocols.includes(el))) {
     throw new Error(`Invalid exchange protocol configured: ` +

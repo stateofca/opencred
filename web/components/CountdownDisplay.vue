@@ -1,38 +1,54 @@
 <template>
-  <span>{{friendlyTime}}</span>
+  <span>
+    <template v-if="remainingSeconds > 89">
+      {{Math.round(remainingSeconds / 60)}}
+      minutes
+    </template>
+    <template v-else>
+      {{remainingSeconds}} seconds
+    </template>
+  </span>
 </template>
 
 <script setup>
-import {computed, ref} from 'vue';
+import {onMounted, onUnmounted, ref} from 'vue';
 
+// Props
 const props = defineProps({
-  ttl: {
-    type: Number,
-    required: true
-  },
   createdAt: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
+  ttl: {
+    type: Number,
+    required: true,
+  },
 });
 
-const friendlyTime = computed(() => {
-  const timeLeft = ref(Math.floor(
-    (new Date(props.createdAt).getTime() +
-    props.ttl * 1000 - Date.now()) / 1000));
+// Refs for time tracking
+const remainingSeconds = ref(0);
+let intervalId = null;
 
-  if(timeLeft.value <= 0) {
-    return 'expired';
-  }
-  if(timeLeft.value >= 7200) { // 2 hours in seconds
-    const hours = Math.ceil(timeLeft.value / 3600);
-    return `${hours} hour${hours > 1 ? 's' : ''}`;
-  }
-  if(timeLeft.value >= 60) {
-    const minutes = Math.ceil(timeLeft.value / 60);
-    return `${minutes} minute${minutes > 1 ? 's' : ''}`;
-  } else {
-    return `${timeLeft.value} second${timeLeft.value !== 1 ? 's' : ''}`;
+// Helper function to calculate remaining time
+function updateRemaining(createdAt, ttl) {
+  const createdTime = new Date(createdAt).getTime();
+  const now = Date.now();
+  const elapsed = Math.floor((now - createdTime) / 1000);
+  remainingSeconds.value = Math.max(ttl - elapsed, 0);
+}
+
+// Initialize and update every second
+onMounted(() => {
+  updateRemaining(props.createdAt, props.ttl);
+  intervalId = setInterval(() => {
+    updateRemaining(props.createdAt, props.ttl);
+  }, 1000);
+});
+
+// Clean up on unmount
+onUnmounted(() => {
+  if(intervalId) {
+    clearInterval(intervalId);
   }
 });
 </script>

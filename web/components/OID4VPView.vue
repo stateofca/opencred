@@ -46,9 +46,10 @@ const props = defineProps({
     })
   }
 });
-const emit = defineEmits(['replaceExchange', 'overrideActive', 'error']);
+const emit = defineEmits(['replaceExchange', 'overrideActive']);
 const showDeeplink = ref(false);
 const showVideo = ref(false);
+const showNoSchemeHandlerWarning = ref(false);
 const $q = useQuasar();
 const $cookies = inject('$cookies');
 
@@ -94,14 +95,11 @@ async function appOpened() {
     `${props.exchangeData.ttl}s`,
     '', '', true, 'Strict');
 
-  // If we're still on the page after 2 seconds, the app failed to launch.
+  // If we're still on the page after 2 seconds, the app may have failed to
+  // launch. Warn the user.
   setTimeout(() => {
     if(window.location !== exchange.OID4VP) {
-      emit('error', {
-        message: t('noSchemeHandlerMessage'),
-        title: t('noSchemeHandlerTitle'),
-        resettable: true
-      });
+      showNoSchemeHandlerWarning.value = true;
     }
   }, 2000);
   window.location.replace(exchange.OID4VP);
@@ -186,19 +184,23 @@ const handleGoBack = () => {
       v-else-if="exchangeData.QR"
       class="flex justify-center">
       <!-- A button to launch a same-device wallet -->
-      <q-btn
-        v-if="!active"
-        color="primary"
-        @click="appOpened()">
-        {{$t('appCta')}}
-      </q-btn>
-      <div v-else>
-        <p>
-          {{$t('exchangeActiveExpiryMessage')}}
-          <CountdownDisplay
-            :created-at="props.exchangeData.createdAt"
-            :ttl="props.exchangeData.ttl" />
+      <div v-if="!active">
+        <q-btn
+          v-if="!active"
+          color="primary"
+          @click="appOpened()">
+          {{$t('appCta')}}
+        </q-btn>
+        <p
+          v-if="showNoSchemeHandlerWarning"
+          class="mt-4 text-red-600">
+          <span class="text-bold">
+            {{$t('noSchemeHandlerTitle')}}
+          </span>
+          {{$t('noSchemeHandlerMessage')}}
         </p>
+      </div>
+      <div v-else>
         <q-btn
           color="primary"
           class="px-16 py-4"
@@ -207,6 +209,14 @@ const handleGoBack = () => {
             color="white"
             size="1em" />
         </q-btn>
+      </div>
+      <div>
+        <p class="my-4">
+          {{$t('exchangeActiveExpiryMessage')}}
+          <CountdownDisplay
+            :created-at="props.exchangeData.createdAt"
+            :ttl="props.exchangeData.ttl" />
+        </p>
       </div>
     </div>
     <div class="mt-2">

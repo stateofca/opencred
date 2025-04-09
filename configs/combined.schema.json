@@ -178,6 +178,12 @@
                 "recordExpiresDurationMs": {
                   "type": "integer",
                   "description": "The number of milliseconds after which a record will expire. Default: 86400000 (24hrs)"
+                },
+                "exchangeTtlSeconds": {
+                  "type": "integer",
+                  "min": 10,
+                  "max": 900,
+                  "description": "The number of seconds that a user has to complete an exchange. Default: 900 (15 minutes)"
                 }
               }
             },

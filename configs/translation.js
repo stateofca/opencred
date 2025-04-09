@@ -25,7 +25,7 @@ export const defaultTranslations = {
     exchangeErrorTtlExpired: 'The exchange has expired.',
     exchangeResetTitle: 'You may try again.',
     exchangeReset: 'Retry',
-    noSchemeHandlerTitle: 'Could not launch app',
+    noSchemeHandlerTitle: 'Did the app fail to launch?',
     noSchemeHandlerMessage:
       'The wallet app may not be installed on this device.',
     qrTitle: 'Login with your Wallet app',
