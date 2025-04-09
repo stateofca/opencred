@@ -29,28 +29,30 @@ defineEmits(['reset']);
 </script>
 
 <template>
-  <div class="p-4 md:p-5 space-y-2">
-    <h2 class="text-3xl font-extrabold">
+  <div class="p-4 md:p-5 space-y-4">
+    <h2 class="text-2xl md:text-3xl font-bold text-gray-900">
       {{title}}
     </h2>
 
-    <h4 class="text-xl font-extrabold">
+    <h3 class="text-lg md:text-xl font-medium text-gray-700">
       {{subtitle}}
-    </h4>
+    </h3>
 
-    <p class="mb-4 text-lg font-normal text-gray-500">
+    <p class="text-base text-gray-600">
       {{message}}
     </p>
 
-    <div v-if="resettable">
-      <p class="mb-4 text-lg font-normal text-500">
+    <div
+      v-if="resettable"
+      class="space-y-2">
+      <p class="text-base text-gray-600">
         {{$t('exchangeResetTitle')}}
       </p>
-      <button
-        class="text-sm font-semibold text-blue-600 hover:text-blue-800"
+      <q-btn
+        color="primary"
         @click="$emit('reset')">
         {{$t('exchangeReset')}}
-      </button>
+      </q-btn>
     </div>
   </div>
 </template>
