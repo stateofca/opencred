@@ -19,7 +19,10 @@
   - Update `did-jwt-vc` dependency to latest major version.
   - Updated dependency `@digitalbazaar/vc` to support 2.0 VCDM credentials
   - `@digitalbazaar/data-integrity`
+  - `@digitalbazaar/http-client` and `jsonld-document-loader`
+  - `@digitalbazaar/did-method-web`
   - `@digitalbazaar/did-method-jwk` for authentication proofPurpose
+  - Context files: `@digitalbazaar/credentials-context`, `@digitalbazaar/data-integrity-context`
 
 ## 8.6.1 - 2025-01-28
 

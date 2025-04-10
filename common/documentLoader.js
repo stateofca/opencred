@@ -10,39 +10,34 @@ import * as DidKey from '@digitalbazaar/did-method-key';
 import * as DidWeb from '@digitalbazaar/did-method-web';
 import * as EcdsaMultikey from '@digitalbazaar/ecdsa-multikey';
 
+import {CachedResolver} from '@digitalbazaar/did-io';
 import {
-  CONTEXT as CRED_CONTEXT,
-  CONTEXT_URL as CRED_CONTEXT_URL
-} from 'credentials-context';
+  contexts as CRED_CONTEXT_MAP
+} from '@digitalbazaar/credentials-context';
 import {
-  CONTEXT as DI_CONTEXT,
-  CONTEXT_URL as DI_CONTEXT_URL
+  contexts as DATA_INTEGRITY_CONTEXT_MAP
 } from '@digitalbazaar/data-integrity-context';
 import {
-  CONTEXT as DID_CONTEXT,
-  CONTEXT_URL as DID_CONTEXT_URL
+  contexts as DID_CONTEXT_MAP
 } from 'did-context';
 import {
-  CONTEXT as ED_SIG_2020_CONTEXT,
-  CONTEXT_URL as ED_SIG_2020_CONTEXT_URL
+  contexts as ED25519_SIG_2020_CONTEXT_MAP,
 } from 'ed25519-signature-2020-context';
-import {
-  CONTEXT_V1 as SL_V1_CONTEXT,
-  CONTEXT_URL_V1 as SL_V1_CONTEXT_URL
-} from '@digitalbazaar/vc-status-list-context';
-import {
-  CONTEXT as VDL_AAMVA_CONTEXT,
-  CONTEXT_URL as VDL_AAMVA_CONTEXT_URL
-} from '@digitalbazaar/vdl-aamva-context';
-import {
-  CONTEXT as VDL_BASE_CONTEXT,
-  CONTEXT_URL as VDL_BASE_CONTEXT_URL
-} from '@digitalbazaar/vdl-context';
-import {CachedResolver} from '@digitalbazaar/did-io';
 import {Ed25519VerificationKey2020}
   from '@digitalbazaar/ed25519-verification-key-2020';
 import {JsonLdDocumentLoader} from 'jsonld-document-loader';
-import X25519KeyAgreement2020Context from 'x25519-key-agreement-2020-context';
+import {
+  contexts as SL_CONTEXT_MAP
+} from '@digitalbazaar/vc-status-list-context';
+import {
+  contexts as VDL_AAMVA_CONTEXT_MAP,
+} from '@digitalbazaar/vdl-aamva-context';
+import {
+  contexts as VDL_CONTEXT_MAP
+} from '@digitalbazaar/vdl-context';
+import {
+  contexts as X25519_KEY_AGREEMENT_CONTEXT_MAP
+} from 'x25519-key-agreement-2020-context';
 
 const didWebDriver = DidWeb.driver();
 const didKeyDriver = DidKey.driver();
@@ -75,17 +70,30 @@ export const getDocumentLoader = () => {
   const jsonLdDocLoader = new JsonLdDocumentLoader();
 
   // handle static contexts
-  jsonLdDocLoader.addStatic(ED_SIG_2020_CONTEXT_URL, ED_SIG_2020_CONTEXT);
-  jsonLdDocLoader.addStatic(
-    X25519KeyAgreement2020Context.constants.CONTEXT_URL,
-    X25519KeyAgreement2020Context.contexts.get(
-      X25519KeyAgreement2020Context.constants.CONTEXT_URL));
-  jsonLdDocLoader.addStatic(DI_CONTEXT_URL, DI_CONTEXT);
-  jsonLdDocLoader.addStatic(DID_CONTEXT_URL, DID_CONTEXT);
-  jsonLdDocLoader.addStatic(CRED_CONTEXT_URL, CRED_CONTEXT);
-  jsonLdDocLoader.addStatic(SL_V1_CONTEXT_URL, SL_V1_CONTEXT);
-  jsonLdDocLoader.addStatic(VDL_BASE_CONTEXT_URL, VDL_BASE_CONTEXT);
-  jsonLdDocLoader.addStatic(VDL_AAMVA_CONTEXT_URL, VDL_AAMVA_CONTEXT);
+  ED25519_SIG_2020_CONTEXT_MAP.forEach((context, url) => {
+    jsonLdDocLoader.addStatic(url, context);
+  });
+  X25519_KEY_AGREEMENT_CONTEXT_MAP.forEach((context, url) => {
+    jsonLdDocLoader.addStatic(url, context);
+  });
+  DATA_INTEGRITY_CONTEXT_MAP.forEach((context, url) => {
+    jsonLdDocLoader.addStatic(url, context);
+  });
+  DID_CONTEXT_MAP.forEach((context, url) => {
+    jsonLdDocLoader.addStatic(url, context);
+  });
+  CRED_CONTEXT_MAP.forEach((context, url) => {
+    jsonLdDocLoader.addStatic(url, context);
+  });
+  SL_CONTEXT_MAP.forEach((context, url) => {
+    jsonLdDocLoader.addStatic(url, context);
+  });
+  VDL_CONTEXT_MAP.forEach((context, url) => {
+    jsonLdDocLoader.addStatic(url, context);
+  });
+  VDL_AAMVA_CONTEXT_MAP.forEach((context, url) => {
+    jsonLdDocLoader.addStatic(url, context);
+  });
 
   // handle DIDs
   jsonLdDocLoader.setDidResolver(didResolver);
