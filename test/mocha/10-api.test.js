@@ -20,13 +20,18 @@ import {baseUrl} from '../mock-data.js';
 import {BaseWorkflowService} from '../../lib/workflows/base.js';
 import {config} from '@bedrock/core';
 import {database} from '../../lib/database.js';
+import {documentLoader} from '../utils/testDocumentLoader.js';
 import {domainToDidWeb} from '../../lib/didWeb.js';
 import {exampleKey2} from '../fixtures/signingKeys.js';
+import {generateValidDidKeyData} from '../utils/dids.js';
 import {generateValidJwtVpToken} from '../utils/jwtVpTokens.js';
+import {generateValidSignedCredential} from '../utils/credentials.js';
 import '../../lib/index.js';
 
 import {httpClient} from '@digitalbazaar/http-client';
 import https from 'node:https';
+
+import {createPresentation, signPresentation} from '@digitalbazaar/vc';
 
 const agent = new https.Agent({rejectUnauthorized: false});
 const client = httpClient.extend({agent});
@@ -142,18 +147,11 @@ entraExchange.createdAt = new Date();
 entraExchange.recordExpiresAt = new Date();
 
 describe('OpenCred API - Native Workflow', function() {
-  let vp_token_di;
-  let presentation_submission_di;
   let vp_token_jwt;
   let presentation_submission_jwt;
   let exchange_jwt;
 
   before(() => {
-    const di = JSON.parse(fs.readFileSync(
-      './test/fixtures/oid4vp_di.json'
-    ));
-    vp_token_di = di.vp_token;
-    presentation_submission_di = di.presentation_submission;
     const jwt = JSON.parse(fs.readFileSync(
       './test/fixtures/oid4vp_jwt.json'
     ));
@@ -339,15 +337,49 @@ describe('OpenCred API - Native Workflow', function() {
   });
 
   it('OID4VP should handle DI authorization response', async function() {
+    const {
+      did: holderDid, suite: holderSuite
+    } = await generateValidDidKeyData();
+    const {credential} = await generateValidSignedCredential({
+      holderDid,
+      didMethod: 'key',
+      documentLoader
+    });
+    const presentation = await signPresentation({
+      presentation: createPresentation({
+        verifiableCredential: [credential],
+        holder: holderDid
+      }),
+      challenge: exchange.challenge,
+      documentLoader,
+      suite: holderSuite
+    });
+
+    const aR = exchange.variables.authorizationRequest;
+    const presentation_submission_di = {
+      id: `urn:uuid:${globalThis.crypto.randomUUID()}`,
+      definition_id: aR.presentation_definition.id,
+      descriptor_map: [
+        {
+          id: aR?.presentation_definition.input_descriptors?.[0].id,
+          path: '$',
+          format: 'ldp_vp',
+          path_nested: {
+            format: 'ldp_vc',
+            path: '$.verifiableCredential[0]'
+          }
+        }
+      ]
+    };
     const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
-      .resolves({...exchange, challenge: vp_token_di.proof.challenge});
+      .resolves(exchange);
     const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
       .resolves();
     let result;
     let err;
     try {
       const searchParams = new URLSearchParams();
-      searchParams.set('vp_token', JSON.stringify(vp_token_di));
+      searchParams.set('vp_token', JSON.stringify(presentation));
       searchParams.set('presentation_submission',
         JSON.stringify(presentation_submission_di));
       result = await client

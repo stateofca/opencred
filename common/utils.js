@@ -150,7 +150,8 @@ const verifyJWTVC = async (jwt, options = {}) => {
       jwt,
       resolver ?
         {resolve: did => resolver.resolve(did)} :
-        {resolve: did => didResolver.get({did})},
+        {resolve: did => didResolver.get({
+          did, verificationMethodType: 'JsonWebKey2020'})},
       optionsWithoutResolver
     );
     return {...verification, errors: []};

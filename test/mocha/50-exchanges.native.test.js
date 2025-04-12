@@ -14,10 +14,14 @@ import {
   convertDerCertificateToPem,
   generateCertificateChain
 } from '../utils/x509.js';
+import {createPresentation, signPresentation} from '@digitalbazaar/vc';
 import {config} from '@bedrock/core';
 import {database} from '../../lib/database.js';
+import {documentLoader} from '../utils/testDocumentLoader.js';
 import {domainToDidWeb} from '../../lib/didWeb.js';
+import {generateValidDidKeyData} from '../utils/dids.js';
 import {generateValidJwtVpToken} from '../utils/jwtVpTokens.js';
+import {generateValidSignedCredential} from '../utils/credentials.js';
 import {getDocumentLoader} from '../../common/documentLoader.js';
 import {NativeWorkflowService} from '../../lib/workflows/native-workflow.js';
 import {verifyUtils} from '../../common/utils.js';
@@ -36,7 +40,6 @@ describe('Exchanges (Native)', async () => {
   let presentation_submission;
   let exchange;
   let verifyStub;
-  let verifyCredentialStub;
   let dbStub;
   let service;
 
@@ -57,10 +60,12 @@ describe('Exchanges (Native)', async () => {
         return Promise.resolve({/* mock resolved value */});
       });
     verifyStub = sinon.stub(verifyUtils, 'verifyPresentationDataIntegrity')
-      .resolves({verified: true});
-    verifyCredentialStub = sinon.stub(
-      verifyUtils, 'verifyCredentialDataIntegrity')
-      .resolves({verified: true});
+      .resolves({
+        verified: true,
+        credentialResults: [{
+          credentialId: 'did:example:testcredential',
+          verified: true
+        }]});
   });
 
   after(() => {
@@ -106,15 +111,24 @@ describe('Exchanges (Native)', async () => {
   it('should set the right ttl and recordExpiresAt', async () => {
     const optionsConfigStub = sinon.stub(config.opencred, 'options').value({
       ...config.opencred.options,
-      recordExpiresDurationMs: 5000 // 5 seconds
+      recordExpiresDurationMs: 5000, // 5 seconds
+      exchangeTtlSeconds: 16 // 16 seconds
     });
     const next = sinon.spy();
     const req = {rp, query: {state: 'test'}};
     await service.createExchange(req, null, next);
 
-    // TTL should be 5 seconds not 900 default
+    // TTL should be 16 seconds not 900 default or 5 (5).
     // because it will be the smaller of the default & db cache timeout
-    expect(dbStub.lastCall?.args[0].ttl).to.be(5);
+    expect(dbStub.lastCall?.args[0].ttl).to.be(16);
+
+    // RecordexpiresAt should be at least ttl
+    const recordExpiresAt = new Date(dbStub.lastCall?.args[0].recordExpiresAt);
+    const createdAt = new Date(dbStub.lastCall?.args[0].createdAt);
+
+    // Check that recordExpiresAt is as expected
+    expect(recordExpiresAt.getTime()).to.equal(
+      createdAt.getTime() + 60000 + 16000);
 
     optionsConfigStub.restore();
   });
@@ -124,12 +138,49 @@ describe('Exchanges (Native)', async () => {
       [{...rp, trustedCredentialIssuers: []}]
     );
 
+    // Consider refactoring into more utility functions
+    const {
+      did: holderDid, suite: holderSuite
+    } = await generateValidDidKeyData();
+    const {credential} = await generateValidSignedCredential({
+      holderDid,
+      didMethod: 'key',
+      credentialTemplate: {
+        id: 'did:example:testcredential'
+      }
+    });
+    const presentation = await signPresentation({
+      presentation: createPresentation({
+        verifiableCredential: [credential],
+        holder: holderDid
+      }),
+      challenge: exchange.challenge,
+      documentLoader,
+      suite: holderSuite
+    });
+
+    const aR = exchange.variables.authorizationRequest;
+    const presentation_submission = {
+      id: `urn:uuid:${globalThis.crypto.randomUUID()}`,
+      definition_id: aR.presentation_definition.id,
+      descriptor_map: [
+        {
+          id: aR?.presentation_definition.input_descriptors?.[0].id,
+          path: '$',
+          format: 'ldp_vp',
+          path_nested: {
+            format: 'ldp_vc',
+            path: '$.verifiableCredential[0]'
+          }
+        }
+      ]
+    };
+
     const result = await service.verifySubmission(
-      vp_token, presentation_submission, exchange
+      presentation, presentation_submission, exchange
     );
 
     expect(verifyStub.called).to.be(true);
-    expect(verifyCredentialStub.called).to.be(true);
     expect(result.verified).to.be(true);
     expect(result.errors.length).to.be(0);
 
@@ -162,7 +213,6 @@ describe('Exchanges (Native)', async () => {
       ' of the contained credential';
 
     expect(verifyStub.called).to.be(true);
-    expect(verifyCredentialStub.called).to.be(true);
     expect(result.verified).to.be(false);
     expect(result.errors.includes(expectedError)).to.be(true);
 
@@ -179,7 +229,6 @@ describe('Exchanges (Native)', async () => {
     );
 
     expect(verifyStub.called).to.be.false;
-    expect(verifyCredentialStub.called).to.be.false;
     expect(result.verified).to.be(false);
     expect(result.errors.length).to.be.greaterThan(0);
   });
@@ -193,22 +242,6 @@ describe('Exchanges (Native)', async () => {
     );
 
     expect(verifyStub.called).to.be.true;
-    expect(verifyCredentialStub.called).to.be.false;
-    expect(result.verified).to.be(false);
-    expect(result.errors.length).to.be.greaterThan(0);
-  });
-
-  it('should return an error if vc invalid', async () => {
-    verifyCredentialStub.restore();
-    verifyCredentialStub = sinon.stub(
-      verifyUtils, 'verifyCredentialDataIntegrity')
-      .resolves({verified: false, error: 'invalid vc'});
-    const result = await service.verifySubmission(
-      vp_token, presentation_submission, exchange
-    );
-
-    expect(verifyStub.called).to.be.true;
-    expect(verifyCredentialStub.called).to.be.true;
     expect(result.verified).to.be(false);
     expect(result.errors.length).to.be.greaterThan(0);
   });

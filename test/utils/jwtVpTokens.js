@@ -77,7 +77,8 @@ export const generateValidJwtVpToken = async ({
     sub: holderDid,
     vc: generateValidCredential({
       issuerDid: innerIssuerDid ?? issuerDid,
-      holderDid
+      holderDid,
+      vcVersion: 1
     })
   };
   const signedVcPayload = await signer.sign(vcPayload);

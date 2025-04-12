@@ -9,15 +9,26 @@ import {
   generateValidDidKeyData,
   generateValidDidWebData
 } from './dids.js';
-import {getDocumentLoader} from '../../common/documentLoader.js';
 import {signUtils} from '../../common/utils.js';
 
-const documentLoader = getDocumentLoader().build();
-
 export const generateValidCredential = ({
-  issuerDid,
-  holderDid
+  issuerDid, holderDid, vcVersion = 2
 }) => {
+  if(vcVersion === 2) {
+    return {
+      '@context': [
+        'https://www.w3.org/ns/credentials/v2',
+        'https://www.w3.org/ns/credentials/examples/v2'
+      ],
+      type: ['VerifiableCredential', 'MyPrototypeCredential'],
+      issuer: issuerDid,
+      credentialSubject: {
+        id: holderDid,
+        mySubjectProperty: 'mySubjectValue'
+      }
+    };
+  }
+
   return {
     '@context': [
       'https://www.w3.org/2018/credentials/v1',
@@ -36,8 +47,11 @@ export const generateValidCredential = ({
 };
 
 export const generateValidSignedCredential = async ({
+  holderDid,
   didMethod = 'web',
-  didWebUrl = 'https://example-cred.edu'
+  didWebUrl = 'https://example-cred.edu',
+  documentLoader,
+  credentialTemplate = {}
 } = {}) => {
   let issuerDid;
   let issuerDidDocument;
@@ -61,9 +75,13 @@ export const generateValidSignedCredential = async ({
       break;
   }
 
-  const credential = generateValidCredential({
-    issuerDid, holderDid: issuerDid
-  });
+  const credential = {
+    ...generateValidCredential({
+      issuerDid, holderDid: holderDid || issuerDid
+    }),
+    issuer: issuerDid,
+    ...credentialTemplate // consider a deeper clone, but this is ok for now
+  };
   const signedCredential = await signUtils.signCredentialDataIntegrity({
     credential,
     documentLoader,

@@ -146,7 +146,7 @@ export const getOverrideDidResolver = overrides => {
     if(overrides[did]) {
       return overrides[did];
     }
-    return didResolver.get({did});
+    return didResolver.get({did, verificationMethodType: 'JsonWebKey2020'});
   };
   return {resolve};
 };
