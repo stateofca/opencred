@@ -50,7 +50,7 @@
     "@digitalbazaar/ed25519-signature-2018": "^4.1.0",
     "@digitalbazaar/ed25519-signature-2020": "^5.4.0",
     "@digitalbazaar/ed25519-verification-key-2020": "^4.2.0",
-    "@digitalbazaar/eddsa-2022-cryptosuite": "^1.0.0",
+    "@digitalbazaar/eddsa-rdfc-2022-cryptosuite": "^1.2.0",
     "@digitalbazaar/ezcap": "^4.1.0",
     "@digitalbazaar/http-client": "^4.2.0",
     "@digitalbazaar/minimal-jwt": "^2.1.0",
