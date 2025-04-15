@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 8.7.0 - 2025-04-XX
+## 8.7.0 - 2025-04-15
 
 ### Added
 - New configurable timeout for exchanges `options.recordExpiresDurationMs` and
