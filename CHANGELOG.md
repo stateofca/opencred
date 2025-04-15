@@ -1,5 +1,12 @@
 # opencred-platform Changelog
 
+## 9.0.0 - 2025-04-XX
+
+### Changed
+  - **BREAKING**: Updated dependency `@bedrock/mongodb@11`.
+    - Use MongoDB driver 6.x and update error names and details.
+    - See changelog for details.
+
 ## 8.7.2 - 2025-04-22
 
 ### Fixed
