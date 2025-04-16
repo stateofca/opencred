@@ -1,5 +1,11 @@
 # opencred-platform Changelog
 
+## 8.7.1 - 2025-04-XX
+
+### Fixed
+- Fix issue with `did:jwk` resolution, `did-jwk` requires legacy
+  `JsonWebKey2020` type.
+
 ## 8.7.0 - 2025-04-15
 
 ### Added
