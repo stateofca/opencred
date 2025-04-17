@@ -132,3 +132,5 @@ export const getOverrideDidResolver = overrides => {
   };
   return {resolve};
 };
+
+export const defaultDocLoader = getDocumentLoader().build();

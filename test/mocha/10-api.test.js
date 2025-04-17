@@ -386,7 +386,26 @@ describe('OpenCred API - Native Workflow', function() {
     const {credential} = await generateValidSignedCredential({
       holderDid,
       didMethod: 'key',
-      documentLoader
+      documentLoader,
+      credentialTemplate: {
+        '@context': ['https://www.w3.org/2018/credentials/v1', 'https://w3id.org/citizenship/v1'],
+        type: ['VerifiableCredential', 'PermanentResidentCard'],
+        credentialSubject: {
+          type: [
+            'PermanentResident',
+            'Person'
+          ],
+          givenName: 'JANE',
+          familyName: 'SMITH',
+          gender: 'Female',
+          residentSince: '2015-01-01',
+          lprCategory: 'C09',
+          lprNumber: '999-999-999',
+          commuterClassification: 'C1',
+          birthCountry: 'Arcadia',
+          birthDate: '1978-07-17'
+        }
+      }
     });
     const presentation = await signPresentation({
       presentation: createPresentation({
@@ -499,7 +518,8 @@ describe('OpenCred API - Native Workflow', function() {
       err = e;
     }
     should.exist(err);
-    err.data.errors[0].should.include('does not match presentation');
+    err.data.errors[0].should.include(
+      'Presentation does not match requested credential');
 
     findStub.restore();
     updateStub.restore();

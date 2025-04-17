@@ -195,9 +195,9 @@ describe('Credential Status Verification', async () => {
       }
       return documentLoader(url);
     };
-    const result = await service.verifySubmission(
-      presentation, presentation_submission, exchange,
-      docLoaderWithStatusCredential,
+    const result = await service.verifySubmission({
+      vp_token: presentation, presentation_submission, exchange, rp,
+      documentLoader: docLoaderWithStatusCredential}
     );
 
     // expect(verifyStub.called).to.be(true);

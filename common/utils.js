@@ -1,6 +1,6 @@
 /*!
- * Copyright 2023 - 2024 California Department of Motor Vehicles
- * Copyright 2023 - 2024 Digital Bazaar, Inc.
+ * Copyright 2023 - 2024 California Department of Motor Vehicles Copyright 2023
+ * - 2024 Digital Bazaar, Inc.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -25,6 +25,7 @@ import {decodeJwt} from 'jose';
 import {didResolver} from './documentLoader.js';
 import {generateId} from 'bnid';
 import {httpClient} from '@digitalbazaar/http-client';
+import jp from 'jsonpath';
 import {logger} from '../lib/logger.js';
 import {verifyChain} from './x509.js';
 
@@ -238,9 +239,52 @@ const verifyJWTVP = async (jwt, options = {}) => {
 };
 
 /**
+ * Checks if a Verifiable Credential matches a query specification
+ * @param {object} options - Options object containing: vc {object} - The
+ *   Verifiable Credential to check vpr {object} - The Verifiable Presentation
+ *   Request (legacy format) dcql_query {object} - A DCQL query describing
+ *   credential requirements presentation_definition {object} - OID4VP
+ *   presentation definition (legacy format)
+ * @returns boolean - true if the VC matches the query specification
+ * @throws {Error} if more than one query type is specified or none are
+ * specified
+ */
+function checkVcQueryMatch(options) {
+  const {vc, vpr, dcql_query, presentation_definition} = options;
+  // Validate that exactly one query type is provided
+  const queryTypes = [vpr, dcql_query, presentation_definition].filter(Boolean);
+  if(queryTypes.length === 0) {
+    throw new Error('Exactly one query type must be specified:' +
+      ' vpr, dcql_query, or presentation_definition');
+  }
+  if(queryTypes.length > 1) {
+    throw new Error('Only one query type can be specified at a time:' +
+      ' vpr, dcql_query, or presentation_definition');
+  }
+
+  // Handle DCQL query
+  if(dcql_query) {
+    return checkVcForDcql(vc, dcql_query);
+  }
+
+  // Handle presentation definition (OID4VP draft < 25 format)
+  if(presentation_definition) {
+    return checkVcForPresentationDefinition(vc, presentation_definition);
+  }
+
+  // Handle VPR
+  if(vpr) {
+    return checkVcForVpr(vc, vpr);
+  }
+
+  return false;
+}
+
+/**
  * Checks if a Verifiable Credential matches a Verifiable Presentation Request
- * @param vc - The Verifiable Credential to check
- * @param vpr - The Verifiable Presentation Request containing the query
+ * @param {object} vc - The Verifiable Credential to check
+ * @param {object} vpr - The Verifiable Presentation Request containing the
+ * query
  * @returns boolean - true if the VC matches the VPR
  */
 function checkVcForVpr(vc, vpr) {
@@ -250,8 +294,7 @@ function checkVcForVpr(vc, vpr) {
   }
   const example = vpr.query.credentialQuery.example;
 
-  // Only Context and Type fields are supported for QueryByExample
-  // at this time.
+  // Only Context and Type fields are supported for QueryByExample at this time.
   const expectedContext = arrayOf(example['@context']) || [];
   const expectedType = arrayOf(example.type) || [];
 
@@ -266,6 +309,110 @@ function checkVcForVpr(vc, vpr) {
     // Check if the VC's type matches the expected type
     const vcType = arrayOf(vc.type);
     if(!expectedType.every(type => vcType.includes(type))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Checks if a Verifiable Credential matches a DCQL query
+ * @param {object} vc - The Verifiable Credential to check
+ * @param {object} dcql_query - The DCQL query
+ * @returns boolean - true if the VC matches the DCQL query
+ */
+function checkVcForDcql(vc, dcql_query) {
+  if(!dcql_query.credentials || !Array.isArray(dcql_query.credentials)) {
+    return false;
+  }
+
+  // For now, we'll check against the first credential query In a full
+  // implementation, we'd need to handle multiple credentials and
+  // credential_sets
+  const credentialQuery = dcql_query.credentials[0];
+  if(!credentialQuery) {
+    return false;
+  }
+
+  // Check format if specified
+  if(credentialQuery.format && vc.format !== credentialQuery.format) {
+    return false;
+  }
+
+  // Check meta constraints if specified
+  if(credentialQuery.meta) {
+    // For now, we'll do basic context and type matching A full implementation
+    // would need to handle all meta properties
+    if(credentialQuery.meta['@context']) {
+      const expectedContext = arrayOf(credentialQuery.meta['@context']);
+      const vcContext = arrayOf(vc['@context']);
+      if(!expectedContext.every(ctx => vcContext.includes(ctx))) {
+        return false;
+      }
+    }
+    if(credentialQuery.meta.type) {
+      const expectedType = arrayOf(credentialQuery.meta.type);
+      const vcType = arrayOf(vc.type);
+      if(!expectedType.every(type => vcType.includes(type))) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Checks if a Verifiable Credential matches an OID4VP presentation definition
+ * @param {object} vc - The Verifiable Credential to check
+ * @param {object} presentation_definition - The OID4VP presentation definition
+ * @returns boolean - true if the VC matches the presentation definition
+ */
+function checkVcForPresentationDefinition(vc, presentation_definition) {
+  if(!presentation_definition.input_descriptors ||
+    !Array.isArray(presentation_definition.input_descriptors)) {
+    return false;
+  }
+
+  // Check against the first input descriptor
+  const inputDescriptor = presentation_definition.input_descriptors[0];
+  if(!inputDescriptor || !inputDescriptor.constraints ||
+    !inputDescriptor.constraints.fields) {
+    return false;
+  }
+
+  const fields = inputDescriptor.constraints.fields;
+  for(const field of fields) {
+    if(!field.path || !field.filter) {
+      continue;
+    }
+
+    // Parse the JSONPath to understand what field we're checking
+    const parsedPath = jp.parse(field.path);
+    if(!parsedPath || parsedPath.length === 0) {
+      continue;
+    }
+
+    // Extract the field name from the parsed path
+    // For paths like $['@context'] or $['type'], we want the identifier
+    const lastExpression = parsedPath[parsedPath.length - 1];
+    if(!lastExpression || !lastExpression.expression ||
+       lastExpression.expression.type !== 'string_literal') {
+      continue;
+    }
+
+    const fieldName = lastExpression.expression.value;
+    const expectedValues = field.filter.contains || [];
+    const expectedValueStrings = expectedValues
+      .filter(item => item.type === 'string')
+      .map(item => item.const);
+
+    if(expectedValueStrings.length === 0) {
+      continue;
+    }
+
+    const vcFieldValue = arrayOf(vc[fieldName]);
+    if(!expectedValueStrings.every(value => vcFieldValue.includes(value))) {
       return false;
     }
   }
@@ -331,7 +478,8 @@ export const verifyUtils = {
   verifyCredentialJWT: async (jwt, options) => verifyJWTVC(jwt, options),
   verifyx509JWT: async (certs, options) => verifyChain(certs, options),
   getVerifyPresentationDataIntegrityErrors,
-  checkVcForVpr
+  checkVcForVpr,
+  checkVcQueryMatch
 };
 
 // Sign Utilities
