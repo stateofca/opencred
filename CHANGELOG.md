@@ -5,6 +5,12 @@
 ### Fixed
 - Fix issue with `did:jwk` resolution, `did-jwk` requires legacy
   `JsonWebKey2020` type.
+- Fixed format identifiers for VCs and VPs in the authorization request.
+
+### Changed
+- Updated dependency `@digitalbazaar/oid4-client@4.3.0`.
+- Improve constraintsOverride processing. It is now not likely to be necessary
+  to use `constraintsOverride` in the config. 
 
 ## 8.7.0 - 2025-04-15
 
