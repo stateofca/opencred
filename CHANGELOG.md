@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 8.7.1 - 2025-04-XX
+## 8.7.1 - 2025-04-18
 
 ### Fixed
 - Fix issue with `did:jwk` resolution, `did-jwk` requires legacy
