@@ -7,6 +7,9 @@
     - Use MongoDB driver 6.x and update error names and details.
     - See changelog for details.
 
+### Fixed
+- Fixed error redirecting to client `redirect_uri` after exchange is complete.
+
 ## 8.7.2 - 2025-04-22
 
 ### Fixed

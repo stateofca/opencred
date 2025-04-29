@@ -358,7 +358,7 @@ onUnmounted(() => {
       </div>
       <div v-if="context.exchangeData?.state == 'complete'">
         <router-view
-          :exchange="context.value?.exchangeData"
+          :exchange="context.exchangeData"
           :rp="context.rp" />
       </div>
       <div v-else-if="state.error">
