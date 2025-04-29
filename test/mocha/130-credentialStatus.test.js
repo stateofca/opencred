@@ -28,7 +28,8 @@ const rp = {
     type: 'native',
     untrustedVariableAllowList: ['redirectPath']
   },
-  domain: 'http://example.test.com'
+  domain: 'http://example.test.com',
+  trustedCredentialIssuers: []
 };
 
 describe('Credential Status Verification', async () => {
@@ -47,19 +48,12 @@ describe('Credential Status Verification', async () => {
     exchange.recordExpiresAt = new Date(exchange.recordExpiresAt);
 
     rpStub = sinon.stub(config.opencred, 'relyingParties').value(
-      [{
-        workflow: {
-          id: 'testworkflow',
-          type: 'native',
-          untrustedVariableAllowList: ['redirectPath']
-        },
-        domain: 'http://example.test.com',
-        trustedCredentialIssuers: []
-      }]
+      [rp]
     );
   });
 
   after(() => {
+    rpStub.restore();
     sinon.restore();
   });
 
@@ -113,10 +107,6 @@ describe('Credential Status Verification', async () => {
   });
 
   it('should pass verification when credential has valid status', async () => {
-    const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
-      [{...rp, trustedCredentialIssuers: []}]
-    );
-
     // Consider refactoring into more utility functions
     const {
       did: holderDid, suite: holderSuite
@@ -193,7 +183,5 @@ describe('Credential Status Verification', async () => {
     // expect(verifyStub.called).to.be(true);
     expect(result.verified).to.be(true);
     expect(result.errors.length).to.be(0);
-
-    rpStub.restore();
   });
 });
