@@ -17,6 +17,9 @@ import {
   verifyPresentation as verifyPresentationJWT
 } from 'did-jwt-vc';
 import base64url from 'base64url';
+import {
+  checkStatus as checkStatusBitstring
+} from '@digitalbazaar/vc-bitstring-status-list';
 import {ConfidentialClientApplication} from '@azure/msal-node';
 import {decodeJwt} from 'jose';
 import {didResolver} from './documentLoader.js';
@@ -26,6 +29,16 @@ import {logger} from '../lib/logger.js';
 import {verifyChain} from './x509.js';
 
 // General Utilities
+
+export const arrayOf = value => {
+  if(Array.isArray(value)) {
+    return value;
+  }
+  if(value) {
+    return [value];
+  }
+  return [];
+};
 
 export const createId = async (bitLength = 128) => {
   const id = await generateId({
@@ -140,10 +153,40 @@ export const normalizeVpTokenDataIntegrity = vpToken => {
 
 // Verify Utilities
 
+const SUPPORTED_STATUS_ENTRY_TYPES = [
+  'BitstringStatusListEntry',
+];
+
+const checkStatus = async options => {
+  const {credential} = options;
+  const statuses = arrayOf(credential?.credentialStatus);
+
+  if(!statuses.length) {
+    return {verified: true};
+  }
+
+  const statusEntryTypes = statuses.map(
+    status => arrayOf(status.type)
+  ).flat();
+  if(statusEntryTypes.find(tt => !SUPPORTED_STATUS_ENTRY_TYPES.includes(tt))) {
+    return {
+      verified: false,
+      errors: [
+        `Unsupported status entry type(s): ${
+          statusEntryTypes
+            .filter(tt => !SUPPORTED_STATUS_ENTRY_TYPES.includes(tt))
+            .join(', ')}`]
+    };
+  }
+
+  return checkStatusBitstring(options);
+};
+
 const verifyJWTVC = async (jwt, options = {}) => {
   const {
+    checkStatus,
     resolver,
-    ...optionsWithoutResolver
+    ...restOptions
   } = options;
   try {
     const verification = await verifyCredentialJWT(
@@ -152,8 +195,22 @@ const verifyJWTVC = async (jwt, options = {}) => {
         {resolve: did => resolver.resolve(did)} :
         {resolve: did => didResolver.get({
           did, verificationMethodType: 'JsonWebKey2020'})},
-      optionsWithoutResolver
+      restOptions
     );
+    if(verification.verified && checkStatus) {
+      // Check status if available
+      const vc = verification.verifiableCredential;
+      const statusEntries = arrayOf(vc?.credentialStatus);
+      // todo check if this location is match of LD tools.
+      verification.statusResult = (statusEntries.length && statusEntries[0]) ?
+        await checkStatus({credential: vc, ...restOptions}) : null;
+      if(verification.statusResult && !verification.statusResult?.verified) {
+        verification.verified = false;
+        verification.errors = verification.errors ? verification.errors.concat(
+          verification.statusResult.errors) : verification.statusResult.errors;
+        return verification;
+      }
+    }
     return {...verification, errors: []};
   } catch(e) {
     return {verified: false, errors: [e.message]};
@@ -208,6 +265,7 @@ const getVerifyPresentationDiError = vpResult => {
 };
 
 export const verifyUtils = {
+  checkStatus,
   verifyPresentationDataIntegrity: async options => verify(options),
   verifyCredentialDataIntegrity: async options => verifyCredential(options),
   verifyPresentationJWT: async (jwt, options) => verifyJWTVP(jwt, options),

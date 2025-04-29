@@ -10,9 +10,10 @@ import {
   generateValidDidWebData
 } from './dids.js';
 import {signUtils} from '../../common/utils.js';
+import {documentLoader as testDocumentLoader} from './testDocumentLoader.js';
 
 export const generateValidCredential = ({
-  issuerDid, holderDid, vcVersion = 2
+  issuerDid, holderDid, template, vcVersion = 2
 }) => {
   if(vcVersion === 2) {
     return {
@@ -25,7 +26,8 @@ export const generateValidCredential = ({
       credentialSubject: {
         id: holderDid,
         mySubjectProperty: 'mySubjectValue'
-      }
+      },
+      ...(template ? template : {}),
     };
   }
 
@@ -42,49 +44,54 @@ export const generateValidCredential = ({
         type: 'BachelorDegree',
         name: 'Bachelor of Science and Arts'
       }
-    }
+    },
+    ...(template ? template : {}),
   };
 };
 
 export const generateValidSignedCredential = async ({
   holderDid,
+  issuerDid,
+  issuerSuite,
   didMethod = 'web',
   didWebUrl = 'https://example-cred.edu',
   documentLoader,
   credentialTemplate = {}
 } = {}) => {
-  let issuerDid;
+  let iDid = issuerDid;
   let issuerDidDocument;
-  let suite;
-  switch(didMethod) {
-    case 'web':
-      ({
-        did: issuerDid,
-        didDocument: issuerDidDocument,
-        suite
-      } = await generateValidDidWebData(didWebUrl));
-      break;
-    case 'key':
-      ({
-        did: issuerDid,
-        didDocument: issuerDidDocument,
-        suite
-      } = await generateValidDidKeyData());
-      break;
-    default:
-      break;
+  let suite = issuerSuite;
+  if(!iDid || !suite) {
+    switch(didMethod) {
+      case 'web':
+        ({
+          did: iDid,
+          didDocument: issuerDidDocument,
+          suite
+        } = await generateValidDidWebData(didWebUrl));
+        break;
+      case 'key':
+        ({
+          did: iDid,
+          didDocument: issuerDidDocument,
+          suite
+        } = await generateValidDidKeyData());
+        break;
+      default:
+        break;
+    }
   }
 
   const credential = {
     ...generateValidCredential({
-      issuerDid, holderDid: holderDid || issuerDid
+      issuerDid: iDid, holderDid: holderDid ?? iDid
     }),
-    issuer: issuerDid,
+    issuer: iDid,
     ...credentialTemplate // consider a deeper clone, but this is ok for now
   };
   const signedCredential = await signUtils.signCredentialDataIntegrity({
     credential,
-    documentLoader,
+    documentLoader: documentLoader ?? testDocumentLoader,
     suite
   });
 
@@ -92,8 +99,9 @@ export const generateValidSignedCredential = async ({
 
   return {
     credential: signedCredential,
-    issuerDid,
+    issuerDid: iDid,
     issuerDidDocument,
+    issuerSuite: suite,
     issuanceDate
   };
 };

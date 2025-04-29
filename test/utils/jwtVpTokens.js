@@ -29,6 +29,7 @@ export const generateValidJwtVpToken = async ({
   alg = 'ES256',
   crv = 'P-256',
   aud = 'did:web:localhost:22443',
+  template = null,
   x5c = [],
   leafKeyPair = null,
   innerIssuerDid = null
@@ -78,6 +79,7 @@ export const generateValidJwtVpToken = async ({
     vc: generateValidCredential({
       issuerDid: innerIssuerDid ?? issuerDid,
       holderDid,
+      template,
       vcVersion: 1
     })
   };
@@ -97,5 +99,9 @@ export const generateValidJwtVpToken = async ({
   };
   const signedVpPayload = await signer.sign(vpPayload);
 
-  return {vpToken: signedVpPayload, issuerDid, issuanceDate};
+  return {
+    vpToken: signedVpPayload,
+    vcToken: signedVcPayload,
+    issuerDid, issuanceDate
+  };
 };

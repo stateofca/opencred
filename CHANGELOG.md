@@ -2,10 +2,14 @@
 
 ## 9.0.0 - 2025-04-XX
 
+### Added
+- Added status checking that supports Bitstring Status List v1.0. Credentials
+  with unsupported status type will be rejected. 
+
 ### Changed
-  - **BREAKING**: Updated dependency `@bedrock/mongodb@11`.
-    - Use MongoDB driver 6.x and update error names and details.
-    - See changelog for details.
+- Updated dependency `@bedrock/mongodb@11` to support MongoDB 8.x. Recommended
+  to upgrade database after or concurrently with deploying this version of
+  OpenCred. 
 
 ### Fixed
 - Fixed error redirecting to client `redirect_uri` after exchange is complete.
