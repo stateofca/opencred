@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 9.0.0 - 2025-04-XX
+## 9.0.0 - 2025-04-30
 
 ### Added
 - Added status checking that supports Bitstring Status List v1.0. Credentials
