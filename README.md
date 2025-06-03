@@ -491,7 +491,7 @@ path for other systems.
 
 ```sh
 $ docker build . -t opencred-platform
-$ docker run -d -p 22443:22443 -v $PWD/configs:/etc/app-config opencred-platform
+$ docker run -d -p 22443:22443 -v $PWD/configs:/etc/bedrock-config opencred-platform
 $ curl https://localhost:22443/health/live
 ```
 
