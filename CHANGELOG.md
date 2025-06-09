@@ -5,6 +5,7 @@
 ### Fixed
 - Improved error message reporting for failed verifications due to status
   credential verification errors.
+- Catch rare error caused by some inaccurate workflow configurations.
 
 ## 9.0.0 - 2025-04-30
 
