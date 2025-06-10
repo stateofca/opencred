@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 9.0.1 - 2025-05-XX
+## 9.0.1 - 2025-06-10
 
 ### Fixed
 - Improved error message reporting for failed verifications due to status
