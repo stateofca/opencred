@@ -3,7 +3,7 @@
 ## 9.0.2 - 2025-06-XX
 
 ### Fixed
-- Fixed incorrect status check logic to ensure that revoked credentials.
+- Fixed incorrect status check logic to ensure that revoked credentials are flagged.
 - Additional credential correctness and fitness for purpose checks.
 
 ## 9.0.1 - 2025-06-10
