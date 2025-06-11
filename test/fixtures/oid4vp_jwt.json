@@ -27,7 +27,7 @@
                         },
                         {
                           "type": "string",
-                          "const": "https://identity.foundation/.well-known/did-configuration/v1"
+                          "const": "https://www.w3.org/2018/credentials/examples/v1"
                         }
                       ]
                     }
@@ -39,7 +39,7 @@
                       "contains": [
                         {
                           "type": "string",
-                          "const": "DomainLinkageCredential"
+                          "const": "UniversityDegreeCredential"
                         }
                       ]
                     }

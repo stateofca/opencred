@@ -30,7 +30,27 @@ const rp = {
   workflow: {
     id: 'testworkflow',
     type: 'native',
-    untrustedVariableAllowList: ['redirectPath']
+    untrustedVariableAllowList: ['redirectPath'],
+    steps: {
+      default: {
+        verifiablePresentationRequest: JSON.stringify({
+          query: {
+            type: 'QueryByExample',
+            credentialQuery: {
+              reason: 'Please present your Driver\'s License',
+              example: {
+                '@context': [
+                  'https://www.w3.org/ns/credentials/v2',
+                  'https://www.w3.org/ns/credentials/examples/v2'
+                ],
+                type: 'MyPrototypeCredential'
+              }
+            }
+          }
+        })
+      }
+    },
+    initialStep: 'default'
   },
   domain: 'http://example.test.com'
 };
@@ -62,6 +82,11 @@ describe('Exchanges (Native)', async () => {
     verifyStub = sinon.stub(verifyUtils, 'verifyPresentationDataIntegrity')
       .resolves({
         verified: true,
+        presentationResult: {
+          results: [{
+            verified: true}
+          ]
+        },
         credentialResults: [{
           credentialId: 'did:example:testcredential',
           verified: true
@@ -223,6 +248,9 @@ describe('Exchanges (Native)', async () => {
   });
 
   it('should return an error if definition_id does not match', async () => {
+    const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+      [rp]
+    );
     presentation_submission.definition_id = 'invalid';
     const result = await service.verifySubmission(
       vp_token, presentation_submission, exchange
@@ -231,9 +259,13 @@ describe('Exchanges (Native)', async () => {
     expect(verifyStub.called).to.be.false;
     expect(result.verified).to.be(false);
     expect(result.errors.length).to.be.greaterThan(0);
+    rpStub.restore();
   });
 
   it('should return an error if vp invalid', async () => {
+    const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+      [rp]
+    );
     verifyStub.restore();
     verifyStub = sinon.stub(verifyUtils, 'verifyPresentationDataIntegrity')
       .resolves({verified: false, error: 'invalid vp'});
@@ -244,9 +276,13 @@ describe('Exchanges (Native)', async () => {
     expect(verifyStub.called).to.be.true;
     expect(result.verified).to.be(false);
     expect(result.errors.length).to.be.greaterThan(0);
+    rpStub.restore();
   });
 
   it('should return an error if vc fails challenge', async () => {
+    const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+      [rp]
+    );
     verifyStub.restore();
     const result = await service.verifySubmission(
       vp_token, presentation_submission, {
@@ -257,6 +293,7 @@ describe('Exchanges (Native)', async () => {
 
     expect(result.verified).to.be(false);
     expect(result.errors.length).to.be.greaterThan(0);
+    rpStub.restore();
   });
 
   it('should fail X.509 validation with invalid x5c chain', async () => {
@@ -292,7 +329,8 @@ describe('Exchanges (Native)', async () => {
     );
 
     expect(result.verified).to.be(false);
-    expect(result.errors.length).to.be(1);
+    expect(result.errors.length).to.be(2);
+    expect(result.errors[0]).to.be('Invalid certificate in x5c claim');
 
     rpStub.restore();
     caStoreStub.restore();
@@ -351,7 +389,8 @@ describe('Exchanges (Native)', async () => {
     );
 
     expect(result.verified).to.be(false);
-    expect(result.errors.length).to.be(1);
+    expect(result.errors.length).to.be(2);
+    expect(result.errors[0]).to.be('Invalid certificate in x5c claim');
 
     rpStub.restore();
     caStoreStub.restore();
@@ -395,7 +434,8 @@ describe('Exchanges (Native)', async () => {
     );
 
     expect(result.verified).to.be(false);
-    expect(result.errors.length).to.be(1);
+    expect(result.errors.length).to.be(2);
+    expect(result.errors[0]).to.be('Invalid certificate in x5c claim');
 
     rpStub.restore();
     caStoreStub.restore();
@@ -416,6 +456,8 @@ describe('Exchanges (Native)', async () => {
         caStore: false
       }]
     );
+    const vprCheckStub = sinon.stub(
+      verifyUtils, 'checkVcForVpr').resolves(true);
     const oid4vpJWT = JSON.parse(fs.readFileSync(
       './test/fixtures/oid4vp_jwt.json'));
     const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
@@ -449,6 +491,7 @@ describe('Exchanges (Native)', async () => {
       updateStub.restore();
       verifyUtilsStub.restore();
       verifyUtilsStub2.restore();
+      vprCheckStub.restore();
     }
   });
 
@@ -458,6 +501,8 @@ describe('Exchanges (Native)', async () => {
       const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
         [{...rp, trustedCredentialIssuers: []}]
       );
+      const vprCheckStub = sinon.stub(
+        verifyUtils, 'checkVcForVpr').resolves(true);
       const oid4vpJWT = JSON.parse(fs.readFileSync(
         './test/fixtures/oid4vp_jwt.json'));
       const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
@@ -486,6 +531,7 @@ describe('Exchanges (Native)', async () => {
       updateStub.restore();
       verifyUtilsStub.restore();
       verifyUtilsStub2.restore();
+      vprCheckStub.restore();
     });
 
   it('should return an error if issuer allowlist is not empty and ' +
@@ -494,6 +540,8 @@ describe('Exchanges (Native)', async () => {
     const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
       [{...rp, trustedCredentialIssuers: ['did:jwk:123']}]
     );
+    const vprCheckStub = sinon.stub(
+      verifyUtils, 'checkVcForVpr').resolves(true);
     const oid4vpJWT = JSON.parse(fs.readFileSync(
       './test/fixtures/oid4vp_jwt.json'));
     const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
@@ -522,6 +570,7 @@ describe('Exchanges (Native)', async () => {
     updateStub.restore();
     verifyUtilsStub.restore();
     verifyUtilsStub2.restore();
+    vprCheckStub.restore();
   });
 
   it('should return an error if issuer of inner credential ' +
@@ -530,6 +579,8 @@ describe('Exchanges (Native)', async () => {
     const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
       [{...rp, trustedCredentialIssuers: ['did:jwk:123']}]
     );
+    const vprCheckStub = sinon.stub(
+      verifyUtils, 'checkVcForVpr').resolves(true);
     const oid4vpJWT = JSON.parse(fs.readFileSync(
       './test/fixtures/oid4vp_jwt.json'));
     const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
@@ -559,6 +610,7 @@ describe('Exchanges (Native)', async () => {
     updateStub.restore();
     verifyUtilsStub.restore();
     verifyUtilsStub2.restore();
+    vprCheckStub.restore();
   });
 
   it('createExchange should set oidc.state from query param', async () => {

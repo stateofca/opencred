@@ -237,11 +237,46 @@ const verifyJWTVP = async (jwt, options = {}) => {
   }
 };
 
-const getVerifyPresentationDiError = vpResult => {
-  if(vpResult.error) {
-    return vpResult.error;
+/**
+ * Checks if a Verifiable Credential matches a Verifiable Presentation Request
+ * @param vc - The Verifiable Credential to check
+ * @param vpr - The Verifiable Presentation Request containing the query
+ * @returns boolean - true if the VC matches the VPR
+ */
+function checkVcForVpr(vc, vpr) {
+  // Extract the example from the VPR (only QueryByExample supported)
+  if(!vpr.query?.type || vpr.query?.type !== 'QueryByExample') {
+    return false;
+  }
+  const example = vpr.query.credentialQuery.example;
+
+  // Only Context and Type fields are supported for QueryByExample
+  // at this time.
+  const expectedContext = arrayOf(example['@context']) || [];
+  const expectedType = arrayOf(example.type) || [];
+
+  if(expectedContext.length > 0) {
+    // Check if the VC's context matches the expected context
+    const vcContext = arrayOf(vc['@context']);
+    if(!expectedContext.every(ctx => vcContext.includes(ctx))) {
+      return false;
+    }
+  }
+  if(expectedType.length > 0) {
+    // Check if the VC's type matches the expected type
+    const vcType = arrayOf(vc.type);
+    if(!expectedType.every(type => vcType.includes(type))) {
+      return false;
+    }
   }
 
+  return true;
+}
+
+const getVerifyPresentationDataIntegrityErrors = vpResult => {
+  if(vpResult.error) {
+    return [vpResult.error];
+  }
   const vpErrorMessage = vpResult.presentationResult.results
     .filter(result => !result.verified)
     .map(result => result.error?.message)
@@ -255,13 +290,30 @@ const getVerifyPresentationDiError = vpResult => {
         .map(result => result.error.message);
     })
     .reduce((accumulatedMessages, currentMessages) =>
-      accumulatedMessages.concat(currentMessages))
+      accumulatedMessages.concat(currentMessages), [])
     .join(', ');
 
-  return 'PresentationVerificationError: ' +
-    `${/\S/.test(vpErrorMessage) ? vpErrorMessage : 'None'}; ` +
-    'CredentialVerificationError: ' +
-    `${/\S/.test(vcErrorMessage) ? vcErrorMessage : 'None'}`;
+  const statusErrorMessage = vpResult.credentialResults.filter(
+    result => result.statusResult).map(result => {
+    if(!result.statusResult.errors?.length) {
+      return result.statusResult.errors?.join(', ');
+    } else if(!result.statusResult.verified) {
+      return 'The status credential could not be verified.';
+    } else if(result.credentialStatus?.statusPurpose !== 'revocation') {
+      return 'The status credential is not a revocation status. Only ' +
+        'revocation statusPurpose is supported at this time. Other purposes ' +
+        'must be treated as invalid.';
+    } else if(result.statusResult.status === true) {
+      return 'The credential has been revoked.';
+    }
+  }).filter(m => !!m).join(', ');
+
+  const errors = [
+    ...(vpErrorMessage ? [vpErrorMessage] : []),
+    ...(vcErrorMessage ? [vcErrorMessage] : []),
+    ...(statusErrorMessage ? [statusErrorMessage] : [])
+  ];
+  return errors;
 };
 
 export const verifyUtils = {
@@ -271,8 +323,8 @@ export const verifyUtils = {
   verifyPresentationJWT: async (jwt, options) => verifyJWTVP(jwt, options),
   verifyCredentialJWT: async (jwt, options) => verifyJWTVC(jwt, options),
   verifyx509JWT: async (certs, options) => verifyChain(certs, options),
-  getVerifyPresentationDataIntegrityErrors:
-    vpResult => getVerifyPresentationDiError(vpResult)
+  getVerifyPresentationDataIntegrityErrors,
+  checkVcForVpr
 };
 
 // Sign Utilities

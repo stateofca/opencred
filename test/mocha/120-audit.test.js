@@ -430,8 +430,6 @@ describe('Audit Presentation', function() {
         error.status.should.equal(400);
         error.data.verified.should.be.equal(false);
         error.data.message
-          .should.match(/CredentialVerificationError/);
-        error.data.message
           .should.match(/Safe mode validation error/);
         resolveDidWebStub.restore();
         findOneStub.restore();

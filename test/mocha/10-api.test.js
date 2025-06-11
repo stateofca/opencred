@@ -9,6 +9,7 @@ import * as sinon from 'sinon';
 import {decodeJwt} from 'jose';
 import expect from 'expect.js';
 import fs from 'node:fs';
+import {klona} from 'klona';
 import {zcapClient} from '../../common/zcap.js';
 
 import {
@@ -61,13 +62,52 @@ const testRP = {
           },
         })
       }
-    }
+    },
+    initialStep: 'default'
   },
   clientId: 'test',
   clientSecret: 'shhh',
   redirectUri: 'https://example.com',
   scopes: [{name: 'openid'}],
 };
+
+const testRP2 = klona(testRP);
+testRP2.clientId = 'test2';
+testRP2.workflow.id = 'testworkflow2';
+testRP2.workflow.steps.default.verifiablePresentationRequest = JSON.stringify({
+  query: {
+    type: 'QueryByExample',
+    credentialQuery: {
+      reason: 'Please present your Driver\'s License',
+      example: {
+        '@context': [
+          'https://www.w3.org/ns/credentials/v2',
+          'https://www.w3.org/ns/credentials/examples/v2'
+        ],
+        type: 'MyPrototypeCredential'
+      }
+    }
+  }
+});
+
+const testRP3 = klona(testRP);
+testRP3.clientId = 'test3';
+testRP3.workflow.id = 'testworkflow3';
+testRP3.workflow.steps.default.verifiablePresentationRequest = JSON.stringify({
+  query: {
+    type: 'QueryByExample',
+    credentialQuery: {
+      reason: 'Please present your Driver\'s License',
+      example: {
+        '@context': [
+          'https://www.w3.org/2018/credentials/v1',
+          'https://www.w3.org/2018/credentials/examples/v1'
+        ],
+        type: 'UniversityDegreeCredential'
+      }
+    }
+  }
+});
 
 const testVpToken = `
   eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtp
@@ -165,7 +205,8 @@ describe('OpenCred API - Native Workflow', function() {
   });
 
   this.beforeEach(() => {
-    this.rpStub = sinon.stub(config.opencred, 'relyingParties').value([testRP]);
+    this.rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+      [testRP, testRP2, testRP3]);
   });
 
   this.afterEach(() => {
@@ -337,6 +378,70 @@ describe('OpenCred API - Native Workflow', function() {
   });
 
   it('OID4VP should handle DI authorization response', async function() {
+    const exchange2 = {...exchange, workflowId: testRP2.workflow.id};
+    const {
+      did: holderDid, suite: holderSuite
+    } = await generateValidDidKeyData();
+    const {credential} = await generateValidSignedCredential({
+      holderDid,
+      didMethod: 'key',
+      documentLoader
+    });
+    const presentation = await signPresentation({
+      presentation: createPresentation({
+        verifiableCredential: [credential],
+        holder: holderDid
+      }),
+      challenge: exchange2.challenge,
+      documentLoader,
+      suite: holderSuite
+    });
+
+    const aR = exchange2.variables.authorizationRequest;
+    const presentation_submission_di = {
+      id: `urn:uuid:${globalThis.crypto.randomUUID()}`,
+      definition_id: aR.presentation_definition.id,
+      descriptor_map: [
+        {
+          id: aR?.presentation_definition.input_descriptors?.[0].id,
+          path: '$',
+          format: 'ldp_vp',
+          path_nested: {
+            format: 'ldp_vc',
+            path: '$.verifiableCredential[0]'
+          }
+        }
+      ]
+    };
+    const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+      .resolves(exchange2);
+    const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
+      .resolves();
+    let result;
+    let err;
+    try {
+      const searchParams = new URLSearchParams();
+      searchParams.set('vp_token', JSON.stringify(presentation));
+      searchParams.set('presentation_submission',
+        JSON.stringify(presentation_submission_di));
+      result = await client
+        .post(`${baseUrl}/workflows/${testRP2.workflow.id}/exchanges/` +
+          `${exchange2.id}/openid/client/authorization/response`, {
+          body: searchParams,
+          headers: {
+            'content-type': 'application/x-www-form-urlencoded'
+          }});
+    } catch(e) {
+      err = e;
+    }
+    should.not.exist(err);
+    result.status.should.be.equal(204);
+
+    findStub.restore();
+    updateStub.restore();
+  });
+
+  it('OID4VP should reject schema mismatch', async function() {
     const {
       did: holderDid, suite: holderSuite
     } = await generateValidDidKeyData();
@@ -375,14 +480,14 @@ describe('OpenCred API - Native Workflow', function() {
       .resolves(exchange);
     const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
       .resolves();
-    let result;
     let err;
     try {
       const searchParams = new URLSearchParams();
       searchParams.set('vp_token', JSON.stringify(presentation));
       searchParams.set('presentation_submission',
         JSON.stringify(presentation_submission_di));
-      result = await client
+      // this test credential doesn't match the testRP schema, matches testRP2
+      await client
         .post(`${baseUrl}/workflows/${testRP.workflow.id}/exchanges/` +
           `${exchange.id}/openid/client/authorization/response`, {
           body: searchParams,
@@ -392,8 +497,8 @@ describe('OpenCred API - Native Workflow', function() {
     } catch(e) {
       err = e;
     }
-    should.not.exist(err);
-    result.status.should.be.equal(204);
+    should.exist(err);
+    err.data.errors[0].should.include('does not match presentation');
 
     findStub.restore();
     updateStub.restore();
@@ -401,12 +506,15 @@ describe('OpenCred API - Native Workflow', function() {
 
   it('OID4VP should handle JWT authorization response', async function() {
     const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
-      .resolves(exchange_jwt);
+      .resolves({...exchange_jwt, exchange: {
+        ...exchange_jwt.exchange, workflowId: testRP3.workflow.id}});
     const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
       .resolves({
         verified: true,
         verifiablePresentation: {vc: {proof: {jwt: '...'}}}}
       );
+    const vprCheckStub = sinon.stub(
+      verifyUtils, 'checkVcForVpr').resolves(true);
     const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
       .resolves({verified: true, signer: {}});
     const updateStub = sinon.stub(database.collections.Exchanges, 'replaceOne')
@@ -426,7 +534,7 @@ describe('OpenCred API - Native Workflow', function() {
       searchParams.set('presentation_submission',
         JSON.stringify(presentation_submission_jwt));
       result = await client
-        .post(`${baseUrl}/workflows/${testRP.workflow.id}/exchanges/` +
+        .post(`${baseUrl}/workflows/${testRP3.workflow.id}/exchanges/` +
           `${exchange.id}/openid/client/authorization/response`, {
           body: searchParams,
           headers: {'content-type': 'application/x-www-form-urlencoded'}
@@ -442,6 +550,7 @@ describe('OpenCred API - Native Workflow', function() {
     verifyUtilsStub.restore();
     verifyUtilsStub2.restore();
     caStoreStub.restore();
+    vprCheckStub.restore();
   });
 
   it('should fail callback after submitting presentation',
@@ -462,6 +571,8 @@ describe('OpenCred API - Native Workflow', function() {
         }
       }]);
       const httpClientStub = sinon.stub(httpClient, 'post');
+      const vprCheckStub = sinon.stub(
+        verifyUtils, 'checkVcForVpr').resolves(true);
       const callbackUrl = 'https://api.callback.example.com';
       httpClientStub.withArgs(callbackUrl, sinon.match.any)
         .rejects({
@@ -524,6 +635,7 @@ describe('OpenCred API - Native Workflow', function() {
       verifyUtilsStub.restore();
       verifyUtilsStub2.restore();
       caStoreStub.restore();
+      vprCheckStub.restore();
     });
 });
 

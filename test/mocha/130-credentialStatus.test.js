@@ -26,7 +26,27 @@ const rp = {
   workflow: {
     id: 'testworkflow',
     type: 'native',
-    untrustedVariableAllowList: ['redirectPath']
+    untrustedVariableAllowList: ['redirectPath'],
+    steps: {
+      default: {
+        verifiablePresentationRequest: JSON.stringify({
+          query: {
+            type: 'QueryByExample',
+            credentialQuery: {
+              reason: 'Please present your Driver\'s License',
+              example: {
+                '@context': [
+                  'https://www.w3.org/ns/credentials/v2',
+                  'https://www.w3.org/ns/credentials/examples/v2'
+                ],
+                type: 'MyPrototypeCredential'
+              }
+            }
+          }
+        })
+      }
+    },
+    initialStep: 'default'
   },
   domain: 'http://example.test.com',
   trustedCredentialIssuers: []
