@@ -274,12 +274,11 @@ function checkVcForVpr(vc, vpr) {
 }
 
 const getVerifyPresentationDataIntegrityErrors = vpResult => {
-  if(vpResult.error) {
-    return [vpResult.error];
-  }
   const vpErrorMessage = vpResult.presentationResult.results
     .filter(result => !result.verified)
-    .map(result => result.error?.message)
+    .map((result, i) => {
+      return `${result.error?.message}${i == 0 ? ' (Presentation)' : ''}`;
+    })
     .join(', ');
 
   const vcErrorMessage = vpResult.credentialResults
@@ -295,18 +294,27 @@ const getVerifyPresentationDataIntegrityErrors = vpResult => {
 
   const statusErrorMessage = vpResult.credentialResults.filter(
     result => result.statusResult).map(result => {
-    if(!result.statusResult.errors?.length) {
+    if(result.statusResult.errors?.length) {
       return result.statusResult.errors?.join(', ');
     } else if(!result.statusResult.verified) {
       return 'The status credential could not be verified.';
-    } else if(result.credentialStatus?.statusPurpose !== 'revocation') {
-      return 'The status credential is not a revocation status. Only ' +
-        'revocation statusPurpose is supported at this time. Other purposes ' +
-        'must be treated as invalid.';
-    } else if(result.statusResult.status === true) {
-      return 'The credential has been revoked.';
     }
-  }).filter(m => !!m).join(', ');
+
+    const statusResults = result.statusResult.results ?? [];
+    for(const statusResult of statusResults) {
+      if(!statusResult.verified) {
+        return `The status credential ${
+          statusResult.credentialStatus?.id} could not be verified.`;
+      } else if(statusResult.credentialStatus?.statusPurpose !== 'revocation') {
+        return 'The status credential is not a revocation status. Only ' +
+            'revocation statusPurpose is supported at this time. Other ' +
+            'purposes must be treated as invalid.';
+      } else if(statusResult.status === true) {
+        return 'The credential has been revoked.';
+      }
+    }
+  }
+  ).filter(m => !!m).join(', ');
 
   const errors = [
     ...(vpErrorMessage ? [vpErrorMessage] : []),
