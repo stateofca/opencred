@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 9.0.2 - 2025-06-XX
+## 9.0.2 - 2025-06-12
 
 ### Fixed
 - Fixed incorrect status check logic to ensure that revoked credentials are flagged.
