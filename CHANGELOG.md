@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 9.0.3 - 2025-06-XX
+## 9.0.3 - 2025-06-13
 
 ### Changed
 - Updated error reporting for more clarity on combinations of verification
