@@ -277,7 +277,7 @@ const getVerifyPresentationDataIntegrityErrors = vpResult => {
   const vpErrorMessage = vpResult.presentationResult.results
     .filter(result => !result.verified)
     .map((result, i) => {
-      return `${result.error?.message}${i == 0 ? ' (Presentation)' : ''}`;
+      return `${result.error?.message}${i === 0 ? ' (Presentation)' : ''}`;
     })
     .join(', ');
 
@@ -313,8 +313,7 @@ const getVerifyPresentationDataIntegrityErrors = vpResult => {
         return 'The credential has been revoked.';
       }
     }
-  }
-  ).filter(m => !!m).join(', ');
+  }).filter(m => !!m).join(', ');
 
   const errors = [
     ...(vpErrorMessage ? [vpErrorMessage] : []),
