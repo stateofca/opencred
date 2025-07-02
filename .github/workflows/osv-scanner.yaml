@@ -14,7 +14,7 @@
 # limitations under the License.
 
 # OSV-Scanner PR scanning reusable workflow, can be used as a PR action to detect new vulnerabilities being introduced.
-name: Use OSV to do SCA on main (on a schedule) and PRs
+name: Use OSV to do SCA on main (daily) and PRs
 
 on:
   pull_request:
