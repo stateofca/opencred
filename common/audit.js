@@ -266,3 +266,11 @@ export const getFieldMatches = (vpToken, fields) => {
   }
   return getFieldMatchesDiVp(diVp, fields);
 };
+
+export const auditUtils = {
+  updateIssuerDidDocumentHistory,
+  getIssuerDidDocumentOverrides,
+  getFieldMatches,
+  getVpTokenMetadata,
+  getVcTokensForVpToken
+};

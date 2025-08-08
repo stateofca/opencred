@@ -22,7 +22,7 @@ if(!process.env.BEDROCK_CONFIG) {
     logger.info('Loading config from ' + configPath);
     localConfig = fs.readFileSync(configPath, 'utf8');
   } catch(e) {
-    logger.warn('Failed to load config from ' + configPath);
+    logger.warning('Failed to load config from ' + configPath);
   }
 }
 

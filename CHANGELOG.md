@@ -1,5 +1,12 @@
 # opencred-platform Changelog
 
+## 9.0.4 - 2025-08-XX
+
+### Fixed
+- Fixed crash caused by incorrect logger invocation.
+- Added safety checks for some possible cases where exchange would be complete
+  but no verifiablePresentation was provided.
+
 ## 9.0.3 - 2025-06-13
 
 ### Changed

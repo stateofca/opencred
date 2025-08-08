@@ -17,6 +17,7 @@ import {
   generateCertificateChain
 } from '../utils/x509.js';
 import {msalUtils, verifyUtils} from '../../common/utils.js';
+import {auditUtils} from '../../common/audit.js';
 import {baseUrl} from '../mock-data.js';
 import {BaseWorkflowService} from '../../lib/workflows/base.js';
 import {config} from '@bedrock/core';
@@ -713,6 +714,53 @@ describe('OpenCred API - VC-API Workflow', function() {
     findStub.restore();
     zcapStub.restore();
   });
+
+  // Draft test for once vc-api exchanges are used.
+  it.skip('should updateDidDocumentHistory on complete exchange',
+    async function() {
+      const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+        .resolves(exchange);
+      const zcapStub = sinon.stub(zcapClient, 'zcapReadRequest')
+        .resolves({data: {
+          ...exchange,
+          state: 'complete',
+          variables: {
+            default: {
+              results: {
+                verifiablePresentation: {
+                // stubbed out verifiable presentation
+                  type: 'VerifiablePresentation'
+                }
+              }
+            }
+          }
+        }});
+      const updateDidDocumentHistoryStub = sinon.stub(
+        auditUtils, 'updateIssuerDidDocumentHistory')
+        .resolves();
+      let result;
+      let err;
+      try {
+        const token = exchange.accessToken;
+        result = await client
+          .get(`${baseUrl}/workflows/${testRP.workflow.id}/exchanges/` +
+          `${exchange.id}`, {headers: {Authorization: `Bearer ${token}`}});
+      } catch(e) {
+        err = e;
+      }
+
+      should.not.exist(err);
+      result.status.should.be.equal(200);
+      result.data.exchange.id.should.be.a('string');
+
+      zcapStub.called.should.be.equal(true);
+      findStub.called.should.be.equal(true);
+      updateDidDocumentHistoryStub.called.should.be.equal(true);
+
+      findStub.restore();
+      zcapStub.restore();
+      updateDidDocumentHistoryStub.restore();
+    });
 });
 
 describe('OpenCred API - Microsoft Entra Verified ID Workflow',
