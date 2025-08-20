@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 9.0.5 - 2025-08-XX
+## 9.0.5 - 2025-08-20
 
 ### Fixed
 - Fixed additional crash caused by incorrect log call before config is loaded.
