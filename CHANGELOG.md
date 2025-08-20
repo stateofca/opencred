@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 9.0.4 - 2025-08-XX
+## 9.0.4 - 2025-08-20
 
 ### Fixed
 - Fixed crash caused by incorrect logger invocation.
