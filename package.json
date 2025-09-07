@@ -18,6 +18,7 @@
     "lint": "eslint --ext .cjs,.js,.vue .",
     "preview": "vite preview",
     "start": "node --preserve-symlinks dev.js",
+    "dev": "nodemon --preserve-symlinks dev.js",
     "test": "npm run test-node",
     "test-node": "cross-env NODE_ENV=test node --trace-warnings --preserve-symlinks test.js test",
     "test:load": "artillery run ./test/load/artillery.yaml",
@@ -110,6 +111,7 @@
     "eslint-plugin-vue": "^9.23.0",
     "expect.js": "^0.3.1",
     "klona": "^2.0.6",
+    "nodemon": "^3.1.10",
     "sinon": "^17.0.1"
   }
 }
