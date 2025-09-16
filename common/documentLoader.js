@@ -39,6 +39,9 @@ import {
   contexts as X25519_KEY_AGREEMENT_CONTEXT_MAP
 } from 'x25519-key-agreement-2020-context';
 
+import {Agent} from 'node:https';
+import {httpClient} from '@digitalbazaar/http-client';
+
 const didWebDriver = DidWeb.driver();
 const didKeyDriver = DidKey.driver();
 didKeyDriver.use({
@@ -99,29 +102,47 @@ export const getDocumentLoader = () => {
   jsonLdDocLoader.setDidResolver(didResolver);
 
   // automatically handle all http(s) contexts that are not handled above
-  const webHandler = {
-    get: async ({url}) => {
-      const getConfig = {
-        headers: {
-          'Cache-Control': 'no-cache',
-          Pragma: 'no-cache'
-        },
-        // max size for any JSON doc (in bytes, ~8 KiB)
-        size: 8192,
-        // timeout in ms for fetching any document
-        timeout: 5000
-      };
-      return (await fetch(url, getConfig)).json();
+  const customHandler = {
+    async get({url}) {
+      const agent = new Agent({rejectUnauthorized: false});
+      console.log(`Custom Handler URL: ${url}`);
+      const response = await httpClient.get(url, {agent});
+      const {data} = response;
+      return data;
     }
   };
+
   jsonLdDocLoader.setProtocolHandler({
-    protocol: 'http',
-    handler: webHandler
+    protocol: 'http', handler: customHandler
   });
   jsonLdDocLoader.setProtocolHandler({
-    protocol: 'https',
-    handler: webHandler
+    protocol: 'https', handler: customHandler
   });
+
+  // // automatically handle all http(s) contexts that are not handled above
+  // const webHandler = {
+  //   get: async ({url}) => {
+  //     const getConfig = {
+  //       headers: {
+  //         'Cache-Control': 'no-cache',
+  //         Pragma: 'no-cache'
+  //       },
+  //       // max size for any JSON doc (in bytes, ~8 KiB)
+  //       size: 8192,
+  //       // timeout in ms for fetching any document
+  //       timeout: 5000
+  //     };
+  //     return (await fetch(url, getConfig)).json();
+  //   }
+  // };
+  // jsonLdDocLoader.setProtocolHandler({
+  //   protocol: 'http',
+  //   handler: webHandler
+  // });
+  // jsonLdDocLoader.setProtocolHandler({
+  //   protocol: 'https',
+  //   handler: webHandler
+  // });
 
   return jsonLdDocLoader;
 };
