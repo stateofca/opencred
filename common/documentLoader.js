@@ -119,31 +119,6 @@ export const getDocumentLoader = () => {
     protocol: 'https', handler: customHandler
   });
 
-  // // automatically handle all http(s) contexts that are not handled above
-  // const webHandler = {
-  //   get: async ({url}) => {
-  //     const getConfig = {
-  //       headers: {
-  //         'Cache-Control': 'no-cache',
-  //         Pragma: 'no-cache'
-  //       },
-  //       // max size for any JSON doc (in bytes, ~8 KiB)
-  //       size: 8192,
-  //       // timeout in ms for fetching any document
-  //       timeout: 5000
-  //     };
-  //     return (await fetch(url, getConfig)).json();
-  //   }
-  // };
-  // jsonLdDocLoader.setProtocolHandler({
-  //   protocol: 'http',
-  //   handler: webHandler
-  // });
-  // jsonLdDocLoader.setProtocolHandler({
-  //   protocol: 'https',
-  //   handler: webHandler
-  // });
-
   return jsonLdDocLoader;
 };
 
