@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 9.0.6 - 2025-xx-xx
+
+### Changed
+- Refactored the document loader to use the `@digitalbazaar/http-client` dependency.
+
 ## 9.0.5 - 2025-08-20
 
 ### Fixed
