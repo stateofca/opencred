@@ -6,17 +6,16 @@
  */
 
 import * as didMethodKey from '@digitalbazaar/did-method-key';
+import {agent} from '@bedrock/https-agent';
 import {decodeSecretKeySeed} from 'bnid';
 import {Ed25519Signature2020} from '@digitalbazaar/ed25519-signature-2020';
 import {
   Ed25519VerificationKey2020
 } from '@digitalbazaar/ed25519-verification-key-2020';
 import {httpClient} from '@digitalbazaar/http-client';
-import https from 'node:https';
 import {logger} from '../lib/logger.js';
 import {ZcapClient} from '@digitalbazaar/ezcap';
 
-const agent = new https.Agent({rejectUnauthorized: false});
 const didKeyDriver = didMethodKey.driver();
 didKeyDriver.use({
   name: 'Ed25519',
