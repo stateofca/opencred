@@ -39,7 +39,7 @@ import {
   contexts as X25519_KEY_AGREEMENT_CONTEXT_MAP
 } from 'x25519-key-agreement-2020-context';
 
-import {Agent} from 'node:https';
+import {agent} from '@bedrock/https-agent';
 import {httpClient} from '@digitalbazaar/http-client';
 
 const didWebDriver = DidWeb.driver();
@@ -104,8 +104,7 @@ export const getDocumentLoader = () => {
   // automatically handle all http(s) contexts that are not handled above
   const customHandler = {
     async get({url}) {
-      const agent = new Agent({rejectUnauthorized: false});
-      console.log(`Custom Handler URL: ${url}`);
+      console.debug(`Custom Handler URL: ${url}`);
       const response = await httpClient.get(url, {agent});
       const {data} = response;
       return data;

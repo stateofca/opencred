@@ -31,6 +31,7 @@
     "@bedrock/express": "^8.3.0",
     "@bedrock/express-browser-fixes": "^3.1.0",
     "@bedrock/health": "^4.1.0",
+    "@bedrock/https-agent": "^4.1.0",
     "@bedrock/mongodb": "^11.0.0",
     "@bedrock/oauth2-client": "^7.1.0",
     "@bedrock/quasar": "^10.0.0",

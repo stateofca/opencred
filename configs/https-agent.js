@@ -6,6 +6,7 @@
  */
 
 import {config} from '@bedrock/core';
+import '@bedrock/https-agent';
 
 // allow self-signed certificates in dev
 config['https-agent'].rejectUnauthorized = false;
