@@ -112,9 +112,6 @@ export const getDocumentLoader = () => {
   };
 
   jsonLdDocLoader.setProtocolHandler({
-    protocol: 'http', handler: customHandler
-  });
-  jsonLdDocLoader.setProtocolHandler({
     protocol: 'https', handler: customHandler
   });
 
