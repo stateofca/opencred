@@ -104,7 +104,6 @@ export const getDocumentLoader = () => {
   // automatically handle all http(s) contexts that are not handled above
   const customHandler = {
     async get({url}) {
-      console.debug(`Custom Handler URL: ${url}`);
       const response = await httpClient.get(url, {agent});
       const {data} = response;
       return data;
