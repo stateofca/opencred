@@ -5,7 +5,7 @@
 
 app:
   # server:
-    # baseUri: https://evil-cows-return.loca.lt
+  # baseUri: https://evil-cows-return.loca.lt
   opencred:
     caStore:
       - pem: |
@@ -282,12 +282,12 @@ app:
           required: true
         - type: number
           id: height
-          name:	Height (cm)
+          name: Height (cm)
           path: "$.credentialSubject.height"
           required: false
         - type: dropdown
           id: sex
-          name:	Sex
+          name: Sex
           path: "$.credentialSubject.sex"
           required: false
           options:
@@ -295,7 +295,7 @@ app:
             "Female": 2
         - type: dropdown
           id: senior_citizen
-          name:	Are you a senior citizen?
+          name: Are you a senior citizen?
           path: "$.credentialSubject.senior_citizen"
           required: true
           options:
@@ -334,3 +334,16 @@ app:
         exchangeErrorSubtitle: "Error details:"
         exchangeResetTitle: Please try again.
         exchangeReset: Retry exchange
+        # DC API specific translations
+        dcApiTitle: "Verify with Digital Credential"
+        dcApiLoading: "Requesting your digital credential..."
+        dcApiLoadingHelp: "Please follow the prompts in your browser to select and share your credential."
+        dcApiError: "Unable to verify credential"
+        dcApiReady: "Click To Verify with DC API"
+        dcApiRetry: "Try Again"
+        dcApiContinue: "Continue"
+        dcApiSwitchMethod: "Use a different verification method"
+        dcApiInitializing: "Initializing Digital Credential verification..."
+        dcApiHavingTrouble: "Having trouble?"
+        dcApiTryAnotherWay: "Try another way"
+        dcApiCancel: "Cancel DC API Verification Request"

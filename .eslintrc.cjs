@@ -8,24 +8,28 @@
 module.exports = {
   root: true,
   env: {
-    node: true
+    node: true,
   },
   extends: [
     'plugin:quasar/standard',
     'digitalbazaar',
     'digitalbazaar/module',
-    'digitalbazaar/vue3'
+    'digitalbazaar/vue3',
   ],
-  ignorePatterns: [
-    'node_modules/',
-    'dist/'
-  ],
+  ignorePatterns: ['node_modules/', 'dist/'],
   rules: {
     'linebreak-style': [
       'error',
-      (process.platform === 'win32' ? 'windows' : 'unix')
+      process.platform === 'win32' ? 'windows' : 'unix',
     ],
     'unicorn/prefer-node-protocol': 'error',
-    'vue/no-v-html': 'off'
-  }
+    'vue/no-v-html': 'off',
+    quotes: [
+      'error',
+      'single',
+      {
+        avoidEscape: true,
+      },
+    ],
+  },
 };
