@@ -175,7 +175,7 @@ async function startDCApiFlow() {
 const retry = () => {
     console.log("Retrying DC API flow...");
     // Reset the exchange to get a fresh session before retrying
-    // emit("resetExchange");
+    emit("resetExchange");
     // Small delay to allow the reset to complete
     setTimeout(() => {
         startDCApiFlow();
