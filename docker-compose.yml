@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:6-jammy
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: opencred_localhost
+    ports:
+      - "27017:27017"
+    volumes:
+      - data:/data/db
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.3
+    restart: always
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_LOG_LEVEL: info
+      KC_METRICS_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8081:8080"
+    command: start-dev
+
+volumes:
+  data:
