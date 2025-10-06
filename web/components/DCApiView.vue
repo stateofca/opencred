@@ -1,6 +1,6 @@
 <!--
 Copyright 2023 - 2024 California Department of Motor Vehicles
-Copyright 2023 - 2024 Digital Bazaar, Inc.
+Copyright 2025 Spruce Systems, Inc.
 
 SPDX-License-Identifier: BSD-3-Clause
 -->
@@ -100,7 +100,7 @@ async function startDCApiFlow() {
         console.log("Calling navigator.credentials.get()...");
         const credentialResponse = await navigator.credentials.get({
             signal: controller.signal,
-            mediation: "silent",
+            mediation: "required",
             digital: authRequest,
         });
 
@@ -175,7 +175,7 @@ async function startDCApiFlow() {
 const retry = () => {
     console.log("Retrying DC API flow...");
     // Reset the exchange to get a fresh session before retrying
-    emit("resetExchange");
+    // emit("resetExchange");
     // Small delay to allow the reset to complete
     setTimeout(() => {
         startDCApiFlow();
