@@ -48,22 +48,29 @@ export const jwtFromExchange = async (exchange, rp) => {
     kid: signingKey.id,
   };
 
+  if(!exchange.variables?.results) {
+    return null;
+  }
+
+  const stepResultKey = Object.keys(exchange.variables.results).find(
+    v => v == exchange.step,
+  );
+  const stepResults = exchange.variables.results[stepResultKey];
+
   // Handle DC API workflow differently
-  if(rp.workflow?.type === 'dc-api' && exchange.variables?.dcApiResponse) {
+  if(rp.workflow?.type === 'dc-api' && !!stepResults) {
     try {
       const now = Math.floor(Date.now() / 1000);
-      const dcApiResponse = exchange.variables.dcApiResponse;
       // Default to 1 hour
       const expirySeconds = rp.idTokenExpirySeconds || 3600;
 
-      const subject =
-        dcApiResponse.response['org.iso.18013.5.1'].document_number;
+      const subject = stepResults.response['org.iso.18013.5.1'].document_number;
 
       const verified =
-        dcApiResponse.response.issuer_authentication == 'Valid' &&
-        dcApiResponse.response.device_authentication == 'Valid';
+        stepResults.response.issuer_authentication == 'Valid' &&
+        stepResults.response.device_authentication == 'Valid';
 
-      const errors = dcApiResponse.response.errors;
+      const errors = stepResults.response.errors;
 
       const payload = {
         iss: config.server.baseUri,
@@ -73,7 +80,7 @@ export const jwtFromExchange = async (exchange, rp) => {
         exp: now + expirySeconds,
         verified,
         verification_method: 'dc-api',
-        verified_credentials: dcApiResponse.response,
+        verified_credentials: stepResults.response,
       };
 
       if(errors !== null) {
@@ -88,14 +95,6 @@ export const jwtFromExchange = async (exchange, rp) => {
     }
   }
 
-  if(!exchange.variables?.results) {
-    return null;
-  }
-
-  const stepResultKey = Object.keys(exchange.variables.results).find(
-    v => v == exchange.step,
-  );
-  const stepResults = exchange.variables.results[stepResultKey];
   const c = jp.query(
     stepResults,
     '$.verifiablePresentation.verifiableCredential[0]',
