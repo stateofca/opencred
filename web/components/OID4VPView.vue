@@ -61,40 +61,6 @@ onMounted(() => {
     }
 });
 
-async function dcApi() {
-    console.log("Clicked dc api button");
-    if (typeof window.DigitalCredential !== "undefined") {
-        console.log("Making authentication request");
-        const { data: response } = await httpClient.get(
-            `/workflows/${props.exchangeData.workflowId}` +
-                `/exchanges/${props.exchangeData.id}` +
-                `/dc-api/request`,
-            {
-                headers: {
-                    Authorization: `Bearer ${props.exchangeData.accessToken}`,
-                },
-            },
-        );
-
-        console.log("DC API response:", response);
-
-        const controller = new AbortController();
-        const { protocol, data } = await navigator.credentials
-            .get({
-                signal: controller.signal,
-                mediation: "required",
-                digital: response,
-            })
-            .then(console.log);
-    } else {
-        console.log(
-            new Error(
-                "The Digital Credentials API is disabled or not supported in this browser.",
-            ),
-        );
-    }
-}
-
 async function appOpened() {
     const { location } = window;
     const searchParams = new URLSearchParams(location.search);
