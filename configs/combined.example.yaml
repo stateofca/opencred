@@ -149,6 +149,47 @@ app:
           steps:
             default:
               acceptedCredentialType: "TODO" # required
+      - name: "DC API Test App"
+        clientId: "opencred"
+        clientSecret: "opencred"
+        description: "Relying Party DC API Test App"
+        icon: "https://placekitten.com/200/200"
+        backgroundImage: "https://placekitten.com/800/300"
+        idTokenExpirySeconds: 3600
+        brand:
+          cta: "#0B669D"
+          primary: "#045199"
+          header: "#0979c4"
+        redirectUri: "http://0.0.0.0:8080/realms/OpenCred/broker/oauth2/endpoint"
+        scopes:
+          - name: "openid"
+            description: "Open ID Connect"
+        claims:
+          - name: "email"
+            path: "email"
+        workflow:
+          id: 235bbcc4-f0b4-4eb3-8a3b-0006ae17462c
+          type: dc-api
+          submissionEndpoint: ""
+          referenceEndpoint: ""
+          baseUrl: https://cb1e46108f7d.ngrok-free.app/
+          clientSecret: "z1AanFEw6Dk5x2QGfz7B32X9xSDSatz6XEXCATtNvSxBAcP"
+          steps:
+            initiated:
+              callback:
+            complete:
+              callback:
+          dcApiRequest: >
+            {
+              "namespaces": {
+                "org.iso.18013.5.1": [
+                  "family_name",
+                  "given_name",
+                  "document_number"
+                ]
+              },
+              "origin": "https://cb1e46108f7d.ngrok-free.app"
+            }
       - name: "load-test"
         clientId: "load-test"
         clientSecret: "DeepestAndDarkest"
