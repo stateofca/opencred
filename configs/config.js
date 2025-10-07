@@ -478,7 +478,8 @@ bedrock.events.on('bedrock.init', async () => {
         throw new Error(
           'When the "reCaptcha.enable" config value is "true", ' +
             'the following config values must also be provided: ' +
-            '"reCaptcha.version", "reCaptcha.siteKey", and "reCaptcha.secretKey"',
+            '"reCaptcha.version", "reCaptcha.siteKey", ' +
+            'and "reCaptcha.secretKey"',
         );
       }
       if(!availableReCaptchaVersions.includes(opencred.reCaptcha.version)) {
