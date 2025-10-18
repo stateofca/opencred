@@ -349,9 +349,11 @@ onUnmounted(() => {
         </h2>
       </div>
       <div
-        v-if="!state.error"
+        v-if="!state.error && context.rp.backgroundImage"
         class="bg-no-repeat bg-cover clip-path-bg z-0 min-h-[360px]"
-        :style="{ 'background-image': `url(${context.rp.backgroundImage})` }">
+        :style="{ 'background-image': `url(${
+          typeof context.rp.backgroundImage === 'string' ?
+            context.rp.backgroundImage : context.rp.backgroundImage?.id})` }">
         <div class="text-center text-6xl py-10">
 &nbsp;
         </div>

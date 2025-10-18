@@ -7,23 +7,20 @@
 
 import expect from 'expect.js';
 
-import {applyRpDefaults} from '../../configs/configUtils.js';
+import {applyWorkflowDefaults} from '../../configs/configUtils.js';
 
 const app1 = {
   clientId: 'test1',
   clientSecret: 'shhh',
   redirectUri: 'https://example.com',
   caStore: false,
-  scopes: [{name: 'openid'}],
-  workflow: {
-    type: 'native',
-    id: 'testworkflow',
-    steps: {
-      waiting: {
-        verifiablePresentationRequest: '{}'
-      }
-    }
+  oidc: {
+    redirectUri: 'https://example.com',
+    scopes: [{name: 'openid', description: 'Open ID Connect'}],
+    claims: [],
+    idTokenExpirySeconds: 3600
   },
+  type: 'native',
   brand: {
     cta: '#111111',
     primary: '#a11111',
@@ -33,7 +30,6 @@ const app1 = {
 
 const app2 = {
   clientId: 'test2',
-  redirectUri: 'https://example.com',
   configFrom: 'test1',
   brand: {
     cta: '#222222',
@@ -50,7 +46,13 @@ const app3 = {
 
 describe('Config - setting defaults with configFrom', function() {
   it('should populate defaults from configFrom config', async function() {
-    const result = applyRpDefaults([app1, app2, app3], app3);
+    const result = applyWorkflowDefaults({
+      opencred: {
+        defaultBrand: {cta: '#006847', primary: '#008f5a', header: '#004225'}
+      },
+      workflows: [app1, app2, app3],
+      workflow: app3
+    });
     expect(result.brand.cta).to.equal('#222222');
     expect(result.clientSecret).to.equal('three is a crowd');
     expect(result.caStore ?? true).to.equal(false);
@@ -65,11 +67,23 @@ describe('Config - setting defaults with configFrom', function() {
       clientId: 'test4',
       configFrom: 'test5'
     };
-    expect(() => applyRpDefaults([app4, app5], app4)).to.throwError();
+    expect(() => applyWorkflowDefaults({
+      opencred: {
+        defaultBrand: {cta: '#006847', primary: '#008f5a', header: '#004225'}
+      },
+      workflows: [app4, app5],
+      workflow: app4
+    })).to.throwError();
   });
 
   it('should throw an error for missing configFrom ref', function() {
-    expect(() => applyRpDefaults([app2, app3], app2)).to.throwError();
+    expect(() => applyWorkflowDefaults({
+      opencred: {
+        defaultBrand: {cta: '#006847', primary: '#008f5a', header: '#004225'}
+      },
+      workflows: [app2, app3],
+      workflow: app2
+    })).to.throwError();
   });
 
 });
