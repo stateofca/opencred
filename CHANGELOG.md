@@ -5,6 +5,9 @@
 ### Changed
 - Refactored the document loader to use the `@digitalbazaar/http-client` dependency.
 
+### Fixed
+- Sanitize OIDC input codes.
+
 ## 9.0.5 - 2025-08-20
 
 ### Fixed
