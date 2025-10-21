@@ -529,6 +529,35 @@ describe('OAuth Login Workflow', function() {
 
     dbStub.restore();
   });
+
+  it('should fail for invalid code format', async function() {
+    // Send JSON body with an object for `code` to simulate a NoSQL injection
+    // or malformed input instead of the expected urlencoded string.
+    let result;
+    let err;
+    try {
+      result = await client.post(`${baseUrl}/token`, {
+        headers: {'content-type': 'application/json'},
+        body: JSON.stringify({
+          client_id: 'test',
+          client_secret: 'testsecret',
+          grant_type: 'authorization_code',
+          // attacker-supplied object instead of string
+          code: { "$ne": null },
+          redirect_uri: 'https://example.com',
+          scope: 'openid'
+        })
+      });
+    } catch(e) {
+      err = e;
+    }
+
+    should.not.exist(result);
+    err.status.should.be.equal(400);
+    // The implementation checks for a missing or non-string code and
+    // returns {message: 'code is required'} on invalid input.
+    err.data.message.should.be.equal('code is required');
+  });
 });
 
 describe('JWKS Endpoint', function() {
