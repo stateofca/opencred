@@ -10,7 +10,6 @@
 ### Fixed
 - Fixed additional crash caused by incorrect log call before config is loaded.
 
-
 ## 9.0.4 - 2025-08-20
 
 ### Fixed
@@ -41,12 +40,12 @@
 
 ### Added
 - Added status checking that supports Bitstring Status List v1.0. Credentials
-  with unsupported status type will be rejected. 
+  with unsupported status type will be rejected.
 
 ### Changed
 - Updated dependency `@bedrock/mongodb@11` to support MongoDB 8.x. Recommended
   to upgrade database after or concurrently with deploying this version of
-  OpenCred. 
+  OpenCred.
 
 ### Fixed
 - Fixed error redirecting to client `redirect_uri` after exchange is complete.
@@ -59,7 +58,7 @@
 ### Changed
 - Updated dependency `@digitalbazaar/oid4-client@4.3.0`.
 - Improve constraintsOverride processing. It is now not likely to be necessary
-  to use `constraintsOverride` in the config. 
+  to use `constraintsOverride` in the config.
 
 ## 8.7.1 - 2025-04-18
 
