@@ -543,7 +543,7 @@ describe('OAuth Login Workflow', function() {
           client_secret: 'testsecret',
           grant_type: 'authorization_code',
           // attacker-supplied object instead of string
-          code: { "$ne": null },
+          code: {$ne: null},
           redirect_uri: 'https://example.com',
           scope: 'openid'
         })
