@@ -36,32 +36,30 @@ bedrock.events.on('bedrock.configure', async () => {
 
 config.views.bundle.packages.push({
   path: path.join(rootPath, 'web'),
-  manifest: path.join(rootPath, 'web', 'manifest.json')
+  manifest: path.join(rootPath, 'web', 'manifest.json'),
 });
 
 config['bedrock-webpack'].configs.push({
   module: {
-    rules: [{
-      test: /\.pcss$/i,
-      include: path.resolve(__dirname, '..', 'web'),
-      use: [
-        'style-loader',
-        'css-loader',
-        {
-          loader: 'postcss-loader',
-          options: {
-            postcssOptions: {
-              plugins: [
-                'postcss-preset-env',
-                'tailwindcss',
-                'autoprefixer',
-              ]
-            }
-          }
-        }
-      ]
-    }]
-  }
+    rules: [
+      {
+        test: /\.pcss$/i,
+        include: path.resolve(__dirname, '..', 'web'),
+        use: [
+          'style-loader',
+          'css-loader',
+          {
+            loader: 'postcss-loader',
+            options: {
+              postcssOptions: {
+                plugins: ['postcss-preset-env', 'tailwindcss', 'autoprefixer'],
+              },
+            },
+          },
+        ],
+      },
+    ],
+  },
 });
 
 bedrock.events.on('bedrock.init', async () => {
@@ -84,8 +82,8 @@ bedrock.events.on('bedrock.init', async () => {
    * @property {string} verifiablePresentationRequest - What to request
    * @property {string} constraintsOverride - Override presentation definition
    * constraints with value
-  * @property {Object.<string, WorkflowStep>} steps - Steps to execute
-  */
+   * @property {Object.<string, WorkflowStep>} steps - Steps to execute
+   */
 
   /**
    * @typedef {Object} NativeWorkflow
@@ -159,7 +157,7 @@ bedrock.events.on('bedrock.init', async () => {
    * record in seconds. (Default/max 900)
    */
 
-  const availableExchangeProtocols = ['openid4vp', 'chapi'];
+  const availableExchangeProtocols = ['openid4vp', 'chapi', 'dc-api'];
   /**
    * A list of exchange protocols in use by OpenCred
    * exchangeProtocols: ['openid4vp', 'chapi']
@@ -169,25 +167,35 @@ bedrock.events.on('bedrock.init', async () => {
     exchangeProtocols: availableExchangeProtocols,
     recordExpiresDurationMs: 86400000, // 1 day in milliseconds
     exchangeTtlSeconds: 900, // 15 minutes in seconds
-    ...(opencred.options || {})
+    ...(opencred.options || {}),
   };
 
   // Clamp recordExpiresDurationMs between 1 min and 30 days
-  opencred.options.recordExpiresDurationMs = Math.floor(Math.max(
-    Math.min(opencred.options.recordExpiresDurationMs, 86400000 * 30),
-    60000
-  ));
+  opencred.options.recordExpiresDurationMs = Math.floor(
+    Math.max(
+      Math.min(opencred.options.recordExpiresDurationMs, 86400000 * 30),
+      60000,
+    ),
+  );
 
   // Clamp exchange TTL between 10 and 900/recordDuration seconds
-  opencred.options.exchangeTtlSeconds = Math.floor(Math.min(
-    Math.max(opencred.options.exchangeTtlSeconds, 10),
-    Math.min(900, opencred.options.recordExpiresDurationMs / 1000)));
+  opencred.options.exchangeTtlSeconds = Math.floor(
+    Math.min(
+      Math.max(opencred.options.exchangeTtlSeconds, 10),
+      Math.min(900, opencred.options.recordExpiresDurationMs / 1000),
+    ),
+  );
 
-  if(!opencred.options.exchangeProtocols
-    .every(el => availableExchangeProtocols.includes(el))) {
-    throw new Error(`Invalid exchange protocol configured: ` +
-      `Found: [${opencred.options.exchangeProtocols}], ` +
-      `Available: [${availableExchangeProtocols}]`);
+  if(
+    !opencred.options.exchangeProtocols.every(el =>
+      availableExchangeProtocols.includes(el),
+    )
+  ) {
+    throw new Error(
+      `Invalid exchange protocol configured: ` +
+        `Found: [${opencred.options.exchangeProtocols}], ` +
+        `Available: [${availableExchangeProtocols}]`,
+    );
   }
 
   if(!opencred.relyingParties) {
@@ -203,7 +211,8 @@ bedrock.events.on('bedrock.init', async () => {
   const WorkflowType = {
     VcApi: 'vc-api',
     Native: 'native',
-    MicrosoftEntraVerifiedId: 'microsoft-entra-verified-id'
+    MicrosoftEntraVerifiedId: 'microsoft-entra-verified-id',
+    DcApi: 'dc-api',
   };
 
   const WorkFlowTypes = Object.values(WorkflowType);
@@ -225,7 +234,7 @@ bedrock.events.on('bedrock.init', async () => {
 
       if(!rp.scopes || !Array.isArray(rp.scopes)) {
         throw new Error(
-          `An array of scopes must be defined in client ${rp.clientId}.`
+          `An array of scopes must be defined in client ${rp.clientId}.`,
         );
       }
       if(!rp.scopes.map(s => s.name).includes('openid')) {
@@ -245,11 +254,11 @@ bedrock.events.on('bedrock.init', async () => {
       if(!rp.workflow.baseUrl?.startsWith('http')) {
         throw new Error(
           'workflow baseUrl must be defined. This tool uses a VC-API exchange' +
-          ` endpoint to communicate with wallets. (client: ${rp.clientId})`
+            ` endpoint to communicate with wallets. (client: ${rp.clientId})`,
         );
       } else if(typeof rp.workflow.capability !== 'string') {
         throw new Error(
-          `workflow capability must be defined. (client: ${rp.clientId})`
+          `workflow capability must be defined. (client: ${rp.clientId})`,
         );
       } else if(
         !rp.workflow.clientSecret ||
@@ -257,18 +266,18 @@ bedrock.events.on('bedrock.init', async () => {
         rp.workflow.clientSecret.length < 1
       ) {
         throw new Error(
-          `workflow clientSecret must be defined. (client: ${rp.clientId})`
+          `workflow clientSecret must be defined. (client: ${rp.clientId})`,
         );
       }
     } else if(rp.workflow.type === WorkflowType.Native) {
       if(!rp.workflow.steps || Object.keys(rp.workflow.steps).length === 0) {
         throw new Error(
-          `workflow must have at least 1 step. (client: ${rp.clientId})`
+          `workflow must have at least 1 step. (client: ${rp.clientId})`,
         );
       }
       if(!rp.workflow.initialStep) {
         throw new Error(
-          `workflow initialStep must be set. (client: ${rp.clientId})`
+          `workflow initialStep must be set. (client: ${rp.clientId})`,
         );
       }
     } else if(rp.workflow.type === WorkflowType.MicrosoftEntraVerifiedId) {
@@ -281,53 +290,65 @@ bedrock.events.on('bedrock.init', async () => {
         verifierDid,
         verifierName,
         steps,
-        initialStep
+        initialStep,
       } = rp.workflow;
       if(!apiBaseUrl) {
         throw new Error(
-          `apiBaseUrl is missing for workflow in client ${rp.clientId}.`);
+          `apiBaseUrl is missing for workflow in client ${rp.clientId}.`,
+        );
       }
       if(!apiLoginBaseUrl) {
         throw new Error(
-          `apiLoginBaseUrl is missing for workflow in client ${rp.clientId}.`);
+          `apiLoginBaseUrl is missing for workflow in client ${rp.clientId}.`,
+        );
       }
       if(!apiClientId) {
         throw new Error(
-          `apiClientId is missing for workflow in client ${rp.clientId}.`);
+          `apiClientId is missing for workflow in client ${rp.clientId}.`,
+        );
       }
       if(!apiClientSecret) {
         throw new Error(
-          `apiClientSecret is missing for workflow in client ${rp.clientId}.`);
+          `apiClientSecret is missing for workflow in client ${rp.clientId}.`,
+        );
       }
       if(!apiTenantId) {
         throw new Error(
-          `apiTenantId is missing for workflow in client ${rp.clientId}.`);
+          `apiTenantId is missing for workflow in client ${rp.clientId}.`,
+        );
       }
       if(!verifierDid) {
         throw new Error(
-          `verifierDid is missing for workflow in client  ${rp.clientId}.`);
+          `verifierDid is missing for workflow in client  ${rp.clientId}.`,
+        );
       }
       if(!verifierName) {
         throw new Error(
-          `verifierName is missing for workflow in client ${rp.clientId}.`);
+          `verifierName is missing for workflow in client ${rp.clientId}.`,
+        );
       }
       if(!steps) {
         throw new Error(
-          `steps is missing for workflow in client ${rp.clientId}.`);
+          `steps is missing for workflow in client ${rp.clientId}.`,
+        );
       }
       if(!initialStep) {
         throw new Error(
-          `initialStep is missing for workflow in client  ${rp.clientId}.`);
+          `initialStep is missing for workflow in client  ${rp.clientId}.`,
+        );
       }
       const {acceptedCredentialType} = steps[initialStep];
       if(!acceptedCredentialType) {
         throw new Error(
-          `acceptedCredentialType is missing for workflow in ${rp.clientId}.`);
+          `acceptedCredentialType is missing for workflow in ${rp.clientId}.`,
+        );
       }
+    } else if(rp.workflow.type === WorkflowType.DcApi) {
+      console.log('Loading DC API Workflow');
     } else {
       throw new Error(
         'workflow type must be one of the following values: ' +
-        `${WorkFlowTypes.map(v => `'${v}'`).join(', ')}.`
+          `${WorkFlowTypes.map(v => `'${v}'`).join(', ')}.`,
       );
     }
   };
@@ -343,7 +364,7 @@ bedrock.events.on('bedrock.init', async () => {
   const defaultBrand = opencred.defaultBrand ?? {
     cta: '#006847',
     primary: '#008f5a',
-    header: '#004225'
+    header: '#004225',
   };
 
   const validateDidWeb = () => {
@@ -351,7 +372,7 @@ bedrock.events.on('bedrock.init', async () => {
       mainEnabled: opencred.didWeb?.mainEnabled,
       linkageEnabled: opencred.didWeb?.linkageEnabled,
       mainDocument: JSON.parse(opencred.didWeb?.mainDocument ?? '{}'),
-      linkageDocument: JSON.parse(opencred.didWeb?.linkageDocument ?? '{}')
+      linkageDocument: JSON.parse(opencred.didWeb?.linkageDocument ?? '{}'),
     };
   };
   opencred.didWeb = validateDidWeb();
@@ -367,12 +388,9 @@ bedrock.events.on('bedrock.init', async () => {
       if(!Array.isArray(sk.purpose) || !sk.purpose?.length) {
         throw new Error('Each signingKey must have at least one purpose.');
       }
-      if(
-        sk.type == 'ES256' &&
-        (!sk.privateKeyPem || !sk.publicKeyPem)
-      ) {
+      if(sk.type == 'ES256' && (!sk.privateKeyPem || !sk.publicKeyPem)) {
         throw new Error(
-          'Each ES256 signingKey must have a privateKeyPem and publicKeyPem.'
+          'Each ES256 signingKey must have a privateKeyPem and publicKeyPem.',
         );
       }
     });
@@ -390,11 +408,11 @@ bedrock.events.on('bedrock.init', async () => {
     validateWorkflow(app);
     const brand = {
       ...defaultBrand,
-      ...(app.brand ? app.brand : {})
+      ...(app.brand ? app.brand : {}),
     };
     return {
       ...app,
-      brand
+      brand,
     };
   });
 
@@ -410,8 +428,9 @@ bedrock.events.on('bedrock.init', async () => {
     }
     for(const issuer of scope.trustedCredentialIssuers) {
       if(typeof issuer !== 'string') {
-        throw new Error('Each issuer in trustedCredentialIssuers ' +
-        'must be a string');
+        throw new Error(
+          'Each issuer in trustedCredentialIssuers ' + 'must be a string',
+        );
       }
     }
   };
@@ -421,9 +440,10 @@ bedrock.events.on('bedrock.init', async () => {
     for(const rp of opencred.relyingParties) {
       rp.trustedCredentialIssuers = rp.trustedCredentialIssuers ?? [];
       validateTrustedCredentialIssuers(rp);
-      rp.trustedCredentialIssuers = rp.trustedCredentialIssuers.length === 0 ?
-        opencred.trustedCredentialIssuers :
-        rp.trustedCredentialIssuers;
+      rp.trustedCredentialIssuers =
+        rp.trustedCredentialIssuers.length === 0 ?
+          opencred.trustedCredentialIssuers :
+          rp.trustedCredentialIssuers;
     }
   };
   applyDefaultTrustedCredentialIssuers();
@@ -432,8 +452,7 @@ bedrock.events.on('bedrock.init', async () => {
    * Prepare a list of trusted root certificates
    */
   const applyCaStoreDefaults = () => {
-    opencred.caStore = (opencred.caStore ?? [])
-      .map(cert => cert.pem);
+    opencred.caStore = (opencred.caStore ?? []).map(cert => cert.pem);
   };
   applyCaStoreDefaults();
 
@@ -446,25 +465,29 @@ bedrock.events.on('bedrock.init', async () => {
   if(!opencred.reCaptcha.pages) {
     opencred.reCaptcha.pages = [];
   }
-  opencred.reCaptcha.enable =
-    opencred.reCaptcha.enable === true;
+  opencred.reCaptcha.enable = opencred.reCaptcha.enable === true;
   const availableReCaptchaVersions = [2, 3];
 
   const validateReCaptcha = () => {
     if(opencred.reCaptcha.enable) {
-      if(!opencred.reCaptcha.version ||
+      if(
+        !opencred.reCaptcha.version ||
         !opencred.reCaptcha.siteKey ||
-        !opencred.reCaptcha.secretKey) {
+        !opencred.reCaptcha.secretKey
+      ) {
         throw new Error(
           'When the "reCaptcha.enable" config value is "true", ' +
-          'the following config values must also be provided: ' +
-          '"reCaptcha.version", "reCaptcha.siteKey", and "reCaptcha.secretKey"'
+            'the following config values must also be provided: ' +
+            '"reCaptcha.version", "reCaptcha.siteKey", ' +
+            'and "reCaptcha.secretKey"',
         );
       }
       if(!availableReCaptchaVersions.includes(opencred.reCaptcha.version)) {
-        throw new Error('The config value of "reCaptcha.version" must be ' +
-          'one of the following values: ' +
-          availableReCaptchaVersions.map(v => `"${v}"`).join(', '));
+        throw new Error(
+          'The config value of "reCaptcha.version" must be ' +
+            'one of the following values: ' +
+            availableReCaptchaVersions.map(v => `"${v}"`).join(', '),
+        );
       }
     }
   };
@@ -479,8 +502,7 @@ bedrock.events.on('bedrock.init', async () => {
   if(!opencred.audit.fields) {
     opencred.audit.fields = [];
   }
-  opencred.audit.enable =
-    opencred.audit.enable === true;
+  opencred.audit.enable = opencred.audit.enable === true;
 
   /**
    * A field to audit in a VP token
@@ -505,33 +527,46 @@ bedrock.events.on('bedrock.init', async () => {
       throw new Error('The "audit.fields" config value must be an array.');
     }
     for(const field of opencred.audit.fields) {
-      if(!requiredAuditFieldKeys.every(f => Object.keys(field).includes(f))) {
-        throw new Error('Each object in "audit.fields" must have the ' +
-          'following keys: ' +
-          requiredAuditFieldKeys.map(k => `"${k}"`).join(', '));
+      if(
+        !requiredAuditFieldKeys.every(f => Object.keys(field).includes(f))
+      ) {
+        throw new Error(
+          'Each object in "audit.fields" must have the ' +
+            'following keys: ' +
+            requiredAuditFieldKeys.map(k => `"${k}"`).join(', '),
+        );
       }
       if(!auditFieldTypes.includes(field.type)) {
-        throw new Error('Each object in "audit.fields" must have one of the ' +
-          'following types: ' +
-          auditFieldTypes.map(t => `"${t}"`).join(', '));
+        throw new Error(
+          'Each object in "audit.fields" must have one of the ' +
+            'following types: ' +
+            auditFieldTypes.map(t => `"${t}"`).join(', '),
+        );
       }
     }
     const auditFieldsHaveUniqueIds = klona(opencred.audit.fields)
       .map(k => k.id)
       .sort()
-      .reduce((unique, currentId, currentIndex, ids) =>
-        unique && currentId !== ids[currentIndex - 1], true);
+      .reduce(
+        (unique, currentId, currentIndex, ids) =>
+          unique && currentId !== ids[currentIndex - 1],
+        true,
+      );
     if(!auditFieldsHaveUniqueIds) {
       throw new Error('Each object in "audit.fields" must have a unique "id".');
     }
     const auditFieldsHaveUniquePaths = klona(opencred.audit.fields)
       .map(k => k.id)
       .sort()
-      .reduce((unique, currentPath, currentIndex, paths) =>
-        unique && currentPath !== paths[currentIndex - 1], true);
+      .reduce(
+        (unique, currentPath, currentIndex, paths) =>
+          unique && currentPath !== paths[currentIndex - 1],
+        true,
+      );
     if(!auditFieldsHaveUniquePaths) {
-      throw new Error('Each object in "audit.fields" must have ' +
-        'a unique "path".');
+      throw new Error(
+        'Each object in "audit.fields" must have ' + 'a unique "path".',
+      );
     }
   };
   validateAuditFields();

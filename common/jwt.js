@@ -16,8 +16,8 @@ import jp from 'jsonpath';
  * @param {import("../configs/config.js").RelyingParty} rp
  */
 export const jwtFromExchange = async (exchange, rp) => {
-  const signingKey = config.opencred.signingKeys?.find(
-    sk => sk.purpose.includes('id_token')
+  const signingKey = config.opencred.signingKeys?.find(sk =>
+    sk.purpose.includes('id_token'),
   );
   if(!signingKey) {
     throw new Error('No signing key found in config with purpose id_token');
@@ -45,15 +45,59 @@ export const jwtFromExchange = async (exchange, rp) => {
   const header = {
     alg: signingKey.type,
     typ: 'JWT',
-    kid: signingKey.id
+    kid: signingKey.id,
   };
 
+  if(!exchange.variables?.results) {
+    return null;
+  }
+
   const stepResultKey = Object.keys(exchange.variables.results).find(
-    v => v == exchange.step
+    v => v == exchange.step,
   );
   const stepResults = exchange.variables.results[stepResultKey];
+
+  // Handle DC API workflow differently
+  if(rp.workflow?.type === 'dc-api' && !!stepResults) {
+    try {
+      const now = Math.floor(Date.now() / 1000);
+      // Default to 1 hour
+      const expirySeconds = rp.idTokenExpirySeconds || 3600;
+
+      const subject = stepResults.response['org.iso.18013.5.1'].document_number;
+
+      const verified =
+        stepResults.response.issuer_authentication == 'Valid' &&
+        stepResults.response.device_authentication == 'Valid';
+
+      const errors = stepResults.response.errors;
+
+      const payload = {
+        iss: config.server.baseUri,
+        aud: rp.clientId,
+        sub: subject || exchange.id,
+        iat: now,
+        exp: now + expirySeconds,
+        verified,
+        verification_method: 'dc-api',
+        verified_credentials: stepResults.response,
+      };
+
+      if(errors !== null) {
+        payload.errors = errors;
+      }
+
+      const jwt = await JWT.sign({payload, header, signFn});
+      return jwt.toString();
+    } catch(error) {
+      console.error('Error in DC API JWT generation:', error);
+      throw error;
+    }
+  }
+
   const c = jp.query(
-    stepResults, '$.verifiablePresentation.verifiableCredential[0]'
+    stepResults,
+    '$.verifiablePresentation.verifiableCredential[0]',
   );
   if(!c.length) {
     return null;
@@ -65,7 +109,7 @@ export const jwtFromExchange = async (exchange, rp) => {
     aud: rp.clientId,
     sub: c[0].credentialSubject.id,
     iat: now,
-    exp: now + rp.idTokenExpirySeconds
+    exp: now + rp.idTokenExpirySeconds,
   };
 
   for(const {name, path} of rp.claims ?? []) {
