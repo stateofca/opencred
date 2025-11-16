@@ -4,7 +4,7 @@
   "ttl": 900,
   "state": "pending",
   "accessToken": "z19k6s2E9wr30gb56t789AmFS",
-  "workflowId": "testworkflow",
+  "workflowId": "test",
   "variables": {
     "authorizationRequest": {
       "response_type": "vp_token",

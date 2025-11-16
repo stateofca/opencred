@@ -72,7 +72,7 @@
         "format": "jwt_vp_json",
         "path_nested": {
           "format": "jwt_vp_json",
-          "path": "$.vc"
+          "path": "$.verifiableCredential[0]"
         }
       }
     ]

@@ -8,6 +8,7 @@ SPDX-License-Identifier: BSD-3-Clause
 <script setup>
 import {inject, onBeforeMount, onMounted, onUnmounted, reactive,
   ref} from 'vue';
+import {CadmvHeader} from '@digitalbazaar/cadmv-ui';
 import CHAPIView from './CHAPIView.vue';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
@@ -80,6 +81,10 @@ onBeforeMount(async () => {
       Object.keys(resp.data.rp.brand).forEach(key => {
         setCssVar(key, resp.data.rp.brand[key]);
       });
+      // Set --q-primary to header color for CadmvHeader component
+      if(resp.data.rp.brand.header) {
+        setCssVar('primary', resp.data.rp.brand.header);
+      }
     }
   } catch(e) {
     const {status, data} = e;
@@ -103,7 +108,7 @@ const changeLanguage = lang => {
 };
 
 const checkStatus = async () => {
-  if(!context.value || !context.value.rp?.workflow?.id ||
+  if(!context.value || !context.value.rp?.clientId ||
     !context.value.exchangeData?.id) {
     return;
   }
@@ -137,7 +142,7 @@ const checkStatus = async () => {
     ({
       data: {exchange},
     } = await httpClient.get(
-      `/workflows/${context.value.rp.workflow.id}/exchanges/` +
+      `/workflows/${context.value.rp.clientId}/exchanges/` +
       `${context.value?.exchangeData?.id}`,
       {
         headers: {
@@ -208,7 +213,7 @@ const handleResetExchange = async () => {
 
   try {
     const resetResult = await httpClient.post(
-      `/workflows/${context.value.rp.workflow.id}/exchanges/` +
+      `/workflows/${context.value.rp.clientId}/exchanges/` +
     `${context.value.exchangeData.id}/reset`,
       {
         headers: {
@@ -271,89 +276,74 @@ onUnmounted(() => {
 
 <template>
   <div class="flex flex-col min-h-screen">
-    <header :style="{ background: context.rp.brand.header }">
+    <cadmv-header
+      :ca-gov-url="context.rp.brand.primaryLogo?.href ??
+        context.rp.brand.primaryLink"
+      :ca-gov-logo="typeof context.rp.brand.primaryLogo === 'string' ?
+        context.rp.brand.primaryLogo : context.rp.brand.primaryLogo?.id"
+      :ca-gov-alt="context.rp.brand.primaryLogo?.alt || 'logo-image'"
+      :dmv-url="context.rp.brand.secondaryLogo?.href ??
+        context.rp.brand.secondaryLink"
+      :dmv-logo="typeof context.rp.brand.secondaryLogo === 'string' ?
+        context.rp.brand.secondaryLogo : context.rp.brand.secondaryLogo?.id"
+      :dmv-alt="context.rp.brand.secondaryLogo?.alt || 'logo-image'">
       <div
-        class="mx-auto flex gap-2 justify-between items-center px-6 py-3
-        max-w-3xl">
-        <a
-          v-if="context.rp.primaryLogo"
-          :href="context.rp.primaryLogo?.href ?? context.rp.primaryLink"
-          class="flex items-center gap-3">
-          <img
-            :height="context.rp.primaryLogo?.height || null"
-            :width="context.rp.primaryLogo?.width || null"
-            :src="typeof context.rp.primaryLogo === 'string' ?
-              context.rp.primaryLogo : context.rp.primaryLogo?.id"
-            :alt="context.rp.primaryLogo?.alt || 'logo-image'">
-        </a>
-        <a
-          v-if="context.rp.secondaryLogo"
-          :href="context.rp.secondaryLogo?.href ?? context.rp.secondaryLink"
-          class="flex items-center gap-3">
-          <img
-            :height="context.rp.secondaryLogo?.height || null"
-            :width="context.rp.secondaryLogo?.width || null"
-            :src="typeof context.rp.secondaryLogo === 'string' ?
-              context.rp.secondaryLogo : context.rp.secondaryLogo?.id"
-            :alt="context.rp.secondaryLogo?.alt || 'logo-image'">
-        </a>
+        id="translations-btn"
+        class="flex-grow flex justify-end items-center gap-3">
+        <q-btn-dropdown
+          v-if="availableLocales.length > 1 && useNativeTranslations"
+          flat
+          no-caps
+          text-color="white">
+          <template #label>
+            <div class="row items-center no-wrap gap-2 text-white">
+              <span class="bg-white rounded-full p-1 flex">
+                <TranslateIcon />
+              </span>
+              {{$t('translate')}}
+            </div>
+          </template>
+          <q-list>
+            <q-item
+              v-for="(item, index) in availableLocales"
+              :key="index"
+              v-close-popup
+              clickable
+              @click="changeLanguage(item)">
+              <q-item-section>
+                <q-item-label>
+                  {{$t(`languages.${item}`)}}
+                </q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
         <div
-          id="translations-btn"
-          class="flex-grow flex justify-end items-center gap-3">
-          <q-btn-dropdown
-            v-if="availableLocales.length > 1 && useNativeTranslations"
-            flat
-            no-caps
-            text-color="white">
-            <template #label>
-              <div class="row items-center no-wrap gap-2 text-white">
-                <span class="bg-white rounded-full p-1 flex">
-                  <TranslateIcon />
-                </span>
-                {{$t('translate')}}
-              </div>
-            </template>
-            <q-list>
-              <q-item
-                v-for="(item, index) in availableLocales"
-                :key="index"
-                v-close-popup
-                clickable
-                @click="changeLanguage(item)">
-                <q-item-section>
-                  <q-item-label>
-                    {{$t(`languages.${item}`)}}
-                  </q-item-label>
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-btn-dropdown>
-          <div
-            v-else-if="!useNativeTranslations"
-            class="row items-center no-wrap gap-2 ">
-            <span class="bg-white rounded-full p-1 flex">
-              <TranslateIcon />
-            </span>
-          </div>
+          v-else-if="!useNativeTranslations"
+          class="row items-center no-wrap gap-2 ">
+          <span class="bg-white rounded-full p-1 flex">
+            <TranslateIcon />
+          </span>
         </div>
       </div>
-    </header>
+    </cadmv-header>
     <main class="relative flex-grow">
       <div
-        v-if="context.rp.homeLink"
+        v-if="context.rp.brand.homeLink"
         class="bg-white w-full text-center">
         <h2 class="font-bold">
-          <a :href="context.rp.homeLink">
+          <a :href="context.rp.brand.homeLink">
             {{$t('home')}}
           </a>
         </h2>
       </div>
       <div
-        v-if="!state.error && context.rp.backgroundImage"
+        v-if="!state.error && context.rp.brand.backgroundImage"
         class="bg-no-repeat bg-cover clip-path-bg z-0 min-h-[360px]"
         :style="{ 'background-image': `url(${
-          typeof context.rp.backgroundImage === 'string' ?
-            context.rp.backgroundImage : context.rp.backgroundImage?.id})` }">
+          typeof context.rp.brand.backgroundImage === 'string' ?
+            context.rp.brand.backgroundImage :
+            context.rp.brand.backgroundImage?.id})` }">
         <div class="text-center text-6xl py-10">
 &nbsp;
         </div>
@@ -384,10 +374,10 @@ onUnmounted(() => {
       <OID4VPView
         v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex]
           === 'openid4vp'"
-        :brand="context.rp?.brand"
+        :brand="context.rp.brand"
         :exchange-data="context.exchangeData"
         :options="config.options"
-        :explainer-video="context.rp?.explainerVideo"
+        :explainer-video="context.rp.brand.explainerVideo"
         :active="state.active && !state.activeOverride"
         @switch-view="switchView"
         @override-active="state.activeOverride = true"

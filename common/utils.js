@@ -109,6 +109,38 @@ const _unenvelopeVcJwtVc = vcTokens => {
   });
 };
 
+/**
+ * Normalizes a vp_token JWT string to handle both plain JWT strings and
+ * JSON-stringified JWT strings (per OID4VP Draft 18 ambiguity).
+ * @param {string} vpToken - The vp_token value (may be plain JWT or
+ *   JSON-stringified JWT)
+ * @returns {string} - The normalized JWT string (unwrapped if needed)
+ */
+export const normalizeVpTokenJwt = vpToken => {
+  if(typeof vpToken !== 'string') {
+    return vpToken;
+  }
+  // Check if it's a JSON-stringified JWT (starts and ends with quotes)
+  if(vpToken.startsWith('"') && vpToken.endsWith('"')) {
+    try {
+      const parsed = JSON.parse(vpToken);
+      // If parsing succeeds and result is still a string, it was
+      // JSON-stringified
+      if(typeof parsed === 'string') {
+        return parsed;
+      }
+      // If parsing results in an object, return original (shouldn't happen
+      // for JWT)
+      return vpToken;
+    } catch(e) {
+      // If JSON parsing fails, it's not JSON-stringified, return as-is
+      return vpToken;
+    }
+  }
+  // Not JSON-stringified, return as-is
+  return vpToken;
+};
+
 export const unenvelopeJwtVp = vpToken => {
   const decodedVpPayloadWithEncodedVcs = decodeJwt(vpToken).vp;
   const decodedVpPayload = {
@@ -244,35 +276,54 @@ const verifyJWTVP = async (jwt, options = {}) => {
  *   Verifiable Credential to check vpr {object} - The Verifiable Presentation
  *   Request (legacy format) dcql_query {object} - A DCQL query describing
  *   credential requirements presentation_definition {object} - OID4VP
- *   presentation definition (legacy format)
+ *   presentation definition (legacy format) presentation_submission {object} -
+ *   Presentation submission (Draft 18 format indicator)
  * @returns boolean - true if the VC matches the query specification
  * @throws {Error} if more than one query type is specified or none are
  * specified
  */
 function checkVcQueryMatch(options) {
-  const {vc, vpr, dcql_query, presentation_definition} = options;
-  // Validate that exactly one query type is provided
+  const {vc, vpr, dcql_query, presentation_definition,
+    presentation_submission} = options;
+  // Validate that at least one query type is provided
   const queryTypes = [vpr, dcql_query, presentation_definition].filter(Boolean);
   if(queryTypes.length === 0) {
     throw new Error('Exactly one query type must be specified:' +
       ' vpr, dcql_query, or presentation_definition');
   }
-  if(queryTypes.length > 1) {
+
+  // Allow both dcql_query and presentation_definition for backward
+  // compatibility. Only error if vpr conflicts with others.
+  if(vpr && (dcql_query || presentation_definition)) {
     throw new Error('Only one query type can be specified at a time:' +
       ' vpr, dcql_query, or presentation_definition');
   }
 
-  // Handle DCQL query
-  if(dcql_query) {
-    return checkVcForDcql(vc, dcql_query);
+  // Determine which format to use based on presentation_submission presence:
+  // - If presentation_submission is present → Draft 18 format → use
+  //   presentation_definition
+  // - If presentation_submission is absent → OID4VP 1.0 format → use dcql_query
+  if(presentation_submission) {
+    // Draft 18 format: prioritize presentation_definition
+    if(presentation_definition) {
+      return checkVcForPresentationDefinition(vc, presentation_definition);
+    }
+    // Fallback to dcql_query if presentation_definition not available
+    if(dcql_query) {
+      return checkVcForDcql(vc, dcql_query);
+    }
+  } else {
+    // OID4VP 1.0 format: prioritize dcql_query
+    if(dcql_query) {
+      return checkVcForDcql(vc, dcql_query);
+    }
+    // Fallback to presentation_definition if dcql_query not available
+    if(presentation_definition) {
+      return checkVcForPresentationDefinition(vc, presentation_definition);
+    }
   }
 
-  // Handle presentation definition (OID4VP draft < 25 format)
-  if(presentation_definition) {
-    return checkVcForPresentationDefinition(vc, presentation_definition);
-  }
-
-  // Handle VPR
+  // Handle VPR (legacy format, doesn't depend on submission format)
   if(vpr) {
     return checkVcForVpr(vc, vpr);
   }
@@ -316,28 +367,21 @@ function checkVcForVpr(vc, vpr) {
 }
 
 /**
- * Checks if a Verifiable Credential matches a DCQL query
+ * Checks if a Verifiable Credential matches a single credential query
  * @param {object} vc - The Verifiable Credential to check
- * @param {object} dcql_query - The DCQL query
- * @returns boolean - true if the VC matches the DCQL query
+ * @param {object} credentialQuery - A single credential query from DCQL
+ * @returns {object} - Object with `matches` (boolean) and `errors` (array)
  */
-function checkVcForDcql(vc, dcql_query) {
-  if(!dcql_query.credentials || !Array.isArray(dcql_query.credentials)) {
-    return false;
-  }
+function checkVcAgainstCredentialQuery(vc, credentialQuery) {
+  const errors = [];
 
-  // For now, we'll check against the first credential query In a full
-  // implementation, we'd need to handle multiple credentials and
-  // credential_sets
-  const credentialQuery = dcql_query.credentials[0];
-  if(!credentialQuery) {
-    return false;
-  }
-
-  // Check format if specified
-  if(credentialQuery.format && vc.format !== credentialQuery.format) {
-    return false;
-  }
+  // Note: Format checking is not done here because VCs don't have a format
+  // property. Format validation happens at the submission level (in
+  // verifyDraft18Submission/verifyOID4VPSubmission) where format information
+  // is available from:
+  // - Draft 18: presentation_submission.descriptor_map[].format or
+  //   path_nested.format
+  // - OID4VP 1.0: dcql_query.credentials[].format
 
   // Check meta constraints if specified
   if(credentialQuery.meta) {
@@ -347,19 +391,75 @@ function checkVcForDcql(vc, dcql_query) {
       const expectedContext = arrayOf(credentialQuery.meta['@context']);
       const vcContext = arrayOf(vc['@context']);
       if(!expectedContext.every(ctx => vcContext.includes(ctx))) {
-        return false;
+        const expectedStr = expectedContext.join(', ');
+        const gotStr = vcContext.join(', ');
+        errors.push(
+          `Context mismatch: expected all of [${expectedStr}], ` +
+          `got [${gotStr}]`
+        );
       }
     }
     if(credentialQuery.meta.type) {
       const expectedType = arrayOf(credentialQuery.meta.type);
       const vcType = arrayOf(vc.type);
       if(!expectedType.every(type => vcType.includes(type))) {
-        return false;
+        errors.push(
+          `Type mismatch: expected all of [${expectedType.join(', ')}], ` +
+          `got [${vcType.join(', ')}]`
+        );
       }
     }
   }
 
-  return true;
+  return {
+    matches: errors.length === 0,
+    errors
+  };
+}
+
+/**
+ * Checks if a Verifiable Credential matches a DCQL query
+ * @param {object} vc - The Verifiable Credential to check
+ * @param {object} dcql_query - The DCQL query
+ * @returns boolean - true if the VC matches any of the credential queries
+ */
+function checkVcForDcql(vc, dcql_query) {
+  if(!dcql_query.credentials || !Array.isArray(dcql_query.credentials)) {
+    return false;
+  }
+
+  if(dcql_query.credentials.length === 0) {
+    return false;
+  }
+
+  // Check all credential queries, return true if any match
+  const allErrors = [];
+  for(let i = 0; i < dcql_query.credentials.length; i++) {
+    const credentialQuery = dcql_query.credentials[i];
+    if(!credentialQuery) {
+      allErrors.push({
+        queryIndex: i,
+        errors: ['Credential query is missing or invalid']
+      });
+      continue;
+    }
+
+    const result = checkVcAgainstCredentialQuery(vc, credentialQuery);
+    if(result.matches) {
+      // Found a match, return true immediately
+      return true;
+    }
+
+    // Record errors for this query
+    allErrors.push({
+      queryIndex: i,
+      errors: result.errors
+    });
+  }
+
+  // All queries failed, return false
+  // Note: allErrors contains organized error information for debugging
+  return false;
 }
 
 /**
@@ -387,31 +487,81 @@ function checkVcForPresentationDefinition(vc, presentation_definition) {
       continue;
     }
 
-    // Parse the JSONPath to understand what field we're checking
-    const parsedPath = jp.parse(field.path);
-    if(!parsedPath || parsedPath.length === 0) {
+    // Handle path as either string or array of strings
+    const paths = Array.isArray(field.path) ? field.path : [field.path];
+    let fieldName = null;
+
+    // Try to parse each path to extract the field name
+    // Use the first path that can be successfully parsed
+    for(const path of paths) {
+      if(typeof path !== 'string') {
+        continue;
+      }
+
+      try {
+        const parsedPath = jp.parse(path);
+        if(!parsedPath || parsedPath.length === 0) {
+          continue;
+        }
+
+        // Extract the field name from the parsed path
+        // For paths like $['@context'] or $['type'], we want the identifier
+        const lastExpression = parsedPath[parsedPath.length - 1];
+        if(lastExpression && lastExpression.expression &&
+           lastExpression.expression.type === 'string_literal') {
+          fieldName = lastExpression.expression.value;
+          break;
+        }
+      } catch(e) {
+        // Skip invalid paths
+        continue;
+      }
+    }
+
+    if(!fieldName) {
       continue;
     }
 
-    // Extract the field name from the parsed path
-    // For paths like $['@context'] or $['type'], we want the identifier
-    const lastExpression = parsedPath[parsedPath.length - 1];
-    if(!lastExpression || !lastExpression.expression ||
-       lastExpression.expression.type !== 'string_literal') {
+    const vcFieldValue = arrayOf(vc[fieldName]);
+
+    // Handle filter.allOf (requires ALL conditions to be satisfied)
+    if(field.filter.allOf && Array.isArray(field.filter.allOf)) {
+      // Each item in allOf must be satisfied
+      for(const allOfFilter of field.filter.allOf) {
+        // Check if this allOf filter has a contains constraint
+        if(allOfFilter.contains) {
+          const contains = allOfFilter.contains;
+          const expectedValue = contains.type === 'string' ?
+            contains.const : null;
+
+          if(expectedValue === null) {
+            // If we can't extract a value, skip this allOf condition
+            continue;
+          }
+
+          // The VC field value must contain this expected value
+          if(!vcFieldValue.includes(expectedValue)) {
+            return false;
+          }
+        }
+        // Add support for other filter types in allOf if needed
+      }
+      // If we processed allOf, continue to next field
       continue;
     }
 
-    const fieldName = lastExpression.expression.value;
-    const expectedValues = field.filter.contains || [];
+    // Handle filter.contains as either array or single object (legacy/fallback)
+    const contains = field.filter.contains;
+    const expectedValues = Array.isArray(contains) ? contains :
+      (contains ? [contains] : []);
     const expectedValueStrings = expectedValues
-      .filter(item => item.type === 'string')
+      .filter(item => item && item.type === 'string')
       .map(item => item.const);
 
     if(expectedValueStrings.length === 0) {
       continue;
     }
 
-    const vcFieldValue = arrayOf(vc[fieldName]);
     if(!expectedValueStrings.every(value => vcFieldValue.includes(value))) {
       return false;
     }

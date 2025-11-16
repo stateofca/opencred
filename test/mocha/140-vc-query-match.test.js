@@ -196,6 +196,139 @@ describe('VC Query Match', () => {
 
       expect(result).to.be(false);
     });
+
+    it('should match vc that satisfies presentation definition ' +
+      'with allOf', () => {
+      const driverLicenseVcWithAllContexts = {
+        '@context': [
+          'https://www.w3.org/2018/credentials/v1',
+          'https://w3id.org/vdl/v1',
+          'https://w3id.org/vdl/aamva/v1'
+        ],
+        type: ['VerifiableCredential', 'Iso18013DriversLicense'],
+        credentialSubject: {
+          id: 'did:example:holder123',
+          givenName: 'John',
+          familyName: 'Doe'
+        }
+      };
+
+      const presentationDefinition = {
+        id: 'test-presentation-definition',
+        input_descriptors: [{
+          id: 'driver-license',
+          constraints: {
+            fields: [
+              {
+                path: ['$[\'@context\']'],
+                filter: {
+                  type: 'array',
+                  allOf: [
+                    {
+                      contains: {
+                        type: 'string',
+                        const: 'https://www.w3.org/2018/credentials/v1'
+                      }
+                    },
+                    {
+                      contains: {
+                        type: 'string',
+                        const: 'https://w3id.org/vdl/v1'
+                      }
+                    },
+                    {
+                      contains: {
+                        type: 'string',
+                        const: 'https://w3id.org/vdl/aamva/v1'
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                path: '$[\'type\']',
+                filter: {
+                  type: 'array',
+                  contains: [
+                    {
+                      type: 'string',
+                      const: 'Iso18013DriversLicense'
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }]
+      };
+
+      const result = verifyUtils.checkVcQueryMatch({
+        vc: driverLicenseVcWithAllContexts,
+        presentation_definition: presentationDefinition
+      });
+
+      expect(result).to.be(true);
+    });
+
+    it('should not match vc missing required context in allOf', () => {
+      const driverLicenseVcMissingContext = {
+        '@context': [
+          'https://www.w3.org/2018/credentials/v1',
+          'https://w3id.org/vdl/v1'
+          // Missing 'https://w3id.org/vdl/aamva/v1'
+        ],
+        type: ['VerifiableCredential', 'Iso18013DriversLicense'],
+        credentialSubject: {
+          id: 'did:example:holder123',
+          givenName: 'John',
+          familyName: 'Doe'
+        }
+      };
+
+      const presentationDefinition = {
+        id: 'test-presentation-definition',
+        input_descriptors: [{
+          id: 'driver-license',
+          constraints: {
+            fields: [
+              {
+                path: ['$[\'@context\']'],
+                filter: {
+                  type: 'array',
+                  allOf: [
+                    {
+                      contains: {
+                        type: 'string',
+                        const: 'https://www.w3.org/2018/credentials/v1'
+                      }
+                    },
+                    {
+                      contains: {
+                        type: 'string',
+                        const: 'https://w3id.org/vdl/v1'
+                      }
+                    },
+                    {
+                      contains: {
+                        type: 'string',
+                        const: 'https://w3id.org/vdl/aamva/v1'
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }]
+      };
+
+      const result = verifyUtils.checkVcQueryMatch({
+        vc: driverLicenseVcMissingContext,
+        presentation_definition: presentationDefinition
+      });
+
+      expect(result).to.be(false);
+    });
   });
 
   describe('VPR Matching', () => {
@@ -318,12 +451,19 @@ describe('VC Query Match', () => {
         ' vpr, dcql_query, or presentation_definition');
     });
 
-    it('should throw for both dcql_query and presentation_definition', () => {
+    it('should allow both dcql_query and presentation_definition ' +
+      '(dcql_query takes priority)', () => {
       const dcqlQuery = {
         credentials: [{
           id: 'test',
           format: 'ldp_vc',
-          meta: {}
+          meta: {
+            '@context': [
+              'https://www.w3.org/2018/credentials/v1',
+              'https://w3id.org/citizenship/v1'
+            ],
+            type: ['VerifiableCredential', 'DriverLicenseCredential']
+          }
         }]
       };
 
@@ -335,14 +475,14 @@ describe('VC Query Match', () => {
         }]
       };
 
-      expect(() => {
-        verifyUtils.checkVcQueryMatch({
-          vc: driverLicenseVc,
-          dcql_query: dcqlQuery,
-          presentation_definition: presentationDefinition
-        });
-      }).to.throwError('Only one query type can be specified at a time:' +
-        ' vpr, dcql_query, or presentation_definition');
+      // Should not throw - both are allowed for backward compatibility
+      // dcql_query takes priority
+      const result = verifyUtils.checkVcQueryMatch({
+        vc: driverLicenseVc,
+        dcql_query: dcqlQuery,
+        presentation_definition: presentationDefinition
+      });
+      expect(result).to.be(true);
     });
   });
 

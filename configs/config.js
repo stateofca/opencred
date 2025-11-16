@@ -5,9 +5,10 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import * as bedrock from '@bedrock/core';=
+import * as bedrock from '@bedrock/core';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
+import {ZodError} from 'zod';
 import 'dotenv/config';
 import '@bedrock/views';
 
@@ -71,18 +72,32 @@ bedrock.events.on('bedrock.init', async () => {
   // After Bedrock has loaded config from env or file, validate config
   // and apply defaults and presets.
   const {opencred} = config;
-  const {workflows} = opencred;
+  const workflows = opencred?.workflows ?? [];
 
   opencred.defaultLanguage = opencred.defaultLanguage ?? 'en';
   opencred.translations = combineTranslations(opencred.translations ?? {});
 
   // A list of verification use cases for this OpenCred instance
   opencred.workflows = workflows.map(
-    workflow => applyWorkflowDefaults({opencred, workflows, workflow}).filter(Boolean)
-  );
+    workflow => applyWorkflowDefaults({
+      opencred, workflows, workflow})
+  ).filter(Boolean);
 
-  // TODO: catch and process errors.
-  config.opencred = OpenCredConfigSchema.parse(opencred);
-
-  logger.info('OpenCred Config Successfully Validated.');
+  try {
+    config.opencred = OpenCredConfigSchema.parse(opencred);
+    logger.info('OpenCred Config Successfully Validated.');
+  } catch(error) {
+    if(error instanceof ZodError) {
+      logger.error(JSON.stringify(error.issues, null, 2));
+      throw new bedrock.util.BedrockError(
+        'OpenCred configuration validation failed. See logs for details.',
+        {
+          name: 'ConfigurationError',
+          details: {validationErrors: error.issues.map(issue => issue.message)}
+        }
+      );
+    }
+    // Re-throw non-ZodError errors as-is
+    throw error;
+  }
 });

@@ -19,10 +19,10 @@
     "preview": "vite preview",
     "start": "node --preserve-symlinks dev.js",
     "test": "npm run test-node",
+    "test:bail": "cross-env MOCHA_BAIL=true DEBUG_ERRORS=true npm run test-node",
     "test-node": "cross-env NODE_ENV=test node --trace-warnings --preserve-symlinks test.js test",
     "test:load": "artillery run ./test/load/artillery.yaml",
-    "test:load:qa": "env-cmd artillery run -e qa ./test/load/artillery.yaml",
-    "validateConfig": "npx ajv-cli validate -d configs/combined.yaml -s configs/combined.schema.json -c ajv-formats --spec=draft7"
+    "test:load:qa": "env-cmd artillery run -e qa ./test/load/artillery.yaml"
   },
   "dependencies": {
     "@azure/msal-node": "^2.11.0",
@@ -40,6 +40,8 @@
     "@bedrock/vue": "^5.1.0",
     "@bedrock/web": "^3.1.0",
     "@bedrock/webpack": "^11.4.0",
+    "@digitalbazaar/cadmv-ui": "^2.0.0",
+    "@digitalbazaar/citizenship-context": "^4.1.0",
     "@digitalbazaar/credentials-context": "^3.2.0",
     "@digitalbazaar/data-integrity": "^2.5.0",
     "@digitalbazaar/data-integrity-context": "^2.0.1",
@@ -102,8 +104,6 @@
   "devDependencies": {
     "@bedrock/test": "^8.2.0",
     "@peculiar/webcrypto": "^1.4.5",
-    "ajv-cli": "^5.0.0",
-    "ajv-formats": "^3.0.1",
     "asn1js": "^3.0.5",
     "cross-env": "^7.0.3",
     "env-cmd": "^10.1.0",

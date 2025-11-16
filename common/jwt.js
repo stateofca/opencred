@@ -65,10 +65,10 @@ export const jwtFromExchange = async (exchange, rp) => {
     aud: rp.clientId,
     sub: c[0].credentialSubject.id,
     iat: now,
-    exp: now + rp.idTokenExpirySeconds
+    exp: now + (rp.oidc?.idTokenExpirySeconds ?? 3600)
   };
 
-  for(const {name, path} of rp.claims ?? []) {
+  for(const {name, path} of rp.oidc?.claims ?? []) {
     const claim = jp.query(c[0].credentialSubject, path);
     if(claim) {
       payload[name] = claim[0];

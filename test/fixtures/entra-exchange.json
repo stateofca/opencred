@@ -5,7 +5,7 @@
   "state": "pending",
   "accessToken": "z19k6s2E9wr30gb56t789AmFS",
   "apiAccessToken": "z19k6s2E9wr32gb56t543AmFS",
-  "workflowId": "testworkflow",
+  "workflowId": "test",
   "variables": {
     "authorizationRequest": {
       "response_type": "vp_token",

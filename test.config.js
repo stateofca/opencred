@@ -15,6 +15,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 config.mocha.tests.push(path.join(__dirname, 'test', 'mocha'));
 
+// Bail out on first failure to focus on one test at a time
+// because many subsequent failures are related to inability to
+// set up test mocks/stubs after a first failure.
+// Run with `npm run test:bail` to use.
+config.mocha.options.bail = (process.env.MOCHA_BAIL == 'true');
+
 // mongodb config
 config.mongodb.name = 'opencred_test';
 config.mongodb.host = 'localhost';

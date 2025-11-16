@@ -9,6 +9,7 @@ import {exportJWK, generateKeyPair, importJWK, SignJWT} from 'jose';
 import base64url from 'base64url';
 import {Crypto} from '@peculiar/webcrypto';
 import {generateValidCredential} from './credentials.js';
+import {isValidJwt} from '../../common/utils.js';
 
 const crypto = new Crypto();
 
@@ -32,7 +33,8 @@ export const generateValidJwtVpToken = async ({
   template = null,
   x5c = [],
   leafKeyPair = null,
-  innerIssuerDid = null
+  innerIssuerDid = null,
+  challenge = null
 } = {}) => {
   let publicKey;
   let privateKey;
@@ -97,11 +99,72 @@ export const generateValidJwtVpToken = async ({
       verifiableCredential: [signedVcPayload]
     }
   };
+  // Include nonce if provided (required for OID4VP challenge verification)
+  if(challenge) {
+    vpPayload.nonce = challenge;
+  }
   const signedVpPayload = await signer.sign(vpPayload);
 
   return {
     vpToken: signedVpPayload,
     vcToken: signedVcPayload,
     issuerDid, issuanceDate
+  };
+};
+
+/**
+ * Generates a presentation_submission that matches an authorization request
+ * @param {Object} options - Options for submission generation
+ * @param {Object} options.authorizationRequest - The authorization request
+ *   containing presentation_definition
+ * @param {string|Object} options.vpToken - The VP token (JWT string or
+ *   LDP object)
+ * @returns {Object} - Presentation submission object with id, definition_id,
+ *   and descriptor_map
+ */
+export const generatePresentationSubmission = ({
+  authorizationRequest,
+  vpToken
+}) => {
+  const {presentation_definition} = authorizationRequest;
+
+  if(!presentation_definition) {
+    throw new Error(
+      'authorizationRequest must contain presentation_definition');
+  }
+
+  if(!presentation_definition.input_descriptors ||
+    !Array.isArray(presentation_definition.input_descriptors)) {
+    throw new Error(
+      'presentation_definition must contain input_descriptors array');
+  }
+
+  // Determine format based on vpToken type
+  const isJwt = typeof vpToken === 'string' && isValidJwt(vpToken);
+  const vpFormat = isJwt ? 'jwt_vp_json' : 'ldp_vp';
+  // For nested VC format, use jwt_vc_json for JWT VCs
+  const vcFormat = isJwt ? 'jwt_vc_json' : 'ldp_vc';
+  // Path for nested VC: $.verifiableCredential[0] for both JWT and LDP
+  // (JWT VPs are decoded to verifiablePresentation structure with
+  // verifiableCredential array, not vc property)
+  const nestedPath = '$.verifiableCredential[0]';
+
+  // Generate descriptor_map entries for each input_descriptor
+  const descriptor_map = presentation_definition.input_descriptors.map(
+    inputDescriptor => ({
+      id: inputDescriptor.id,
+      path: '$',
+      format: vpFormat,
+      path_nested: {
+        format: vcFormat,
+        path: nestedPath
+      }
+    })
+  );
+
+  return {
+    id: `urn:uuid:${globalThis.crypto.randomUUID()}`,
+    definition_id: presentation_definition.id,
+    descriptor_map
   };
 };

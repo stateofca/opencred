@@ -24,100 +24,80 @@ app:
           -----END PUBLIC KEY-----
         purpose:
           - authorization_request
-    relyingParties:
+    workflows:
       - name: "Test Relying Party (Native)"
         clientId: "rp1"
         clientSecret: "DeepestAndDarkest"
         description: "Relying Party Test App"
-        primaryLogo: "https://placekitten.com/200/200"
-        primaryLink: "https://example.com"
-        secondaryLogo: "https://placekitten.com/200/200"
-        secondaryLink: "https://example2.com"
-        homeLink: "https://example.com"
-        explainerVideo:
-          id: "<YOUTUBE ID>"
-          provider: youtube
-        backgroundImage: "https://placekitten.com/800/200"
-        redirectUri: "http://localhost:3000"
-        idTokenExpirySeconds: 3600
-        claims:
-          - name: "dl_number"
-            path: "driversLicense.document_number"
         brand:
+          primaryLogo: "https://placekitten.com/200/200"
+          primaryLink: "https://example.com"
+          secondaryLogo: "https://placekitten.com/200/200"
+          secondaryLink: "https://example2.com"
+          homeLink: "https://example.com"
           cta: "#0B669D"
           primary: "#045199"
           header: "#0979c4"
-        scopes:
-          - name: "openid"
-            description: "Open ID Connect"
-        workflow:
-          type: native
-          id: z1A32xJZGqBeAEcMq56avmw2L
-          untrustedVariableAllowList:
-            - exampleParam
-            - exampleParam2
-          initialStep: default
-          steps:
-            default:
-              callback:
-                url: http://localhost:9000/callback
-                headersVariable: callbackHeaders
-                oauth:
-                  issuer: http://example.com
-                  token_url: http://example.com/token
-                  client_secret: exampleClientSecret
-                  client_id: exampleClientId
-                  scope:
-                    - default
-              createChallenge: true
-              verifiablePresentationRequest: >
-                {
-                  "query": {
-                    "type": "QueryByExample",
-                    "credentialQuery": {
-                      "reason": "Please present your VC.",
-                      "example": {
-                        "type": [
-                          "Iso18013DriversLicenseCredential"
-                        ]
-                      }
-                    }
-                  }
-                }
-              constraintsOverride: >
-                {
-                  "fields": [
-                    {
-                      "path": [
-                        "$.vc.type"
-                      ],
-                      "filter": {
-                        "type": "string",
-                        "pattern": "Iso18013DriversLicenseCredential"
-                      }
-                    }
+          explainerVideo:
+            id: "<YOUTUBE ID>"
+            provider: youtube
+          backgroundImage: "https://placekitten.com/800/200"
+        oidc:
+          redirectUri: "http://localhost:3000"
+          idTokenExpirySeconds: 3600
+          claims:
+            - name: "dl_number"
+              path: "driversLicense.document_number"
+          scopes:
+            - name: "openid"
+              description: "Open ID Connect"
+        callback:
+          url: http://localhost:9000/callback
+          headersVariable: callbackHeaders
+          oauth:
+            issuer: http://example.com
+            token_url: http://example.com/token
+            client_secret: exampleClientSecret
+            client_id: exampleClientId
+            scope:
+              - default
+              
+        createChallenge: true
+        verifiablePresentationRequest: >
+          {
+            "query": {
+              "type": "QueryByExample",
+              "credentialQuery": {
+                "reason": "Please present your VC.",
+                "example": {
+                  "type": [
+                    "Iso18013DriversLicenseCredential"
                   ]
                 }
+              }
+            }
+          }
       - name: "Test App"
         # An example that uses a remove VC-API exchanger to connect with a wallet
         # See Verifiable Credentials API Documentation: https://w3c-ccg.github.io/vc-api/
         clientId: "32bb6cec384b"
         clientSecret: "DeepestAndDarkest"
         description: "Relying Party Test App"
-        icon: "https://placekitten.com/200/200"
-        backgroundImage: "https://placekitten.com/800/300"
-        idTokenExpirySeconds: 3600
         brand:
+          primaryLogo: "https://placekitten.com/200/200"
+          backgroundImage: "https://placekitten.com/800/300"
           cta: "#0B669D"
           primary: "#045199"
           header: "#0979c4"
-        redirectUri: "http://localhost:3000"
-        scopes:
-          - name: "openid"
-            description: "Open ID Connect"
-        claims:
-          - name: "email"
-            path: "email"
+        oidc:
+          redirectUri: "http://localhost:3000"
+          idTokenExpirySeconds: 3600
+          claims:
+            - name: "email"
+              path: "email"
+          scopes:
+            - name: "openid"
+              description: "Open ID Connect"
         workflow:
           type: vc-api
           baseUrl: https://example.org/workflows/123
@@ -141,118 +121,83 @@ app:
           apiTenantId: "TODO" # required
           verifierDid: "TODO" # required
           verifierName: "TODO" # required
+          acceptedCredentialType: "TODO" # required
           credentialVerificationPurpose: "So that we can evaluate your permission to access the requested resource" # optional (default populated in middleware unless overridden here)
           allowRevokedCredentials: false # optional (default populated in middleware unless overridden here)
           validateLinkedDomain: false # optional (default populated in middleware unless overridden here)
           includeQrCode: true # optional (default populated in middleware unless overridden here)
-          initialStep: default
-          steps:
-            default:
-              acceptedCredentialType: "TODO" # required
       - name: "load-test"
         clientId: "load-test"
         clientSecret: "DeepestAndDarkest"
         description: "Load Testing Profile"
-        icon: "https://imagedelivery.net/I-hc6FAYxquPgv-npvTcWQ/241cb0c9-d92c-40b7-1745-6d5e68a45d00/public"
-        backgroundImage: "https://imagedelivery.net/I-hc6FAYxquPgv-npvTcWQ/f7516576-f9d3-4a15-1b9e-e95281613700/public"
-        redirectUri: "http://localhost:3000"
-        idTokenExpirySeconds: 3600
-        claims:
-          - name: "dl_number"
-            path: "driversLicense.document_number"
         brand:
+          primaryLogo: "https://imagedelivery.net/I-hc6FAYxquPgv-npvTcWQ/241cb0c9-d92c-40b7-1745-6d5e68a45d00/public"
+          backgroundImage: "https://imagedelivery.net/I-hc6FAYxquPgv-npvTcWQ/f7516576-f9d3-4a15-1b9e-e95281613700/public"
           cta: "#0B669D"
           primary: "#045199"
           header: "#0979c4"
-        scopes:
-          - name: "openid"
-            description: "Open ID Connect"
-        workflow:
-          type: native
-          id: load-test
-          initialStep: default
-          steps:
-            default:
-              createChallenge: true
-              verifiablePresentationRequest: >
-                {
-                  "query": {
-                    "type": "QueryByExample",
-                    "credentialQuery": {
-                      "reason": "Please present your VC.",
-                      "example": {
-                        "type": [
-                          "DomainLinkageCredential"
-                        ]
-                      }
-                    }
-                  }
-                }
-              constraintsOverride: >
-                {
-                  "fields": [
-                    {
-                      "path": [
-                        "$.vc.type"
-                      ],
-                      "filter": {
-                        "type": "string",
-                        "pattern": "DomainLinkageCredential"
-                      }
-                    }
+        oidc:
+          redirectUri: "http://localhost:3000"
+          idTokenExpirySeconds: 3600
+          claims:
+            - name: "dl_number"
+              path: "driversLicense.document_number"
+          scopes:
+            - name: "openid"
+              description: "Open ID Connect"
+        createChallenge: true
+        verifiablePresentationRequest: >
+          {
+            "query": {
+              "type": "QueryByExample",
+              "credentialQuery": {
+                "reason": "Please present your VC.",
+                "example": {
+                  "type": [
+                    "DomainLinkageCredential"
                   ]
                 }
+              }
+            }
+          }
+        workflow:
+          type: native
       - name: "Permanent Resident Card Verifier"
         clientId: "prc-verifier"
         clientSecret: "DeepestAndDarkest"
         description: "Permanent Resident Card Verification Service"
-        icon: "https://placekitten.com/200/200"
-        backgroundImage: "https://placekitten.com/800/300"
-        redirectUri: "http://localhost:3000"
-        idTokenExpirySeconds: 3600
         brand:
+          primaryLogo: "https://placekitten.com/200/200"
+          backgroundImage: "https://placekitten.com/800/300"
           cta: "#0B669D"
           primary: "#045199"
           header: "#0979c4"
-        scopes:
-          - name: "openid"
-            description: "Open ID Connect"
+        oidc:
+          redirectUri: "http://localhost:3000"
+          idTokenExpirySeconds: 3600
+          scopes:
+            - name: "openid"
+              description: "Open ID Connect"
+        createChallenge: true
+        verifiablePresentationRequest: >
+          {
+            "query": {
+              "type": "QueryByExample",
+              "credentialQuery": {
+                "reason": "Please present your Permanent Resident Card credential.",
+                "example": {
+                  "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://w3id.org/citizenship/v1",
+                    "https://w3id.org/security/suites/ed25519-2020/v1"
+                  ],
+                  "type": ["PermanentResidentCard"]
+                }
+              }
+            }
+          }
         workflow:
           type: native
-          id: prc-verifier
-          initialStep: default
-          steps:
-            default:
-              createChallenge: true
-              verifiablePresentationRequest: >
-                {
-                  "query": {
-                    "type": "QueryByExample",
-                    "credentialQuery": {
-                      "reason": "Please present your Permanent Resident Card credential.",
-                      "example": {
-                        "@context": [
-                          "https://www.w3.org/2018/credentials/v1",
-                          "https://w3id.org/citizenship/v1",
-                          "https://w3id.org/security/suites/ed25519-2020/v1"
-                        ],
-                        "type": ["PermanentResidentCard"]
-                      }
-                    }
-                  }
-                }
-              constraintsOverride: >
-                {
-                  "fields": [
-                    {
-                      "path": ["$.vc.type", "$.verifiableCredential.type", "$.type"],
-                      "filter": {
-                        "type": "string",
-                        "pattern": "PermanentResidentCard"
-                      }
-                    }
-                  ]
-                }
     options:
       exchangeProtocols:
         - chapi

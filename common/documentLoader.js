@@ -1,6 +1,6 @@
 /*!
- * Copyright 2023 - 2024 California Department of Motor Vehicles
- * Copyright 2023 - 2024 Digital Bazaar, Inc.
+ * Copyright 2023 - 2025 California Department of Motor Vehicles
+ * Copyright 2023 - 2025 Digital Bazaar, Inc.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -10,6 +10,9 @@ import * as DidKey from '@digitalbazaar/did-method-key';
 import * as DidWeb from '@digitalbazaar/did-method-web';
 import * as EcdsaMultikey from '@digitalbazaar/ecdsa-multikey';
 import {CachedResolver} from '@digitalbazaar/did-io';
+import {
+  contexts as CITIZENSHIP_CONTEXT_MAP
+} from '@digitalbazaar/citizenship-context';
 import {
   contexts as CRED_CONTEXT_MAP
 } from '@digitalbazaar/credentials-context';
@@ -79,6 +82,7 @@ export const getDocumentLoader = () => {
 
   // handle static context maps
   jsonLdDocLoader.addDocuments({documents: CRED_CONTEXT_MAP});
+  jsonLdDocLoader.addDocuments({documents: CITIZENSHIP_CONTEXT_MAP});
   jsonLdDocLoader.addDocuments({documents: DATA_INTEGRITY_CONTEXT_MAP});
   jsonLdDocLoader.addDocuments({documents: DID_CONTEXT_MAP});
   jsonLdDocLoader.addDocuments({documents: ED25519_SIG_2020_CONTEXT_MAP});

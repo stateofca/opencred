@@ -172,22 +172,37 @@ export const PresetWorkflowSchema = z.object({
 export const VcApiWorkflowSchema = z.object({
   ...BaseWorkflowSchema.shape,
   type: z.literal('vc-api'),
-  capability: z.string(), // Used to authenticate exchange API requests
+  capability: z.string().optional(), // authenticate exchange zCAP API requests
+  clientSecret: z.string().optional(), // zcap secret
   baseUrl: z.url().optional(), // May be included in capability
-  vpr: z.string()
+  verifiablePresentationRequest: z.string()
 });
 
 // Native Workflow schema
 export const NativeWorkflowSchema = z.object({
   ...BaseWorkflowSchema.shape,
   type: z.literal('native'),
-  dcql_query: DcqlQuerySchema.optional()
+  // if present, the verbose dcql_query format is used
+  dcql_query: DcqlQuerySchema.optional(),
+
+  // first fallback is the simplified query format
+  query: z.object({
+    type: z.string(),
+    context: z.array(z.string()),
+  }).optional(),
+
+  // final fallback is the legacy verifiablePresentationRequest format
+  verifiablePresentationRequest: z.string().optional(),
 });
 
 // Entra Workflow schema
 export const EntraWorkflowSchema = z.object({
   ...BaseWorkflowSchema.shape,
   type: z.literal('microsoft-entra-verified-id'),
+  acceptedCredentialType: z.string(),
+  credentialVerificationPurpose: z.string().optional(),
+  allowRevokedCredentials: z.boolean().default(false),
+  validateLinkedDomain: z.boolean().default(false),
   apiBaseUrl: z.url(),
   apiLoginBaseUrl: z.url(),
   apiTenantId: z.string(),
@@ -249,6 +264,7 @@ export const NativeVcWorkflowSchema = z.object({
 
 // Union of all workflow types
 export const WorkflowSchema = z.discriminatedUnion('type', [
+  PresetWorkflowSchema,
   VcApiWorkflowSchema,
   NativeWorkflowSchema,
   NativeVcWorkflowSchema,
@@ -289,19 +305,27 @@ export const AuditFieldSchema = z.object({
   name: z.string(),
   path: z.string(),
   required: z.boolean(),
-  options: z.array(z.string()).optional()
+  options: z.record(z.string(), z.any()).optional()
 });
 
 // Audit configuration schema
 export const AuditSchema = z.object({
-  enable: z.boolean().optional(),
+  enable: z.boolean().default(false),
   types: z.array(z.union(
     [
-      z.enum(Object.keys(presets)),
-      AuditFieldSchema
+      z.object({
+        preset: z.enum(Object.keys(presets))
+      }),
+      z.object({
+        name: z.string(),
+        fields: z.array(AuditFieldSchema)
+      })
     ]
   )).optional()
 }).transform(data => {
+  if(!data.enable) {
+    return {enable: false};
+  }
   // load preset audit configs
   return {
     ...data,
@@ -363,58 +387,72 @@ export const SigningKeySchema = z.object({
 
 // Main OpenCred configuration schema
 export const OpenCredConfigSchema = z.object({
-  options: OptionsSchema.optional(),
+  options: OptionsSchema.default({}),
   workflows: z.array(WorkflowSchema).optional(),
   defaultLanguage: z.string().optional(),
   translations: z.record(z.string(), z.record(z.string(), z.string()))
     .optional(),
   defaultBrand: BrandSchema.default(DEFAULT_BRAND),
-  didWeb: DidWebSchema.optional(),
+  didWeb: DidWebSchema.default({mainEnabled: false, linkageEnabled: false}),
   signingKeys: z.array(SigningKeySchema).default([]),
   trustedCredentialIssuers: z.array(z.string()).optional(),
-  caStore: z.array(z.object({pem: z.string()})).optional(),
+  caStore: z.array(z.object({pem: z.string()})).default([]),
   reCaptcha: ReCaptchaSchema.optional(),
-  audit: AuditSchema.optional()
+  audit: AuditSchema.default({enable: false})
 });
 
 /** Populate workflow with defaults from root and configFrom peers */
 export const applyWorkflowDefaults = (
   {opencred, workflows, workflow, refs = []}
 ) => {
-  const db = {brand: opencred.defaultBrand ?? DEFAULT_BRAND};
+  const defaultBrand = {brand: opencred.defaultBrand ?? DEFAULT_BRAND};
   if(workflow.configFrom) {
     if(typeof workflow.configFrom !== 'string') {
-      logger.error(`[${workflow.clientId}]: configFrom must be a string`);
-      return null;
+      const error = new Error(
+        `[${workflow.clientId}]: configFrom must be a string`
+      );
+      logger.error(error.message);
+      throw error;
     }
     const configFrom = workflows.find(r => r.clientId === workflow.configFrom);
     if(!configFrom) {
-      logger.error(
+      const error = new Error(
         `[${workflow.clientId}]: configFrom ${workflow.configFrom} not found`
       );
-      return null;
+      logger.error(error.message);
+      throw error;
     }
-    if(configFrom.configFrom && refs.includes(configFrom.clientId)) {
-      logger.error(
+    // Check for circular reference: if we've already seen this workflow's
+    // clientId or the configFrom's clientId in our reference chain, it's a
+    // cycle
+    if(refs.includes(workflow.clientId) ||
+      refs.includes(configFrom.clientId)) {
+      const error = new Error(
         `[${workflow.clientId}]: Circular configFrom reference detected`
       );
-      return null;
-    } else if(configFrom.configFrom) {
+      logger.error(error.message);
+      throw error;
+    }
+    if(configFrom.configFrom) {
       return {
-        ...db,
+        ...defaultBrand,
         ...applyWorkflowDefaults({
-          workflows, configFrom, refs: refs.concat(workflow.clientId)}),
+          opencred,
+          workflows,
+          workflow: configFrom,
+          refs: refs.concat(workflow.clientId)
+        }),
         ...workflow
       };
     }
     return {
-      ...db,
+      ...defaultBrand,
       ...configFrom,
       ...workflow
     };
   }
   return {
-    ...db,
+    ...defaultBrand,
     ...workflow
   };
 };

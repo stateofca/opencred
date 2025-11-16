@@ -14,66 +14,59 @@ import {
   convertDerCertificateToPem,
   generateCertificateChain
 } from '../utils/x509.js';
+import {createId, verifyUtils} from '../../common/utils.js';
 import {createPresentation, signPresentation} from '@digitalbazaar/vc';
+import {
+  generatePresentationSubmission,
+  generateValidJwtVpToken
+} from '../utils/jwtVpTokens.js';
 import {config} from '@bedrock/core';
+import {createExchangeWithAuthRequest} from '../utils/exchanges.js';
 import {database} from '../../lib/database.js';
 import {documentLoader} from '../utils/testDocumentLoader.js';
 import {domainToDidWeb} from '../../lib/didWeb.js';
 import {generateValidDidKeyData} from '../utils/dids.js';
-import {generateValidJwtVpToken} from '../utils/jwtVpTokens.js';
 import {generateValidSignedCredential} from '../utils/credentials.js';
 import {getDocumentLoader} from '../../common/documentLoader.js';
-import {NativeWorkflowService} from '../../lib/workflows/native-workflow.js';
-import {verifyUtils} from '../../common/utils.js';
+
 import {withStubs} from '../utils/withStubs.js';
 
+import {NativeWorkflowService} from '../../lib/workflows/native-workflow.js';
+
 const rp = {
-  workflow: {
-    id: 'testworkflow',
-    type: 'native',
-    untrustedVariableAllowList: ['redirectPath'],
-    steps: {
-      default: {
-        verifiablePresentationRequest: JSON.stringify({
-          query: {
-            type: 'QueryByExample',
-            credentialQuery: {
-              reason: 'Please present your Driver\'s License',
-              example: {
-                '@context': [
-                  'https://www.w3.org/ns/credentials/v2',
-                  'https://www.w3.org/ns/credentials/examples/v2'
-                ],
-                type: 'MyPrototypeCredential'
-              }
-            }
-          }
-        })
+  type: 'native',
+  clientId: 'testworkflow',
+  untrustedVariableAllowList: ['redirectPath'],
+  verifiablePresentationRequest: JSON.stringify({
+    query: {
+      type: 'QueryByExample',
+      credentialQuery: {
+        reason: 'Please present your Driver\'s License',
+        example: {
+          '@context': [
+            'https://www.w3.org/ns/credentials/v2',
+            'https://www.w3.org/ns/credentials/examples/v2'
+          ],
+          type: 'MyPrototypeCredential'
+        }
       }
-    },
-    initialStep: 'default'
-  },
-  domain: 'http://example.test.com'
+    }
+  })
 };
 
 describe('Exchanges (Native)', async () => {
   let vp_token;
   let presentation_submission;
-  let exchange;
   let verifyStub;
   let dbStub;
   let service;
 
   before(() => {
-    service = new NativeWorkflowService({get: () => {}, post: () => {}});
+    service = new NativeWorkflowService();
     const oid4vp = JSON.parse(fs.readFileSync(
       './test/fixtures/oid4vp_di.json'));
     vp_token = oid4vp.vp_token;
     presentation_submission = oid4vp.presentation_submission;
-    exchange = JSON.parse(fs.readFileSync(
-      './test/fixtures/exchange.json'));
-    exchange.createdAt = new Date(exchange.createdAt);
-    exchange.recordExpiresAt = new Date(exchange.recordExpiresAt);
     dbStub = sinon.stub(database.collections.Exchanges, 'insertOne')
       .resolves({insertedId: 'test'});
     sinon.stub(getDocumentLoader(), 'build')
@@ -98,40 +91,65 @@ describe('Exchanges (Native)', async () => {
     sinon.restore();
   });
 
-  it('should set req.exchange for native workflow in createNativeExchange',
+  it('should return exchange from createWorkflowSpecificExchange',
     async () => {
-      const next = sinon.spy();
-      const req = {rp, query: {state: 'test'}};
+      const accessToken = await createId();
+      const trustedVariables = {
+        rp,
+        accessToken,
+        oidc: {
+          code: null,
+          state: 'test'
+        }
+      };
+      const untrustedVariables = {};
 
-      await service.createExchange(req, null, next);
-      expect(next).to.have.property('called');
-      expect(req).to.have.property('exchange');
-      expect(req.exchange).to.have.property('vcapi');
-      expect(req.exchange).to.have.property('OID4VP');
-      expect(req.exchange).to.have.property('id');
+      const exchange = await service.createWorkflowSpecificExchange(
+        trustedVariables, untrustedVariables);
+      expect(exchange).to.have.property('vcapi');
+      expect(exchange).to.have.property('OID4VP');
+      expect(exchange).to.have.property('id');
       expect(dbStub.called).to.be(true);
     });
 
-  it('should not set req.exchange for vc-api workflow in createNativeExchange',
+  it('should return undefined for vc-api workflow',
     async () => {
-      const next = sinon.spy();
-      const req = klona({rp, query: {state: 'test'}});
-      req.rp.workflow.type = 'vc-api';
-      await service.createExchange(req, null, next);
-      expect(next).to.have.property('called');
-      expect(req).to.not.have.property('exchange');
+      const accessToken = await createId();
+      const vcApiRp = klona(rp);
+      vcApiRp.type = 'vc-api';
+      const trustedVariables = {
+        rp: vcApiRp,
+        accessToken,
+        oidc: {
+          code: null,
+          state: 'test'
+        }
+      };
+      const untrustedVariables = {};
+
+      const exchange = await service.createWorkflowSpecificExchange(
+        trustedVariables, untrustedVariables);
+      expect(exchange).to.be(undefined);
     });
 
   it('should get the correct exchange data', async () => {
-    const next = sinon.spy();
-    const req = {rp, query: {state: 'test'}};
-    await service.createExchange(req, null, next);
+    const accessToken = await createId();
+    const trustedVariables = {
+      rp,
+      accessToken,
+      oidc: {
+        code: null,
+        state: 'test'
+      }
+    };
+    const untrustedVariables = {};
 
-    expect(next).to.have.property('called');
-    expect(req).to.have.property('exchange');
-    expect(req.exchange).to.have.property('vcapi');
-    expect(req.exchange).to.have.property('OID4VP');
-    expect(req.exchange).to.have.property('id');
+    const exchange = await service.createWorkflowSpecificExchange(
+      trustedVariables, untrustedVariables);
+
+    expect(exchange).to.have.property('vcapi');
+    expect(exchange).to.have.property('OID4VP');
+    expect(exchange).to.have.property('id');
   });
 
   it('should set the right ttl and recordExpiresAt', async () => {
@@ -145,9 +163,19 @@ describe('Exchanges (Native)', async () => {
         return [optionsConfigStub];
       },
       async () => {
-        const next = sinon.spy();
-        const req = {rp, query: {state: 'test'}};
-        await service.createExchange(req, null, next);
+        const accessToken = await createId();
+        const trustedVariables = {
+          rp,
+          accessToken,
+          oidc: {
+            code: null,
+            state: 'test'
+          }
+        };
+        const untrustedVariables = {};
+
+        await service.createWorkflowSpecificExchange(
+          trustedVariables, untrustedVariables);
 
         // TTL should be 16 seconds not 900 default or 5 (5).
         // because it will be the smaller of the default & db cache timeout
@@ -167,6 +195,7 @@ describe('Exchanges (Native)', async () => {
 
   it('should verify a submission and return verified true', async () => {
     const rpStub = {...rp, trustedCredentialIssuers: []};
+    const exchange = await createExchangeWithAuthRequest({rp: rpStub});
 
     // Consider refactoring into more utility functions
     const {
@@ -231,11 +260,16 @@ describe('Exchanges (Native)', async () => {
       },
       async () => {
         const rpStub = {...rp, trustedCredentialIssuers: []};
+        const exchange = await createExchangeWithAuthRequest({rp: rpStub});
 
-        const oid4vpJWT = JSON.parse(fs.readFileSync(
-          './test/fixtures/oid4vp_jwt.json'));
-        const vp_token_jwt = oid4vpJWT.vp_token;
-        const submission = oid4vpJWT.presentation_submission;
+        const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
+          aud: domainToDidWeb(config.server.baseUri),
+          challenge: exchange.challenge
+        });
+        const submission = generatePresentationSubmission({
+          authorizationRequest: exchange.variables.authorizationRequest,
+          vpToken: vp_token_jwt
+        });
 
         const result = await service.verifySubmission({
           rp: rpStub, vp_token: vp_token_jwt, submission, exchange});
@@ -253,12 +287,13 @@ describe('Exchanges (Native)', async () => {
   it('should return an error if definition_id does not match', async () => {
     await withStubs(
       () => {
-        const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+        const rpStub = sinon.stub(config.opencred, 'workflows').value(
           [rp]
         );
         return [rpStub];
       },
       async () => {
+        const exchange = await createExchangeWithAuthRequest({rp});
         presentation_submission.definition_id = 'invalid';
         const result = await service.verifySubmission({
           rp, vp_token, submission: presentation_submission, exchange
@@ -274,7 +309,7 @@ describe('Exchanges (Native)', async () => {
   it('should return an error if vp invalid', async () => {
     await withStubs(
       () => {
-        const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+        const rpStub = sinon.stub(config.opencred, 'workflows').value(
           [rp]
         );
         verifyStub.restore();
@@ -284,6 +319,7 @@ describe('Exchanges (Native)', async () => {
         return [rpStub, newVerifyStub];
       },
       async () => {
+        const exchange = await createExchangeWithAuthRequest({rp});
         const result = await service.verifySubmission({
           rp, vp_token, submission: presentation_submission, exchange});
 
@@ -297,12 +333,13 @@ describe('Exchanges (Native)', async () => {
   it('should return an error if vc fails challenge', async () => {
     await withStubs(
       () => {
-        const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+        const rpStub = sinon.stub(config.opencred, 'workflows').value(
           [rp]
         );
         return [rpStub];
       },
       async () => {
+        const exchange = await createExchangeWithAuthRequest({rp});
         const result = await service.verifySubmission({
           rp, vp_token, submission: presentation_submission,
           exchange: {
@@ -341,14 +378,17 @@ describe('Exchanges (Native)', async () => {
       },
       async () => {
         const rpStub = {...rp, trustedCredentialIssuers: []};
-        const oid4vpJWT = JSON.parse(fs.readFileSync(
-          './test/fixtures/oid4vp_jwt.json'));
+        const exchange = await createExchangeWithAuthRequest({rp: rpStub});
         const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
           aud: domainToDidWeb(config.server.baseUri),
+          challenge: exchange.challenge,
           x5c: (await generateCertificateChain({length: 3})).chain.map(
             c => convertDerCertificateToPem(c.raw, true))
         });
-        const presentation_submission_jwt = oid4vpJWT.presentation_submission;
+        const presentation_submission_jwt = generatePresentationSubmission({
+          authorizationRequest: exchange.variables.authorizationRequest,
+          vpToken: vp_token_jwt
+        });
 
         const result = await service.verifySubmission({
           rp: rpStub, vp_token: vp_token_jwt,
@@ -385,10 +425,10 @@ describe('Exchanges (Native)', async () => {
       },
       async () => {
         const rpStub = {...rp, trustedCredentialIssuers: []};
-        const oid4vpJWT = JSON.parse(fs.readFileSync(
-          './test/fixtures/oid4vp_jwt.json'));
+        const exchange = await createExchangeWithAuthRequest({rp: rpStub});
         const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
           aud: domainToDidWeb(config.server.baseUri),
+          challenge: exchange.challenge,
           x5c: [
             'MIICaDCCAg6gAwIBAgIUHOO2dIyATRbAfyt3AcBO6DHawhEwCgYIKoZIzj0E' +
             'AwIwUDELMAkGA1UEBhMCVVMxDjAMBgNVBAgMBVVTLUNBMQwwCgYDVQQKDANE' +
@@ -406,7 +446,10 @@ describe('Exchanges (Native)', async () => {
             'pwIgdFTNrjOJJEYDCbzvsjh832SZlK7nk2Hcl+EncyfraYY='
           ]
         });
-        const presentation_submission_jwt = oid4vpJWT.presentation_submission;
+        const presentation_submission_jwt = generatePresentationSubmission({
+          authorizationRequest: exchange.variables.authorizationRequest,
+          vpToken: vp_token_jwt
+        });
 
         const result = await service.verifySubmission({
           rp: rpStub, vp_token: vp_token_jwt,
@@ -443,17 +486,20 @@ describe('Exchanges (Native)', async () => {
       },
       async () => {
         const rpStub = {...rp, trustedCredentialIssuers: []};
-        const oid4vpJWT = JSON.parse(fs.readFileSync(
-          './test/fixtures/oid4vp_jwt.json'));
+        const exchange = await createExchangeWithAuthRequest({rp: rpStub});
         const {chain, leafKeyPair} = await generateCertificateChain({
           length: 3
         });
         const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
           aud: domainToDidWeb(config.server.baseUri),
+          challenge: exchange.challenge,
           x5c: chain.map(c => convertDerCertificateToPem(c.raw, true)),
           leafKeyPair
         });
-        const presentation_submission_jwt = oid4vpJWT.presentation_submission;
+        const presentation_submission_jwt = generatePresentationSubmission({
+          authorizationRequest: exchange.variables.authorizationRequest,
+          vpToken: vp_token_jwt
+        });
 
         const result = await service.verifySubmission({
           rp: rpStub, vp_token: vp_token_jwt,
@@ -468,15 +514,13 @@ describe('Exchanges (Native)', async () => {
 
   it('should pass X.509 validation with invalid x5c chain if' +
     ' caStore is false in rp', async () => {
-    const oid4vpJWT = JSON.parse(fs.readFileSync(
-      './test/fixtures/oid4vp_jwt.json'));
     await withStubs(
       async () => {
         const {chain} = await generateCertificateChain({
           length: 3
         });
         const root = chain.pop();
-        const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+        const rpStub = sinon.stub(config.opencred, 'workflows').value(
           [{...rp, trustedCredentialIssuers: [],
             // Bypass CA checks
             caStore: false
@@ -501,15 +545,20 @@ describe('Exchanges (Native)', async () => {
           verifyUtilsStub2, updateStub, caStoreStub];
       },
       async () => {
+        const rpStub = {...rp, trustedCredentialIssuers: []};
+        const exchange = await createExchangeWithAuthRequest({rp: rpStub});
         const {chain} = await generateCertificateChain({
           length: 3
         });
         const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
           aud: domainToDidWeb(config.server.baseUri),
+          challenge: exchange.challenge,
           x5c: chain.map(c => convertDerCertificateToPem(c.raw, true))
         });
-        const presentation_submission_jwt = oid4vpJWT.presentation_submission;
-        const rpStub = {...rp, trustedCredentialIssuers: []};
+        const presentation_submission_jwt = generatePresentationSubmission({
+          authorizationRequest: exchange.variables.authorizationRequest,
+          vpToken: vp_token_jwt
+        });
 
         const result = await service.verifySubmission({
           rp: rpStub, vp_token: vp_token_jwt,
@@ -523,12 +572,10 @@ describe('Exchanges (Native)', async () => {
 
   it('should not fail trusted issuer check if issuer allowlist is empty',
     async () => {
-      const oid4vpJWT = JSON.parse(fs.readFileSync(
-        './test/fixtures/oid4vp_jwt.json'));
       await withStubs(
         () => {
           const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
-          const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+          const rpStub = sinon.stub(config.opencred, 'workflows').value(
             [{...rp, trustedCredentialIssuers: []}]
           );
           const vprCheckStub = sinon.stub(
@@ -549,11 +596,16 @@ describe('Exchanges (Native)', async () => {
             verifyUtilsStub, verifyUtilsStub2, updateStub];
         },
         async () => {
-          const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
-            aud: domainToDidWeb(config.server.baseUri)
-          });
-          const presentation_submission_jwt = oid4vpJWT.presentation_submission;
           const rpStub = {...rp, trustedCredentialIssuers: []};
+          const exchange = await createExchangeWithAuthRequest({rp: rpStub});
+          const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
+            aud: domainToDidWeb(config.server.baseUri),
+            challenge: exchange.challenge
+          });
+          const presentation_submission_jwt = generatePresentationSubmission({
+            authorizationRequest: exchange.variables.authorizationRequest,
+            vpToken: vp_token_jwt
+          });
 
           const result = await service.verifySubmission({
             rp: rpStub, vp_token: vp_token_jwt,
@@ -567,12 +619,10 @@ describe('Exchanges (Native)', async () => {
 
   it('should return an error if issuer allowlist is not empty and ' +
     'vc issuer is not in allowlist', async () => {
-    const oid4vpJWT = JSON.parse(fs.readFileSync(
-      './test/fixtures/oid4vp_jwt.json'));
     await withStubs(
       () => {
         const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
-        const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+        const rpStub = sinon.stub(config.opencred, 'workflows').value(
           [{...rp, trustedCredentialIssuers: ['did:jwk:123']}]
         );
         const vprCheckStub = sinon.stub(
@@ -591,11 +641,16 @@ describe('Exchanges (Native)', async () => {
           verifyUtilsStub, verifyUtilsStub2, updateStub];
       },
       async () => {
-        const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
-          aud: domainToDidWeb(config.server.baseUri)
-        });
-        const presentation_submission_jwt = oid4vpJWT.presentation_submission;
         const rpStub = {...rp, trustedCredentialIssuers: []};
+        const exchange = await createExchangeWithAuthRequest({rp: rpStub});
+        const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
+          aud: domainToDidWeb(config.server.baseUri),
+          challenge: exchange.challenge
+        });
+        const presentation_submission_jwt = generatePresentationSubmission({
+          authorizationRequest: exchange.variables.authorizationRequest,
+          vpToken: vp_token_jwt
+        });
 
         const result = await service.verifySubmission({
           rp: rpStub, vp_token: vp_token_jwt,
@@ -609,12 +664,10 @@ describe('Exchanges (Native)', async () => {
 
   it('should return an error if issuer of inner credential ' +
     'is in allowlist, but VC-JWT issuer is not', async () => {
-    const oid4vpJWT = JSON.parse(fs.readFileSync(
-      './test/fixtures/oid4vp_jwt.json'));
     await withStubs(
       () => {
         const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
-        const rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+        const rpStub = sinon.stub(config.opencred, 'workflows').value(
           [{...rp, trustedCredentialIssuers: ['did:jwk:123']}]
         );
         const vprCheckStub = sinon.stub(
@@ -634,12 +687,17 @@ describe('Exchanges (Native)', async () => {
           verifyUtilsStub, verifyUtilsStub2, updateStub];
       },
       async () => {
+        const rpStub = {...rp, trustedCredentialIssuers: []};
+        const exchange = await createExchangeWithAuthRequest({rp: rpStub});
         const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
           aud: domainToDidWeb(config.server.baseUri),
+          challenge: exchange.challenge,
           innerIssuerDid: 'did:jwk:123'
         });
-        const presentation_submission_jwt = oid4vpJWT.presentation_submission;
-        const rpStub = {...rp, trustedCredentialIssuers: []};
+        const presentation_submission_jwt = generatePresentationSubmission({
+          authorizationRequest: exchange.variables.authorizationRequest,
+          vpToken: vp_token_jwt
+        });
 
         const result = await service.verifySubmission({
           rp: rpStub, vp_token: vp_token_jwt,
@@ -651,26 +709,41 @@ describe('Exchanges (Native)', async () => {
     );
   });
 
-  it('createExchange should set oidc.state from query param', async () => {
-    const next = sinon.spy();
-    const req = {rp, query: {state: 'test'}};
-
-    await service.createExchange(req, null, next);
-    expect(next).to.have.property('called');
-    expect(req).to.have.property('exchange');
-    expect(req.exchange.oidc.state).to.be('test');
-    expect(dbStub.called).to.be(true);
-  });
-
-  it('createExchange should set oidc.state from body param',
+  it('createWorkflowSpecificExchange should set oidc.state from query param',
     async () => {
-      const next = sinon.spy();
-      const req = {rp, body: {oidcState: 'test'}};
+      const accessToken = await createId();
+      const trustedVariables = {
+        rp,
+        accessToken,
+        oidc: {
+          code: null,
+          state: 'test'
+        }
+      };
+      const untrustedVariables = {};
 
-      await service.createExchange(req, null, next);
-      expect(next).to.have.property('called');
-      expect(req).to.have.property('exchange');
-      expect(req.exchange.oidc.state).to.be('test');
+      const exchange = await service.createWorkflowSpecificExchange(
+        trustedVariables, untrustedVariables);
+      expect(exchange.oidc.state).to.be('test');
+      expect(dbStub.called).to.be(true);
+    });
+
+  it('createWorkflowSpecificExchange should set oidc.state from body param',
+    async () => {
+      const accessToken = await createId();
+      const trustedVariables = {
+        rp,
+        accessToken,
+        oidc: {
+          code: null,
+          state: 'test'
+        }
+      };
+      const untrustedVariables = {};
+
+      const exchange = await service.createWorkflowSpecificExchange(
+        trustedVariables, untrustedVariables);
+      expect(exchange.oidc.state).to.be('test');
       expect(dbStub.called).to.be(true);
     });
 });

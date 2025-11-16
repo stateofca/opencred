@@ -84,7 +84,7 @@ the file does not exist, create it. Add the following content to the file:
 
 #### Configuring a Native workflow
 
-Update the `relyingParties` section of the config file to include a relying
+Update the `workflows` section of the config file to include a relying
 party with a workflow of type `native`. The `native` workflow type is used to
 implement an OID4VP or VC-API exchange on this instance of OpenCred. This results in a QR
 code being displayed to the user or returned through the initiate exchange API
@@ -191,16 +191,17 @@ signingKeys:
 ```
 
 #### Configuring id_token claims for OIDC
-Within your relying party configuration, you may configure claims that will be
+Within your workflow configuration, you may configure claims that will be
 extracted from a credential and included in the id_token result of an Open ID
 Connect login flow. The following example will extract the `email` claim from a
 credential that is presented by the user. The `email` claim will be included in
 the id_token that is returned to the relying party.
 
 ```yaml
-relyingParties:
+workflows:
   - clientId: example
     clientSecret: example
+    type: native
     redirectUri: http://localhost:8080/oidc/callback
     workflow:
       ...
@@ -225,13 +226,15 @@ parameters or as JSON body properties. It is important to note that these params
 originate from the client side application and so should be treated as
 "untrusted".
 
-While configuring a relying party workflow an `untrustedVariableAllowList`
-property contains a list of variables that are allowed to be passed in this
-manner. There is a default `redirectPath` variable that will always be included.
+While configuring a workflow an `untrustedVariableAllowList` property contains a
+list of variables that are allowed to be passed in this manner. There is a
+default `redirectPath` variable that will always be included.
 
 ```yaml
-relyingParties:
+workflows:
   - clientId: example
+    clientSecret: example
+    type: native
     workflow:
       type: native
       id: example-workflow
@@ -514,20 +517,20 @@ control.
   and Verifiable Credential data in their original form.
 
 
-### Open ID Connect Login
+### OpenID Connect (OIDC) Login
 
 You can enable users to sign into a relying party application with a Verifiable
 Credential using OpenCred as an identity provider connected over OAuth 2.0 /
 OpenID Connect. OpenCred returns a signed `id_token` that contains specific claims
 
- There is an
-`openid-configuration` endpoint at `/.well-known/openid-configuration` with
-detailed information about the algorithm and protocol support that the server
-has. It references a JWKS (keyset) endpoint at `/.well-known/jwks.json` that
-contains the signing key used to sign an id_token. Dynamic registration is not
-supported, so you must configure `clientId` and `clientSecret` in the relying
-party configuration manually, along with the credential exchange workflow that
-you want to use for this client.
+ There is an `openid-configuration` endpoint at
+`/.well-known/openid-configuration` with detailed information about the
+algorithm and protocol support that the server has. It references a JWKS
+(keyset) endpoint at `/.well-known/jwks.json` that contains the signing key used
+to sign an id_token. Dynamic registration is not supported, so you must
+configure `clientId` and `clientSecret` in the workflow configuration manually,
+along with the credential exchange workflow that you want to use for this
+client.
 
 The OIDC workflow follows this process:
 
@@ -605,11 +608,10 @@ To install artillery globally via `npm`:
 npm install -g artillery@latest
 ```
 
-Ensure that there is a relyingParties configuration in `config.yaml` for a
-relying party with `clientId: load-test` matching the configuration for that
-client found in `configs/config.example.yaml`. Load testing requires on this
-configuration remaining congruent with hardcoded fixtures and credentials in
-the load tests.
+Ensure that there is a workflow configuration in `combined.example.yaml` for a
+load test relying party with `clientId: load-test` matching the configuration
+for that client. Load testing requires on this configuration remaining congruent
+with hardcoded fixtures and credentials in the load tests.
 
 Run the load testing script:
 

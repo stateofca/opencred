@@ -54,42 +54,38 @@ property and its children.
 
 If you need to keep the `caStore` for other relying parties you can selectively bypass the CA checks 
 
-### 4. Configure the Relying Party
+### 4. Configure the Workflow
 
-Remove all of the example relying parties under the `relyingParties` section and
+Remove all of the example relying parties under the `workflows` section and
 add a new entry for your relying party with a `native` workflow. Example:
 
 ```yaml
-relyingParties:
+workflows:
   - clientId: example-client
     clientSecret: example-secret
-    redirectUri: http://localhost:8080/oidc/callback
-    scopes:
-      - name: "openid"
-        description: "Open ID Connect"
-    claims:
-      - name: email
-        path: credentialSubject.email
-    workflow:
-      type: native
-      id: example-workflow
-      initialStep: default
-      steps:
-        default:
-          verifiablePresentationRequest: >
-            {
-              "query": {
-                "type": "QueryByExample",
-                "credentialQuery": {
-                  "reason": "Please present your Verified Email Credential.",
-                  "example": {
-                    "type": [
-                      "VerifiedEmailCredential"
-                    ]
-                  }
-                }
+    type: native
+    oidc:
+      redirectUri: http://localhost:8080/oidc/callback
+      scopes:
+        - name: "openid"
+          description: "Open ID Connect"
+      claims:
+        - name: email
+          path: credentialSubject.email
+      verifiablePresentationRequest: >
+        {
+          "query": {
+            "type": "QueryByExample",
+            "credentialQuery": {
+              "reason": "Please present your Verified Email Credential.",
+              "example": {
+                "type": [
+                  "VerifiedEmailCredential"
+                ]
               }
             }
+          }
+        }
 ```
 
 ### 5. Generate and Configure the `id_token` Signing Key

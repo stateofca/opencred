@@ -19,42 +19,36 @@ const agent = new https.Agent({rejectUnauthorized: false});
 const client = httpClient.extend({agent});
 
 const exampleRelyingParty = {
-  workflow: {
-    id: 'testWorkflowId',
-    type: 'native',
-    initialStep: 'default',
-    steps: {
-      default: {
-        verifiablePresentationRequest: {}
-      }
-    }
-  },
   clientId: 'test',
-  idTokenExpirySeconds: 3600,
   clientSecret: 'testsecret',
-  redirectUri: 'https://example.com',
-  scopes: [{name: 'openid'}],
+  type: 'native',
+  verifiablePresentationRequest: {},
+  oidc: {
+    redirectUri: 'https://example.com',
+    scopes: [{name: 'openid'}],
+    idTokenExpirySeconds: 3600,
+    claims: [
+      {
+        name: 'name',
+        path: 'name'
+      }
+    ]
+  },
   brand: {
     cta: '#8A2BE2',
     primary: '#6A5ACD',
     header: '#9370DB',
-  },
-  claims: [
-    {
-      name: 'name',
-      path: 'name'
-    }
-  ]
+  }
 };
 
 describe('OAuth Login Workflow', function() {
-  this.beforeEach(() => {
-    this.rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+  this.beforeAll(() => {
+    this.rpStub = sinon.stub(config.opencred, 'workflows').value(
       [exampleRelyingParty]
     );
   });
 
-  this.afterEach(() => {
+  this.afterAll(() => {
     this.rpStub.restore();
   });
 
@@ -155,7 +149,7 @@ describe('OAuth Login Workflow', function() {
       dbStub.resolves({
         _id: 'test',
         ttl: 900,
-        workflowId: 'testWorkflowId',
+        workflowId: 'test',
         code: 'the-code',
         variables: {
           results: {
@@ -229,7 +223,7 @@ describe('OAuth Login Workflow', function() {
       dbStub.resolves({
         _id: 'test',
         ttl: 900,
-        workflowId: 'testWorkflowId',
+        workflowId: 'test',
         code: 'the-code',
         variables: {
           results: {
@@ -354,7 +348,7 @@ describe('OAuth Login Workflow', function() {
     dbStub.onCall(0).resolves({
       _id: 'test',
       ttl: 900,
-      workflowId: 'testWorkflowId',
+      workflowId: 'test',
       code: 'the-code',
       variables: {
         results: {
@@ -432,7 +426,7 @@ describe('OAuth Login Workflow', function() {
     dbStub.resolves({
       _id: 'test',
       ttl: 900,
-      workflowId: 'testWorkflowId',
+      workflowId: 'test',
       code: 'the-code',
       variables: {
         results: {
@@ -497,7 +491,7 @@ describe('OAuth Login Workflow', function() {
     dbStub.resolves({
       _id: 'test',
       ttl: 900,
-      workflowId: 'testWorkflowId',
+      workflowId: 'test',
       code: 'the-code',
       step: 'default',
       redirectUri: 'https://example.com',

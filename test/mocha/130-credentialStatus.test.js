@@ -12,41 +12,27 @@ import {
 } from '@digitalbazaar/vc-bitstring-status-list';
 import {createPresentation, signPresentation} from '@digitalbazaar/vc';
 import expect from 'expect.js';
-import fs from 'node:fs';
 
+import {BaseWorkflowService} from '../../lib/workflows/base.js';
 import {config} from '@bedrock/core';
 import {documentLoader} from '../utils/testDocumentLoader.js';
 import {generateValidDidKeyData} from '../utils/dids.js';
 import {generateValidJwtVpToken} from '../utils/jwtVpTokens.js';
 import {generateValidSignedCredential} from '../utils/credentials.js';
+import {getAuthorizationRequest} from '../../common/oid4vp.js';
 import {NativeWorkflowService} from '../../lib/workflows/native-workflow.js';
 import {verifyUtils} from '../../common/utils.js';
 
 const rp = {
-  workflow: {
-    id: 'testworkflow',
-    type: 'native',
-    untrustedVariableAllowList: ['redirectPath'],
-    steps: {
-      default: {
-        verifiablePresentationRequest: JSON.stringify({
-          query: {
-            type: 'QueryByExample',
-            credentialQuery: {
-              reason: 'Please present your Driver\'s License',
-              example: {
-                '@context': [
-                  'https://www.w3.org/ns/credentials/v2',
-                  'https://www.w3.org/ns/credentials/examples/v2'
-                ],
-                type: 'MyPrototypeCredential'
-              }
-            }
-          }
-        })
-      }
-    },
-    initialStep: 'default'
+  clientId: 'testworkflow',
+  type: 'native',
+  untrustedVariableAllowList: ['redirectPath'],
+  query: {
+    type: 'MyPrototypeCredential',
+    contexts: [
+      'https://www.w3.org/ns/credentials/v2',
+      'https://www.w3.org/ns/credentials/examples/v2'
+    ]
   },
   domain: 'http://example.test.com',
   trustedCredentialIssuers: []
@@ -56,18 +42,14 @@ describe('Credential Status Verification', async () => {
   let service;
   let exchange;
   let rpStub;
+  let baseService;
 
   before(() => {
     // Initialize service and stubs
-    service = new NativeWorkflowService({get: () => {}, post: () => {}});
+    service = new NativeWorkflowService();
+    baseService = new BaseWorkflowService();
 
-    // Load exchange fixture
-    exchange = JSON.parse(fs.readFileSync(
-      './test/fixtures/exchange.json'));
-    exchange.createdAt = new Date(exchange.createdAt);
-    exchange.recordExpiresAt = new Date(exchange.recordExpiresAt);
-
-    rpStub = sinon.stub(config.opencred, 'relyingParties').value(
+    rpStub = sinon.stub(config.opencred, 'workflows').value(
       [rp]
     );
   });
@@ -143,6 +125,26 @@ describe('Credential Status Verification', async () => {
       didMethod: 'key',
       credentialTemplate: statusCredentialTemplate
     });
+
+    // Generate exchange programmatically
+    exchange = await baseService.initExchange(
+      {rp, accessToken: 'test-token', oidc: {code: null, state: ''}},
+      {}
+    );
+    exchange.createdAt = new Date();
+    exchange.recordExpiresAt = new Date(
+      exchange.createdAt.getTime() + 900000
+    );
+
+    // Generate authorization request from rp and exchange
+    const authorizationRequest = await getAuthorizationRequest({
+      rp,
+      exchange,
+      domain: rp.domain,
+      url: '/test/authorization/request'
+    });
+    exchange.variables.authorizationRequest = authorizationRequest;
+
     const {credential} = await generateValidSignedCredential({
       issuerDid,
       issuerSuite,
@@ -195,12 +197,12 @@ describe('Credential Status Verification', async () => {
       }
       return documentLoader(url);
     };
+    // Use a draft 18 approach with presentation_submission
     const result = await service.verifySubmission({
-      vp_token: presentation, presentation_submission, exchange, rp,
+      vp_token: presentation, submission: presentation_submission, exchange, rp,
       documentLoader: docLoaderWithStatusCredential}
     );
 
-    // expect(verifyStub.called).to.be(true);
     expect(result.verified).to.be(true);
     expect(result.errors.length).to.be(0);
   });

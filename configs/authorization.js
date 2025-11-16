@@ -5,24 +5,24 @@ const cc = c.computer();
 
 const getOAuthConfigs = workflow => {
   const configs = [];
-  for(const step of Object.keys(workflow.steps ?? {})) {
-    const {oauth} = workflow.steps[step].callback ?? {};
-    if(oauth) {
-      configs.push({
-        issuer: oauth.issuer,
-        client_id: oauth.clientId,
-        client_secret: oauth.clientSecret,
-        token_endpoint: oauth.tokenUrl,
-        scope: oauth.scope,
-        pkce: false,
-        protocol: 'oauth2_client_grant',
-        grant_type: 'client_credentials'
-      });
-    }
+
+  const {oauth} = workflow.callback ?? {};
+  if(oauth) {
+    configs.push({
+      issuer: oauth.issuer,
+      client_id: oauth.clientId,
+      client_secret: oauth.clientSecret,
+      token_endpoint: oauth.tokenUrl,
+      scope: oauth.scope,
+      pkce: false,
+      protocol: 'oauth2_client_grant',
+      grant_type: 'client_credentials'
+    });
   }
+
   return configs;
 };
 
-cc('opencred.authorization', () => config.opencred.relyingParties.flatMap(
-  rp => getOAuthConfigs(rp.workflow)
+cc('opencred.authorization', () => config.opencred.workflows.flatMap(
+  rp => getOAuthConfigs(rp)
 ).filter(c => c));
