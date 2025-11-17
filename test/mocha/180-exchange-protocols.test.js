@@ -13,7 +13,7 @@ import expect from 'expect.js';
 import {getAuthorizationRequest} from '../../common/oid4vp.js';
 import {NativeWorkflowService} from '../../lib/workflows/native-workflow.js';
 import {VCApiWorkflowService} from '../../lib/workflows/vc-api-workflow.js';
-
+import {withStubs} from '../utils/withStubs.js';
 import {zcapClient} from '../../common/zcap.js';
 
 const testRP = {
@@ -76,13 +76,13 @@ describe('Exchange Protocols', () => {
       expect(exchange.protocols).to.have.property('vcapi');
       expect(exchange.protocols).to.have.property('OID4VP');
       expect(exchange.protocols).to.have.property('OID4VP-draft18');
-      expect(exchange.protocols).to.have.property('OID4VP-combined');
+      expect(exchange.protocols).to.have.property('OID4VP-1.0');
       expect(exchange.protocols).to.have.property('interact');
-      expect(exchange.protocols.OID4VP).to.contain('profile%3DOID4VP');
+      expect(exchange.protocols.OID4VP).to.contain('profile%3DOID4VP-combined');
       expect(exchange.protocols['OID4VP-draft18']).to.contain(
         'profile%3DOID4VP-draft18');
-      expect(exchange.protocols['OID4VP-combined']).to.contain(
-        'profile%3DOID4VP-combined');
+      expect(exchange.protocols['OID4VP-1.0']).to.contain(
+        'profile%3DOID4VP-1.0');
     });
 
     it('should include protocols object for vc-api workflow', async () => {
@@ -192,7 +192,7 @@ describe('Exchange Protocols', () => {
         exchange,
         domain,
         url,
-        profile: 'OID4VP'
+        profile: 'OID4VP-1.0'
       });
 
       expect(authRequest.client_metadata).to.have.property(
@@ -227,27 +227,39 @@ describe('Exchange Protocols', () => {
       expect(authRequest).to.have.property('dcql_query');
     });
 
-    it('should default to OID4VP-draft18 if no profile asked', async () => {
-      // Change if default settings change.
-      const exchange = {
-        id: await createId(),
-        challenge: await createId(),
-        workflowId: testRP.clientId
-      };
-      const domain = config.server.baseUri;
-      const url = `/workflows/${testRP.clientId}/exchanges/${
-        exchange.id}/openid/client/authorization/request`;
+    it('should default to settings default if no profile asked', async () => {
+      // Default is now OID4VP-combined when no profile is specified
+      await withStubs(
+        () => {
+          const optionsStub = sinon.stub(
+            config.opencred.options, 'OID4VPdefault')
+            .returns(undefined);
+          return [optionsStub];
+        },
+        async () => {
+          const exchange = {
+            id: await createId(),
+            challenge: await createId(),
+            workflowId: testRP.clientId
+          };
+          const domain = config.server.baseUri;
+          const url = `/workflows/${testRP.clientId}/exchanges/${
+            exchange.id}/openid/client/authorization/request`;
 
-      const authRequest = await getAuthorizationRequest({
-        rp: testRP,
-        exchange,
-        domain,
-        url
-      });
+          const authRequest = await getAuthorizationRequest({
+            rp: testRP,
+            exchange,
+            domain,
+            url
+          });
 
-      expect(authRequest.client_metadata).to.have.property('vp_formats');
-      expect(
-        authRequest.client_metadata.vp_formats_supported).to.equal(undefined);
+          expect(authRequest.client_metadata).to.have.property('vp_formats');
+          expect(authRequest.client_metadata).to.have.property(
+            'vp_formats_supported');
+          // OID4VP-combined includes dcql_query
+          expect(authRequest).to.have.property('dcql_query');
+        }
+      );
     });
   });
 

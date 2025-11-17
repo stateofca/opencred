@@ -499,9 +499,9 @@ export const getAuthorizationRequest = async ({
       'OID4VP-combined';
   }
 
-  // Map legacy 'OID4VP' to 'OID4VP-1.0' for backward compatibility
+  // Map legacy 'OID4VP' to 'OID4VP-combined' to match default behavior
   if(resolvedProfile === 'OID4VP') {
-    resolvedProfile = 'OID4VP-1.0';
+    resolvedProfile = 'OID4VP-combined';
   }
 
   // Ensure profile is valid, default to combined if not

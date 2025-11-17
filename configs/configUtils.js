@@ -290,8 +290,9 @@ export const OptionsSchema = z.object({
       900 // Max 900 seconds
     ))),
   includeQRByDefault: z.boolean().default(true),
-  OID4VPdefault: z.enum(['OID4VP-draft18', 'OID4VP', 'OID4VP-combined'])
-    .default('OID4VP-draft18')
+  OID4VPdefault: z.enum([
+    'OID4VP-draft18', 'OID4VP', 'OID4VP-combined', 'OID4VP-1.0'
+  ]).default('OID4VP-combined')
 }).transform(data => {
   // exchangeTtlSeconds cannot exceed recordExpiresDurationMs
   const maxExchangeTtl = Math.min(900, data.recordExpiresDurationMs / 1000);

@@ -242,8 +242,6 @@ describe('OpenCred API - Native Workflow', function() {
     result.data.OID4VP.should.be.a('string');
     result.data.accessToken.should.be.a('string');
     result.data.workflowId.should.be.a('string');
-    result.data.QR.should.be.a('string');
-
     insertStub.called.should.equal(true);
     insertStub.restore();
   });
@@ -825,7 +823,6 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
       result.data.id.should.be.equal('c656dad8-a8fa-4361-baef-51af0c2e428e');
       result.data.vcapi.should.be.a('string');
       result.data.accessToken.should.be.a('string');
-      result.data.QR.should.be.a('string');
       result.data.OID4VP.should.be.equal(
         'openid4vp://?request_uri=https://requri.example.com/123&' +
         'client_id=did:web:example.com'

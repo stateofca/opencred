@@ -44,15 +44,10 @@ const testRP = {
 
 describe('Interactions URL Endpoint', () => {
   let dbStub;
-  let exchangeId;
 
   before(() => {
     dbStub = sinon.stub(database.collections.Exchanges, 'insertOne')
       .resolves({insertedId: 'test'});
-  });
-
-  beforeEach(async () => {
-    exchangeId = await createId();
   });
 
   after(() => {
@@ -62,7 +57,7 @@ describe('Interactions URL Endpoint', () => {
   describe('GET /interactions/:exchangeId', () => {
     it('should return protocols object for native workflow', async () => {
       const exchange = {
-        id: exchangeId,
+        id: await createId(),
         workflowId: testRP.clientId,
         challenge: await createId(),
         state: 'pending',
@@ -79,7 +74,7 @@ describe('Interactions URL Endpoint', () => {
         let result;
         let err;
         try {
-          result = await client.get(`${baseUrl}/interactions/${exchangeId}`);
+          result = await client.get(`${baseUrl}/interactions/${exchange.id}`);
         } catch(e) {
           err = e;
         }
@@ -91,13 +86,13 @@ describe('Interactions URL Endpoint', () => {
         expect(protocols).to.have.property('vcapi');
         expect(protocols).to.have.property('OID4VP');
         expect(protocols).to.have.property('OID4VP-draft18');
-        expect(protocols).to.have.property('OID4VP-combined');
+        expect(protocols).to.have.property('OID4VP-1.0');
         expect(protocols).to.have.property('interact');
-        expect(protocols.OID4VP).to.contain('profile%3DOID4VP');
+        expect(protocols.OID4VP).to.contain('profile%3DOID4VP-combined');
         expect(protocols['OID4VP-draft18']).to.contain(
           'profile%3DOID4VP-draft18');
-        expect(protocols['OID4VP-combined']).to.contain(
-          'profile%3DOID4VP-combined');
+        expect(protocols['OID4VP-1.0']).to.contain(
+          'profile%3DOID4VP-1.0');
         expect(protocols.interact).to.contain('iuv=1');
       } finally {
         findOneStub.restore();
@@ -116,12 +111,13 @@ describe('Interactions URL Endpoint', () => {
       };
 
       const exchange = {
-        id: exchangeId,
+        id: await createId(),
         workflowId: vcApiRP.clientId,
         challenge: await createId(),
         state: 'pending',
         createdAt: new Date(),
-        ttl: 900
+        ttl: 900,
+        vcapi: 'https://example.com/exchanges/test123'
       };
 
       const findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
@@ -133,7 +129,7 @@ describe('Interactions URL Endpoint', () => {
         let result;
         let err;
         try {
-          result = await client.get(`${baseUrl}/interactions/${exchangeId}`);
+          result = await client.get(`${baseUrl}/interactions/${exchange.id}`);
         } catch(e) {
           err = e;
         }
@@ -166,7 +162,7 @@ describe('Interactions URL Endpoint', () => {
       };
 
       const exchange = {
-        id: exchangeId,
+        id: await createId(),
         workflowId: entraRP.clientId,
         challenge: await createId(),
         state: 'pending',
@@ -184,7 +180,7 @@ describe('Interactions URL Endpoint', () => {
         let result;
         let err;
         try {
-          result = await client.get(`${baseUrl}/interactions/${exchangeId}`);
+          result = await client.get(`${baseUrl}/interactions/${exchange.id}`);
         } catch(e) {
           err = e;
         }
@@ -207,7 +203,7 @@ describe('Interactions URL Endpoint', () => {
 
     it('should include interact URL with iuv=1 parameter', async () => {
       const exchange = {
-        id: exchangeId,
+        id: await createId(),
         workflowId: testRP.clientId,
         challenge: await createId(),
         state: 'pending',
@@ -224,7 +220,7 @@ describe('Interactions URL Endpoint', () => {
         let result;
         let err;
         try {
-          result = await client.get(`${baseUrl}/interactions/${exchangeId}`);
+          result = await client.get(`${baseUrl}/interactions/${exchange.id}`);
         } catch(e) {
           err = e;
         }
@@ -235,7 +231,7 @@ describe('Interactions URL Endpoint', () => {
         const protocols = result.data.protocols;
         expect(protocols).to.have.property('interact');
         expect(protocols.interact).to.contain('iuv=1');
-        expect(protocols.interact).to.contain(`/interactions/${exchangeId}`);
+        expect(protocols.interact).to.contain(`/interactions/${exchange.id}`);
       } finally {
         findOneStub.restore();
         workflowsStub.restore();
@@ -248,7 +244,7 @@ describe('Interactions URL Endpoint', () => {
       // This test verifies the alias endpoint returns the same data
       // In practice, both endpoints use the same middleware
       const exchange = {
-        id: exchangeId,
+        id: await createId(),
         workflowId: testRP.clientId,
         challenge: await createId(),
         state: 'pending',
@@ -267,7 +263,7 @@ describe('Interactions URL Endpoint', () => {
         try {
           result = await client.get(
             `${baseUrl}/workflows/${testRP.clientId}/exchanges/` +
-            `${exchangeId}/protocols`
+            `${exchange.id}/protocols`
           );
         } catch(e) {
           err = e;
@@ -280,7 +276,7 @@ describe('Interactions URL Endpoint', () => {
         expect(protocols).to.have.property('vcapi');
         expect(protocols).to.have.property('OID4VP');
         expect(protocols).to.have.property('OID4VP-draft18');
-        expect(protocols).to.have.property('OID4VP-combined');
+        expect(protocols).to.have.property('OID4VP-1.0');
         expect(protocols).to.have.property('interact');
         expect(protocols.interact).to.contain('iuv=1');
       } finally {

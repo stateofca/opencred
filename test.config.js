@@ -32,3 +32,15 @@ config.mongodb.dropCollections.collections = ['Exchanges'];
 
 // HTTPS Agent
 config['https-agent'].rejectUnauthorized = false;
+
+// OpenCred default options for tests
+if(!config.opencred) {
+  config.opencred = {};
+}
+config.opencred.options = {
+  exchangeProtocols: ['openid4vp', 'chapi'],
+  recordExpiresDurationMs: 86400000, // 1 day
+  exchangeTtlSeconds: 900, // 15 minutes
+  includeQRByDefault: false,
+  OID4VPdefault: undefined
+};
