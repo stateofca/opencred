@@ -117,7 +117,8 @@ describe('OID4VP Client Metadata', () => {
         };
 
         const result = await getAuthorizationRequest({
-          rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+          rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
+          profile: 'OID4VP-1.0'
         });
 
         expect(result).to.have.property('client_metadata');
@@ -128,7 +129,7 @@ describe('OID4VP Client Metadata', () => {
           .to.have.property('ldp_vc');
       });
 
-    it('should have correct structure for jwt_vc_json', async () => {
+    it('should have correct 1.0 structure for jwt_vc_json', async () => {
       const rp = {
         dcql_query: {
           credentials: [
@@ -141,7 +142,8 @@ describe('OID4VP Client Metadata', () => {
       };
 
       const result = await getAuthorizationRequest({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
+        profile: 'OID4VP-1.0'
       });
 
       const jwtVcJson = result.client_metadata.vp_formats_supported
@@ -155,7 +157,7 @@ describe('OID4VP Client Metadata', () => {
       expect(jwtVcJson.alg_values).to.contain('ES256');
     });
 
-    it('should have correct structure for ldp_vc', async () => {
+    it('should have correct 1.0 structure for ldp_vc', async () => {
       const rp = {
         dcql_query: {
           credentials: [
@@ -168,7 +170,8 @@ describe('OID4VP Client Metadata', () => {
       };
 
       const result = await getAuthorizationRequest({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
+        profile: 'OID4VP-1.0'
       });
 
       const ldpVc = result.client_metadata.vp_formats_supported.ldp_vc;
@@ -186,7 +189,7 @@ describe('OID4VP Client Metadata', () => {
   });
 
   describe('Both formats present', () => {
-    it('should include both vp_formats and vp_formats_supported',
+    it('OID4VP-combined: both vp_formats and vp_formats_supported',
       async () => {
         const rp = {
           dcql_query: {
@@ -200,14 +203,15 @@ describe('OID4VP Client Metadata', () => {
         };
 
         const result = await getAuthorizationRequest({
-          rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+          rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
+          profile: 'OID4VP-combined'
         });
 
         expect(result.client_metadata).to.have.property('vp_formats');
         expect(result.client_metadata).to.have.property('vp_formats_supported');
       });
 
-    it('should have different keys in vp_formats vs vp_formats_supported',
+    it('OID4VP-combined: different keys in vp_formats vs vp_formats_supported',
       async () => {
         const rp = {
           dcql_query: {
@@ -221,7 +225,8 @@ describe('OID4VP Client Metadata', () => {
         };
 
         const result = await getAuthorizationRequest({
-          rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+          rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
+          profile: 'OID4VP-combined'
         });
 
         // Draft 18 should use jwt_vp_json and ldp_vp
@@ -246,7 +251,7 @@ describe('OID4VP Client Metadata', () => {
   });
 
   describe('Different RP configurations', () => {
-    it('should include both formats with dcql_query RP', async () => {
+    it('OID4VP-combined: both formats with dcql_query RP', async () => {
       const rp = {
         dcql_query: {
           credentials: [
@@ -265,14 +270,15 @@ describe('OID4VP Client Metadata', () => {
       };
 
       const result = await getAuthorizationRequest({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
+        profile: 'OID4VP-combined'
       });
 
       expect(result.client_metadata).to.have.property('vp_formats');
       expect(result.client_metadata).to.have.property('vp_formats_supported');
     });
 
-    it('should include both formats with query RP', async () => {
+    it('OID4VP-combined: both formats with query RP', async () => {
       const rp = {
         query: {
           contexts: [
@@ -285,14 +291,15 @@ describe('OID4VP Client Metadata', () => {
       };
 
       const result = await getAuthorizationRequest({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
+        profile: 'OID4VP-combined'
       });
 
       expect(result.client_metadata).to.have.property('vp_formats');
       expect(result.client_metadata).to.have.property('vp_formats_supported');
     });
 
-    it('should include both formats with verifiablePresentationRequest RP',
+    it('OID4VP-combined: both formats with verifiablePresentationRequest RP',
       async () => {
         const rp = {
           verifiablePresentationRequest: JSON.stringify({
@@ -313,7 +320,8 @@ describe('OID4VP Client Metadata', () => {
         };
 
         const result = await getAuthorizationRequest({
-          rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+          rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
+          profile: 'OID4VP-combined'
         });
 
         expect(result.client_metadata).to.have.property('vp_formats');
@@ -322,7 +330,7 @@ describe('OID4VP Client Metadata', () => {
   });
 
   describe('Client metadata structure', () => {
-    it('should include all required client_metadata fields', async () => {
+    it('OID4VP-combined: all required client_metadata fields', async () => {
       const rp = {
         dcql_query: {
           credentials: [
@@ -335,7 +343,8 @@ describe('OID4VP Client Metadata', () => {
       };
 
       const result = await getAuthorizationRequest({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
+        profile: 'OID4VP-combined'
       });
 
       expect(result.client_metadata).to.have.property('client_name');

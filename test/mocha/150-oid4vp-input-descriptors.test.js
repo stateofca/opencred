@@ -387,8 +387,8 @@ describe('OID4VP Input Descriptors', () => {
       expect(result[0]).to.have.property('constraints');
       expect(result[0].constraints.fields).to.be.an('array');
       expect(result[0].constraints.fields.length).to.be(1);
-      expect(result[0].constraints.fields[0].filter.pattern).to.be(
-        'Iso18013DriversLicenseCredential');
+      expect(result[0].constraints.fields[0].filter.allOf[
+        0].contains.const).to.be('Iso18013DriversLicenseCredential');
     });
   });
 

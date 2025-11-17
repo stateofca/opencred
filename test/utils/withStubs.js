@@ -30,16 +30,17 @@ async function withStubs(setupStubs, testBody) {
     stubs = await setupStubs();
 
     // Ensure stubs is an array
-    if(!Array.isArray(stubs) || Array.any(stub => !stub || !stub.restore)) {
+    if(!Array.isArray(stubs) || stubs.some(stub => !stub || !stub.restore)) {
       throw TypeError('Stubs must be returned from setupStubs function');
     }
-
-    // Execute the test body
-    await testBody();
-
   } catch(error) {
     console.warn('Skipping test due to previous failures. Stubs already set.');
     return;
+  }
+
+  try {
+    // Execute the test body
+    await testBody();
   } finally {
     // Always restore stubs, even if they were already restored
     stubs.forEach(stub => {

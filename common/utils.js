@@ -99,13 +99,30 @@ const _unenvelopeVcJwtVc = vcTokens => {
       // Handle EnvelopedVerifiableCredential
       if(typeof credentialId === 'string' &&
           credentialId.startsWith('data:application/jwt')) {
-        return decodeJwt(credentialId.split(',')[1]).vc;
+        const jwt = credentialId.split(',')[1];
+        const vc = decodeJwt(jwt).vc;
+        // Preserve the JWT string in proof.jwt for verification
+        return {
+          ...vc,
+          proof: {
+            ...vc.proof,
+            jwt
+          }
+        };
       }
       // VerifiableCredential already decoded
       return t;
     }
     // JWT in Compact Serialization
-    return decodeJwt(t).vc;
+    const vc = decodeJwt(t).vc;
+    // Preserve the JWT string in proof.jwt for verification
+    return {
+      ...vc,
+      proof: {
+        ...vc.proof,
+        jwt: t
+      }
+    };
   });
 };
 

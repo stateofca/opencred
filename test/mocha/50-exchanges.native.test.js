@@ -259,7 +259,9 @@ describe('Exchanges (Native)', async () => {
         return [verifyUtilsStub, verifyUtilsStub2, updateStub];
       },
       async () => {
-        const rpStub = {...rp, trustedCredentialIssuers: []};
+        const rpStub = {...rp, trustedCredentialIssuers: [
+          'did:web:not-a-valid-issuer.org'
+        ]};
         const exchange = await createExchangeWithAuthRequest({rp: rpStub});
 
         const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
@@ -274,8 +276,7 @@ describe('Exchanges (Native)', async () => {
         const result = await service.verifySubmission({
           rp: rpStub, vp_token: vp_token_jwt, submission, exchange});
 
-        const expectedError = 'Each vc token issuer must match the issuer' +
-          ' of the contained credential';
+        const expectedError = 'Unaccepted credential issuer';
 
         expect(verifyStub.called).to.be(true);
         expect(result.verified).to.be(false);
@@ -545,7 +546,7 @@ describe('Exchanges (Native)', async () => {
           verifyUtilsStub2, updateStub, caStoreStub];
       },
       async () => {
-        const rpStub = {...rp, trustedCredentialIssuers: []};
+        const rpStub = {...rp, trustedCredentialIssuers: [], caStore: false};
         const exchange = await createExchangeWithAuthRequest({rp: rpStub});
         const {chain} = await generateCertificateChain({
           length: 3
@@ -553,7 +554,14 @@ describe('Exchanges (Native)', async () => {
         const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
           aud: domainToDidWeb(config.server.baseUri),
           challenge: exchange.challenge,
-          x5c: chain.map(c => convertDerCertificateToPem(c.raw, true))
+          x5c: chain.map(c => convertDerCertificateToPem(c.raw, true)),
+          template: {
+            '@context': [
+              'https://www.w3.org/ns/credentials/v2',
+              'https://www.w3.org/ns/credentials/examples/v2'
+            ],
+            type: ['VerifiableCredential', 'MyPrototypeCredential']
+          }
         });
         const presentation_submission_jwt = generatePresentationSubmission({
           authorizationRequest: exchange.variables.authorizationRequest,
@@ -600,7 +608,14 @@ describe('Exchanges (Native)', async () => {
           const exchange = await createExchangeWithAuthRequest({rp: rpStub});
           const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
             aud: domainToDidWeb(config.server.baseUri),
-            challenge: exchange.challenge
+            challenge: exchange.challenge,
+            template: {
+              '@context': [
+                'https://www.w3.org/ns/credentials/v2',
+                'https://www.w3.org/ns/credentials/examples/v2'
+              ],
+              type: ['VerifiableCredential', 'MyPrototypeCredential']
+            }
           });
           const presentation_submission_jwt = generatePresentationSubmission({
             authorizationRequest: exchange.variables.authorizationRequest,

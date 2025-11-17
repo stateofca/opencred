@@ -1,4 +1,5 @@
 import * as bedrock from '@bedrock/core';
+import {config} from '@bedrock/core';
 import {createId} from './utils.js';
 import {defaultDocLoader} from './documentLoader.js';
 import {domainToDidWeb} from '../lib/didWeb.js';
@@ -27,24 +28,142 @@ const inputDescriptorsFromQuery = async ({query, description}) => {
     constraints: {
       fields: [
         {
-          path: ['$.vc.type', '$.verifiableCredential.type', '$.type'],
+          path: ['$[\'type\']', '$[\'vc\'][\'type\']'],
           filter: {
-            type: 'string',
-            pattern: query.type
+            type: 'array',
+            allOf: [
+              {
+                contains: {
+                  type: 'string',
+                  const: query.type
+                }
+              }
+            ]
           }
         }
       ]
-    }
+    },
   };
   return [inputDescriptors];
 };
 
 /**
- * Convert dcql_query to input_descriptors
+ * Convert claim path to input descriptor path format
  */
-const inputDescriptorsFromDcql = async ({dcql_query, description}) => {
-  // Convert dcql_query to input_descriptors
-  if(!dcql_query.credentials || !Array.isArray(dcql_query.credentials) ||
+const convertPathForFormat = (pathKey, format) => {
+  // Ensure path is always an array
+  const ensureArray = path => Array.isArray(path) ? path : [path];
+
+  if(format === 'jwt_vc_json') {
+    // Convert $.vc.context to $['@context']
+    if(pathKey === '$.vc.context' || pathKey === '$.vc.@context') {
+      return ['$[\'@context\']'];
+    }
+    return ensureArray(pathKey);
+  }
+
+  if(format === 'ldp_vc') {
+    // Convert $.type to $['type']
+    if(pathKey === '$.type') {
+      return ['$[\'type\']'];
+    }
+    return ensureArray(pathKey);
+  }
+
+  return ensureArray(pathKey);
+};
+
+/**
+ * Create field filter from values
+ */
+const createFieldFilter = values => {
+  const uniqueValues = [...new Set(values)];
+  const allOf = uniqueValues.map(value => ({
+    contains: {
+      type: typeof value === 'string' ? 'string' :
+        typeof value === 'number' ? 'number' :
+          typeof value === 'boolean' ? 'boolean' : 'string',
+      const: value
+    }
+  }));
+
+  return {
+    type: 'array',
+    allOf
+  };
+};
+
+/**
+ * Group claims by path, combining values for the same path
+ */
+const groupClaimsByPath = claims => {
+  const claimsByPath = new Map();
+
+  if(!claims || !Array.isArray(claims)) {
+    return claimsByPath;
+  }
+
+  for(const claim of claims) {
+    if(!claim.path || !Array.isArray(claim.path) ||
+      !claim.values || !Array.isArray(claim.values)) {
+      continue;
+    }
+
+    // Use first path as key (assuming all paths equivalent)
+    const pathKey = claim.path[0];
+    if(!claimsByPath.has(pathKey)) {
+      claimsByPath.set(pathKey, []);
+    }
+    claimsByPath.get(pathKey).push(...claim.values);
+  }
+
+  return claimsByPath;
+};
+
+/**
+ * Create type field from credential meta.type_values
+ */
+const createTypeField = credential => {
+  const typeValues = credential.meta?.type_values;
+  if(!Array.isArray(typeValues) || typeValues.length === 0) {
+    return null;
+  }
+
+  // Flatten type_values (array of arrays) to single array
+  const cTypes = typeValues.flat();
+  if(cTypes.length === 0) {
+    return null;
+  }
+
+  // Determine paths based on format
+  const typePaths = credential.format === 'jwt_vc_json' ?
+    ['$[\'type\']', '$[\'vc\'][\'type\']'] :
+    ['$[\'type\']'];
+
+  return {
+    path: typePaths,
+    filter: {
+      type: 'array',
+      allOf: cTypes.map(typeValue => ({
+        contains: {
+          type: 'string',
+          const: typeValue
+        }
+      }))
+    }
+  };
+};
+
+/**
+ * EXPERIMENTAL: Convert dcql_query to input_descriptors
+ * For now, we recommend using a vpr or query for draft18 support.
+ * Reversing from DCQL is pretty complicated.
+ */
+const inputDescriptorsFromDcql = async ({dcql_query, description, profile}) => {
+  // Early return for draft18 or invalid queries
+  if(profile === 'OID4VP-draft18' ||
+    !dcql_query?.credentials ||
+    !Array.isArray(dcql_query.credentials) ||
     dcql_query.credentials.length === 0) {
     return [];
   }
@@ -54,97 +173,21 @@ const inputDescriptorsFromDcql = async ({dcql_query, description}) => {
       const fields = [];
 
       // Convert claims to fields
-      // Group claims by path to combine values for the same path
-      const claimsByPath = new Map();
-      if(credential.claims && Array.isArray(credential.claims)) {
-        for(const claim of credential.claims) {
-          if(!claim.path || !Array.isArray(claim.path) ||
-            !claim.values || !Array.isArray(claim.values)) {
-            continue;
-          }
-
-          // Use first path as key (assuming all paths equivalent)
-          const pathKey = claim.path[0];
-          if(!claimsByPath.has(pathKey)) {
-            claimsByPath.set(pathKey, []);
-          }
-          claimsByPath.get(pathKey).push(...claim.values);
-        }
-      }
-
-      // Convert grouped claims to fields
+      const claimsByPath = groupClaimsByPath(credential.claims);
       for(const [pathKey, allValues] of claimsByPath.entries()) {
-        // Convert claim paths to input descriptor paths
-        // For JWT format, paths like $.vc.context should map to $['@context']
-        // For LDP format, paths like $.type should map to $['type']
-        // Always return path as an array of strings
-        let convertedPath;
-        if(credential.format === 'jwt_vc_json') {
-          // Convert $.vc.context to $['@context']
-          if(pathKey === '$.vc.context' || pathKey === '$.vc.@context') {
-            convertedPath = ['$[\'@context\']'];
-          } else {
-            // Keep other paths as-is for JWT, ensure it's an array
-            convertedPath = Array.isArray(pathKey) ? pathKey : [pathKey];
-          }
-        } else if(credential.format === 'ldp_vc') {
-          // For LDP, ensure proper bracket notation
-          if(pathKey === '$.type') {
-            convertedPath = ['$[\'type\']'];
-          } else {
-            // Keep other paths as-is for LDP, ensure it's an array
-            convertedPath = Array.isArray(pathKey) ? pathKey : [pathKey];
-          }
-        } else {
-          // Ensure it's always an array
-          convertedPath = Array.isArray(pathKey) ? pathKey : [pathKey];
-        }
-
-        // Convert values to filter.allOf format (deduplicate)
-        const uniqueValues = [...new Set(allValues)];
-        const allOf = uniqueValues.map(value => ({
-          contains: {
-            type: typeof value === 'string' ? 'string' :
-              typeof value === 'number' ? 'number' :
-                typeof value === 'boolean' ? 'boolean' : 'string',
-            const: value
-          }
-        }));
+        const convertedPath = convertPathForFormat(pathKey, credential.format);
+        const filter = createFieldFilter(allValues);
 
         fields.push({
           path: convertedPath,
-          filter: {
-            type: 'array',
-            allOf
-          }
+          filter
         });
       }
 
-      // Convert meta.type_values to type field constraints
-      if(credential.meta && credential.meta.type_values &&
-        Array.isArray(credential.meta.type_values) &&
-        credential.meta.type_values.length > 0) {
-        // Flatten type_values (array of arrays) to single array
-        const cTypes = credential.meta.type_values.flat();
-        if(cTypes.length > 0) {
-          // Always use array format for path
-          const typePaths = credential.format === 'jwt_vc_json' ?
-            ['$.vc.type', '$.verifiableCredential.type', '$.type'] :
-            ['$[\'type\']'];
-
-          fields.push({
-            path: typePaths,
-            filter: {
-              type: 'array',
-              allOf: cTypes.map(iri => ({
-                contains: {
-                  type: 'string',
-                  const: iri
-                }
-              }))
-            }
-          });
-        }
+      // Add type field if present
+      const typeField = createTypeField(credential);
+      if(typeField) {
+        fields.push(typeField);
       }
 
       return {
@@ -215,7 +258,9 @@ const inputDescriptorsFromVpr = async ({
  * Deprecated in OID4VP draft 25, this was the old way to define what
  * credential you were looking for.
  */
-export const getInputDescriptors = async ({rp, exchange, domain, url}) => {
+export const getInputDescriptors = async ({
+  rp, exchange, domain, url, profile
+}) => {
   const {dcql_query, query} = rp;
   const {challenge} = exchange;
 
@@ -227,7 +272,9 @@ export const getInputDescriptors = async ({rp, exchange, domain, url}) => {
   }
 
   if(dcql_query) {
-    return inputDescriptorsFromDcql({dcql_query, description: rp.description});
+    return inputDescriptorsFromDcql({
+      dcql_query, description: rp.description, profile
+    });
   }
 
   // Or fall back to legacy verbose config method.
@@ -261,101 +308,219 @@ const getTypeIri = async ({contexts, type}) => {
   }
 };
 
-export const getDcqlQuery = async ({rp, exchange}) => {
+export const getDcqlQuery = async ({rp, exchange, profile}) => {
+  // DCQL query was not invented in OID4VP-draft18
+  if(profile === 'OID4VP-draft18') {
+    return {};
+  }
+
   const {dcql_query, query, verifiablePresentationRequest} = rp;
   const {challenge} = exchange;
 
-  if(dcql_query) {
-    return dcql_query;
-  }
-
-  // New compact RP config method using rp.query
   let requestedType;
   let requestedTypeIri;
-  if(query) {
+
+  if(dcql_query) {
+    return {dcql_query};
+  } else if(query) {
+    // New compact config method using rp.query
     requestedTypeIri = await getTypeIri({
       contexts: query.contexts,
       type: query.type
     });
     requestedType = query.type;
+
+    const baseQuery = {
+      multiple: false,
+      require_cryptographic_holder_binding: true,
+      // trusted_authorities: [] // TODO - optional
+      meta: {
+        type_values: [
+          [requestedTypeIri]
+        ]
+      }
+    };
+    return {
+      dcql_query: {
+        credentials: [
+          { // 1: JWT
+            ...baseQuery,
+            id: await createId(),
+            format: 'jwt_vc_json',
+            claims: [{
+              path: ['$.vc.type', '$.verifiableCredential.type', '$.type'],
+              values: [requestedType]
+            }],
+          },
+          {
+            // 2: LDP_VC
+            ...baseQuery,
+            id: await createId(),
+            format: 'ldp_vc',
+            claims: [{
+              path: ['$.type'],
+              values: [requestedType]
+            }]
+          }
+        ]
+      }
+    };
   } else {
-    // Or fall back to legacy verbose config method.
+    // Or fall back to legacy verifiablePresentationRequest config method.
     const vpr = JSON.parse(verifiablePresentationRequest);
     vpr.challenge = challenge;
     const fromVPR = oid4vp.fromVpr({
       verifiablePresentationRequest: vpr,
-      prefixVC: true
-    });
-    try {
-      requestedType = fromVPR.presentation_definition.input_descriptors[0].
-        constraints.fields.find(
-          f => f.path.some(p => p.includes('type')))
-        .filter.contains[0].const;
-    } catch{
-      requestedType = 'VerifiableCredential';
-    }
-  }
-
-  const baseQuery = {
-    multiple: false,
-    require_cryptographic_holder_binding: true,
-    // trusted_authorities: [] // TODO - optional
-    meta: {
-      type_values: [
-        [requestedTypeIri]
-      ]
-    }
-  };
-  const dcqlQuery = {
-    credentials: [
-      { // 1: JWT
-        ...baseQuery,
-        id: await createId(),
-        format: 'jwt_vc_json',
-        claims: [{
-          path: ['$.vc.type', '$.verifiableCredential.type', '$.type'],
-          values: [requestedType]
-        }],
-      },
-      {
-        // 2: LDP_VC
-        ...baseQuery,
-        id: await createId(),
-        format: 'ldp_vc',
-        claims: [{
-          path: ['$.type'],
-          values: [requestedType]
-        }]
+      prefixVC: true,
+      queryFormats: {
+        dcql: true,
+        presentationExchange: false
       }
-    ]
-  };
-  return dcqlQuery;
+    });
+    return {dcql_query: fromVPR.dcql_query};
+  }
 };
 
-export const getAuthorizationRequest = async ({rp, exchange, domain, url}) => {
-  // Draft 18 format: vp_formats with jwt_vp_json and ldp_vp keys
-  const vpFormatsDraft18 = {
-    jwt_vp_json: {
-      alg: ['ES256'],
-      alg_values: ['ES256'],
-    },
-    ldp_vp: {
-      proof_type: ['ecdsa-rdfc-2019'],
+// Templates define which components are active for each profile
+const TEMPLATES = {
+  'OID4VP-draft18': {
+    vp_formats: true,
+    vp_formats_supported: false,
+    presentation_definition: true,
+    dcql_query: false
+  },
+  'OID4VP-1.0': {
+    vp_formats: false,
+    vp_formats_supported: true,
+    presentation_definition: false,
+    dcql_query: true
+  },
+  'OID4VP-combined': {
+    vp_formats: true,
+    vp_formats_supported: true,
+    presentation_definition: true,
+    dcql_query: true
+  }
+};
+
+/**
+ * Returns vp_formats object or empty object based on profile
+ */
+const getVpFormats = ({profile}) => {
+  const template = TEMPLATES[profile];
+  if(!template || !template.vp_formats) {
+    return {};
+  }
+  return {
+    // Draft 18 format: vp_formats with jwt_vp_json and ldp_vp keys
+    vp_formats: {
+      jwt_vp_json: {
+        alg: ['ES256'],
+        alg_values: ['ES256'],
+      },
+      ldp_vp: {
+        proof_type: ['ecdsa-rdfc-2019'],
+      }
     }
+  };
+};
+
+/**
+ * Returns vp_formats_supported object or empty object based on profile
+ */
+const getVpFormatsSupported = ({profile}) => {
+  const template = TEMPLATES[profile];
+  if(!template || !template.vp_formats_supported) {
+    return {};
+  }
+  return {
+    // OID4VP 1.0 format: vp_formats_supported with jwt_vc_json and ldp_vc keys
+    vp_formats_supported: {
+      jwt_vc_json: {
+        alg: ['ES256'],
+        alg_values: ['ES256'],
+      },
+      ldp_vc: {
+        proof_type: ['ecdsa-rdfc-2019'],
+        proof_type_values: ['DataIntegrityProof'],
+        cryptosuite_values: ['ecdsa-rdfc-2019']
+      }
+    }
+  };
+};
+
+/**
+ * Returns base client_metadata merged with vp format properties
+ */
+const getClientMetadata = ({profile}) => {
+  const baseMetadata = {
+    client_name: 'OpenCred Verifier',
+    subject_syntax_types_supported: [
+      'did:jwk', 'did:key', 'did:web'
+    ]
   };
 
-  // OID4VP 1.0 format: vp_formats_supported with jwt_vc_json and ldp_vc keys
-  const vpFormatsSupported = {
-    jwt_vc_json: {
-      alg: ['ES256'],
-      alg_values: ['ES256'],
-    },
-    ldp_vc: {
-      proof_type: ['ecdsa-rdfc-2019'],
-      proof_type_values: ['DataIntegrityProof'],
-      cryptosuite_values: ['ecdsa-rdfc-2019']
+  return {
+    client_metadata: {
+      ...baseMetadata,
+      ...getVpFormats({profile}),
+      ...getVpFormatsSupported({profile})
     }
   };
+};
+
+/**
+ * Returns presentation_definition object or empty object based on profile
+ */
+const getPresentationDefinition = async ({
+  rp, exchange, domain, url, profile
+}) => {
+  const template = TEMPLATES[profile];
+  if(!template || !template.presentation_definition) {
+    return {};
+  }
+
+  return {
+    presentation_definition: {
+      id: await createId(),
+      input_descriptors: await getInputDescriptors({
+        rp, exchange, domain, url, profile})
+    }
+  };
+};
+
+export const getAuthorizationRequest = async ({
+  rp, exchange, domain, url, profile
+}) => {
+  // If no profile provided, use system default from config
+  let resolvedProfile = profile;
+  if(!resolvedProfile) {
+    resolvedProfile = config.opencred?.options?.OID4VPdefault ||
+      'OID4VP-combined';
+  }
+
+  // Map legacy 'OID4VP' to 'OID4VP-1.0' for backward compatibility
+  if(resolvedProfile === 'OID4VP') {
+    resolvedProfile = 'OID4VP-1.0';
+  }
+
+  // Ensure profile is valid, default to combined if not
+  if(!TEMPLATES[resolvedProfile]) {
+    resolvedProfile = 'OID4VP-combined';
+  }
+
+  // Compose authorization request from component functions
+  const [
+    presentationDefinition,
+    dcqlQueryComponent,
+    clientMetadata
+  ] = await Promise.all([
+    getPresentationDefinition({
+      rp, exchange, domain, url, profile: resolvedProfile}),
+    getDcqlQuery({
+      rp, exchange, profile: resolvedProfile}),
+    getClientMetadata({profile: resolvedProfile})
+  ]);
 
   const authorizationRequest = {
     response_type: 'vp_token',
@@ -363,26 +528,13 @@ export const getAuthorizationRequest = async ({rp, exchange, domain, url}) => {
     client_id: domainToDidWeb(domain),
     client_id_scheme: 'did',
     nonce: exchange.challenge,
-    response_uri: url.replace('request', 'response'),
+    response_uri: `${domain}${url.replace('request', 'response')}`,
     state: await createId(),
-
-    // Deprecated in draft 25
-    presentation_definition: {
-      id: await createId(),
-      input_descriptors: await getInputDescriptors({
-        rp, exchange, domain, url})
-    },
-
-    dcql_query: await getDcqlQuery({rp, exchange}),
-    client_metadata: {
-      client_name: 'OpenCred Verifier',
-      subject_syntax_types_supported: [
-        'did:jwk', 'did:key', 'did:web'
-      ],
-      vp_formats: vpFormatsDraft18, // Draft 18 format
-      vp_formats_supported: vpFormatsSupported, // OID4VP 1.0 format
-    },
+    ...presentationDefinition,
+    ...dcqlQueryComponent,
+    ...clientMetadata
   };
+
   return authorizationRequest;
 };
 

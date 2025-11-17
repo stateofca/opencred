@@ -57,7 +57,7 @@
     "@digitalbazaar/ezcap": "^4.1.0",
     "@digitalbazaar/http-client": "^4.2.0",
     "@digitalbazaar/minimal-jwt": "^2.1.0",
-    "@digitalbazaar/oid4-client": "^4.3.0",
+    "@digitalbazaar/oid4-client": "^5.2.0",
     "@digitalbazaar/vc": "^7.1.2",
     "@digitalbazaar/vc-bitstring-status-list": "^2.0.1",
     "@digitalbazaar/vc-dpp-context": "^1.0.0",

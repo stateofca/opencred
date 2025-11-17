@@ -288,7 +288,10 @@ export const OptionsSchema = z.object({
     .transform(val => Math.floor(Math.min(
       Math.max(val, 10), // Min 10 seconds
       900 // Max 900 seconds
-    )))
+    ))),
+  includeQRByDefault: z.boolean().default(true),
+  OID4VPdefault: z.enum(['OID4VP-draft18', 'OID4VP', 'OID4VP-combined'])
+    .default('OID4VP-draft18')
 }).transform(data => {
   // exchangeTtlSeconds cannot exceed recordExpiresDurationMs
   const maxExchangeTtl = Math.min(900, data.recordExpiresDurationMs / 1000);
@@ -387,7 +390,7 @@ export const SigningKeySchema = z.object({
 
 // Main OpenCred configuration schema
 export const OpenCredConfigSchema = z.object({
-  options: OptionsSchema.default({}),
+  options: OptionsSchema.optional(),
   workflows: z.array(WorkflowSchema).optional(),
   defaultLanguage: z.string().optional(),
   translations: z.record(z.string(), z.record(z.string(), z.string()))
@@ -399,6 +402,15 @@ export const OpenCredConfigSchema = z.object({
   caStore: z.array(z.object({pem: z.string()})).default([]),
   reCaptcha: ReCaptchaSchema.optional(),
   audit: AuditSchema.default({enable: false})
+}).transform(data => {
+  // Ensure options is populated with field-level defaults from OptionsSchema
+  // Parse through OptionsSchema to apply defaults for any missing fields
+  return {
+    ...data,
+    options: data.options !== undefined ?
+      OptionsSchema.parse(data.options) :
+      OptionsSchema.parse({})
+  };
 });
 
 /** Populate workflow with defaults from root and configFrom peers */
