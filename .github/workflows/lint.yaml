@@ -1,5 +1,5 @@
-# Copyright 2023 - 2024 California Department of Motor Vehicles
-# Copyright 2023 - 2024 Digital Bazaar, Inc.
+# Copyright 2023 - 2025 California Department of Motor Vehicles
+# Copyright 2023 - 2025 Digital Bazaar, Inc.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
@@ -15,11 +15,11 @@ jobs:
       matrix:
         node-version: [20.x]
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm install
-    - name: Run eslint
-      run: npm run lint
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm install
+      - name: Run eslint
+        run: npm run lint
