@@ -5,151 +5,6 @@ Copyright 2023 - 2024 Digital Bazaar, Inc.
 SPDX-License-Identifier: BSD-3-Clause
 -->
 
-<script setup>
-import CheckCircleIcon from 'vue-material-design-icons/CheckCircle.vue';
-import CloseCircleIcon from 'vue-material-design-icons/CloseCircle.vue';
-import {config} from '@bedrock/web';
-import {httpClient} from '@digitalbazaar/http-client';
-import ReCaptcha from './ReCaptcha.vue';
-import {ref} from 'vue';
-
-const NON_INPUT_TYPES = ['dropdown'];
-
-const enableAuditReCaptcha = config.reCaptcha.pages.includes('audit');
-
-const getDefaultValueForField = f => {
-  if(f.type == 'dropdown') {
-    return f.default ?
-      Object.entries(f.options ?? []).find(
-        v => v[0] == f.default)?.[1] :
-      undefined;
-  }
-  return f.default ?? undefined;
-};
-const mainContent = ref(null);
-const auditFieldValues = ref(
-  Object.fromEntries(
-    config.audit.fields
-      .map(f => [
-        f.path, getDefaultValueForField(f)
-      ])
-  )
-);
-
-const vpTokenInput = ref({
-  data: '',
-  type: 'filepicker',
-  typeToggleButtonText: 'Switch to text input'
-});
-
-const auditResults = ref({
-  data: {
-    verified: null,
-    matches: {},
-    message: ''
-  },
-  loading: false
-});
-
-const reCaptchaResults = ref({
-  loading: false,
-  verified: enableAuditReCaptcha ?
-    false :
-    true,
-  token: null
-});
-
-function onReCaptchaVerify(response) {
-  reCaptchaResults.value.verified = true;
-  reCaptchaResults.value.token = response;
-  reCaptchaResults.value.loading = false;
-  auditPresentation();
-}
-
-function onReCaptchaExpired() {
-  reCaptchaResults.value.loading = false;
-  reCaptchaResults.value.verified = false;
-  reCaptchaResults.value.token = null;
-}
-
-function onReCaptchaError() {
-  reCaptchaResults.value.loading = false;
-  reCaptchaResults.value.verified = false;
-  reCaptchaResults.value.token = null;
-}
-
-function toggleVpTokenInputType() {
-  vpTokenInput.value.type =
-    vpTokenInput.value.type === 'textarea' ?
-      'filepicker' :
-      'textarea';
-  vpTokenInput.value.typeToggleButtonText =
-    vpTokenInput.value.typeToggleButtonText === 'Switch to file picker' ?
-      'Switch to text input' :
-      'Switch to file picker';
-  vpTokenInput.value.data = '';
-}
-
-function handleFileChange(event) {
-  const file = event.target.files[0];
-  const reader = new FileReader();
-  reader.onload = res => {
-    vpTokenInput.value.data = res.target.result;
-  };
-  reader.onerror = err => alert(err?.message || err);
-  reader.readAsText(file);
-}
-
-async function requestSubmit() {
-  // prevent double submission
-  if(reCaptchaResults.value.loading) {
-    return;
-  }
-
-  // disable button while checking
-  reCaptchaResults.value.loading = true;
-  reCaptchaResults.value.verified = false;
-  clearAuditResults();
-}
-
-async function auditPresentation() {
-  // Prevent submission if recaptcha is still going
-  if(!reCaptchaResults.value.verified) {
-    return;
-  }
-
-  let response;
-  try {
-    response = await httpClient.post(
-      '/audit-presentation', {
-        json: {
-          vpToken: vpTokenInput.value.data.replace(/\s+/g, ''),
-          fields: auditFieldValues.value,
-          reCaptchaToken: reCaptchaResults.value.token
-        }
-      }
-    );
-    auditResults.value.data = response.data;
-  } catch(error) {
-    auditResults.value.data = error.data;
-  } finally {
-    auditResults.value.loading = false;
-    mainContent.value.scrollIntoView({behavior: 'smooth'});
-  }
-}
-
-function clearAuditResults() {
-  auditResults.value = {
-    data: {
-      verified: null,
-      matches: {},
-      message: ''
-    },
-    loading: false
-  };
-}
-</script>
-
 <template>
   <div class="flex flex-col">
     <main
@@ -326,6 +181,151 @@ function clearAuditResults() {
     </div>
   </div>
 </template>
+
+<script setup>
+import CheckCircleIcon from 'vue-material-design-icons/CheckCircle.vue';
+import CloseCircleIcon from 'vue-material-design-icons/CloseCircle.vue';
+import {config} from '@bedrock/web';
+import {httpClient} from '@digitalbazaar/http-client';
+import ReCaptcha from '../components/ReCaptcha.vue';
+import {ref} from 'vue';
+
+const NON_INPUT_TYPES = ['dropdown'];
+
+const enableAuditReCaptcha = config.reCaptcha.pages.includes('audit');
+
+const getDefaultValueForField = f => {
+  if(f.type == 'dropdown') {
+    return f.default ?
+      Object.entries(f.options ?? []).find(
+        v => v[0] == f.default)?.[1] :
+      undefined;
+  }
+  return f.default ?? undefined;
+};
+const mainContent = ref(null);
+const auditFieldValues = ref(
+  Object.fromEntries(
+    config.audit.fields
+      .map(f => [
+        f.path, getDefaultValueForField(f)
+      ])
+  )
+);
+
+const vpTokenInput = ref({
+  data: '',
+  type: 'filepicker',
+  typeToggleButtonText: 'Switch to text input'
+});
+
+const auditResults = ref({
+  data: {
+    verified: null,
+    matches: {},
+    message: ''
+  },
+  loading: false
+});
+
+const reCaptchaResults = ref({
+  loading: false,
+  verified: enableAuditReCaptcha ?
+    false :
+    true,
+  token: null
+});
+
+function onReCaptchaVerify(response) {
+  reCaptchaResults.value.verified = true;
+  reCaptchaResults.value.token = response;
+  reCaptchaResults.value.loading = false;
+  auditPresentation();
+}
+
+function onReCaptchaExpired() {
+  reCaptchaResults.value.loading = false;
+  reCaptchaResults.value.verified = false;
+  reCaptchaResults.value.token = null;
+}
+
+function onReCaptchaError() {
+  reCaptchaResults.value.loading = false;
+  reCaptchaResults.value.verified = false;
+  reCaptchaResults.value.token = null;
+}
+
+function toggleVpTokenInputType() {
+  vpTokenInput.value.type =
+    vpTokenInput.value.type === 'textarea' ?
+      'filepicker' :
+      'textarea';
+  vpTokenInput.value.typeToggleButtonText =
+    vpTokenInput.value.typeToggleButtonText === 'Switch to file picker' ?
+      'Switch to text input' :
+      'Switch to file picker';
+  vpTokenInput.value.data = '';
+}
+
+function handleFileChange(event) {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+  reader.onload = res => {
+    vpTokenInput.value.data = res.target.result;
+  };
+  reader.onerror = err => alert(err?.message || err);
+  reader.readAsText(file);
+}
+
+async function requestSubmit() {
+  // prevent double submission
+  if(reCaptchaResults.value.loading) {
+    return;
+  }
+
+  // disable button while checking
+  reCaptchaResults.value.loading = true;
+  reCaptchaResults.value.verified = false;
+  clearAuditResults();
+}
+
+async function auditPresentation() {
+  // Prevent submission if recaptcha is still going
+  if(!reCaptchaResults.value.verified) {
+    return;
+  }
+
+  let response;
+  try {
+    response = await httpClient.post(
+      '/audit-presentation', {
+        json: {
+          vpToken: vpTokenInput.value.data.replace(/\s+/g, ''),
+          fields: auditFieldValues.value,
+          reCaptchaToken: reCaptchaResults.value.token
+        }
+      }
+    );
+    auditResults.value.data = response.data;
+  } catch(error) {
+    auditResults.value.data = error.data;
+  } finally {
+    auditResults.value.loading = false;
+    mainContent.value.scrollIntoView({behavior: 'smooth'});
+  }
+}
+
+function clearAuditResults() {
+  auditResults.value = {
+    data: {
+      verified: null,
+      matches: {},
+      message: ''
+    },
+    loading: false
+  };
+}
+</script>
 
 <style>
 .main {

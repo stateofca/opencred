@@ -5,108 +5,6 @@ Copyright 2023 - 2024 Digital Bazaar, Inc.
 SPDX-License-Identifier: BSD-3-Clause
 -->
 
-<script setup>
-import {inject, onMounted, ref} from 'vue';
-import CountdownDisplay from './CountdownDisplay.vue';
-import {httpClient} from '@digitalbazaar/http-client';
-import {useQuasar} from 'quasar';
-
-const props = defineProps({
-  active: {
-    type: Boolean,
-    default: false
-  },
-  brand: {
-    type: Object,
-    default: () => ({
-      primary: ''
-    })
-  },
-  exchangeData: {
-    type: Object,
-    default: () => ({
-      QR: '',
-      vcapi: '',
-      OID4VP: '',
-      ttl: 900,
-      createdAt: new Date(),
-      oidc: {
-        state: ''
-      }
-    })
-  },
-  explainerVideo: {
-    type: Object,
-    default: () => ({
-      id: '',
-      provider: ''
-    })
-  }
-});
-const emit = defineEmits(['replaceExchange', 'overrideActive']);
-const showDeeplink = ref(false);
-const showVideo = ref(false);
-const showNoSchemeHandlerWarning = ref(false);
-const $q = useQuasar();
-const $cookies = inject('$cookies');
-
-const switchView = () => {
-  showDeeplink.value = !showDeeplink.value;
-};
-
-onMounted(() => {
-  if($q.platform.is.mobile) {
-    showDeeplink.value = true;
-  }
-});
-
-async function appOpened() {
-  const {location} = window;
-  const searchParams = new URLSearchParams(location.search);
-  const variables = JSON.parse(atob(searchParams.get('variables') || 'e30='));
-  const redirectPath = location.href.split(location.origin).at(-1);
-  let exchange = {};
-  ({
-    data: exchange,
-  } = await httpClient.post(
-    `/workflows/${props.exchangeData.workflowId}` +
-    `/exchanges`,
-    {
-      json: {
-        variables: btoa(JSON.stringify({
-          ...variables,
-          redirectPath
-        })).replace(/=+$/, ''),
-        oidcState: props.exchangeData.oidc.state
-      },
-      headers: {
-        Authorization: `Bearer ${props.exchangeData.accessToken}`
-      }
-    }
-  ));
-  emit('replaceExchange', exchange);
-  $cookies.set('exchangeId', exchange.id,
-    `${props.exchangeData.ttl}s`,
-    '', '', true, 'Strict');
-  $cookies.set('accessToken', exchange.accessToken,
-    `${props.exchangeData.ttl}s`,
-    '', '', true, 'Strict');
-
-  // If we're still on the page after 2 seconds, the app may have failed to
-  // launch. Warn the user.
-  setTimeout(() => {
-    if(window.location !== exchange.OID4VP) {
-      showNoSchemeHandlerWarning.value = true;
-    }
-  }, 2000);
-  window.location.replace(exchange.OID4VP);
-}
-
-const handleGoBack = () => {
-  emit('overrideActive');
-};
-</script>
-
 <template>
   <div
     class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
@@ -265,3 +163,105 @@ const handleGoBack = () => {
     </q-dialog>
   </div>
 </template>
+
+<script setup>
+import {inject, onMounted, ref} from 'vue';
+import CountdownDisplay from './CountdownDisplay.vue';
+import {httpClient} from '@digitalbazaar/http-client';
+import {useQuasar} from 'quasar';
+
+const props = defineProps({
+  active: {
+    type: Boolean,
+    default: false
+  },
+  brand: {
+    type: Object,
+    default: () => ({
+      primary: ''
+    })
+  },
+  exchangeData: {
+    type: Object,
+    default: () => ({
+      QR: '',
+      vcapi: '',
+      OID4VP: '',
+      ttl: 900,
+      createdAt: new Date(),
+      oidc: {
+        state: ''
+      }
+    })
+  },
+  explainerVideo: {
+    type: Object,
+    default: () => ({
+      id: '',
+      provider: ''
+    })
+  }
+});
+const emit = defineEmits(['replaceExchange', 'overrideActive']);
+const showDeeplink = ref(false);
+const showVideo = ref(false);
+const showNoSchemeHandlerWarning = ref(false);
+const $q = useQuasar();
+const $cookies = inject('$cookies');
+
+const switchView = () => {
+  showDeeplink.value = !showDeeplink.value;
+};
+
+onMounted(() => {
+  if($q.platform.is.mobile) {
+    showDeeplink.value = true;
+  }
+});
+
+async function appOpened() {
+  const {location} = window;
+  const searchParams = new URLSearchParams(location.search);
+  const variables = JSON.parse(atob(searchParams.get('variables') || 'e30='));
+  const redirectPath = location.href.split(location.origin).at(-1);
+  let exchange = {};
+  ({
+    data: exchange,
+  } = await httpClient.post(
+    `/workflows/${props.exchangeData.workflowId}` +
+    `/exchanges`,
+    {
+      json: {
+        variables: btoa(JSON.stringify({
+          ...variables,
+          redirectPath
+        })).replace(/=+$/, ''),
+        oidcState: props.exchangeData.oidc.state
+      },
+      headers: {
+        Authorization: `Bearer ${props.exchangeData.accessToken}`
+      }
+    }
+  ));
+  emit('replaceExchange', exchange);
+  $cookies.set('exchangeId', exchange.id,
+    `${props.exchangeData.ttl}s`,
+    '', '', true, 'Strict');
+  $cookies.set('accessToken', exchange.accessToken,
+    `${props.exchangeData.ttl}s`,
+    '', '', true, 'Strict');
+
+  // If we're still on the page after 2 seconds, the app may have failed to
+  // launch. Warn the user.
+  setTimeout(() => {
+    if(window.location !== exchange.OID4VP) {
+      showNoSchemeHandlerWarning.value = true;
+    }
+  }, 2000);
+  window.location.replace(exchange.OID4VP);
+}
+
+const handleGoBack = () => {
+  emit('overrideActive');
+};
+</script>

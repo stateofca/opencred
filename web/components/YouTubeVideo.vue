@@ -5,6 +5,14 @@ Copyright 2023 - 2024 Digital Bazaar, Inc.
 SPDX-License-Identifier: BSD-3-Clause
 -->
 
+<template>
+  <iframe
+    :src="explainerVideoLink"
+    frameborder="0"
+    allow="autoplay"
+    allowfullscreen />
+</template>
+
 <script setup>
 import {computed} from 'vue';
 
@@ -20,14 +28,6 @@ const explainerVideoLink = computed(() =>
   '&controls=0&loop=1&playlist=' + props.id
 );
 </script>
-
-<template>
-  <iframe
-    :src="explainerVideoLink"
-    frameborder="0"
-    allow="autoplay"
-    allowfullscreen />
-</template>
 
 <style scoped>
 iframe {

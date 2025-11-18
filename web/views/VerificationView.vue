@@ -5,10 +5,6 @@ Copyright 2023 - 2024 Digital Bazaar, Inc.
 SPDX-License-Identifier: BSD-3-Clause
 -->
 
-<script setup>
-import CheckDecagramIcon from 'vue-material-design-icons/CheckDecagram.vue';
-</script>
-
 <template>
   <div
     class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
@@ -21,3 +17,7 @@ import CheckDecagramIcon from 'vue-material-design-icons/CheckDecagram.vue';
     </div>
   </div>
 </template>
+
+<script setup>
+import CheckDecagramIcon from 'vue-material-design-icons/CheckDecagram.vue';
+</script>

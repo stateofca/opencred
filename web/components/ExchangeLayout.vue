@@ -5,6 +5,148 @@ Copyright 2023 - 2024 Digital Bazaar, Inc.
 SPDX-License-Identifier: BSD-3-Clause
 -->
 
+<template>
+  <div class="flex flex-col min-h-screen">
+    <cadmv-header
+      :ca-gov-url="context.rp.brand.primaryLogo?.href ??
+        context.rp.brand.primaryLink"
+      :ca-gov-logo="typeof context.rp.brand.primaryLogo === 'string' ?
+        context.rp.brand.primaryLogo : context.rp.brand.primaryLogo?.id"
+      :ca-gov-alt="context.rp.brand.primaryLogo?.alt || 'logo-image'"
+      :dmv-url="context.rp.brand.secondaryLogo?.href ??
+        context.rp.brand.secondaryLink"
+      :dmv-logo="typeof context.rp.brand.secondaryLogo === 'string' ?
+        context.rp.brand.secondaryLogo : context.rp.brand.secondaryLogo?.id"
+      :dmv-alt="context.rp.brand.secondaryLogo?.alt || 'logo-image'">
+      <div
+        id="translations-btn"
+        class="flex-grow flex justify-end items-center gap-3">
+        <q-btn-dropdown
+          v-if="availableLocales.length > 1 && useNativeTranslations"
+          flat
+          no-caps
+          text-color="white">
+          <template #label>
+            <div class="row items-center no-wrap gap-2 text-white">
+              <span class="bg-white rounded-full p-1 flex">
+                <TranslateIcon />
+              </span>
+              {{$t('translate')}}
+            </div>
+          </template>
+          <q-list>
+            <q-item
+              v-for="(item, index) in availableLocales"
+              :key="index"
+              v-close-popup
+              clickable
+              @click="changeLanguage(item)">
+              <q-item-section>
+                <q-item-label>
+                  {{$t(`languages.${item}`)}}
+                </q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
+        <div
+          v-else-if="!useNativeTranslations"
+          class="row items-center no-wrap gap-2 ">
+          <span class="bg-white rounded-full p-1 flex">
+            <TranslateIcon />
+          </span>
+        </div>
+      </div>
+    </cadmv-header>
+    <main class="relative flex-grow">
+      <div
+        v-if="context.rp.brand.homeLink"
+        class="bg-white w-full text-center">
+        <h2 class="font-bold">
+          <a :href="context.rp.brand.homeLink">
+            {{$t('home')}}
+          </a>
+        </h2>
+      </div>
+      <div
+        v-if="!state.error && context.rp.brand.backgroundImage"
+        class="bg-no-repeat bg-cover clip-path-bg z-0 min-h-[360px]"
+        :style="{ 'background-image': `url(${
+          typeof context.rp.brand.backgroundImage === 'string' ?
+            context.rp.brand.backgroundImage :
+            context.rp.brand.backgroundImage?.id})` }">
+        <div class="text-center text-6xl py-10">
+&nbsp;
+        </div>
+      </div>
+      <div v-if="context.exchangeData?.state == 'complete'">
+        <router-view
+          :exchange="context.exchangeData"
+          :rp="context.rp" />
+      </div>
+      <div v-else-if="state.error">
+        <div class="flex justify-center pt-8">
+          <ErrorView
+            :title="state.error.title"
+            :message="state.error.message"
+            :resettable="state.error.resettable"
+            @reset="handleResetExchange" />
+        </div>
+      </div>
+      <CHAPIView
+        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex]
+          === 'chapi'"
+        :chapi-enabled="true"
+        :rp="context.rp"
+        :options="config.options"
+        :exchange-data="context.exchangeData"
+        @switch-view="switchView" />
+      <!-- eslint-disable max-len -->
+      <OID4VPView
+        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex]
+          === 'openid4vp'"
+        :brand="context.rp.brand"
+        :exchange-data="context.exchangeData"
+        :options="config.options"
+        :explainer-video="context.rp.brand.explainerVideo"
+        :active="state.active && !state.activeOverride"
+        @switch-view="switchView"
+        @override-active="state.activeOverride = true"
+        @replace-exchange="replaceExchange" />
+      <!-- eslint-enable max-len -->
+
+      <div
+        v-if="context.value?.exchangeData?.state != 'complete' &&
+          state.statusCheckCount > 10"
+        class="fixed inset-0 flex items-center justify-center
+              bg-gray-800 bg-opacity-75 z-50">
+        <div class="bg-white rounded-lg p-6 max-w-2xl mx-auto relative">
+          <p class="text-sm text-center">
+            <span class="text-bold">Are you still there? </span>
+            Status checking is paused.
+          </p>
+          <div class="flex justify-center mt-4 space-x-4">
+            <q-btn
+              class="bg-blue-700 text-white py-2 px-4 rounded"
+              @click="startStatusCheck(true)">
+              Resume checking
+            </q-btn>
+            <q-btn
+              color="white"
+              text-color="black"
+              @click="handleResetExchange">
+              Reset Session
+            </q-btn>
+          </div>
+        </div>
+      </div>
+    </main>
+    <footer
+      class="text-left p-3"
+      v-html="$t('copyright')" />
+  </div>
+</template>
+
 <script setup>
 import {inject, onBeforeMount, onMounted, onUnmounted, reactive,
   ref} from 'vue';
@@ -273,148 +415,6 @@ onUnmounted(() => {
   }
 });
 </script>
-
-<template>
-  <div class="flex flex-col min-h-screen">
-    <cadmv-header
-      :ca-gov-url="context.rp.brand.primaryLogo?.href ??
-        context.rp.brand.primaryLink"
-      :ca-gov-logo="typeof context.rp.brand.primaryLogo === 'string' ?
-        context.rp.brand.primaryLogo : context.rp.brand.primaryLogo?.id"
-      :ca-gov-alt="context.rp.brand.primaryLogo?.alt || 'logo-image'"
-      :dmv-url="context.rp.brand.secondaryLogo?.href ??
-        context.rp.brand.secondaryLink"
-      :dmv-logo="typeof context.rp.brand.secondaryLogo === 'string' ?
-        context.rp.brand.secondaryLogo : context.rp.brand.secondaryLogo?.id"
-      :dmv-alt="context.rp.brand.secondaryLogo?.alt || 'logo-image'">
-      <div
-        id="translations-btn"
-        class="flex-grow flex justify-end items-center gap-3">
-        <q-btn-dropdown
-          v-if="availableLocales.length > 1 && useNativeTranslations"
-          flat
-          no-caps
-          text-color="white">
-          <template #label>
-            <div class="row items-center no-wrap gap-2 text-white">
-              <span class="bg-white rounded-full p-1 flex">
-                <TranslateIcon />
-              </span>
-              {{$t('translate')}}
-            </div>
-          </template>
-          <q-list>
-            <q-item
-              v-for="(item, index) in availableLocales"
-              :key="index"
-              v-close-popup
-              clickable
-              @click="changeLanguage(item)">
-              <q-item-section>
-                <q-item-label>
-                  {{$t(`languages.${item}`)}}
-                </q-item-label>
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-btn-dropdown>
-        <div
-          v-else-if="!useNativeTranslations"
-          class="row items-center no-wrap gap-2 ">
-          <span class="bg-white rounded-full p-1 flex">
-            <TranslateIcon />
-          </span>
-        </div>
-      </div>
-    </cadmv-header>
-    <main class="relative flex-grow">
-      <div
-        v-if="context.rp.brand.homeLink"
-        class="bg-white w-full text-center">
-        <h2 class="font-bold">
-          <a :href="context.rp.brand.homeLink">
-            {{$t('home')}}
-          </a>
-        </h2>
-      </div>
-      <div
-        v-if="!state.error && context.rp.brand.backgroundImage"
-        class="bg-no-repeat bg-cover clip-path-bg z-0 min-h-[360px]"
-        :style="{ 'background-image': `url(${
-          typeof context.rp.brand.backgroundImage === 'string' ?
-            context.rp.brand.backgroundImage :
-            context.rp.brand.backgroundImage?.id})` }">
-        <div class="text-center text-6xl py-10">
-&nbsp;
-        </div>
-      </div>
-      <div v-if="context.exchangeData?.state == 'complete'">
-        <router-view
-          :exchange="context.exchangeData"
-          :rp="context.rp" />
-      </div>
-      <div v-else-if="state.error">
-        <div class="flex justify-center pt-8">
-          <ErrorView
-            :title="state.error.title"
-            :message="state.error.message"
-            :resettable="state.error.resettable"
-            @reset="handleResetExchange" />
-        </div>
-      </div>
-      <CHAPIView
-        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex]
-          === 'chapi'"
-        :chapi-enabled="true"
-        :rp="context.rp"
-        :options="config.options"
-        :exchange-data="context.exchangeData"
-        @switch-view="switchView" />
-      <!-- eslint-disable max-len -->
-      <OID4VPView
-        v-else-if="config.options.exchangeProtocols[state.currentUXMethodIndex]
-          === 'openid4vp'"
-        :brand="context.rp.brand"
-        :exchange-data="context.exchangeData"
-        :options="config.options"
-        :explainer-video="context.rp.brand.explainerVideo"
-        :active="state.active && !state.activeOverride"
-        @switch-view="switchView"
-        @override-active="state.activeOverride = true"
-        @replace-exchange="replaceExchange" />
-      <!-- eslint-enable max-len -->
-
-      <div
-        v-if="context.value?.exchangeData?.state != 'complete' &&
-          state.statusCheckCount > 10"
-        class="fixed inset-0 flex items-center justify-center
-              bg-gray-800 bg-opacity-75 z-50">
-        <div class="bg-white rounded-lg p-6 max-w-2xl mx-auto relative">
-          <p class="text-sm text-center">
-            <span class="text-bold">Are you still there? </span>
-            Status checking is paused.
-          </p>
-          <div class="flex justify-center mt-4 space-x-4">
-            <q-btn
-              class="bg-blue-700 text-white py-2 px-4 rounded"
-              @click="startStatusCheck(true)">
-              Resume checking
-            </q-btn>
-            <q-btn
-              color="white"
-              text-color="black"
-              @click="handleResetExchange">
-              Reset Session
-            </q-btn>
-          </div>
-        </div>
-      </div>
-    </main>
-    <footer
-      class="text-left p-3"
-      v-html="$t('copyright')" />
-  </div>
-</template>
 
 <style>
 a {

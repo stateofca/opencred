@@ -5,6 +5,10 @@ Copyright 2023 - 2024 Digital Bazaar, Inc.
 SPDX-License-Identifier: BSD-3-Clause
 -->
 
+<template>
+  <div :id="elementId" />
+</template>
+
 <script setup>
 // Necessary for grecaptcha
 /* eslint-disable no-undef */
@@ -112,7 +116,3 @@ function onError() {
   emit('error');
 }
 </script>
-
-<template>
-  <div :id="elementId" />
-</template>

@@ -5,29 +5,6 @@ Copyright 2023 - 2024 Digital Bazaar, Inc.
 SPDX-License-Identifier: BSD-3-Clause
 -->
 
-<script setup>
-defineProps({
-  title: {
-    type: String,
-    default: () => 'Error',
-  },
-  subtitle: {
-    type: String,
-    default: () => 'The following error was encountered:',
-  },
-  message: {
-    type: String,
-    default: () => 'An error occurred.',
-  },
-  resettable: {
-    type: Boolean,
-    default: () => false,
-  },
-});
-
-defineEmits(['reset']);
-</script>
-
 <template>
   <div class="p-4 md:p-5 space-y-4">
     <h2 class="text-2xl md:text-3xl font-bold text-gray-900">
@@ -56,3 +33,26 @@ defineEmits(['reset']);
     </div>
   </div>
 </template>
+
+<script setup>
+defineProps({
+  title: {
+    type: String,
+    default: () => 'Error',
+  },
+  subtitle: {
+    type: String,
+    default: () => 'The following error was encountered:',
+  },
+  message: {
+    type: String,
+    default: () => 'An error occurred.',
+  },
+  resettable: {
+    type: Boolean,
+    default: () => false,
+  },
+});
+
+defineEmits(['reset']);
+</script>

@@ -5,50 +5,6 @@ Copyright 2023 - 2024 Digital Bazaar, Inc.
 SPDX-License-Identifier: BSD-3-Clause
 -->
 
-<script setup>
-import {config} from '@bedrock/web';
-import {getCredentials} from '../chapi.js';
-import {ref} from 'vue';
-
-const props = defineProps({
-  chapiEnabled: Boolean,
-  rp: {
-    type: Object,
-    default: () => ({
-      backgroundImage: '',
-      brand: {
-        cta: '',
-        primary: ''
-      }
-    })
-  },
-  exchangeData: {
-    type: Object,
-    default: () => ({
-      OID4VP: ''
-    })
-  }
-});
-
-const emit = defineEmits(['switchView']);
-const switchView = () => {
-  emit('switchView');
-};
-const loading = ref(false);
-
-const openChapi = async () => {
-  const req = await getCredentials({
-    queries: {},
-    protocols: {
-      OID4VP: props.exchangeData.OID4VP, // vcapi currently ignored
-    },
-  });
-  if(req.dataType === 'OutOfBand') {
-    loading.value = true;
-  }
-};
-
-</script>
 <template>
   <div
     class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
@@ -106,3 +62,48 @@ const openChapi = async () => {
     </div>
   </div>
 </template>
+
+<script setup>
+import {config} from '@bedrock/web';
+import {getCredentials} from '../chapi.js';
+import {ref} from 'vue';
+
+const props = defineProps({
+  chapiEnabled: Boolean,
+  rp: {
+    type: Object,
+    default: () => ({
+      backgroundImage: '',
+      brand: {
+        cta: '',
+        primary: ''
+      }
+    })
+  },
+  exchangeData: {
+    type: Object,
+    default: () => ({
+      OID4VP: ''
+    })
+  }
+});
+
+const emit = defineEmits(['switchView']);
+const switchView = () => {
+  emit('switchView');
+};
+const loading = ref(false);
+
+const openChapi = async () => {
+  const req = await getCredentials({
+    queries: {},
+    protocols: {
+      OID4VP: props.exchangeData.OID4VP, // vcapi currently ignored
+    },
+  });
+  if(req.dataType === 'OutOfBand') {
+    loading.value = true;
+  }
+};
+
+</script>

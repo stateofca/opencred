@@ -11,20 +11,17 @@ import * as polyfill from 'credential-handler-polyfill';
 import {config, extend} from '@bedrock/web';
 import {createRouter, createWebHistory} from 'vue-router';
 import App from './App.vue';
-import AuditPresentation from './components/AuditPresentation.vue';
+import AuditPresentation from './views/AuditPresentation.vue';
 import CHAPIView from './components/CHAPIView.vue';
 import {createHead} from 'unhead';
 import {createI18n} from 'vue-i18n';
 import ErrorView from './components/ErrorView.vue';
 import {httpClient} from '@digitalbazaar/http-client';
-import JsonNode from './components/JsonNode.vue';
-import JsonView from './components/JsonView.vue';
-import LoginView from './components/LoginView.vue';
+import LoginView from './views/LoginView.vue';
 import {Notify} from 'quasar';
 import OID4VPView from './components/OID4VPView.vue';
-import TestPage from './components/TestPage.vue';
 import TranslateIcon from './components/TranslateIcon.vue';
-import VerificationView from './components/VerificationView.vue';
+import VerificationView from './views/VerificationView.vue';
 import VueCookies from 'vue-cookies';
 import YouTubeVideo from './components/YouTubeVideo.vue';
 import '@quasar/extras/material-icons/material-icons.css';
@@ -41,11 +38,8 @@ brVue.initialize({
     app.component('OID4VPView', OID4VPView);
     app.component('CHAPIView', CHAPIView);
     app.component('ErrorView', ErrorView);
-    app.component('JsonNode', JsonNode);
-    app.component('JsonView', JsonView);
     app.component('YouTubeVideo', YouTubeVideo);
     app.component('TranslateIcon', TranslateIcon);
-    app.component('TestPage', TestPage);
     app.component('VerificationView', VerificationView);
 
     // ensure CHAPI is available
@@ -79,7 +73,7 @@ brVue.initialize({
         },
         {
           path: '/audit-vp',
-          component: () => import('./components/AuditPresentation.vue'),
+          component: () => import('./views/AuditPresentation.vue'),
           meta: {
             title: 'Audit VP'
           }
