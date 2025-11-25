@@ -41,6 +41,17 @@ const workflow = {
       },
     ],
   },
+  query: [
+    {
+      type: ['Iso18013DriversLicenseCredential'],
+      context: [
+        'https://www.w3.org/2018/credentials/v1',
+        'https://w3id.org/vdl/v1',
+        'https://w3id.org/vdl/aamva/v1'
+      ],
+      format: ['jwt_vc_json'],
+    },
+  ]
 };
 
 const auditConfig = {

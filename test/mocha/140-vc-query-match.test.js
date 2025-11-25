@@ -143,7 +143,7 @@ describe('VC Query Match', () => {
 
       const result = verifyUtils.checkVcQueryMatch({
         vc: permanentResidentVc,
-        presentation_definition: presentationDefinition
+        presentation_definition: presentationDefinition,
       });
 
       expect(result).to.be(true);
@@ -264,7 +264,7 @@ describe('VC Query Match', () => {
 
       const result = verifyUtils.checkVcQueryMatch({
         vc: driverLicenseVcWithAllContexts,
-        presentation_definition: presentationDefinition
+        presentation_definition: presentationDefinition,
       });
 
       expect(result).to.be(true);
@@ -324,7 +324,7 @@ describe('VC Query Match', () => {
 
       const result = verifyUtils.checkVcQueryMatch({
         vc: driverLicenseVcMissingContext,
-        presentation_definition: presentationDefinition
+        presentation_definition: presentationDefinition,
       });
 
       expect(result).to.be(false);
@@ -384,73 +384,6 @@ describe('VC Query Match', () => {
   });
 
   describe('Error Handling', () => {
-    it('should throw error if no query type is specified', () => {
-      expect(() => {
-        verifyUtils.checkVcQueryMatch({
-          vc: driverLicenseVc
-        });
-      }).to.throwError('Exactly one query type must be specified: ' +
-        'vpr, dcql_query, or presentation_definition');
-    });
-
-    it('should throw error if multiple query types are specified', () => {
-      const vpr = {
-        query: {
-          type: 'QueryByExample',
-          credentialQuery: {
-            reason: 'Test',
-            example: {type: 'TestCredential'}
-          }
-        }
-      };
-
-      const dcqlQuery = {
-        credentials: [{
-          id: 'test',
-          format: 'ldp_vc',
-          meta: {}
-        }]
-      };
-
-      expect(() => {
-        verifyUtils.checkVcQueryMatch({
-          vc: driverLicenseVc,
-          vpr,
-          dcql_query: dcqlQuery
-        });
-      }).to.throwError('Only one query type can be specified at a time:' +
-        ' vpr, dcql_query, or presentation_definition');
-    });
-
-    it('should throw error for overloaded requirements', () => {
-      const vpr = {
-        query: {
-          type: 'QueryByExample',
-          credentialQuery: {
-            reason: 'Test',
-            example: {type: 'TestCredential'}
-          }
-        }
-      };
-
-      const presentationDefinition = {
-        input_descriptors: [{
-          constraints: {
-            fields: []
-          }
-        }]
-      };
-
-      expect(() => {
-        verifyUtils.checkVcQueryMatch({
-          vc: driverLicenseVc,
-          vpr,
-          presentation_definition: presentationDefinition
-        });
-      }).to.throwError('Only one query type can be specified at a time:' +
-        ' vpr, dcql_query, or presentation_definition');
-    });
-
     it('should allow both dcql_query and presentation_definition ' +
       '(dcql_query takes priority)', () => {
       const dcqlQuery = {

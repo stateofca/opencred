@@ -27,13 +27,13 @@ const rp = {
   clientId: 'testworkflow',
   type: 'native',
   untrustedVariableAllowList: ['redirectPath'],
-  query: {
-    type: 'MyPrototypeCredential',
-    contexts: [
+  query: [{
+    type: ['MyPrototypeCredential'],
+    context: [
       'https://www.w3.org/ns/credentials/v2',
       'https://www.w3.org/ns/credentials/examples/v2'
     ]
-  },
+  }],
   domain: 'http://example.test.com',
   trustedCredentialIssuers: []
 };
@@ -141,7 +141,8 @@ describe('Credential Status Verification', async () => {
       rp,
       exchange,
       domain: rp.domain,
-      url: '/test/authorization/request'
+      url: '/test/authorization/request',
+      profile: 'OID4VP-draft18'
     });
     exchange.variables.authorizationRequest = authorizationRequest;
 

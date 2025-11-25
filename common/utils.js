@@ -289,58 +289,32 @@ const verifyJWTVP = async (jwt, options = {}) => {
 
 /**
  * Checks if a Verifiable Credential matches a query specification
- * @param {object} options - Options object containing: vc {object} - The
- *   Verifiable Credential to check vpr {object} - The Verifiable Presentation
- *   Request (legacy format) dcql_query {object} - A DCQL query describing
- *   credential requirements presentation_definition {object} - OID4VP
- *   presentation definition (legacy format) presentation_submission {object} -
- *   Presentation submission (Draft 18 format indicator)
+ * @param {object} options - Options object containing:
+ * @param {object} options.vc - The Verifiable Credential object to check.
+ * @param {object} [options.vpr] - The Verifiable Presentation Request (legacy
+ * format) object.
+ * @param {object} [options.dcql_query] - The DCQL query object describing
+ * credential requirements.
+ * @param {object} [options.presentation_definition] - The OID4VP presentation
+ * definition object (legacy format).
+ * @param {object} [options.presentation_submission] - The Presentation
+ * Submission object (Draft 18 format indicator).
  * @returns boolean - true if the VC matches the query specification
  * @throws {Error} if more than one query type is specified or none are
  * specified
  */
-function checkVcQueryMatch(options) {
-  const {vc, vpr, dcql_query, presentation_definition,
-    presentation_submission} = options;
-  // Validate that at least one query type is provided
-  const queryTypes = [vpr, dcql_query, presentation_definition].filter(Boolean);
-  if(queryTypes.length === 0) {
-    throw new Error('Exactly one query type must be specified:' +
-      ' vpr, dcql_query, or presentation_definition');
+function checkVcQueryMatch({
+  vc, vpr, dcql_query, presentation_definition, presentation_submission}) {
+  // If submission against draft18, check that first,
+  // otherwise check dcql_query, or fall back to vpr
+  if(presentation_definition && (presentation_submission || !dcql_query)) {
+    return checkVcForPresentationDefinition(vc, presentation_definition);
   }
-
-  // Allow both dcql_query and presentation_definition for backward
-  // compatibility. Only error if vpr conflicts with others.
-  if(vpr && (dcql_query || presentation_definition)) {
-    throw new Error('Only one query type can be specified at a time:' +
-      ' vpr, dcql_query, or presentation_definition');
+  // Fallback to dcql_query if presentation_definition not available
+  if(dcql_query) {
+    return checkVcForDcql(vc, dcql_query);
   }
-
-  // Determine which format to use based on presentation_submission presence:
-  // - If presentation_submission is present → Draft 18 format → use
-  //   presentation_definition
-  // - If presentation_submission is absent → OID4VP 1.0 format → use dcql_query
-  if(presentation_submission) {
-    // Draft 18 format: prioritize presentation_definition
-    if(presentation_definition) {
-      return checkVcForPresentationDefinition(vc, presentation_definition);
-    }
-    // Fallback to dcql_query if presentation_definition not available
-    if(dcql_query) {
-      return checkVcForDcql(vc, dcql_query);
-    }
-  } else {
-    // OID4VP 1.0 format: prioritize dcql_query
-    if(dcql_query) {
-      return checkVcForDcql(vc, dcql_query);
-    }
-    // Fallback to presentation_definition if dcql_query not available
-    if(presentation_definition) {
-      return checkVcForPresentationDefinition(vc, presentation_definition);
-    }
-  }
-
-  // Handle VPR (legacy format, doesn't depend on submission format)
+  // Handle presentation exchange VPR (Doesn't depend on submission format)
   if(vpr) {
     return checkVcForVpr(vc, vpr);
   }

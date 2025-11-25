@@ -51,20 +51,10 @@ SPDX-License-Identifier: BSD-3-Clause
         </span>
       </div>
     </div>
-    <div v-if="config.options.exchangeProtocols.length > 1">
-      <p class="text-center">
-        <button
-          :style="{ color: rp.brand.primary }"
-          @click="switchView">
-          {{$t('chapiPageAnotherWay')}}
-        </button>
-      </p>
-    </div>
   </div>
 </template>
 
 <script setup>
-import {config} from '@bedrock/web';
 import {getCredentials} from '../chapi.js';
 import {ref} from 'vue';
 
@@ -88,10 +78,6 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['switchView']);
-const switchView = () => {
-  emit('switchView');
-};
 const loading = ref(false);
 
 const openChapi = async () => {

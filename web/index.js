@@ -16,6 +16,7 @@ import CHAPIView from './components/CHAPIView.vue';
 import {createHead} from 'unhead';
 import {createI18n} from 'vue-i18n';
 import ErrorView from './components/ErrorView.vue';
+import HomeView from './views/HomeView.vue';
 import {httpClient} from '@digitalbazaar/http-client';
 import LoginView from './views/LoginView.vue';
 import {Notify} from 'quasar';
@@ -33,6 +34,7 @@ brVue.initialize({
       await httpClient.get('/config/app.json' + window.location.search);
     extend({target: config, source: appConfig, deep: true});
 
+    app.component('HomeView', HomeView);
     app.component('LoginView', LoginView);
     app.component('AuditPresentation', AuditPresentation);
     app.component('OID4VPView', OID4VPView);
@@ -53,9 +55,13 @@ brVue.initialize({
       routes: [
         {
           path: '/',
-          component: () => import('./components/ExchangeLayout.vue'),
+          component: () => import('./components/AppLayout.vue'),
           props: true,
           children: [
+            {
+              path: '',
+              component: HomeView
+            },
             {
               path: 'login',
               name: 'login',

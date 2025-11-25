@@ -280,13 +280,13 @@ describe('OID4VP Client Metadata', () => {
 
     it('OID4VP-combined: both formats with query RP', async () => {
       const rp = {
-        query: {
-          contexts: [
+        query: [{
+          context: [
             'https://www.w3.org/2018/credentials/v1',
             'https://w3id.org/vdl/v1'
           ],
-          type: 'Iso18013DriversLicenseCredential'
-        },
+          type: ['Iso18013DriversLicenseCredential']
+        }],
         description: 'Test description'
       };
 

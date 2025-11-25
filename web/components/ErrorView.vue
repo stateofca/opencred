@@ -25,16 +25,18 @@ SPDX-License-Identifier: BSD-3-Clause
       <p class="text-base text-gray-600">
         {{$t('exchangeResetTitle')}}
       </p>
-      <q-btn
-        color="primary"
+      <cadmv-button
+        variant="primary"
         @click="$emit('reset')">
         {{$t('exchangeReset')}}
-      </q-btn>
+      </cadmv-button>
     </div>
   </div>
 </template>
 
 <script setup>
+import {CadmvButton} from '@digitalbazaar/cadmv-ui';
+
 defineProps({
   title: {
     type: String,

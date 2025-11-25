@@ -1,4 +1,5 @@
 import * as bedrock from '@bedrock/core';
+import {arrayOf} from './utils.js';
 import {config} from '@bedrock/core';
 import {createId} from './utils.js';
 import {defaultDocLoader} from './documentLoader.js';
@@ -18,33 +19,102 @@ const supportedVcFormats = {
 };
 
 /**
+ * Create field filter from values
+ */
+const createFieldFilter = values => {
+  const uniqueValues = [...new Set(values)];
+  const allOf = uniqueValues.map(value => ({
+    contains: {
+      type: typeof value === 'string' ? 'string' :
+        typeof value === 'number' ? 'number' :
+          typeof value === 'boolean' ? 'boolean' : 'string',
+      const: value
+    }
+  }));
+
+  return {
+    type: 'array',
+    allOf
+  };
+};
+
+/**
  * Construct legacy input_descriptors from compact query format
  */
 const inputDescriptorsFromQuery = async ({query, description}) => {
+  const fields = [];
+
+  // Determine which formats to support (default to ldp_vc)
+  const formats = query.format || ['ldp_vc'];
+  const hasJwtFormat = formats.includes('jwt_vc_json');
+
+  // Build format object based on requested formats
+  const formatObject = {};
+  if(hasJwtFormat && supportedVcFormats.jwt_vc_json) {
+    formatObject.jwt_vc_json = supportedVcFormats.jwt_vc_json;
+  }
+  if((formats.includes('ldp_vc') || formats.includes('mso_mdoc')) &&
+    supportedVcFormats.ldp_vc) {
+    formatObject.ldp_vc = supportedVcFormats.ldp_vc;
+  }
+
+  // Add type field if query.type exists and has items
+  if(query.type && arrayOf(query.type).length > 0) {
+    // Determine paths based on format
+    const typePaths = hasJwtFormat ?
+      ['$[\'type\']', '$[\'vc\'][\'type\']'] :
+      ['$[\'type\']'];
+
+    fields.push({
+      path: typePaths,
+      filter: createFieldFilter(arrayOf(query.type))
+    });
+  }
+
+  // Add context field if query.context exists and has items
+  if(query.context && arrayOf(query.context).length > 0) {
+    // Determine paths based on format
+    const contextPaths = hasJwtFormat ?
+      ['$[\'@context\']', '$[\'vc\'][\'@context\']'] :
+      ['$[\'@context\']'];
+
+    fields.push({
+      path: contextPaths,
+      filter: createFieldFilter(arrayOf(query.context))
+    });
+  }
+
+  // Add fields from query.fields if it exists
+  if(query.fields && typeof query.fields === 'object') {
+    for(const [fieldKey, fieldValues] of Object.entries(query.fields)) {
+      if(Array.isArray(fieldValues) && fieldValues.length > 0) {
+        // Determine path based on format and field key
+        let fieldPath;
+        if(hasJwtFormat) {
+          // For JWT format, use both paths
+          fieldPath = [`$[\'vc\'][\'${fieldKey}\']`, `$[\'${fieldKey}\']`];
+        } else {
+          // For LDP format, use single path
+          fieldPath = [`$[\'${fieldKey}\']`];
+        }
+
+        fields.push({
+          path: fieldPath,
+          filter: createFieldFilter(fieldValues)
+        });
+      }
+    }
+  }
+
   const inputDescriptors = {
     id: await createId(),
-    format: supportedVcFormats,
-    purpose: description,
+    format: formatObject,
+    ...(description ? {purpose: description} : {}),
     constraints: {
-      fields: [
-        {
-          path: ['$[\'type\']', '$[\'vc\'][\'type\']'],
-          filter: {
-            type: 'array',
-            allOf: [
-              {
-                contains: {
-                  type: 'string',
-                  const: query.type
-                }
-              }
-            ]
-          }
-        }
-      ]
-    },
+      fields
+    }
   };
-  return [inputDescriptors];
+  return inputDescriptors;
 };
 
 /**
@@ -71,26 +141,6 @@ const convertPathForFormat = (pathKey, format) => {
   }
 
   return ensureArray(pathKey);
-};
-
-/**
- * Create field filter from values
- */
-const createFieldFilter = values => {
-  const uniqueValues = [...new Set(values)];
-  const allOf = uniqueValues.map(value => ({
-    contains: {
-      type: typeof value === 'string' ? 'string' :
-        typeof value === 'number' ? 'number' :
-          typeof value === 'boolean' ? 'boolean' : 'string',
-      const: value
-    }
-  }));
-
-  return {
-    type: 'array',
-    allOf
-  };
 };
 
 /**
@@ -264,13 +314,18 @@ export const getInputDescriptors = async ({
   const {dcql_query, query} = rp;
   const {challenge} = exchange;
 
-  // New compact RP config method using rp.query
+  // New compact RP config method using rp.query:
+  // OpenCredQuerySchema[]
   if(query) {
-    return inputDescriptorsFromQuery({
-      query, description: rp.description
-    });
+    return Promise.all(query.map(async q => {
+      return inputDescriptorsFromQuery({
+        query: q, description: rp.description
+      });
+    }));
   }
 
+  // It is not recommended to customize dcql_query to convert to
+  // input_descriptors. Use the query format instead.
   if(dcql_query) {
     return inputDescriptorsFromDcql({
       dcql_query, description: rp.description, profile
@@ -317,52 +372,65 @@ export const getDcqlQuery = async ({rp, exchange, profile}) => {
   const {dcql_query, query, verifiablePresentationRequest} = rp;
   const {challenge} = exchange;
 
-  let requestedType;
-  let requestedTypeIri;
+  let requestedTypeIris;
 
   if(dcql_query) {
     return {dcql_query};
   } else if(query) {
     // New compact config method using rp.query
-    requestedTypeIri = await getTypeIri({
-      contexts: query.contexts,
-      type: query.type
-    });
-    requestedType = query.type;
-
-    const baseQuery = {
-      multiple: false,
-      require_cryptographic_holder_binding: true,
-      // trusted_authorities: [] // TODO - optional
-      meta: {
-        type_values: [
-          [requestedTypeIri]
-        ]
+    requestedTypeIris = await Promise.all(query.map(async q => {
+      if(!q.type || !Array.isArray(q.type) || q.type.length === 0) {
+        return [];
       }
-    };
+      // Get IRIs for each type in the q.type array
+      const typeIris = await Promise.all(q.type.map(async type => {
+        return getTypeIri({
+          contexts: q.context,
+          type
+        });
+      }));
+      return typeIris;
+    }));
+
+    // Generate credential queries for each query object and format
+    const credentials = [];
+    for(let i = 0; i < query.length; i++) {
+      const q = query[i];
+      const typeIris = requestedTypeIris[i] || [];
+      const formats = q.format || ['ldp_vc'];
+      const types = q.type || [];
+
+      // Create a credential query for each format
+      for(const format of formats) {
+        // Determine path based on format
+        let path;
+        if(format === 'jwt_vc_json') {
+          path = ['$.vc.type', '$.verifiableCredential.type', '$.type'];
+        } else {
+          // ldp_vc or mso_mdoc
+          path = ['$.type'];
+        }
+
+        credentials.push({
+          id: await createId(),
+          format,
+          multiple: false,
+          require_cryptographic_holder_binding: true,
+          // trusted_authorities: [] // TODO - optional
+          meta: {
+            type_values: typeIris
+          },
+          claims: [{
+            path,
+            values: types
+          }]
+        });
+      }
+    }
+
     return {
       dcql_query: {
-        credentials: [
-          { // 1: JWT
-            ...baseQuery,
-            id: await createId(),
-            format: 'jwt_vc_json',
-            claims: [{
-              path: ['$.vc.type', '$.verifiableCredential.type', '$.type'],
-              values: [requestedType]
-            }],
-          },
-          {
-            // 2: LDP_VC
-            ...baseQuery,
-            id: await createId(),
-            format: 'ldp_vc',
-            claims: [{
-              path: ['$.type'],
-              values: [requestedType]
-            }]
-          }
-        ]
+        credentials
       }
     };
   } else {

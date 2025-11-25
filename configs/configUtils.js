@@ -130,6 +130,15 @@ export const DcqlQuerySchema = z.object({
   // credential_sets: z.array(DcqlCredentialSetQuerySchema).min(1).optional()
 });
 
+// OpenCred Query format schema
+export const OpenCredQuerySchema = z.array(z.object({
+  type: z.array(z.string()).optional(),
+  context: z.array(z.string()).optional(),
+  fields: z.record(z.string(), z.array(z.string())).optional(),
+  format: z.array(
+    z.enum(['jwt_vc_json', 'ldp_vc', 'mso_mdoc'])).default(['ldp_vc'])
+})).min(1);
+
 // Query by Example schema for lightweight VC queries
 export const QueryByExampleSchema = z.object({
   '@context': z.array(z.string()).min(1),
@@ -182,16 +191,14 @@ export const VcApiWorkflowSchema = z.object({
 export const NativeWorkflowSchema = z.object({
   ...BaseWorkflowSchema.shape,
   type: z.literal('native'),
-  // if present, the verbose dcql_query format is used
+
+  // Most versatile format for multi-format conversion
+  query: OpenCredQuerySchema.optional(),
+
+  // OID4VP 1.0 DCQL format
   dcql_query: DcqlQuerySchema.optional(),
 
-  // first fallback is the simplified query format
-  query: z.object({
-    type: z.string(),
-    context: z.array(z.string()),
-  }).optional(),
-
-  // final fallback is the legacy verifiablePresentationRequest format
+  // Presentation Exchange verifiablePresentationRequest format
   verifiablePresentationRequest: z.string().optional(),
 });
 
@@ -392,7 +399,7 @@ export const SigningKeySchema = z.object({
 // Main OpenCred configuration schema
 export const OpenCredConfigSchema = z.object({
   options: OptionsSchema.optional(),
-  workflows: z.array(WorkflowSchema).optional(),
+  workflows: z.array(WorkflowSchema),
   defaultLanguage: z.string().optional(),
   translations: z.record(z.string(), z.record(z.string(), z.string()))
     .optional(),

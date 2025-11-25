@@ -14,15 +14,23 @@ SPDX-License-Identifier: BSD-3-Clause
       :style="{color: brand.primary}">
       {{$t('qrTitle')}}
     </h1>
-    <div class="mb-4">
+    <div class="mb-4 text-gray-900">
       <p
         v-if="$t('qrPageExplain')"
+        class="text-gray-900"
         v-html="$t('qrPageExplain')" />
       <p
         v-if="$t('qrPageExplainHelp')"
-        class="mt-2"
+        class="mt-2 text-gray-900"
         v-html="$t('qrPageExplainHelp')" />
     </div>
+    <WalletSelection
+      :selected-wallet="selectedWallet"
+      :selected-protocol="selectedProtocol"
+      :available-protocols="availableProtocols"
+      :wallets-registry="walletsRegistry"
+      :protocols-registry="protocolsRegistry"
+      @select-protocol="handleSelectProtocol" />
     <div
       v-if="(active && !showDeeplink)"
       class="p-12 m-12 justify-center">
@@ -32,14 +40,15 @@ SPDX-License-Identifier: BSD-3-Clause
           color="primary"
           size="2em" />
       </div>
-      <p>
+      <p class="text-gray-900">
         {{$t('exchangeActiveExpiryMessage')}}
         <CountdownDisplay
+          v-if="props.exchangeData?.createdAt && props.exchangeData?.ttl"
           :created-at="props.exchangeData.createdAt"
           :ttl="props.exchangeData.ttl" />
       </p>
       <button
-        class="mx-auto max-w-prose text-sm underline"
+        class="mx-auto max-w-prose text-sm underline text-gray-900"
         @click="handleGoBack">
         {{$t('exchangeActiveGoBack')}}
       </button>
@@ -54,23 +63,11 @@ SPDX-License-Identifier: BSD-3-Clause
           :src="exchangeData.QR"
           class="mx-auto">
       </div>
-      <div>
-        <p>
-          <!-- A button to switch to a deep link button -->
-          <span v-if="$t('openid4vpQrAnotherWayLabel')">
-            {{$t('openid4vpQrAnotherWayLabel')}}
-          </span>
-          <button
-            class="mt-2 underline pl-1 inline"
-            :style="{color: brand.primary}"
-            @click="switchView">
-            {{$t('openid4vpQrAnotherWay')}}
-          </button>
-        </p>
-      </div>
-      <p>
+
+      <p class="text-gray-900">
         {{$t('exchangeActiveExpiryMessage')}}
         <CountdownDisplay
+          v-if="props.exchangeData?.createdAt && props.exchangeData?.ttl"
           :created-at="props.exchangeData.createdAt"
           :ttl="props.exchangeData.ttl" />
       </p>
@@ -78,14 +75,32 @@ SPDX-License-Identifier: BSD-3-Clause
     <div
       v-else-if="exchangeData.QR"
       class="flex justify-center">
-      <!-- A button to launch a same-device wallet -->
+      <!-- A button to launch a same-device wallet or copy URL -->
       <div v-if="!active">
-        <q-btn
-          v-if="!active"
-          color="primary"
-          @click="appOpened()">
+        <a
+          v-if="protocolUrl && !isCopyUrlProtocol"
+          :href="protocolUrl"
+          class="text-white py-2 px-6 rounded-xl my-8 inline-block"
+          :style="{ background: brand.cta || brand.primary }">
           {{$t('appCta')}}
-        </q-btn>
+        </a>
+        <div
+          v-else-if="protocolUrl && isCopyUrlProtocol"
+          class="flex flex-col items-center my-8">
+          <button
+            class="text-white py-2 px-6 rounded-xl inline-block"
+            :style="{ background: brand.cta || brand.primary }"
+            @click="copyUrlToClipboard">
+            {{urlCopied ?
+              ($t('urlCopied') || 'URL Copied!') :
+              ($t('copyUrl') || 'Copy URL')}}
+          </button>
+          <p
+            v-if="urlCopied"
+            class="mt-2 text-sm text-gray-600">
+            {{$t('pasteUrlInWallet') || 'Paste this URL into your wallet app'}}
+          </p>
+        </div>
         <p
           v-if="showNoSchemeHandlerWarning"
           class="mt-4 text-red-600">
@@ -99,14 +114,14 @@ SPDX-License-Identifier: BSD-3-Clause
         <q-btn
           color="primary"
           class="px-16 py-4"
-          @click="appOpened()">
+          disabled>
           <q-spinner-tail
             color="white"
             size="1em" />
         </q-btn>
       </div>
       <div>
-        <p class="my-4">
+        <p class="my-4 text-gray-900">
           {{$t('exchangeActiveExpiryMessage')}}
           <CountdownDisplay
             :created-at="props.exchangeData.createdAt"
@@ -115,20 +130,8 @@ SPDX-License-Identifier: BSD-3-Clause
       </div>
     </div>
     <div class="mt-2">
-      <p v-if="showDeeplink && exchangeData.QR !== ''">
-        <!-- A button to switch (back) to a QR code -->
-        <span v-if="$t('openid4vpAnotherWayLabel')">
-          {{$t('openid4vpAnotherWayLabel')}}
-        </span>
-        <button
-          class="mt-2 underline pl-1 inline"
-          :style="{color: brand.primary}"
-          @click="switchView">
-          {{$t('openid4vpAnotherWay')}}
-        </button>
-      </p>
       <button
-        v-else-if="$t('qrExplainerText') !== ''
+        v-if="$t('qrExplainerText') !== ''
           && props.explainerVideo.id !== ''
           && props.explainerVideo.provider"
         :style="{color: brand.primary}"
@@ -138,12 +141,12 @@ SPDX-License-Identifier: BSD-3-Clause
       </button>
       <p
         v-if="$t('qrFooterHelp')"
-        class="mt-2"
+        class="mt-2 text-gray-900"
         v-html="$t('qrFooterHelp')" />
     </div>
     <div
       v-if="$t('qrDisclaimer')"
-      class="mt-12 flex flex-col items-center"
+      class="mt-12 flex flex-col items-center text-gray-900"
       v-html="$t('qrDisclaimer')" />
 
     <q-dialog
@@ -165,10 +168,11 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
-import {inject, onMounted, ref} from 'vue';
+import {computed, ref} from 'vue';
 import CountdownDisplay from './CountdownDisplay.vue';
-import {httpClient} from '@digitalbazaar/http-client';
-import {useQuasar} from 'quasar';
+import {PROTOCOLS_REGISTRY} from '../utils/protocols.js';
+import {WALLETS_REGISTRY} from '../utils/wallets.js';
+import WalletSelection from './WalletSelection.vue';
 
 const props = defineProps({
   active: {
@@ -200,68 +204,92 @@ const props = defineProps({
       id: '',
       provider: ''
     })
+  },
+  selectedProtocol: {
+    type: String,
+    default: 'OID4VP-combined'
+  },
+  selectedWallet: {
+    type: String,
+    default: 'cadmv-wallet'
+  },
+  availableProtocols: {
+    type: Array,
+    default: () => []
+  },
+  walletsRegistry: {
+    type: Object,
+    default: () => WALLETS_REGISTRY
+  },
+  protocolsRegistry: {
+    type: Object,
+    default: () => PROTOCOLS_REGISTRY
+  },
+  prefersQrDisplay: {
+    type: Boolean,
+    default: true
+  },
+  isCopyUrlProtocol: {
+    type: Boolean,
+    default: false
   }
 });
-const emit = defineEmits(['replaceExchange', 'overrideActive']);
-const showDeeplink = ref(false);
+const emit = defineEmits(['selectProtocol']);
 const showVideo = ref(false);
 const showNoSchemeHandlerWarning = ref(false);
-const $q = useQuasar();
-const $cookies = inject('$cookies');
+const urlCopied = ref(false);
 
-const switchView = () => {
-  showDeeplink.value = !showDeeplink.value;
-};
-
-onMounted(() => {
-  if($q.platform.is.mobile) {
-    showDeeplink.value = true;
-  }
-});
-
-async function appOpened() {
-  const {location} = window;
-  const searchParams = new URLSearchParams(location.search);
-  const variables = JSON.parse(atob(searchParams.get('variables') || 'e30='));
-  const redirectPath = location.href.split(location.origin).at(-1);
-  let exchange = {};
-  ({
-    data: exchange,
-  } = await httpClient.post(
-    `/workflows/${props.exchangeData.workflowId}` +
-    `/exchanges`,
-    {
-      json: {
-        variables: btoa(JSON.stringify({
-          ...variables,
-          redirectPath
-        })).replace(/=+$/, ''),
-        oidcState: props.exchangeData.oidc.state
-      },
-      headers: {
-        Authorization: `Bearer ${props.exchangeData.accessToken}`
-      }
-    }
-  ));
-  emit('replaceExchange', exchange);
-  $cookies.set('exchangeId', exchange.id,
-    `${props.exchangeData.ttl}s`,
-    '', '', true, 'Strict');
-  $cookies.set('accessToken', exchange.accessToken,
-    `${props.exchangeData.ttl}s`,
-    '', '', true, 'Strict');
-
-  // If we're still on the page after 2 seconds, the app may have failed to
-  // launch. Warn the user.
-  setTimeout(() => {
-    if(window.location !== exchange.OID4VP) {
-      showNoSchemeHandlerWarning.value = true;
-    }
-  }, 2000);
-  window.location.replace(exchange.OID4VP);
-}
+const showDeeplink = computed(() => !props.prefersQrDisplay);
 
 const handleGoBack = () => {
-  emit('overrideActive');
+  emit('selectProtocol', {
+    protocol: props.selectedProtocol,
+    displayQr: !props.prefersQrDisplay
+  });
+};
+
+// Get the protocol URL for the selected protocol
+const protocolUrl = computed(() => {
+  if(!props.exchangeData?.protocols) {
+    return props.exchangeData?.OID4VP || '';
+  }
+  // Use the selected protocol URL from the protocols object
+  return props.exchangeData.protocols[props.selectedProtocol] ||
+    props.exchangeData.OID4VP || '';
+});
+
+const handleSelectProtocol = event => {
+  emit('selectProtocol', event);
+};
+
+const copyUrlToClipboard = async () => {
+  if(protocolUrl.value) {
+    try {
+      await navigator.clipboard.writeText(protocolUrl.value);
+      urlCopied.value = true;
+      setTimeout(() => {
+        urlCopied.value = false;
+      }, 3000);
+    } catch(err) {
+      console.error('Failed to copy URL:', err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = protocolUrl.value;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        urlCopied.value = true;
+        setTimeout(() => {
+          urlCopied.value = false;
+        }, 3000);
+      } catch(fallbackErr) {
+        console.error('Fallback copy failed:', fallbackErr);
+      }
+      document.body.removeChild(textArea);
+    }
+  }
 };
 </script>
