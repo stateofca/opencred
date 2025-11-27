@@ -43,6 +43,7 @@ SPDX-License-Identifier: BSD-3-Clause
         :protocols-registry="protocolsRegistry"
         :prefers-qr-display="prefersQrDisplay"
         :is-copy-url-protocol="isQrAndCopyUrlProtocol(selectedProtocol)"
+        :dc-api-enabled="rp?.dcApiEnabled ?? false"
         @select-protocol="handleSelectProtocol" />
     </div>
   </div>

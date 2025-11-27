@@ -44,7 +44,9 @@ export const defaultTranslations = {
     chapiPageAnotherWay: 'Looking for a QR code to scan with your wallet app ' +
       'instead?',
     copyright: 'Powered by OpenCred',
-    home: 'Home'
+    home: 'Home',
+    dcApiRetry: 'Try Again',
+    dcApiFallback: 'Try another way'
   }
 };
 

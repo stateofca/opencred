@@ -6,15 +6,15 @@
  */
 
 import * as bedrock from '@bedrock/core';
+import {applyWorkflowDefaults, OpenCredConfigSchema} from './configUtils.js';
+import {combineTranslations} from './translation.js';
 import {fileURLToPath} from 'node:url';
+import {isDcApiAvailable} from '../common/dcapi.js';
+import {logger} from '../lib/logger.js';
 import path from 'node:path';
 import {ZodError} from 'zod';
 import 'dotenv/config';
 import '@bedrock/views';
-
-import {applyWorkflowDefaults, OpenCredConfigSchema} from './configUtils.js';
-import {combineTranslations} from './translation.js';
-import {logger} from '../lib/logger.js';
 
 /** ---------------- Initial Config on App Start -------------------- */
 const {config} = bedrock;
@@ -86,6 +86,16 @@ bedrock.events.on('bedrock.init', async () => {
   try {
     config.opencred = OpenCredConfigSchema.parse(opencred);
     logger.info('OpenCred Config Successfully Validated.');
+
+    // Check DC API availability and log status
+    if(!isDcApiAvailable(config.opencred)) {
+      logger.warning(
+        'DC API support is disabled: caStore is not configured. ' +
+        'DC API requires at least one certificate in opencred.caStore.'
+      );
+    } else {
+      logger.info('DC API support is enabled: caStore is configured.');
+    }
   } catch(error) {
     if(error instanceof ZodError) {
       logger.error(JSON.stringify(error.issues, null, 2));

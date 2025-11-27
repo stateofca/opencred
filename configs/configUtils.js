@@ -136,7 +136,20 @@ export const OpenCredQuerySchema = z.array(z.object({
   context: z.array(z.string()).optional(),
   fields: z.record(z.string(), z.array(z.string())).optional(),
   format: z.array(
-    z.enum(['jwt_vc_json', 'ldp_vc', 'mso_mdoc'])).default(['ldp_vc'])
+    z.enum(['jwt_vc_json', 'ldp_vc', 'mso_mdoc'])).default(['ldp_vc']),
+  // DC API namespace query for mso_mdoc format credentials
+  dcApiNamespaceQuery: z.record(z.string(), z.array(z.string())).optional()
+}).refine(data => {
+  // dcApiNamespaceQuery can only exist if format includes mso_mdoc
+  if(data.dcApiNamespaceQuery !== undefined) {
+    return data.format && Array.isArray(data.format) &&
+      data.format.includes('mso_mdoc');
+  }
+  return true;
+}, {
+  message: 'dcApiNamespaceQuery can only be used when format includes ' +
+    'mso_mdoc',
+  path: ['dcApiNamespaceQuery']
 })).min(1);
 
 // Query by Example schema for lightweight VC queries
@@ -154,6 +167,7 @@ export const BaseWorkflowSchema = z.object({
   description: z.string().optional(),
   brand: BrandSchema.optional(),
   caStore: z.boolean().default(true), // If false, cert/x5c checks are skipped
+  dcApiEnabled: z.boolean().default(true), // If false, DC API is disabled
   oidc: OpenIdConnectSchema.optional(),
   callback: CallbackSchema.optional(),
   translations: z.record(z.string(), z.record(z.string(), z.string()))
@@ -407,7 +421,8 @@ export const OpenCredConfigSchema = z.object({
   didWeb: DidWebSchema.default({mainEnabled: false, linkageEnabled: false}),
   signingKeys: z.array(SigningKeySchema).default([]),
   trustedCredentialIssuers: z.array(z.string()).optional(),
-  caStore: z.array(z.object({pem: z.string()})).default([]),
+  caStore: z.array(z.object({pem: z.string()})).default([])
+    .transform(arr => arr.map(item => item.pem)),
   reCaptcha: ReCaptchaSchema.optional(),
   audit: AuditSchema.default({enable: false})
 }).transform(data => {

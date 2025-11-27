@@ -37,7 +37,15 @@ SPDX-License-Identifier: BSD-3-Clause
       :actions="dialogActions"
       @action="handleDialogAction">
       <template #body>
-        <div class="wallet-protocol-selection">
+        <div class="wallet-protocol-selection relative">
+          <q-btn
+            flat
+            dense
+            round
+            icon="close"
+            class="absolute top-0 right-0 text-gray-500 hover:text-gray-900 z-10"
+            style="margin-top: -8px; margin-right: -8px;"
+            @click="showDialog = false" />
           <div class="mb-4">
             <p class="font-semibold mb-3 text-gray-900">
               Select Wallet
@@ -49,7 +57,7 @@ SPDX-License-Identifier: BSD-3-Clause
               :class="{
                 'bg-blue-50 border-blue-300': selectedWallet === walletId
               }">
-              <div class="flex items-center justify-between gap-3">
+              <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                 <div class="flex items-center gap-3 flex-grow min-w-0">
                   <img
                     v-if="wallet.icon"
@@ -65,17 +73,45 @@ SPDX-License-Identifier: BSD-3-Clause
                       class="text-xs text-gray-600 mt-1">
                       {{wallet.description}}
                     </div>
+                    <div
+                      v-if="wallet.appStoreLinks"
+                      class="flex gap-2 mt-2">
+                      <a
+                        v-if="wallet.appStoreLinks.googlePlay"
+                        :href="wallet.appStoreLinks.googlePlay"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-block">
+                        <img
+                          src="/google-play-button.png"
+                          alt="Get it on Google Play"
+                          class="h-8">
+                      </a>
+                      <a
+                        v-if="wallet.appStoreLinks.ios"
+                        :href="wallet.appStoreLinks.ios"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-block">
+                        <img
+                          src="/apple-app-store-button.png"
+                          alt="Download on the App Store"
+                          class="h-8">
+                      </a>
+                    </div>
                   </div>
                 </div>
-                <q-btn
-                  flat
-                  dense
-                  size="sm"
-                  label="Select"
-                  class="flex-shrink-0"
-                  :class="selectedWallet === walletId ?
-                    'text-blue-700' : 'text-gray-600'"
-                  @click="handleWalletSelect(walletId)" />
+                <div class="w-full lg:w-auto flex justify-end">
+                  <q-btn
+                    flat
+                    dense
+                    size="sm"
+                    label="Select"
+                    class="flex-shrink-0"
+                    :class="selectedWallet === walletId ?
+                      'text-blue-700' : 'text-gray-600'"
+                    @click="handleWalletSelect(walletId)" />
+                </div>
               </div>
             </div>
           </div>
@@ -84,16 +120,19 @@ SPDX-License-Identifier: BSD-3-Clause
               Or select protocol (advanced)
             </p>
             <p class="text-xs text-gray-600 mb-3">
-              Other wallets may support one or more of the following protocols.
+              Wallets may support one or more of the following protocols.
             </p>
             <div
               v-for="protocolId in availableProtocols"
               :key="protocolId"
-              class="mb-3 p-3 border border-gray-200 rounded-lg"
+              class="mb-3 p-3 border rounded-lg"
               :class="{
-                'bg-blue-50 border-blue-300': selectedProtocol === protocolId
+                'bg-blue-50 border-blue-300': selectedProtocol === protocolId && !selectedWallet,
+                'border-green-300 bg-green-50': selectedWallet && 
+                  isProtocolSupported(protocolId) && 
+                  selectedProtocol !== protocolId
               }">
-              <div class="flex items-center justify-between gap-3">
+              <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                 <div class="flex-grow text-left min-w-0">
                   <div class="font-medium text-gray-900">
                     {{protocolsRegistry[protocolId]?.name || protocolId}}
@@ -104,15 +143,22 @@ SPDX-License-Identifier: BSD-3-Clause
                     {{protocolsRegistry[protocolId].description}}
                   </div>
                 </div>
-                <q-btn
-                  flat
-                  dense
-                  size="sm"
-                  label="Select"
-                  class="flex-shrink-0"
-                  :class="selectedProtocol === protocolId ?
-                    'text-blue-700' : 'text-gray-600'"
-                  @click="handleProtocolSelect(protocolId)" />
+                <div class="w-full lg:w-auto flex items-center justify-end gap-2">
+                  <span
+                    v-if="selectedWallet && 
+                      isProtocolSupported(protocolId)"
+                    class="text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded whitespace-nowrap">
+                    Supported by {{walletInfo?.name || selectedWallet}}
+                  </span>
+                  <q-btn
+                    flat
+                    dense
+                    size="sm"
+                    label="Select"
+                    :class="selectedProtocol === protocolId ?
+                      'text-blue-700' : 'text-gray-600'"
+                    @click="handleProtocolSelect(protocolId)" />
+                </div>
               </div>
             </div>
           </div>
@@ -158,6 +204,21 @@ const showDialog = ref(false);
 const walletInfo = computed(() => {
   return props.walletsRegistry[props.selectedWallet];
 });
+
+const supportedProtocols = computed(() => {
+  if(!props.selectedWallet) {
+    return new Set();
+  }
+  const wallet = props.walletsRegistry[props.selectedWallet];
+  if(!wallet || !wallet.supportedProtocols) {
+    return new Set();
+  }
+  return new Set(Object.keys(wallet.supportedProtocols));
+});
+
+const isProtocolSupported = protocolId => {
+  return supportedProtocols.value.has(protocolId);
+};
 
 const dialogActions = [
   {
