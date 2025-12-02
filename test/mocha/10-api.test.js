@@ -268,7 +268,7 @@ describe('OpenCred API - Native Workflow', function() {
     findStub.restore();
   });
 
-  it('should return Presentation Request JWT', async function() {
+  it('should return Authorization Request JWT', async function() {
     const exchange = await createExchangeWithAuthRequest({rp: testRP});
     const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
       .resolves({...exchange, workflowId: testRP.clientId});

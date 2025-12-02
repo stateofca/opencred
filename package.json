@@ -25,6 +25,7 @@
     "test:load:qa": "env-cmd artillery run -e qa ./test/load/artillery.yaml"
   },
   "dependencies": {
+    "@auth0/mdl": "^3.0.1",
     "@azure/msal-node": "^2.11.0",
     "@bedrock/config-yaml": "^4.3.3",
     "@bedrock/core": "^6.1.2",
@@ -57,7 +58,7 @@
     "@digitalbazaar/ezcap": "^4.1.0",
     "@digitalbazaar/http-client": "^4.2.0",
     "@digitalbazaar/minimal-jwt": "^2.1.0",
-    "@digitalbazaar/oid4-client": "^5.2.0",
+    "@digitalbazaar/oid4-client": "^5.3.0",
     "@digitalbazaar/vc": "^7.1.2",
     "@digitalbazaar/vc-bitstring-status-list": "^2.0.1",
     "@digitalbazaar/vc-dpp-context": "^1.0.0",
@@ -71,6 +72,7 @@
     "autoprefixer": "^10.4.17",
     "base64url": "^3.0.1",
     "bnid": "^3.0.0",
+    "cbor-x": "^1.6.0",
     "cors": "^2.8.5",
     "credential-handler-polyfill": "^4.0.0",
     "did-context": "^3.1.1",

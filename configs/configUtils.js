@@ -137,7 +137,8 @@ export const OpenCredQuerySchema = z.array(z.object({
   fields: z.record(z.string(), z.array(z.string())).optional(),
   format: z.array(
     z.enum(['jwt_vc_json', 'ldp_vc', 'mso_mdoc'])).default(['ldp_vc']),
-  // DC API namespace query for mso_mdoc format credentials
+
+  // DC API namespace query for mso_mdoc format w/spruceid handler
   dcApiNamespaceQuery: z.record(z.string(), z.array(z.string())).optional()
 }).refine(data => {
   // dcApiNamespaceQuery can only exist if format includes mso_mdoc

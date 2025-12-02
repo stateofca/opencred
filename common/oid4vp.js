@@ -399,32 +399,66 @@ export const getDcqlQuery = async ({rp, exchange, profile}) => {
       const typeIris = requestedTypeIris[i] || [];
       const formats = q.format || ['ldp_vc'];
       const types = q.type || [];
+      const fields = q.fields;
 
       // Create a credential query for each format
       for(const format of formats) {
-        // Determine path based on format
-        let path;
-        if(format === 'jwt_vc_json') {
-          path = ['$.vc.type', '$.verifiableCredential.type', '$.type'];
-        } else {
-          // ldp_vc or mso_mdoc
-          path = ['$.type'];
-        }
+        if(format === 'mso_mdoc' && fields) {
+          // Handle mso_mdoc format with fields (namespace -> field mappings)
+          // Each namespace in fields represents a doctype namespace
+          for(const [namespace, fieldNames] of Object.entries(fields)) {
+            if(!Array.isArray(fieldNames) || fieldNames.length === 0) {
+              continue;
+            }
 
-        credentials.push({
-          id: await createId(),
-          format,
-          multiple: false,
-          require_cryptographic_holder_binding: true,
-          // trusted_authorities: [] // TODO - optional
-          meta: {
-            type_values: typeIris
-          },
-          claims: [{
-            path,
-            values: types
-          }]
-        });
+            // Create claims for each field in the namespace
+            const claims = fieldNames.map(fieldName => ({
+              intent_to_retain: true,
+              path: [namespace, fieldName]
+            }));
+
+            // Derive doctype_value from namespace
+            // (e.g., "org.iso.18013.5.1.mDL")
+            const doctypeValue = `${namespace}.mDL`;
+
+            credentials.push({
+              id: '0',
+              format: 'mso_mdoc',
+              multiple: false,
+              require_cryptographic_holder_binding: true,
+              meta: {
+                doctype_value: doctypeValue
+              },
+              claims
+            });
+          }
+        } else {
+          // Handle other formats (jwt_vc_json, ldp_vc) or
+          // mso_mdoc without fields
+          // Determine path based on format
+          let path;
+          if(format === 'jwt_vc_json') {
+            path = ['$.vc.type', '$.verifiableCredential.type', '$.type'];
+          } else {
+            // ldp_vc or mso_mdoc
+            path = ['$.type'];
+          }
+
+          credentials.push({
+            id: await createId(),
+            format,
+            multiple: false,
+            require_cryptographic_holder_binding: true,
+            // trusted_authorities: [] // TODO - optional
+            meta: {
+              type_values: typeIris
+            },
+            claims: [{
+              path,
+              values: types
+            }]
+          });
+        }
       }
     }
 
@@ -468,6 +502,12 @@ const TEMPLATES = {
     vp_formats_supported: true,
     presentation_definition: true,
     dcql_query: true
+  },
+  'OID4VP-1.0-HAIP': {
+    vp_formats: false,
+    vp_formats_supported: true,
+    presentation_definition: false,
+    dcql_query: true
   }
 };
 
@@ -501,19 +541,28 @@ const getVpFormatsSupported = ({profile}) => {
   if(!template || !template.vp_formats_supported) {
     return {};
   }
-  return {
+  const formats = {
     // OID4VP 1.0 format: vp_formats_supported with jwt_vc_json and ldp_vc keys
-    vp_formats_supported: {
-      jwt_vc_json: {
-        alg: ['ES256'],
-        alg_values: ['ES256'],
-      },
-      ldp_vc: {
-        proof_type: ['ecdsa-rdfc-2019'],
-        proof_type_values: ['DataIntegrityProof'],
-        cryptosuite_values: ['ecdsa-rdfc-2019']
-      }
+    jwt_vc_json: {
+      alg: ['ES256'],
+      alg_values: ['ES256'],
+    },
+    ldp_vc: {
+      proof_type: ['ecdsa-rdfc-2019'],
+      proof_type_values: ['DataIntegrityProof'],
+      cryptosuite_values: ['ecdsa-rdfc-2019']
     }
+  };
+
+  // Add mso_mdoc format for HAIP profile
+  if(profile === 'OID4VP-1.0-HAIP') {
+    formats.mso_mdoc = {
+      alg: ['ES256']
+    };
+  }
+
+  return {
+    vp_formats_supported: formats
   };
 };
 
@@ -528,12 +577,20 @@ const getClientMetadata = ({profile}) => {
     ]
   };
 
+  const metadata = {
+    ...baseMetadata,
+    ...getVpFormats({profile}),
+    ...getVpFormatsSupported({profile})
+  };
+
+  // Add HAIP-specific requirements
+  if(profile === 'OID4VP-1.0-HAIP') {
+    // HAIP requires encrypted responses
+    metadata.encrypted_response_enc_values_supported = ['A128GCM', 'A256GCM'];
+  }
+
   return {
-    client_metadata: {
-      ...baseMetadata,
-      ...getVpFormats({profile}),
-      ...getVpFormatsSupported({profile})
-    }
+    client_metadata: metadata
   };
 };
 

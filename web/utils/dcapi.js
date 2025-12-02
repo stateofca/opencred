@@ -31,17 +31,29 @@ export async function startDCApiFlow({
   try {
     // Get the authorization request from the server using the OID4VP endpoint
     // with the 18013-7-Annex-D profile
-    const requestUrl = exchangeData.protocols['18013-7-Annex-D'];
+    // The protocol URL contains a request_uri parameter that needs extraction
+    const protocolUrl = exchangeData.protocols['18013-7-Annex-D'];
 
-    const {data: requests} = await httpClient.get(requestUrl, {
+    // Parse the URL to extract the request_uri query parameter
+    const url = new URL(protocolUrl);
+    const requestUri = url.searchParams.get('request_uri');
+
+    if(!requestUri) {
+      throw new Error('request_uri parameter not found in protocol URL');
+    }
+
+    // Decode the URL-encoded request_uri
+    const requestUrl = decodeURIComponent(requestUri);
+
+    // The response will be a JWT string with content-type
+    // 'application/oauth-authz-req+jwt'
+    const response = await httpClient.get(requestUrl, {
       headers: {
         Authorization: `Bearer ${exchangeData.accessToken}`
-      }
+      },
+      responseType: 'text' // Get response as text, not JSON
     });
-
-    if(!requests) {
-      throw new Error('No authorization request received from server');
-    }
+    const jwt = await response.text();
 
     // Use the Digital Credentials API to get credentials
     const controller = new AbortController();
@@ -49,7 +61,14 @@ export async function startDCApiFlow({
     const credentialResponse = await navigator.credentials.get({
       signal: controller.signal,
       mediation: 'required',
-      digital: requests
+      digital: {
+        requests: [{
+          protocol: 'openid4vp',
+          data: {
+            request: jwt
+          }
+        }]
+      }
     });
 
     console.log('Credential response:', credentialResponse);
