@@ -13,15 +13,12 @@
  * @param {Object} options.httpClient - HTTP client instance
  * @param {Function} options.onExchangeUpdate - Callback when
  *   the exchange is updated
- * @param {string} options.profile - OID4VP profile to use
- *   (e.g., 'OID4VP-combined', 'OID4VP-draft18', 'OID4VP-1.0')
  * @returns {Promise<void>}
  */
 export async function startDCApiFlow({
   exchangeData,
   httpClient,
-  onExchangeUpdate,
-  profile
+  onExchangeUpdate
 } = {}) {
   if(!exchangeData || !exchangeData.id || !exchangeData.workflowId) {
     throw new Error('Exchange data is required');
@@ -32,16 +29,9 @@ export async function startDCApiFlow({
   }
 
   try {
-    // Get the authorization request from the server
-    let requestUrl =
-      `/workflows/${exchangeData.workflowId}` +
-      `/exchanges/${exchangeData.id}` +
-      `/dcapi/request`;
-
-    // Append profile query parameter if provided
-    if(profile) {
-      requestUrl += `?profile=${encodeURIComponent(profile)}`;
-    }
+    // Get the authorization request from the server using the OID4VP endpoint
+    // with the 18013-7-Annex-D profile
+    const requestUrl = exchangeData.protocols['18013-7-Annex-D'];
 
     const {data: requests} = await httpClient.get(requestUrl, {
       headers: {
@@ -69,10 +59,11 @@ export async function startDCApiFlow({
     }
 
     // Send the response back to the server
+    // Construct the response URL from the standard pattern
     const responseUrl =
       `/workflows/${exchangeData.workflowId}` +
       `/exchanges/${exchangeData.id}` +
-      `/dcapi/response`;
+      `/openid/client/authorization/response`;
 
     const {data: result} = await httpClient.post(responseUrl, {
       json: credentialResponse,

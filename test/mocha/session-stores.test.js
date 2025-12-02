@@ -7,7 +7,7 @@
 
 import * as sinon from 'sinon';
 import {createId} from '../../common/utils.js';
-import {createSessionStores} from '../../lib/dcapi.js';
+import {createSessionStores} from '../../lib/spruceid-18013-7.js';
 import expect from 'expect.js';
 
 describe('Session Stores', () => {

@@ -222,13 +222,13 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import {computed, onMounted, onUnmounted, ref, watch} from 'vue';
+import {CadmvButton} from '@digitalbazaar/cadmv-ui';
 import CountdownDisplay from './CountdownDisplay.vue';
+import {httpClient} from '@digitalbazaar/http-client';
 import {PROTOCOLS_REGISTRY} from '../utils/protocols.js';
+import {startDCApiFlow as startDCApiFlowUtil} from '../utils/dcapi.js';
 import {WALLETS_REGISTRY} from '../utils/wallets.js';
 import WalletSelection from './WalletSelection.vue';
-import {startDCApiFlow as startDCApiFlowUtil} from '../utils/dcapi.js';
-import {httpClient} from '@digitalbazaar/http-client';
-import {CadmvButton} from '@digitalbazaar/cadmv-ui';
 
 const props = defineProps({
   active: {
