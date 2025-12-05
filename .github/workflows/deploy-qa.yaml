@@ -1,0 +1,26 @@
+name: Deploy to QA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: digitalbazaar/cadmv-qa-environment-tf/.github/workflows/deploy-app-reusable.yml@main
+    with:
+      # CUSTOMIZE THESE FOR YOUR APP:
+      app_name: opencred  # Must match Terraform module name
+      image_repository: us-docker.pkg.dev/cadmv-qa-environment/app-images/opencred-platform
+      gcp_project_id: cadmv-qa-environment
+
+      auto_apply: true
+
+      # OPTIONAL: Custom Dockerfile location
+      # dockerfile_path: ./docker/Dockerfile
+      # build_context: .
+
+    secrets:
+      # Get these from the environment's TF state outputs
+      WIF_PROVIDER: ${{ secrets.WIF_PROVIDER }}
+      WIF_SERVICE_ACCOUNT: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+      # This is a CADMV Dev team TF token
+      TFC_TOKEN: ${{ secrets.TFC_TOKEN }}
