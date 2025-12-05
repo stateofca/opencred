@@ -1,6 +1,9 @@
 name: Deploy to QA
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
