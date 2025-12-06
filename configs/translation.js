@@ -17,12 +17,15 @@ export const defaultTranslations = {
     appCta: 'Open wallet app',
     'appCta-chapi-label': '',
     'appCta-openid4vp-label': '',
+    connectWalletHeading: 'Connect your wallet to continue',
     exchangeActiveGoBack: 'Go back',
     exchangeActiveExpiryMessage:
       'Please complete the exchange in the allotted time:',
     exchangeErrorTitle: 'The exchange failed.',
     exchangeErrorSubtitle: 'The following error was encountered:',
     exchangeErrorTtlExpired: 'The exchange has expired.',
+    exchangePageExplain: 'Please present a matching credential from your' +
+      ' digital wallet.',
     exchangeResetTitle: 'You may try again.',
     exchangeReset: 'Retry',
     noSchemeHandlerTitle: 'Did the app fail to launch?',
@@ -46,7 +49,8 @@ export const defaultTranslations = {
     copyright: 'Powered by OpenCred',
     home: 'Home',
     dcApiRetry: 'Try Again',
-    dcApiFallback: 'Try another way'
+    dcApiFallback: 'Try another way',
+    verificationCta: 'Verify a credential'
   }
 };
 

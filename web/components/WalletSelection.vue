@@ -43,7 +43,8 @@ SPDX-License-Identifier: BSD-3-Clause
             dense
             round
             icon="close"
-            class="absolute top-0 right-0 text-gray-500 hover:text-gray-900 z-10"
+            class="absolute top-0 right-0 text-gray-500
+            hover:text-gray-900 z-10"
             style="margin-top: -8px; margin-right: -8px;"
             @click="showDialog = false" />
           <div class="mb-4">
@@ -57,7 +58,9 @@ SPDX-License-Identifier: BSD-3-Clause
               :class="{
                 'bg-blue-50 border-blue-300': selectedWallet === walletId
               }">
-              <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+              <div
+                class="flex flex-col lg:flex-row lg:items-center
+                lg:justify-between gap-3">
                 <div class="flex items-center gap-3 flex-grow min-w-0">
                   <img
                     v-if="wallet.icon"
@@ -74,7 +77,7 @@ SPDX-License-Identifier: BSD-3-Clause
                       {{wallet.description}}
                     </div>
                     <div
-                      v-if="wallet.appStoreLinks"
+                      v-if="wallet.appStoreLinks && selectedWallet === walletId"
                       class="flex gap-2 mt-2">
                       <a
                         v-if="wallet.appStoreLinks.googlePlay"
@@ -115,24 +118,26 @@ SPDX-License-Identifier: BSD-3-Clause
               </div>
             </div>
           </div>
-          <div>
-            <p class="font-semibold text-gray-900">
-              Or select protocol (advanced)
-            </p>
+          <q-expansion-item
+            class="mt-4">
+            <template #header>
+              <div class="font-semibold text-gray-900 pt-1">
+                Or select protocol (advanced)
+              </div>
+            </template>
             <p class="text-xs text-gray-600 mb-3">
               Wallets may support one or more of the following protocols.
             </p>
             <div
-              v-for="protocolId in availableProtocols"
+              v-for="protocolId in sortedProtocols"
               :key="protocolId"
               class="mb-3 p-3 border rounded-lg"
               :class="{
-                'bg-blue-50 border-blue-300': selectedProtocol === protocolId && !selectedWallet,
-                'border-green-300 bg-green-50': selectedWallet && 
-                  isProtocolSupported(protocolId) && 
-                  selectedProtocol !== protocolId
+                'border-green-300 bg-green-50': selectedProtocol === protocolId
               }">
-              <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+              <div
+                class="flex flex-col lg:flex-row lg:items-center
+                  lg:justify-between gap-3">
                 <div class="flex-grow text-left min-w-0">
                   <div class="font-medium text-gray-900">
                     {{protocolsRegistry[protocolId]?.name || protocolId}}
@@ -143,25 +148,32 @@ SPDX-License-Identifier: BSD-3-Clause
                     {{protocolsRegistry[protocolId].description}}
                   </div>
                 </div>
-                <div class="w-full lg:w-auto flex items-center justify-end gap-2">
+                <div
+                  class="w-full lg:w-auto flex items-center justify-end
+                    gap-2">
                   <span
-                    v-if="selectedWallet && 
-                      isProtocolSupported(protocolId)"
-                    class="text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded whitespace-nowrap">
+                    v-if="selectedWallet && isProtocolSupported(protocolId)"
+                    class="text-xs text-green-700 bg-green-100 px-2 py-0.5
+                      rounded whitespace-nowrap">
                     Supported by {{walletInfo?.name || selectedWallet}}
                   </span>
+                  <span
+                    v-if="selectedProtocol === protocolId"
+                    class="text-sm text-gray-700 font-medium">
+                    Selected
+                  </span>
                   <q-btn
+                    v-else
                     flat
                     dense
                     size="sm"
                     label="Select"
-                    :class="selectedProtocol === protocolId ?
-                      'text-blue-700' : 'text-gray-600'"
+                    class="text-gray-600"
                     @click="handleProtocolSelect(protocolId)" />
                 </div>
               </div>
             </div>
-          </div>
+          </q-expansion-item>
         </div>
       </template>
     </CadmvDialog>
@@ -170,9 +182,9 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import {computed, ref} from 'vue';
+import {hasMdocFormat, WALLETS_REGISTRY} from '../utils/wallets.js';
 import {CadmvDialog} from '@digitalbazaar/cadmv-ui';
 import {PROTOCOLS_REGISTRY} from '../utils/protocols.js';
-import {WALLETS_REGISTRY} from '../utils/wallets.js';
 
 const props = defineProps({
   selectedWallet: {
@@ -194,6 +206,10 @@ const props = defineProps({
   protocolsRegistry: {
     type: Object,
     default: () => PROTOCOLS_REGISTRY
+  },
+  rp: {
+    type: Object,
+    default: null
   }
 });
 
@@ -220,6 +236,20 @@ const isProtocolSupported = protocolId => {
   return supportedProtocols.value.has(protocolId);
 };
 
+// Sort protocols: wallet-supported first, then others
+const sortedProtocols = computed(() => {
+  const walletSupported = [];
+  const others = [];
+  for(const protocolId of props.availableProtocols) {
+    if(isProtocolSupported(protocolId)) {
+      walletSupported.push(protocolId);
+    } else {
+      others.push(protocolId);
+    }
+  }
+  return [...walletSupported, ...others];
+});
+
 const dialogActions = [
   {
     actionId: 'cancel',
@@ -232,11 +262,29 @@ const handleWalletSelect = walletId => {
   const wallet = props.walletsRegistry[walletId];
   if(wallet && wallet.supportedProtocols) {
     const supportedProtocols = Object.keys(wallet.supportedProtocols);
-    const firstSupported = supportedProtocols.find(p =>
-      props.availableProtocols.includes(p)) || props.availableProtocols[0];
-    if(firstSupported) {
+    let selectedProtocol = null;
+
+    // CA DMV wallet: select DC API if mdoc format, otherwise draft18
+    if(walletId === 'cadmv-wallet' && props.rp) {
+      const hasMdoc = hasMdocFormat(props.rp);
+      if(hasMdoc && supportedProtocols.includes('18013-7-Annex-D') &&
+        props.availableProtocols.includes('18013-7-Annex-D')) {
+        selectedProtocol = '18013-7-Annex-D';
+      } else if(supportedProtocols.includes('OID4VP-draft18') &&
+        props.availableProtocols.includes('OID4VP-draft18')) {
+        selectedProtocol = 'OID4VP-draft18';
+      }
+    }
+
+    // Fallback to first supported protocol
+    if(!selectedProtocol) {
+      selectedProtocol = supportedProtocols.find(p =>
+        props.availableProtocols.includes(p)) || props.availableProtocols[0];
+    }
+
+    if(selectedProtocol) {
       emit('selectProtocol', {
-        protocol: firstSupported,
+        protocol: selectedProtocol,
         wallet: walletId
       });
     }
@@ -245,9 +293,14 @@ const handleWalletSelect = walletId => {
 };
 
 const handleProtocolSelect = protocolId => {
+  // If protocol is supported by selected wallet, keep wallet selected
+  // Otherwise, null out the wallet
+  const keepWallet = props.selectedWallet &&
+    isProtocolSupported(protocolId);
+
   emit('selectProtocol', {
     protocol: protocolId,
-    wallet: null
+    wallet: keepWallet ? props.selectedWallet : null
   });
   showDialog.value = false;
 };

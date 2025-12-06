@@ -359,18 +359,6 @@ e92OBdJ/f7VSqBFTmfG9jXEW46WAZ78jLnUBL0Q58lLuNHa1t2TwJTyCzc8XUkA3
 
 describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
   describe('handleNative18013AnnexDRequest', function() {
-    let replaceOneStub;
-
-    beforeEach(function() {
-      replaceOneStub = sinon.stub(
-        database.collections.Exchanges, 'replaceOne'
-      ).resolves();
-    });
-
-    afterEach(function() {
-      replaceOneStub.restore();
-    });
-
     it('should generate complete authorization request with mdoc query',
       async function() {
         const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
@@ -382,8 +370,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           exchange,
           requestUrl,
           baseUri: 'https://example.com',
-          signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
-          replaceExchange: replaceOneStub
+          signingKeys: [{...exampleKey2, purpose: ['authorization_request']}]
         });
 
         expect(result).to.have.property('jwt');
@@ -411,8 +398,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         exchange,
         requestUrl,
         baseUri: 'https://example.com',
-        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
-        replaceExchange: replaceOneStub
+        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}]
       });
 
       const jwt = decodeJwt(result.jwt);
@@ -438,8 +424,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         exchange,
         requestUrl,
         baseUri: 'https://example.com',
-        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
-        replaceExchange: replaceOneStub
+        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}]
       });
 
       const jwt = decodeJwt(result.jwt);
@@ -459,8 +444,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         exchange,
         requestUrl,
         baseUri: 'https://example.com',
-        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
-        replaceExchange: replaceOneStub
+        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}]
       });
 
       const {variables} = result.updatedExchange;
@@ -468,27 +452,6 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
       expect(variables.ephemeralKeyAgreementPrivateKey).to.be.an('object');
       expect(variables.ephemeralKeyAgreementPrivateKey).to.have.property('kid');
       expect(variables.mdocGeneratedNonce).to.be.a('string');
-    });
-
-    it('should call database replaceOne', async function() {
-      const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
-      const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
-        `${exchange.id}/openid/client/authorization/request`;
-
-      await handleNative18013AnnexDRequest({
-        rp: mdocTestRP,
-        exchange,
-        requestUrl,
-        baseUri: 'https://example.com',
-        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
-        replaceExchange: replaceOneStub
-      });
-
-      expect(replaceOneStub.called).to.be(true);
-      expect(replaceOneStub.calledWith(
-        {id: exchange.id},
-        sinon.match.object
-      )).to.be(true);
     });
 
     it('should throw error when no mdoc query items', async function() {
@@ -515,8 +478,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           exchange,
           requestUrl,
           baseUri: 'https://example.com',
-          signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
-          replaceExchange: replaceOneStub
+          signingKeys: [{...exampleKey2, purpose: ['authorization_request']}]
         });
         expect().fail('Should have thrown an error');
       } catch(error) {
@@ -537,8 +499,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           exchange,
           requestUrl,
           baseUri: 'https://example.com',
-          signingKeys: [],
-          replaceExchange: replaceOneStub
+          signingKeys: []
         });
         expect().fail('Should have thrown an error');
       } catch(error) {
@@ -566,8 +527,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         exchange,
         requestUrl,
         baseUri: 'https://example.com',
-        signingKeys: [signingKey],
-        replaceExchange: replaceOneStub
+        signingKeys: [signingKey]
       });
 
       // Decode JWT header to check for x5c
@@ -590,8 +550,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         exchange,
         requestUrl,
         baseUri: 'https://example.com',
-        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
-        replaceExchange: replaceOneStub
+        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}]
       });
 
       const jwt = decodeJwt(result.jwt);

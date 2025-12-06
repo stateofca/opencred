@@ -46,5 +46,11 @@ export const PROTOCOLS_REGISTRY = {
     name: 'VC-API',
     description: 'A Verifiable Credentials API endpoint for wallet ' +
       'interactions. Copy the URL to your wallet app.'
+  },
+  '18013-7-Annex-D': {
+    name: 'ISO 18013-7-Annex-D',
+    description: 'An emerging method for requesting ISO mDL driver' +
+      'license credentials from a wallet on the same or different device.' +
+      'Requires experimental Chrome flags enabled.'
   }
 };

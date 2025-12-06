@@ -168,7 +168,7 @@ export const BaseWorkflowSchema = z.object({
   description: z.string().optional(),
   brand: BrandSchema.optional(),
   caStore: z.boolean().default(true), // If false, cert/x5c checks are skipped
-  dcApiEnabled: z.boolean().default(true), // If false, DC API is disabled
+  dcApiEnabled: z.boolean().default(false), // If false, DC API is disabled
   oidc: OpenIdConnectSchema.optional(),
   callback: CallbackSchema.optional(),
   translations: z.record(z.string(), z.record(z.string(), z.string()))

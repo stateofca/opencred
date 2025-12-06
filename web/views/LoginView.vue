@@ -7,7 +7,9 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <template>
   <div>
-    <OpenCredExchange v-if="context.exchangeData?.state !== 'complete'" />
+    <OpenCredExchange
+      v-if="context.exchangeData?.state !== 'complete'"
+      purpose="login" />
     <div
       v-else
       class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl

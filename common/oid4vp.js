@@ -3,7 +3,7 @@ import {arrayOf} from './utils.js';
 import {config} from '@bedrock/core';
 import {createId} from './utils.js';
 import {defaultDocLoader} from './documentLoader.js';
-import {domainToDidWeb} from '../lib/didWeb.js';
+import {domainToDidWeb} from './didWeb.js';
 import jsonld from 'jsonld';
 import {oid4vp} from '@digitalbazaar/oid4-client';
 

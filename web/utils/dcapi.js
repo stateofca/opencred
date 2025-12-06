@@ -18,7 +18,8 @@
 export async function startDCApiFlow({
   exchangeData,
   httpClient,
-  onExchangeUpdate
+  onExchangeUpdate,
+  selectedProtocol
 } = {}) {
   if(!exchangeData || !exchangeData.id || !exchangeData.workflowId) {
     throw new Error('Exchange data is required');
@@ -30,9 +31,10 @@ export async function startDCApiFlow({
 
   try {
     // Get the authorization request from the server using the OID4VP endpoint
-    // with the 18013-7-Annex-D profile
+    // with the selected profile
     // The protocol URL contains a request_uri parameter that needs extraction
-    const protocolUrl = exchangeData.protocols['18013-7-Annex-D'];
+    const protocolUrl = exchangeData.protocols[
+      selectedProtocol ?? '18013-7-Annex-D'];
 
     // Parse the URL to extract the request_uri query parameter
     const url = new URL(protocolUrl);

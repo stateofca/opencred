@@ -7,26 +7,117 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <template>
   <div>
-    <WalletInteraction
-      :exchange-data="context.exchangeData || {}"
-      :exchange-state="context.exchangeData?.state || 'pending'"
-      :error="state.error"
-      :selected-protocol="selectedProtocol"
-      :selected-wallet="selectedWallet"
-      :available-protocols="availableProtocols"
-      :brand="context.rp.brand"
-      :options="context.options"
-      :explainer-video="context.rp.brand.explainerVideo"
-      :active="state.active && !state.activeOverride"
-      :rp="context.rp"
-      :wallets-registry="walletsRegistry"
-      :protocols-registry="protocolsRegistry"
-      :prefers-qr-display="prefersQrDisplay"
-      @select-protocol="handleSelectProtocol"
-      @reset="handleResetExchange" />
+    <div
+      v-if="context.exchangeData?.state === 'complete'"
+      class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
+             md:px-16 lg:px-24 relative text-center">
+      <!-- Completion handled by parent -->
+    </div>
+    <div
+      v-else-if="state.error"
+      class="flex justify-center pt-8">
+      <ErrorView
+        :title="state.error.title"
+        :message="state.error.message"
+        :resettable="state.error.resettable"
+        @reset="handleResetExchange" />
+    </div>
+    <div
+      v-else
+      class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
+             md:px-16 lg:px-24 relative">
+      <!-- Workflow Title -->
+      <h1
+        class="text-3xl mb-4 text-center"
+        :style="{color: context.rp.brand?.primary}">
+        {{context.rp.name || $t(`${purpose}Cta`)}}
+      </h1>
+
+      <!-- Workflow Description -->
+      <div class="mb-4 text-gray-900">
+        <p
+          v-if="context.rp.description"
+          class="text-gray-900"
+          v-html="context.rp.description" />
+        <p
+          class="text-gray-900"
+          v-html="$t('exchangePageExplain')" />
+      </div>
+
+      <!-- Credential Query Summary -->
+      <CredentialQuerySummary
+        :rp="context.rp"
+        :exchange-data="context.exchangeData || {}" />
+
+      <!-- Connect Your Wallet Heading -->
+      <p class="text-md font-semibold mb-2 text-gray-900">
+        {{$t('connectWalletHeading')}}
+      </p>
+
+      <!-- Wallet Selection -->
+      <WalletSelection
+        :selected-wallet="selectedWallet"
+        :selected-protocol="selectedProtocol"
+        :available-protocols="availableProtocols"
+        :wallets-registry="walletsRegistry"
+        :protocols-registry="protocolsRegistry"
+        :rp="context.rp"
+        @select-protocol="handleSelectProtocol" />
+
+      <!-- Interaction-specific info and exchange status -->
+      <WalletInteraction
+        :exchange-data="context.exchangeData || {}"
+        :exchange-state="context.exchangeData?.state || 'pending'"
+        :selected-protocol="selectedProtocol"
+        :selected-wallet="selectedWallet"
+        :available-protocols="availableProtocols"
+        :active="state.active && !state.activeOverride"
+        :rp="context.rp"
+        :wallets-registry="walletsRegistry"
+        :protocols-registry="protocolsRegistry"
+        :interaction-state="interactionState"
+        @update-interaction-state="handleUpdateInteractionState"
+        @replace-exchange="handleReplaceExchange" />
+
+      <!-- Explainer Video Link -->
+      <div class="mt-2">
+        <button
+          v-if="$t('qrExplainerText') !== '' &&
+            context.rp.brand?.explainerVideo?.id !== '' &&
+            context.rp.brand?.explainerVideo?.provider"
+          :style="{color: context.rp.brand?.primary}"
+          class="underline"
+          @click="showVideo = true">
+          {{$t('qrExplainerText')}}
+        </button>
+        <p
+          v-if="$t('qrFooterHelp')"
+          class="mt-2 text-gray-900"
+          v-html="$t('qrFooterHelp')" />
+      </div>
+
+      <!-- Explainer Video Dialog -->
+      <q-dialog
+        v-model="showVideo">
+        <q-card>
+          <YouTubeVideo
+            v-if="context.rp.brand?.explainerVideo?.provider === 'youtube'"
+            :id="context.rp.brand.explainerVideo.id" />
+          <q-card-actions
+            align="right">
+            <q-btn
+              v-close-popup
+              flat
+              label="Close" />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+    </div>
+
+    <!-- Status Dialog -->
     <CadmvDialog
       v-if="context.exchangeData?.state !== 'complete' &&
-        state.statusCheckCount > 10"
+        state.statusCheckCount > 20"
       :actions="statusDialogActions"
       @action="handleStatusDialogAction">
       <template #body>
@@ -43,6 +134,8 @@ SPDX-License-Identifier: BSD-3-Clause
 import {computed, inject, onBeforeMount, onMounted, onUnmounted, reactive,
   ref, watch} from 'vue';
 import {CadmvDialog} from '@digitalbazaar/cadmv-ui';
+import CredentialQuerySummary from './CredentialQuerySummary.vue';
+import ErrorView from './ErrorView.vue';
 import {httpClient} from '@digitalbazaar/http-client';
 import {PROTOCOLS_REGISTRY} from '../utils/protocols.js';
 import QRCode from 'qrcode';
@@ -50,6 +143,15 @@ import {useI18n} from 'vue-i18n';
 import {useQuasar} from 'quasar';
 import WalletInteraction from './WalletInteraction.vue';
 import {WALLETS_REGISTRY} from '../utils/wallets.js';
+import WalletSelection from './WalletSelection.vue';
+
+defineProps({
+  purpose: {
+    type: String,
+    default: 'verification',
+    validator: value => ['verification', 'login'].includes(value)
+  }
+});
 
 const $cookies = inject('$cookies');
 const $q = useQuasar();
@@ -73,11 +175,29 @@ const state = reactive({
 });
 
 const selectedProtocol = ref('OID4VP-draft18');
-const selectedWallet = ref(null);
-const prefersQrDisplay = ref(true);
+const selectedWallet = ref('cadmv-wallet');
+
+// Interaction state management
+const interactionState = reactive({
+  dcApiErrorOverride: false,
+  // User preference for same device vs remote (QR/DC API)
+  prefersSameDevice: false,
+  dcApiState: {},
+  chapiState: {},
+  qrState: {},
+  sameDeviceState: {},
+  errors: {
+    dcApiError: null,
+    qrError: null,
+    exchangeError: null,
+    sameDeviceLinkError: null
+  }
+});
 
 const walletsRegistry = WALLETS_REGISTRY;
 const protocolsRegistry = PROTOCOLS_REGISTRY;
+
+const showVideo = ref(false);
 
 const statusDialogActions = [
   {
@@ -134,7 +254,7 @@ const handleError = error => {
 
 const {t: translate} = useI18n({useScope: 'global'});
 
-const handleSelectProtocol = ({protocol, wallet, displayQr}) => {
+const handleSelectProtocol = ({protocol, wallet, prefersSameDevice}) => {
   if(protocol) {
     selectedProtocol.value = protocol;
     // Set cookie for protocol
@@ -156,9 +276,24 @@ const handleSelectProtocol = ({protocol, wallet, displayQr}) => {
       }
     }
   }
-  if(displayQr !== undefined) {
-    prefersQrDisplay.value = displayQr;
+  if(prefersSameDevice !== undefined) {
+    interactionState.prefersSameDevice = prefersSameDevice;
   }
+};
+
+const handleUpdateInteractionState = updates => {
+  Object.assign(interactionState, updates);
+  // Handle nested errors object updates
+  if(updates.errors) {
+    Object.assign(interactionState.errors, updates.errors);
+  }
+};
+
+const handleReplaceExchange = updatedExchange => {
+  context.value.exchangeData = {
+    ...context.value.exchangeData,
+    ...updatedExchange
+  };
 };
 
 // Track if we've loaded from cookies to avoid reloading
@@ -180,8 +315,8 @@ watch(() => context.value?.exchangeData, () => {
   if(cookieWallet !== undefined) {
     // Check if wallet supports the selected protocol or if protocol-only mode
     if(cookieWallet === null ||
-      (walletsRegistry[cookieWallet]?.supportedProtocols?.[
-        selectedProtocol.value])) {
+      walletsRegistry[cookieWallet]?.supportedProtocols?.[
+        selectedProtocol.value]) {
       selectedWallet.value = cookieWallet;
     }
   }
@@ -191,16 +326,32 @@ watch(() => context.value?.exchangeData, () => {
 
 onBeforeMount(async () => {
   if($q.platform.is.mobile) {
-    prefersQrDisplay.value = false;
+    interactionState.prefersSameDevice = true;
   }
 
   // Initialize selected protocol if not set or if default is not available
   if(availableProtocols.value.length > 0) {
-    // Prefer OID4VP-draft18 if available, otherwise use first available
     const protocols = availableProtocols.value;
     if(!selectedProtocol.value || !protocols.includes(selectedProtocol.value)) {
-      selectedProtocol.value = protocols.includes('OID4VP-draft18') ?
-        'OID4VP-draft18' : protocols[0];
+      // Use wallet's getDefaultProtocol function if available
+      const wallet = selectedWallet.value ?
+        walletsRegistry[selectedWallet.value] : null;
+      if(wallet?.getDefaultProtocol) {
+        const defaultProtocol = wallet.getDefaultProtocol({
+          workflow: context.value?.rp?.workflow,
+          rp: context.value?.rp,
+          availableProtocols: protocols
+        });
+        if(defaultProtocol && protocols.includes(defaultProtocol)) {
+          selectedProtocol.value = defaultProtocol;
+        } else {
+          selectedProtocol.value = protocols[0];
+        }
+      } else {
+        // Default: prefer OID4VP-draft18
+        selectedProtocol.value = protocols.includes('OID4VP-draft18') ?
+          'OID4VP-draft18' : protocols[0];
+      }
     }
   }
 });
@@ -231,7 +382,7 @@ const checkStatus = async () => {
     return;
   }
 
-  if(state.statusCheckCount > 10) {
+  if(state.statusCheckCount > 20) {
     state.intervalId = clearInterval(state.intervalId);
   }
 

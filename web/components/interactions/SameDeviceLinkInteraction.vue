@@ -1,0 +1,205 @@
+<!--
+Copyright 2023 - 2025 California Department of Motor Vehicles
+Copyright 2023 - 2025 Digital Bazaar, Inc.
+
+SPDX-License-Identifier: BSD-3-Clause
+-->
+
+<template>
+  <div class="flex flex-col items-center justify-center">
+    <!-- openid4vp:// Button -->
+    <div
+      v-if="protocolType === 'openid4vp'"
+      class="my-8">
+      <cadmv-button
+        variant="primary"
+        :loading="exchangeState === 'active'"
+        :disabled="exchangeState === 'active'"
+        @click="handleActivate">
+        {{$t('appCta') || 'Open Wallet App'}}
+      </cadmv-button>
+      <p
+        v-if="showNoSchemeHandlerWarning"
+        class="mt-4 text-red-600">
+        <span class="text-bold">
+          {{$t('noSchemeHandlerTitle') || 'Wallet app not found'}}
+        </span>
+        {{$t('noSchemeHandlerMessage') || 'If your wallet didn\'t open, make sure you have a compatible wallet installed.'}}
+      </p>
+    </div>
+
+    <!-- Web/Deep Link Button -->
+    <div
+      v-else-if="protocolType === 'web'"
+      class="my-8">
+      <cadmv-button
+        variant="primary"
+        :loading="exchangeState === 'active'"
+        :disabled="exchangeState === 'active'"
+        @click="handleActivate">
+        {{$t('appCta') || 'Open Wallet App'}}
+      </cadmv-button>
+    </div>
+
+    <!-- Copy URL Button -->
+    <div
+      v-else-if="protocolType === 'copy'"
+      class="flex flex-col items-center my-8">
+      <cadmv-button
+        variant="primary"
+        :loading="exchangeState === 'active'"
+        :disabled="exchangeState === 'active'"
+        @click="handleActivate">
+        {{urlCopied ?
+          ($t('urlCopied') || 'URL Copied!') :
+          ($t('copyUrl') || 'Copy URL')}}
+      </cadmv-button>
+      <p
+        v-if="urlCopied"
+        class="mt-2 text-sm text-gray-600">
+        {{$t('pasteUrlInWallet') || 'Paste this URL into your wallet app'}}
+      </p>
+    </div>
+
+    <!-- Countdown Timer -->
+    <div>
+      <p class="my-4 text-gray-900">
+        {{$t('exchangeActiveExpiryMessage') || 'This exchange will expire in'}}
+        <CountdownDisplay
+          v-if="exchangeData?.createdAt && exchangeData?.ttl"
+          :created-at="exchangeData.createdAt"
+          :ttl="exchangeData.ttl" />
+      </p>
+    </div>
+
+    <!-- Toggle to QR Code -->
+    <div
+      v-if="exchangeState === 'pending' || exchangeState === 'active'"
+      class="mt-2">
+      <cadmv-button
+        no-caps
+        variant="flat"
+        label="Scan QR code"
+        @click="handleToggleQr" />
+    </div>
+  </div>
+</template>
+
+<script setup>
+import {ref, watch, onMounted, onUnmounted} from 'vue';
+import {CadmvButton} from '@digitalbazaar/cadmv-ui';
+import CountdownDisplay from '../CountdownDisplay.vue';
+
+const props = defineProps({
+  deepLinkUrl: {
+    type: String,
+    required: true
+  },
+  exchangeState: {
+    type: String,
+    default: 'pending'
+  },
+  exchangeData: {
+    type: Object,
+    default: () => ({
+      createdAt: null,
+      ttl: null
+    })
+  },
+  sameDeviceState: {
+    type: Object,
+    default: () => ({})
+  },
+  protocolType: {
+    type: String,
+    required: true
+  }
+});
+
+const emit = defineEmits(['activate', 'toggleQr']);
+
+const showNoSchemeHandlerWarning = ref(false);
+const urlCopied = ref(false);
+const schemeHandlerTimeout = ref(null);
+
+const handleActivate = async () => {
+  if(props.protocolType === 'copy') {
+    await copyUrlToClipboard();
+  } else if(props.protocolType === 'openid4vp') {
+    window.open(props.deepLinkUrl, '_blank');
+    detectSchemeHandler();
+  } else if(props.protocolType === 'web') {
+    window.open(props.deepLinkUrl, '_blank');
+  }
+  emit('activate');
+};
+
+const copyUrlToClipboard = async () => {
+  if(props.deepLinkUrl) {
+    try {
+      await navigator.clipboard.writeText(props.deepLinkUrl);
+      urlCopied.value = true;
+      setTimeout(() => {
+        urlCopied.value = false;
+      }, 3000);
+    } catch(err) {
+      console.error('Failed to copy URL:', err);
+      // Fallback to legacy copy command for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = props.deepLinkUrl;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        urlCopied.value = true;
+        setTimeout(() => {
+          urlCopied.value = false;
+        }, 3000);
+      } catch(fallbackErr) {
+        console.error('Fallback copy failed:', fallbackErr);
+      }
+      document.body.removeChild(textArea);
+    }
+  }
+};
+
+const detectSchemeHandler = () => {
+  // Clear any existing timeout
+  if(schemeHandlerTimeout.value) {
+    clearTimeout(schemeHandlerTimeout.value);
+  }
+
+  // Set timeout to check if we're still on the page after 1.5s
+  schemeHandlerTimeout.value = setTimeout(() => {
+    // If we're still here after 1.5s, the scheme handler likely didn't work
+    showNoSchemeHandlerWarning.value = true;
+  }, 1500);
+};
+
+const handleToggleQr = () => {
+  if(schemeHandlerTimeout.value) {
+    clearTimeout(schemeHandlerTimeout.value);
+    schemeHandlerTimeout.value = null;
+  }
+  showNoSchemeHandlerWarning.value = false;
+  emit('toggleQr');
+};
+
+// Watch for exchange becoming active to clear scheme handler timeout
+watch(() => props.exchangeState, (newState) => {
+  if(newState === 'active' && schemeHandlerTimeout.value) {
+    clearTimeout(schemeHandlerTimeout.value);
+    schemeHandlerTimeout.value = null;
+  }
+});
+
+onUnmounted(() => {
+  // Clean up timeout on unmount
+  if(schemeHandlerTimeout.value) {
+    clearTimeout(schemeHandlerTimeout.value);
+  }
+});
+</script>
+

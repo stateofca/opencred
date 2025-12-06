@@ -7,54 +7,81 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <template>
   <div>
-    <div v-if="exchangeState === 'complete'">
-      <!-- Completion handled by parent -->
-    </div>
-    <div
-      v-else-if="error"
-      class="flex justify-center pt-8">
-      <ErrorView
-        :title="error.title"
-        :message="error.message"
-        :resettable="error.resettable"
-        @reset="$emit('reset')" />
-    </div>
+    <!-- Priority-based interaction display -->
+    <DcApiInteraction
+      v-if="activeInteractionType === 'dcapi'"
+      :exchange-data="exchangeData"
+      :exchange-state="exchangeState"
+      :dc-api-state="interactionState.dcApiState"
+      :error="interactionState.errors.dcApiError"
+      @activate="handleDcApiActivate"
+      @error-override="handleDcApiErrorOverride"
+      @retry="handleDcApiRetry" />
+    <QrCodeInteraction
+      v-else-if="activeInteractionType === 'qr'"
+      :qr-code-data-uri="qrCodeDataUri"
+      :exchange-state="exchangeState"
+      :exchange-data="exchangeData"
+      :qr-state="interactionState.qrState"
+      @toggle-same-device="handleToggleSameDevice"
+      @go-back="qrDisplayOverrideOff" />
+    <SameDeviceLinkInteraction
+      v-else-if="activeInteractionType === 'samedevice'"
+      :deep-link-url="protocolUrl"
+      :exchange-state="exchangeState"
+      :exchange-data="exchangeData"
+      :same-device-state="interactionState.sameDeviceState"
+      :protocol-type="protocolType"
+      @activate="handleSameDeviceActivate"
+      @toggle-qr="handleToggleQr" />
+    <ChapiInteraction
+      v-else-if="activeInteractionType === 'chapi'"
+      :exchange-data="exchangeData"
+      :exchange-state="exchangeState"
+      :chapi-state="interactionState.chapiState"
+      @activate="handleChapiActivate"
+      @error="handleChapiError" />
     <div v-else>
-      <CHAPIView
-        v-if="selectedProtocol === 'chapi'"
-        :chapi-enabled="true"
-        :rp="rp"
-        :options="options"
-        :exchange-data="exchangeData"
-        :selected-protocol="selectedProtocol"
-        @select-protocol="handleSelectProtocol" />
-      <OID4VPView
-        v-else-if="isOID4VPProtocol(selectedProtocol) ||
-          isQrAndCopyUrlProtocol(selectedProtocol)"
-        :brand="brand"
-        :exchange-data="exchangeDataWithQR"
-        :options="options"
-        :explainer-video="explainerVideo"
-        :active="active"
-        :selected-protocol="selectedProtocol"
-        :selected-wallet="selectedWallet"
-        :available-protocols="availableProtocols"
-        :wallets-registry="walletsRegistry"
-        :protocols-registry="protocolsRegistry"
-        :prefers-qr-display="prefersQrDisplay"
-        :is-copy-url-protocol="isQrAndCopyUrlProtocol(selectedProtocol)"
-        :dc-api-enabled="rp?.dcApiEnabled ?? false"
-        @select-protocol="handleSelectProtocol" />
+      <p class="text-left text-sm mb-2 text-gray-900">
+        No wallet interaction available.
+      </p>
     </div>
+    <pre class="text-left text-sm mb-2 text-gray-600">
+active interaction type: {{activeInteractionType ?? 'null'}}
+state: {{exchangeState}}
+wallet: {{selectedWallet}}
+protocol: {{selectedProtocol}}
+available protocols: {{availableProtocols}}
+active: {{active}}
+rp: {{rp}}
+interaction state: {{interactionState}}
+dcapi system available: {{dcApiSystemAvailable}}
+
+exchange data:
+{{exchangeData}}
+
+workflow:
+{{props.rp}}
+    </pre>
   </div>
 </template>
 
 <script setup>
-import {computed, ref, watch} from 'vue';
-import CHAPIView from './CHAPIView.vue';
-import ErrorView from './ErrorView.vue';
-import OID4VPView from './OID4VPView.vue';
+import {computed, onMounted, ref, watch} from 'vue';
+import {
+  generateWalletLink,
+  getAvailableInteractionMethods
+} from '../utils/wallets.js';
+import ChapiInteraction from './interactions/ChapiInteraction.vue';
+import DcApiInteraction from './interactions/DcApiInteraction.vue';
+
+import {httpClient} from '@digitalbazaar/http-client';
 import QRCode from 'qrcode';
+import QrCodeInteraction from './interactions/QrCodeInteraction.vue';
+import SameDeviceLinkInteraction from
+  './interactions/SameDeviceLinkInteraction.vue';
+import {startDCApiFlow as startDCApiFlowUtil} from '../utils/dcapi.js';
+import {useQuasar} from 'quasar';
 
 const props = defineProps({
   exchangeData: {
@@ -64,10 +91,6 @@ const props = defineProps({
   exchangeState: {
     type: String,
     default: 'pending'
-  },
-  error: {
-    type: Object,
-    default: null
   },
   selectedProtocol: {
     type: String,
@@ -80,21 +103,6 @@ const props = defineProps({
   availableProtocols: {
     type: Array,
     default: () => []
-  },
-  brand: {
-    type: Object,
-    required: true
-  },
-  options: {
-    type: Object,
-    required: true
-  },
-  explainerVideo: {
-    type: Object,
-    default: () => ({
-      id: '',
-      provider: ''
-    })
   },
   active: {
     type: Boolean,
@@ -112,16 +120,71 @@ const props = defineProps({
     type: Object,
     required: true
   },
-  prefersQrDisplay: {
-    type: Boolean,
-    default: true
+  interactionState: {
+    type: Object,
+    required: true
   }
 });
 
-const emit = defineEmits(['selectProtocol', 'reset']);
+const emit = defineEmits([
+  'updateInteractionState',
+  'replaceExchange'
+]);
+
+const $q = useQuasar();
+
+// Check if DC API is available at system level
+const dcApiSystemAvailable = ref(false);
+
+// Check if DC API is available
+const checkDCApiAvailability = () => {
+  if(navigator.credentials && window.DigitalCredential !== undefined) {
+    dcApiSystemAvailable.value = true;
+  } else {
+    dcApiSystemAvailable.value = false;
+  }
+};
+
+// Determine which interaction type to show based on priority
+const activeInteractionType = computed(() => {
+  const methods = getAvailableInteractionMethods({
+    walletsRegistry: props.walletsRegistry,
+    protocolsRegistry: props.protocolsRegistry,
+    walletId: props.selectedWallet,
+    protocolId: props.selectedProtocol,
+    prefersSameDevice: props.interactionState.prefersSameDevice ?? false,
+    isMobile: $q.platform.is.mobile,
+    dcApiSystemAvailable: dcApiSystemAvailable.value,
+    rp: props.rp,
+    interactionState: props.interactionState,
+    availableProtocols: props.availableProtocols
+  });
+  return methods[0] || null; // Return first available method
+});
 
 // Get the protocol URL for the selected protocol
 const protocolUrl = computed(() => {
+  // Determine the interaction method based on active interaction type
+  // 'samedevice' maps to 'link', 'qr' maps to 'qr'
+  const interactionMethod = activeInteractionType.value === 'samedevice' ?
+    'link' : activeInteractionType.value === 'qr' ? 'qr' : null;
+
+  // If we have a wallet selected and an interaction method, try to generate
+  // wallet-specific URL
+  if(props.selectedWallet && interactionMethod) {
+    const walletUrl = generateWalletLink({
+      exchange: props.exchangeData,
+      walletId: props.selectedWallet,
+      protocol: props.selectedProtocol,
+      interactionMethod,
+      workflow: props.rp?.workflow
+    });
+    if(walletUrl) {
+      return walletUrl;
+    }
+  }
+
+  // Fallback to default protocol URL
   if(!props.exchangeData?.protocols) {
     return props.exchangeData?.OID4VP || '';
   }
@@ -130,50 +193,157 @@ const protocolUrl = computed(() => {
     props.exchangeData.OID4VP || '';
 });
 
-const isOID4VPProtocol = protocol => {
-  return protocol === 'OID4VP' || protocol === 'OID4VP-draft18' ||
-    protocol === 'OID4VP-1.0' || protocol === 'OID4VP-combined';
-};
+// Determine protocol type based on URL scheme
+const protocolType = computed(() => {
+  const url = protocolUrl.value;
+  if(!url) {
+    return null;
+  }
 
-const isQrAndCopyUrlProtocol = protocol => {
-  return protocol === 'interact' || protocol === 'vcapi';
-};
+  if(url.startsWith('openid4vp://')) {
+    return 'openid4vp';
+  }
+
+  if(url.startsWith('http://') || url.startsWith('https://')) {
+    // Check if wallet has a custom URL generator for this protocol
+    // If it does, treat it as 'web' (deep link) instead of 'copy'
+    const copyProtocols = ['interact', 'vcapi'];
+    if(copyProtocols.includes(props.selectedProtocol)) {
+      // Check if wallet has a custom getUrl function
+      if(props.selectedWallet) {
+        const wallet = props.walletsRegistry[props.selectedWallet];
+        const protocolSupport = wallet?.supportedProtocols?.[
+          props.selectedProtocol];
+        if(protocolSupport) {
+          // Check if either 'qr' or 'link' has a getUrl function
+          const hasCustomUrl = (protocolSupport.qr &&
+            typeof protocolSupport.qr === 'object' &&
+            typeof protocolSupport.qr.getUrl === 'function') ||
+            (protocolSupport.link &&
+            typeof protocolSupport.link === 'object' &&
+            typeof protocolSupport.link.getUrl === 'function');
+          if(hasCustomUrl) {
+            return 'web';
+          }
+        }
+      }
+      return 'copy';
+    }
+    return 'web';
+  }
+
+  return null;
+});
 
 // QR code for the selected protocol
-const qrCode = ref(props.exchangeData?.QR || '');
+const qrCodeDataUri = ref(props.exchangeData?.QR || '');
 
 // Watch for protocol URL changes and update QR code
 watch([protocolUrl, () => props.selectedProtocol], async () => {
+  const qrProtocols = [
+    'OID4VP',
+    'OID4VP-draft18',
+    'OID4VP-1.0',
+    'OID4VP-combined',
+    'interact',
+    'vcapi'
+  ];
   if(protocolUrl.value &&
-    (isOID4VPProtocol(props.selectedProtocol) ||
-      isQrAndCopyUrlProtocol(props.selectedProtocol))) {
+    qrProtocols.includes(props.selectedProtocol)) {
     try {
-      qrCode.value = await QRCode.toDataURL(protocolUrl.value);
+      qrCodeDataUri.value = await QRCode.toDataURL(protocolUrl.value);
     } catch{
-      qrCode.value = props.exchangeData?.QR || '';
+      qrCodeDataUri.value = props.exchangeData?.QR || '';
     }
   } else {
-    qrCode.value = props.exchangeData?.QR || '';
+    qrCodeDataUri.value = props.exchangeData?.QR || '';
   }
 }, {immediate: true});
 
-// Exchange data with the correct protocol URL and QR code
-const exchangeDataWithQR = computed(() => {
-  const data = {...props.exchangeData};
-  // Update OID4VP to use the selected protocol URL if available
-  if(protocolUrl.value &&
-    (isOID4VPProtocol(props.selectedProtocol) ||
-      isQrAndCopyUrlProtocol(props.selectedProtocol))) {
-    data.OID4VP = protocolUrl.value;
-    // Update QR code to use the generated one for the selected protocol
-    if(qrCode.value) {
-      data.QR = qrCode.value;
-    }
+// Handle DC API activation
+const handleDcApiActivate = async () => {
+  try {
+    await startDCApiFlowUtil({
+      exchangeData: props.exchangeData,
+      httpClient,
+      onExchangeUpdate: updatedExchange => {
+        emit('replaceExchange', updatedExchange);
+      },
+      selectedProtocol: props.selectedProtocol
+    });
+  } catch(error) {
+    console.error('DC API flow error:', error);
+    emit('updateInteractionState', {
+      errors: {
+        dcApiError: {
+          message: error.message ||
+            'An error occurred while starting the DC API flow.'
+        }
+      }
+    });
   }
-  return data;
-});
-
-const handleSelectProtocol = event => {
-  emit('selectProtocol', event);
 };
+
+// Handle DC API error override
+const handleDcApiErrorOverride = () => {
+  emit('updateInteractionState', {
+    dcApiErrorOverride: true
+  });
+};
+
+// Handle DC API retry
+const handleDcApiRetry = () => {
+  emit('updateInteractionState', {
+    errors: {
+      dcApiError: null
+    }
+  });
+  handleDcApiActivate();
+};
+
+// Handle same device activation
+const handleSameDeviceActivate = () => {
+  // The SameDeviceLinkInteraction component handles the actual activation
+  // This is just for tracking state if needed
+};
+
+// Handle toggle to same device (from QR)
+const handleToggleSameDevice = () => {
+  emit('updateInteractionState', {
+    prefersSameDevice: true
+  });
+};
+
+// Handle toggle to QR (from same device)
+const handleToggleQr = () => {
+  emit('updateInteractionState', {
+    prefersSameDevice: false
+  });
+};
+
+// Handle go back (from QR when active)
+const qrDisplayOverrideOff = () => {
+  emit('updateInteractionState', {
+    prefersSameDevice: false
+  });
+};
+
+// Handle CHAPI activation
+const handleChapiActivate = () => {
+  // CHAPI activation is handled by ChapiInteraction component
+  // This is just for tracking if needed
+};
+
+// Handle CHAPI error
+const handleChapiError = error => {
+  emit('updateInteractionState', {
+    errors: {
+      chapiError: error
+    }
+  });
+};
+
+onMounted(() => {
+  checkDCApiAvailability();
+});
 </script>
