@@ -18,25 +18,32 @@ const jwtCases = JSON.parse(fs.readFileSync(
 describe('VC-JWT', async () => {
   it('should verify valid vc-jwt (did:key)', async () => {
     const verification =
-      await verifyUtils.verifyCredentialJWT(jwtCases.valid['did:key']);
+      await verifyUtils.verifyCredentialJWT(jwtCases.valid['did:key'], {
+        skewTime: new Date('2025-12-01T00:00:00Z').getTime()
+      });
     verification.verified.should.be.equal(true);
   });
 
   it('should fail verification of invalid vc-jwt (signature)', async () => {
     const verification =
-      await verifyUtils.verifyCredentialJWT(jwtCases.invalid.signature);
+      await verifyUtils.verifyCredentialJWT(jwtCases.invalid.signature, {
+        skewTime: new Date('2025-12-01T00:00:00Z').getTime()
+      });
     verification.verified.should.be.equal(false);
   });
 
   it('should fail verification of invalid vc-jwt (vc)', async () => {
     const verification =
-      await verifyUtils.verifyCredentialJWT(jwtCases.invalid.vc);
+      await verifyUtils.verifyCredentialJWT(jwtCases.invalid.vc, {
+        skewTime: new Date('2025-12-01T00:00:00Z').getTime()
+      });
     verification.verified.should.be.equal(false);
   });
   it('should fail verification of invalid vc-jwt vp (nonce)', async () => {
     const verification =
       await verifyUtils.verifyPresentationJWT(jwtCases.valid['did:key'], {
-        challenge: `incorrect`
+        challenge: `incorrect`,
+        skewTime: new Date('2025-12-01T00:00:00Z').getTime()
       });
     verification.verified.should.be.equal(false);
     verification.errors[0].should.contain(
