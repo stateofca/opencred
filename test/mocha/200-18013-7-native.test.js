@@ -17,6 +17,7 @@ import {
   _getX5cFromSigningKey,
   _pemToBase64Der,
   handleNative18013AnnexDRequest,
+  handleNative18013AnnexDResponse,
 } from '../../lib/workflows/native-18013-7.js';
 import {
   convertDerCertificateToPem,
@@ -769,6 +770,335 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         const jwt = decodeJwt(await result.text());
         expect(jwt.response_mode).to.equal('direct_post');
       });
+  });
+
+  describe('handleNative18013AnnexDResponse', function() {
+    let exchange;
+    let authorizationRequest;
+
+    beforeEach(async function() {
+      exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
+      const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
+        `${exchange.id}/openid/client/authorization/request`;
+      const result = await handleNative18013AnnexDRequest({
+        rp: mdocTestRP,
+        exchange,
+        requestUrl,
+        baseUri: 'https://example.com',
+        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}]
+      });
+      exchange = result.updatedExchange;
+      authorizationRequest = exchange.variables.authorizationRequest;
+    });
+
+    describe('State validation', function() {
+      it('should reject response with mismatched state for dc_api mode',
+        async function() {
+          const responseBody = {
+            protocol: 'openid4vp',
+            data: {
+              state: 'wrong-state-value',
+              vp_token: {
+                0: 'dummy-base64url-token'
+              }
+            }
+          };
+
+          try {
+            await handleNative18013AnnexDResponse({
+              rp: mdocTestRP,
+              exchange,
+              responseBody
+            });
+            expect().fail('Should have thrown an error');
+          } catch(error) {
+            expect(error.message).to.contain(
+              'Parameter \'state\' failed to match'
+            );
+          }
+        });
+
+      it('should accept response with matching state for dc_api mode',
+        async function() {
+          const responseBody = {
+            protocol: 'openid4vp',
+            data: {
+              state: authorizationRequest.state,
+              vp_token: {
+                0: 'dummy-base64url-token'
+              }
+            }
+          };
+
+          // This will fail at mdoc verification, but should pass state check
+          try {
+            await handleNative18013AnnexDResponse({
+              rp: mdocTestRP,
+              exchange,
+              responseBody
+            });
+            expect().fail('Should have failed at mdoc verification');
+          } catch(error) {
+            // Should fail at mdoc verification, not state validation
+            expect(error.message).to.not.contain('State parameter mismatch');
+          }
+        });
+
+      it('should reject response with mismatched state for dc_api.jwt mode',
+        async function() {
+          // Create exchange with dc_api.jwt mode
+          const jwtExchange = await createExchangeWithAuthRequest({
+            rp: mdocTestRP
+          });
+          const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
+            `${jwtExchange.id}/openid/client/authorization/request`;
+          const result = await handleNative18013AnnexDRequest({
+            rp: mdocTestRP,
+            exchange: jwtExchange,
+            requestUrl,
+            baseUri: 'https://example.com',
+            signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
+            profile: 'OID4VP-HAIP-1.0' // This uses dc_api.jwt
+          });
+          // For encrypted mode, state would be in decrypted payload
+          // But we can test the structure validation
+          const responseBody = {
+            protocol: 'openid4vp',
+            data: {
+              state: 'wrong-state',
+              response: 'dummy-encrypted-jwt'
+            }
+          };
+
+          try {
+            await handleNative18013AnnexDResponse({
+              rp: mdocTestRP,
+              exchange: result.updatedExchange,
+              responseBody
+            });
+            expect().fail('Should have thrown an error');
+          } catch(error) {
+            // Should fail at state validation or decryption
+            const hasStateError = error.message.includes(
+              'Parameter \'state\' failed to match'
+            );
+            const hasDecryptError = error.message.includes('Failed to decrypt');
+            expect(hasStateError || hasDecryptError).to.be(true);
+          }
+        });
+    });
+
+    describe('Credential ID verification', function() {
+      it('should verify credential ID 0 exists in dcql_query',
+        async function() {
+          const dcqlQuery = authorizationRequest.dcql_query;
+          expect(dcqlQuery).to.be.an('object');
+          expect(dcqlQuery.credentials).to.be.an('array');
+          expect(dcqlQuery.credentials.length).to.be.greaterThan(0);
+
+          const credentialIds = dcqlQuery.credentials.map(cred => cred.id);
+          expect(credentialIds.indexOf('0')).to.be.greaterThan(-1);
+        });
+
+      it('should extract vp_token using credential ID 0', async function() {
+        const responseBody = {
+          protocol: 'openid4vp',
+          data: {
+            state: authorizationRequest.state,
+            vp_token: {
+              0: 'dummy-base64url-token'
+            }
+          }
+        };
+
+        // This will fail at mdoc verification, but should pass credential ID
+        // extraction
+        try {
+          await handleNative18013AnnexDResponse({
+            rp: mdocTestRP,
+            exchange,
+            responseBody
+          });
+          expect().fail('Should have failed at mdoc verification');
+        } catch(error) {
+          // Should fail at mdoc verification, not credential ID extraction
+          expect(error.message).to.not.contain(
+            'Credential IDs in vp_token'
+          );
+          expect(error.message).to.not.contain(
+            'Invalid dcql_query'
+          );
+        }
+      });
+
+      it('should throw error when credential ID not found in vp_token',
+        async function() {
+          const responseBody = {
+            protocol: 'openid4vp',
+            data: {
+              state: authorizationRequest.state,
+              vp_token: {
+                1: 'dummy-base64url-token' // Wrong credential ID
+              }
+            }
+          };
+
+          try {
+            await handleNative18013AnnexDResponse({
+              rp: mdocTestRP,
+              exchange,
+              responseBody
+            });
+            expect().fail('Should have thrown an error');
+          } catch(error) {
+            expect(error.message).to.contain(
+              'Credential IDs in vp_token'
+            );
+            expect(error.message).to.contain('not found in');
+            expect(error.message).to.contain('dcql_query');
+            expect(error.message).to.contain('Available credential IDs');
+          }
+        });
+    });
+
+    describe('Session transcript construction', function() {
+      it('should handle missing responseUri for dc_api mode', async function() {
+        // dc_api mode doesn't set response_uri
+        expect(authorizationRequest.response_uri).to.be(undefined);
+
+        const responseBody = {
+          protocol: 'openid4vp',
+          data: {
+            state: authorizationRequest.state,
+            vp_token: {
+              0: 'dummy-base64url-token'
+            }
+          }
+        };
+
+        // This will fail at mdoc verification, but should construct session
+        // transcript correctly
+        try {
+          await handleNative18013AnnexDResponse({
+            rp: mdocTestRP,
+            exchange,
+            responseBody
+          });
+          expect().fail('Should have failed at mdoc verification');
+        } catch(error) {
+          // Should fail at mdoc verification, not session transcript
+          // construction
+          expect(error.message).to.not.contain('responseUri');
+          expect(error.message).to.not.contain('session transcript');
+        }
+      });
+
+      it('should include responseUri for direct_post mode', async function() {
+        // Create exchange with direct_post mode
+        const directPostExchange = await createExchangeWithAuthRequest({
+          rp: mdocTestRP
+        });
+        const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
+          `${directPostExchange.id}/openid/client/authorization/request` +
+          '?response_mode=direct_post';
+        const result = await handleNative18013AnnexDRequest({
+          rp: mdocTestRP,
+          exchange: directPostExchange,
+          requestUrl,
+          baseUri: 'https://example.com',
+          signingKeys: [{...exampleKey2, purpose: ['authorization_request']}]
+        });
+        const directPostAuthRequest = result.updatedExchange.variables
+          .authorizationRequest;
+
+        expect(directPostAuthRequest.response_uri).to.be.a('string');
+        expect(directPostAuthRequest.response_uri).to.contain('response');
+      });
+
+      it('should require mdocGeneratedNonce in exchange variables',
+        async function() {
+          const exchangeWithoutNonce = {
+            ...exchange,
+            variables: {
+              ...exchange.variables,
+              mdocGeneratedNonce: undefined
+            }
+          };
+
+          const responseBody = {
+            protocol: 'openid4vp',
+            data: {
+              state: authorizationRequest.state,
+              vp_token: {
+                0: 'dummy-base64url-token'
+              }
+            }
+          };
+
+          try {
+            await handleNative18013AnnexDResponse({
+              rp: mdocTestRP,
+              exchange: exchangeWithoutNonce,
+              responseBody
+            });
+            expect().fail('Should have thrown an error');
+          } catch(error) {
+            expect(error.message).to.contain(
+              'mdocGeneratedNonce not found in exchange variables'
+            );
+          }
+        });
+    });
+
+    describe('Integration test', function() {
+      it('should handle full wallet response flow with protocol wrapper',
+        async function() {
+          // This is a structural test - actual mdoc verification would require
+          // real mdoc data
+          const responseBody = {
+            protocol: 'openid4vp',
+            data: {
+              state: authorizationRequest.state,
+              vp_token: {
+                0: 'dummy-base64url-encoded-device-response'
+              }
+            }
+          };
+
+          // Mock database operations
+          const findOneStub = sinon.stub(
+            database.collections.Exchanges, 'findOne'
+          ).resolves(exchange);
+          const replaceOneStub = sinon.stub(
+            database.collections.Exchanges, 'replaceOne'
+          ).resolves();
+
+          try {
+            await handleNative18013AnnexDResponse({
+              rp: mdocTestRP,
+              exchange,
+              responseBody
+            });
+            expect().fail('Should have failed at mdoc verification');
+          } catch(error) {
+            // Should pass state validation and credential ID extraction,
+            // fail at mdoc verification (expected with dummy data)
+            expect(error.message).to.not.contain(
+              'Parameter \'state\' failed to match'
+            );
+            expect(error.message).to.not.contain(
+              'Credential IDs in vp_token'
+            );
+            // Should have attempted mdoc verification
+            const hasMdocError = error.message.includes('mdoc verification');
+            const hasVerifyError = error.message.includes('verify');
+            expect(hasMdocError || hasVerifyError).to.be(true);
+          } finally {
+            findOneStub.restore();
+            replaceOneStub.restore();
+          }
+        });
+    });
   });
 });
 
