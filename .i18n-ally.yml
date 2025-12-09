@@ -1,0 +1,38 @@
+# i18n Ally Configuration
+# https://github.com/lokalise/i18n-ally/wiki/Configurations
+
+# The directory where locale files are stored
+localeDir: common/i18n
+
+# Path matcher for locale files
+pathMatcher: '{locale}.json'
+
+# Source language (default/fallback)
+sourceLanguage: en
+
+# Framework detection
+framework: vue-i18n
+
+# Display language for the extension UI
+displayLanguage: en
+
+# Enable inline annotations
+annotation: true
+
+# Enable hover preview
+hover: true
+
+# Enable review mode
+review: true
+
+# Enable machine translation
+machineTranslation:
+  enabled: true
+
+# Keep unused keys (don't auto-remove)
+keepFulfilled: true
+
+# Enable extract functionality
+extract:
+  autoDetect: true
+

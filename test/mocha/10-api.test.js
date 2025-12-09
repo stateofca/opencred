@@ -43,6 +43,14 @@ const client = httpClient.extend({agent});
 const testRP = {
   type: 'native',
   clientId: 'test',
+  query: [{
+    context: [
+      'https://www.w3.org/2018/credentials/v1',
+      'https://w3id.org/vdl/v1',
+      'https://w3id.org/vdl/aamva/v1'
+    ],
+    type: ['Iso18013DriversLicense']
+  }],
   verifiablePresentationRequest: JSON.stringify({
     query: {
       type: 'QueryByExample',
@@ -70,6 +78,13 @@ const testRP = {
 
 const testRP2 = klona(testRP);
 testRP2.clientId = 'test2';
+testRP2.query = [{
+  context: [
+    'https://www.w3.org/ns/credentials/v2',
+    'https://www.w3.org/ns/credentials/examples/v2'
+  ],
+  type: ['MyPrototypeCredential']
+}];
 testRP2.verifiablePresentationRequest = JSON.stringify({
   query: {
     type: 'QueryByExample',
@@ -88,6 +103,13 @@ testRP2.verifiablePresentationRequest = JSON.stringify({
 
 const testRP3 = klona(testRP);
 testRP3.clientId = 'test3';
+testRP3.query = [{
+  context: [
+    'https://www.w3.org/2018/credentials/v1',
+    'https://www.w3.org/2018/credentials/examples/v1'
+  ],
+  type: ['UniversityDegreeCredential']
+}];
 testRP3.verifiablePresentationRequest = JSON.stringify({
   query: {
     type: 'QueryByExample',
@@ -106,6 +128,13 @@ testRP3.verifiablePresentationRequest = JSON.stringify({
 
 const testRP4 = klona(testRP);
 testRP4.clientId = 'test4';
+testRP4.query = [{
+  context: [
+    'https://www.w3.org/2018/credentials/v1',
+    'https://w3id.org/citizenship/v1'
+  ],
+  type: ['PermanentResidentCard']
+}];
 testRP4.verifiablePresentationRequest = JSON.stringify({
   query: {
     type: 'QueryByExample',

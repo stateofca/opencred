@@ -22,7 +22,9 @@ const exampleRelyingParty = {
   clientId: 'test',
   clientSecret: 'testsecret',
   type: 'native',
-  verifiablePresentationRequest: {},
+  query: [{
+    type: ['VerifiableCredential']
+  }],
   oidc: {
     redirectUri: 'https://example.com',
     scopes: [{name: 'openid'}],

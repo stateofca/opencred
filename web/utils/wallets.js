@@ -255,12 +255,13 @@ export function getAvailableInteractionMethods({
 
   // 1. DC API (highest priority)
   // Only available if: system supports it, enabled in rp, wallet supports it,
-  // protocol is not excluded, has mdoc format query, and not overridden
+  // protocol is not excluded, has mdoc format query
+  // (or is 18013-7-Annex-D), and not overridden
   if(dcApiSystemAvailable &&
     rp?.dcApiEnabled !== false &&
     walletSupportsDcApiForProtocol(walletsRegistry, walletId, protocolId) &&
     !['chapi', 'vcapi', 'interact'].includes(protocolId) &&
-    hasMdocFormat(rp) &&
+    (hasMdocFormat(rp) || protocolId === '18013-7-Annex-D') &&
     !interactionState.dcApiErrorOverride) {
     methods.push('dcapi');
   }

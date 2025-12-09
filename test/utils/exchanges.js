@@ -21,12 +21,17 @@ const service = new NativeWorkflowService();
  *   exchange creation
  * @param {Object} options.untrustedVariables - Untrusted variables for
  *   exchange creation
+ * @param {string} options.profile - OID4VP profile identifier
+ * @param {string} options.responseMode - Response mode for authorization
+ *   request
  * @returns {Promise<Object>} Exchange object with authorization request
  */
 export async function createExchangeWithAuthRequest({
   rp,
   trustedVariables,
-  untrustedVariables = {}
+  untrustedVariables = {},
+  profile,
+  responseMode
 } = {}) {
   // Create exchange using initExchange to get full exchange object
   const accessToken = trustedVariables?.accessToken || await createId();
@@ -45,7 +50,9 @@ export async function createExchangeWithAuthRequest({
     rp,
     exchange,
     domain,
-    url
+    url,
+    profile,
+    responseMode
   });
 
   // Add authorization request to exchange variables

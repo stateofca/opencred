@@ -37,6 +37,13 @@ const rp = {
   type: 'native',
   clientId: 'testworkflow',
   untrustedVariableAllowList: ['redirectPath'],
+  query: [{
+    context: [
+      'https://www.w3.org/ns/credentials/v2',
+      'https://www.w3.org/ns/credentials/examples/v2'
+    ],
+    type: ['MyPrototypeCredential']
+  }],
   verifiablePresentationRequest: JSON.stringify({
     query: {
       type: 'QueryByExample',

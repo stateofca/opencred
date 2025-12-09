@@ -46,7 +46,9 @@ SPDX-License-Identifier: BSD-3-Clause
         No wallet interaction available.
       </p>
     </div>
-    <pre class="text-left text-sm mb-2 text-gray-600">
+    <pre
+      v-if="isDebugMode"
+      class="text-left text-xs mb-2 text-gray-600">
 active interaction type: {{activeInteractionType ?? 'null'}}
 state: {{exchangeState}}
 wallet: {{selectedWallet}}
@@ -67,7 +69,7 @@ workflow:
 </template>
 
 <script setup>
-import {computed, onMounted, ref, watch} from 'vue';
+import {computed, inject, onMounted, ref, watch} from 'vue';
 import {
   generateWalletLink,
   getAvailableInteractionMethods
@@ -132,6 +134,21 @@ const emit = defineEmits([
 ]);
 
 const $q = useQuasar();
+
+// Get verification context (exchangeContext) to check debug mode
+const verificationContext = inject('exchangeContext', null);
+
+// Check if debug mode is enabled
+const isDebugMode = computed(() => {
+  if(!verificationContext) {
+    return false;
+  }
+  const context = verificationContext.value || verificationContext;
+  // Check for debug mode in options or rp
+  return context?.options?.debug === true ||
+    context?.rp?.debug === true ||
+    false;
+});
 
 // Check if DC API is available at system level
 const dcApiSystemAvailable = ref(false);

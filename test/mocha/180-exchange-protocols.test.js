@@ -19,6 +19,13 @@ import {zcapClient} from '../../common/zcap.js';
 const testRP = {
   type: 'native',
   clientId: 'testworkflow',
+  query: [{
+    context: [
+      'https://www.w3.org/ns/credentials/v2',
+      'https://www.w3.org/ns/credentials/examples/v2'
+    ],
+    type: ['MyPrototypeCredential']
+  }],
   verifiablePresentationRequest: JSON.stringify({
     query: {
       type: 'QueryByExample',

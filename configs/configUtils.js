@@ -168,7 +168,8 @@ export const BaseWorkflowSchema = z.object({
   description: z.string().optional(),
   brand: BrandSchema.optional(),
   caStore: z.boolean().default(true), // If false, cert/x5c checks are skipped
-  dcApiEnabled: z.boolean().default(false), // If false, DC API is disabled
+  // By default,experimental DC API is disabled
+  dcApiEnabled: z.boolean().default(false),
   oidc: OpenIdConnectSchema.optional(),
   callback: CallbackSchema.optional(),
   translations: z.record(z.string(), z.record(z.string(), z.string()))
@@ -207,13 +208,14 @@ export const NativeWorkflowSchema = z.object({
   ...BaseWorkflowSchema.shape,
   type: z.literal('native'),
 
-  // Most versatile format for multi-format conversion
-  query: OpenCredQuerySchema.optional(),
+  // Most versatile format for multi-format conversion (required)
+  query: OpenCredQuerySchema,
 
-  // OID4VP 1.0 DCQL format
+  // OID4VP 1.0 DCQL format (optional override)
   dcql_query: DcqlQuerySchema.optional(),
 
   // Presentation Exchange verifiablePresentationRequest format
+  // (optional override)
   verifiablePresentationRequest: z.string().optional(),
 });
 
@@ -408,7 +410,8 @@ export const SigningKeySchema = z.object({
     message: 'Purpose must be an array of at least one string'
   }),
   privateKeyPem: z.string(),
-  publicKeyPem: z.string()
+  publicKeyPem: z.string(),
+  certificatePem: z.string().optional()
 });
 
 // Main OpenCred configuration schema

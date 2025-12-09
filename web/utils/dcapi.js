@@ -47,9 +47,16 @@ export async function startDCApiFlow({
     // Decode the URL-encoded request_uri
     const requestUrl = decodeURIComponent(requestUri);
 
+    // Add responseMode query parameter for DC API
+    // Use dc_api (unencrypted) for now;
+    // can be changed to dc_api.jwt if encryption is needed
+    const urlObj = new URL(requestUrl, window.location.origin);
+    urlObj.searchParams.set('responseMode', 'dc_api');
+    const requestUrlWithResponseMethod = urlObj.pathname + urlObj.search;
+
     // The response will be a JWT string with content-type
     // 'application/oauth-authz-req+jwt'
-    const response = await httpClient.get(requestUrl, {
+    const response = await httpClient.get(requestUrlWithResponseMethod, {
       headers: {
         Authorization: `Bearer ${exchangeData.accessToken}`
       },

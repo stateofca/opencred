@@ -16,15 +16,15 @@ SPDX-License-Identifier: BSD-3-Clause
         :loading="exchangeState === 'active'"
         :disabled="exchangeState === 'active'"
         @click="handleActivate">
-        {{$t('appCta') || 'Open Wallet App'}}
+        {{$t('appCta')}}
       </cadmv-button>
       <p
         v-if="showNoSchemeHandlerWarning"
         class="mt-4 text-red-600">
         <span class="text-bold">
-          {{$t('noSchemeHandlerTitle') || 'Wallet app not found'}}
+          {{$t('noSchemeHandlerTitle')}}
         </span>
-        {{$t('noSchemeHandlerMessage') || 'If your wallet didn\'t open, make sure you have a compatible wallet installed.'}}
+        {{$t('noSchemeHandlerMessage')}}
       </p>
     </div>
 
@@ -37,7 +37,7 @@ SPDX-License-Identifier: BSD-3-Clause
         :loading="exchangeState === 'active'"
         :disabled="exchangeState === 'active'"
         @click="handleActivate">
-        {{$t('appCta') || 'Open Wallet App'}}
+        {{$t('appCta')}}
       </cadmv-button>
     </div>
 
@@ -50,21 +50,19 @@ SPDX-License-Identifier: BSD-3-Clause
         :loading="exchangeState === 'active'"
         :disabled="exchangeState === 'active'"
         @click="handleActivate">
-        {{urlCopied ?
-          ($t('urlCopied') || 'URL Copied!') :
-          ($t('copyUrl') || 'Copy URL')}}
+        {{urlCopied ? $t('urlCopied') : $t('copyUrl')}}
       </cadmv-button>
       <p
         v-if="urlCopied"
         class="mt-2 text-sm text-gray-600">
-        {{$t('pasteUrlInWallet') || 'Paste this URL into your wallet app'}}
+        {{$t('pasteUrlInWallet')}}
       </p>
     </div>
 
     <!-- Countdown Timer -->
     <div>
       <p class="my-4 text-gray-900">
-        {{$t('exchangeActiveExpiryMessage') || 'This exchange will expire in'}}
+        {{$t('exchangeActiveExpiryMessage')}}
         <CountdownDisplay
           v-if="exchangeData?.createdAt && exchangeData?.ttl"
           :created-at="exchangeData.createdAt"

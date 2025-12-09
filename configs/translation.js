@@ -5,54 +5,52 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-export const defaultTranslations = {
-  en: {
-    translate: 'Translate',
-    loginCta: 'Login with your credential wallet',
-    loginExplain: 'To login with your credential wallet, you will need ' +
-      'to have a credential wallet app installed',
-    appInstallExplain: 'If you don\'t have a credential wallet yet, ' +
-      'see suggested wallets at the <a href="https://vcplayground.org/">' +
-      'Verifiable Credentials Playground</a>',
-    appCta: 'Open wallet app',
-    'appCta-chapi-label': '',
-    'appCta-openid4vp-label': '',
-    connectWalletHeading: 'Connect your wallet to continue',
-    exchangeActiveGoBack: 'Go back',
-    exchangeActiveExpiryMessage:
-      'Please complete the exchange in the allotted time:',
-    exchangeErrorTitle: 'The exchange failed.',
-    exchangeErrorSubtitle: 'The following error was encountered:',
-    exchangeErrorTtlExpired: 'The exchange has expired.',
-    exchangePageExplain: 'Please present a matching credential from your' +
-      ' digital wallet.',
-    exchangeResetTitle: 'You may try again.',
-    exchangeReset: 'Retry',
-    noSchemeHandlerTitle: 'Did the app fail to launch?',
-    noSchemeHandlerMessage:
-      'The wallet app may not be installed on this device.',
-    qrTitle: 'Login with your Wallet app',
-    qrPageExplain: 'Scan the following QR Code using a Wallet app on your ' +
-    'phone.',
-    qrFooter: 'Note: Already on your phone with a Wallet app? Open the ' +
-      'Wallet app, then come back and tap on the QR code above.',
-    qrFooterHelp: '',
-    qrDisclaimer: `If you don't have a Wallet app download it from the` +
-    `app store.`,
-    openid4vpAnotherWay: 'Scan a QR code',
-    openid4vpAnotherWayLabel: '',
-    openid4vpQrAnotherWay: 'Use a wallet on this device.',
-    openid4vpQrAnotherWayLabel: '',
-    qrClickMessage: `The Wallet app must be running in the background.`,
-    chapiPageAnotherWay: 'Looking for a QR code to scan with your wallet app ' +
-      'instead?',
-    copyright: 'Powered by OpenCred',
-    home: 'Home',
-    dcApiRetry: 'Try Again',
-    dcApiFallback: 'Try another way',
-    verificationCta: 'Verify a credential'
+import {readdirSync, readFileSync} from 'node:fs';
+import {fileURLToPath} from 'node:url';
+import path from 'node:path';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const i18nDir = path.join(__dirname, '..', 'common', 'i18n');
+
+/**
+ * Loads default translations from JSON files in common/i18n/
+ * @returns {Object} Object with locale keys mapping to translation objects
+ */
+const loadDefaultTranslations = () => {
+  const translations = {};
+
+  try {
+    // Read all JSON files in the i18n directory
+    const files = readdirSync(i18nDir).filter(file =>
+      file.endsWith('.json')
+    );
+
+    for(const file of files) {
+      const locale = path.basename(file, '.json');
+      const filePath = path.join(i18nDir, file);
+      try {
+        const content = readFileSync(filePath, 'utf8');
+        translations[locale] = JSON.parse(content);
+      } catch(error) {
+        // Log error but continue loading other locales
+        console.warn(`Failed to load locale file ${file}:`, error.message);
+      }
+    }
+  } catch(error) {
+    // If directory doesn't exist or can't be read, return empty object
+    // This allows the system to work even if i18n files are missing
+    console.warn(`Failed to load i18n directory ${i18nDir}:`, error.message);
   }
+
+  // Ensure at least 'en' exists (fallback to empty object if loading failed)
+  if(!translations.en) {
+    translations.en = {};
+  }
+
+  return translations;
 };
+
+export const defaultTranslations = loadDefaultTranslations();
 
 export const combineTranslations = (customTranslations, defaults) => {
   const dt = defaults || defaultTranslations;

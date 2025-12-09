@@ -20,20 +20,11 @@ describe('OID4VP Client Metadata', () => {
   describe('vp_formats (Draft 18)', () => {
     it('should include vp_formats with jwt_vp_json and ldp_vp', async () => {
       const rp = {
-        dcql_query: {
-          credentials: [
-            {
-              id: 'test-credential',
-              format: 'jwt_vc_json',
-              claims: [
-                {
-                  path: ['$.vc.context'],
-                  values: ['https://example.org/v1']
-                }
-              ]
-            }
-          ]
-        }
+        query: [{
+          context: ['https://www.w3.org/2018/credentials/v1'],
+          type: ['VerifiableCredential'],
+          format: ['jwt_vc_json']
+        }]
       };
 
       const result = await getAuthorizationRequest({
@@ -48,14 +39,11 @@ describe('OID4VP Client Metadata', () => {
 
     it('should have correct structure for jwt_vp_json', async () => {
       const rp = {
-        dcql_query: {
-          credentials: [
-            {
-              id: 'test-credential',
-              format: 'jwt_vc_json'
-            }
-          ]
-        }
+        query: [{
+          context: ['https://www.w3.org/2018/credentials/v1'],
+          type: ['VerifiableCredential'],
+          format: ['jwt_vc_json']
+        }]
       };
 
       const result = await getAuthorizationRequest({
@@ -74,14 +62,11 @@ describe('OID4VP Client Metadata', () => {
 
     it('should have correct structure for ldp_vp', async () => {
       const rp = {
-        dcql_query: {
-          credentials: [
-            {
-              id: 'test-credential',
-              format: 'ldp_vc'
-            }
-          ]
-        }
+        query: [{
+          context: ['https://www.w3.org/2018/credentials/v1'],
+          type: ['VerifiableCredential'],
+          format: ['ldp_vc']
+        }]
       };
 
       const result = await getAuthorizationRequest({
@@ -100,20 +85,11 @@ describe('OID4VP Client Metadata', () => {
     it('should include vp_formats_supported with jwt_vc_json and ldp_vc keys',
       async () => {
         const rp = {
-          dcql_query: {
-            credentials: [
-              {
-                id: 'test-credential',
-                format: 'jwt_vc_json',
-                claims: [
-                  {
-                    path: ['$.vc.context'],
-                    values: ['https://example.org/v1']
-                  }
-                ]
-              }
-            ]
-          }
+          query: [{
+            context: ['https://www.w3.org/2018/credentials/v1'],
+            type: ['VerifiableCredential'],
+            format: ['jwt_vc_json']
+          }]
         };
 
         const result = await getAuthorizationRequest({
@@ -131,14 +107,11 @@ describe('OID4VP Client Metadata', () => {
 
     it('should have correct 1.0 structure for jwt_vc_json', async () => {
       const rp = {
-        dcql_query: {
-          credentials: [
-            {
-              id: 'test-credential',
-              format: 'jwt_vc_json'
-            }
-          ]
-        }
+        query: [{
+          context: ['https://www.w3.org/2018/credentials/v1'],
+          type: ['VerifiableCredential'],
+          format: ['jwt_vc_json']
+        }]
       };
 
       const result = await getAuthorizationRequest({
@@ -159,14 +132,11 @@ describe('OID4VP Client Metadata', () => {
 
     it('should have correct 1.0 structure for ldp_vc', async () => {
       const rp = {
-        dcql_query: {
-          credentials: [
-            {
-              id: 'test-credential',
-              format: 'ldp_vc'
-            }
-          ]
-        }
+        query: [{
+          context: ['https://www.w3.org/2018/credentials/v1'],
+          type: ['VerifiableCredential'],
+          format: ['ldp_vc']
+        }]
       };
 
       const result = await getAuthorizationRequest({
@@ -192,14 +162,11 @@ describe('OID4VP Client Metadata', () => {
     it('OID4VP-combined: both vp_formats and vp_formats_supported',
       async () => {
         const rp = {
-          dcql_query: {
-            credentials: [
-              {
-                id: 'test-credential',
-                format: 'jwt_vc_json'
-              }
-            ]
-          }
+          query: [{
+            context: ['https://www.w3.org/2018/credentials/v1'],
+            type: ['VerifiableCredential'],
+            format: ['jwt_vc_json']
+          }]
         };
 
         const result = await getAuthorizationRequest({
@@ -214,14 +181,11 @@ describe('OID4VP Client Metadata', () => {
     it('OID4VP-combined: different keys in vp_formats vs vp_formats_supported',
       async () => {
         const rp = {
-          dcql_query: {
-            credentials: [
-              {
-                id: 'test-credential',
-                format: 'jwt_vc_json'
-              }
-            ]
-          }
+          query: [{
+            context: ['https://www.w3.org/2018/credentials/v1'],
+            type: ['VerifiableCredential'],
+            format: ['jwt_vc_json']
+          }]
         };
 
         const result = await getAuthorizationRequest({
@@ -251,22 +215,12 @@ describe('OID4VP Client Metadata', () => {
   });
 
   describe('Different RP configurations', () => {
-    it('OID4VP-combined: both formats with dcql_query RP', async () => {
+    it('OID4VP-combined: both formats with query RP', async () => {
       const rp = {
-        dcql_query: {
-          credentials: [
-            {
-              id: 'test-credential',
-              format: 'jwt_vc_json',
-              claims: [
-                {
-                  path: ['$.vc.context'],
-                  values: ['https://example.org/v1']
-                }
-              ]
-            }
-          ]
-        }
+        query: [{
+          type: ['TestCredential'],
+          format: ['jwt_vc_json']
+        }]
       };
 
       const result = await getAuthorizationRequest({
@@ -302,6 +256,13 @@ describe('OID4VP Client Metadata', () => {
     it('OID4VP-combined: both formats with verifiablePresentationRequest RP',
       async () => {
         const rp = {
+          query: [{
+            context: [
+              'https://www.w3.org/2018/credentials/v1',
+              'https://w3id.org/vdl/v1'
+            ],
+            type: ['Iso18013DriversLicenseCredential']
+          }],
           verifiablePresentationRequest: JSON.stringify({
             query: {
               type: 'QueryByExample',
@@ -332,14 +293,11 @@ describe('OID4VP Client Metadata', () => {
   describe('Client metadata structure', () => {
     it('OID4VP-combined: all required client_metadata fields', async () => {
       const rp = {
-        dcql_query: {
-          credentials: [
-            {
-              id: 'test-credential',
-              format: 'jwt_vc_json'
-            }
-          ]
-        }
+        query: [{
+          context: ['https://www.w3.org/2018/credentials/v1'],
+          type: ['VerifiableCredential'],
+          format: ['jwt_vc_json']
+        }]
       };
 
       const result = await getAuthorizationRequest({

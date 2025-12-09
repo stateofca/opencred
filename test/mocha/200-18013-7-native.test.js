@@ -312,21 +312,6 @@ e92OBdJ/f7VSqBFTmfG9jXEW46WAZ78jLnUBL0Q58lLuNHa1t2TwJTyCzc8XUkA3
       expect(result.length).to.equal(1);
     });
 
-    it('should use caStore certificates when certificatePem not available',
-      async function() {
-        const {chain} = await generateCertificateChain({length: 1});
-        const certPem = convertDerCertificateToPem(chain[0].raw);
-        const signingKey = {
-          id: 'test-key'
-        };
-
-        const result = _getX5cFromSigningKey(signingKey, {
-          caStore: [certPem]
-        });
-        expect(result).to.be.an('array');
-        expect(result.length).to.be.greaterThan(0);
-      });
-
     it('should return empty array and log warning when no certificates',
       function() {
         const signingKey = {
@@ -334,7 +319,6 @@ e92OBdJ/f7VSqBFTmfG9jXEW46WAZ78jLnUBL0Q58lLuNHa1t2TwJTyCzc8XUkA3
         };
 
         const result = _getX5cFromSigningKey(signingKey, {
-          caStore: [],
           logger: mockLogger
         });
         expect(result).to.be.an('array');
@@ -342,18 +326,6 @@ e92OBdJ/f7VSqBFTmfG9jXEW46WAZ78jLnUBL0Q58lLuNHa1t2TwJTyCzc8XUkA3
         expect(mockLogger.warning.called).to.be(true);
       });
 
-    it('should skip invalid certificates in caStore', function() {
-      const signingKey = {
-        id: 'test-key'
-      };
-
-      const result = _getX5cFromSigningKey(signingKey, {
-        caStore: ['invalid-certificate'],
-        logger: mockLogger
-      });
-      expect(result).to.be.an('array');
-      expect(mockLogger.warning.called).to.be(true);
-    });
   });
 });
 
@@ -361,7 +333,10 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
   describe('handleNative18013AnnexDRequest', function() {
     it('should generate complete authorization request with mdoc query',
       async function() {
-        const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
+        const exchange = await createExchangeWithAuthRequest({
+          rp: mdocTestRP,
+          profile: 'OID4VP-HAIP-1.0'
+        });
         const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
           `${exchange.id}/openid/client/authorization/request`;
 
@@ -370,7 +345,8 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           exchange,
           requestUrl,
           baseUri: 'https://example.com',
-          signingKeys: [{...exampleKey2, purpose: ['authorization_request']}]
+          signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
+          profile: 'OID4VP-HAIP-1.0'
         });
 
         expect(result).to.have.property('jwt');
@@ -386,9 +362,25 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         expect(result.updatedExchange.variables).to.have.property(
           'mdocGeneratedNonce'
         );
+
+        // Verify HAIP-compliant behavior
+        const jwt = decodeJwt(result.jwt);
+        expect(jwt.response_mode).to.equal('dc_api.jwt');
+        expect(jwt.client_metadata).to.have.property('vp_formats_supported');
+        expect(jwt.client_metadata).to.not.have.property('vp_formats');
+        expect(jwt.client_metadata.vp_formats_supported.mso_mdoc).to.eql({
+          alg: ['ES256']
+        });
+        expect(jwt.client_metadata).to.have.property('jwks');
+        expect(jwt.client_metadata).to.have.property(
+          'encrypted_response_enc_values_supported'
+        );
+        expect(jwt.client_metadata.encrypted_response_enc_values_supported)
+          .to.eql(['A128GCM', 'A256GCM']);
       });
 
     it('should include correct JWT structure and claims', async function() {
+      // Using default profile OID4VP-1.0
       const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
       const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
         `${exchange.id}/openid/client/authorization/request`;
@@ -402,22 +394,33 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
       });
 
       const jwt = decodeJwt(result.jwt);
-      expect(jwt.aud).to.equal('https://self-issued.me/v2');
-      expect(jwt.client_id).to.have.string('did:web:example.com');
-      expect(jwt.client_id_scheme).to.equal('did');
+      // Native 18013-7 uses x509_san_dns client_id scheme
+      expect(jwt.client_id).to.equal('x509_san_dns:example.com');
+      expect(jwt.client_id_scheme).to.equal('x509_san_dns');
       expect(jwt.response_type).to.equal('vp_token');
-      expect(jwt.response_mode).to.equal('direct_post.jwt');
-      expect(jwt).to.have.property('response_uri');
+      // Default profile uses dc_api (unencrypted) response mode
+      expect(jwt.response_mode).to.equal('dc_api');
+      expect(jwt).to.have.property('expected_origins');
+      expect(jwt.expected_origins).to.eql(['https://example.com']);
       expect(jwt).to.have.property('nonce');
       expect(jwt).to.have.property('state');
       expect(jwt).to.have.property('dcql_query');
       expect(jwt).to.have.property('client_metadata');
+      // Default profile uses vp_formats (not vp_formats_supported)
+      expect(jwt.client_metadata).to.have.property('vp_formats');
+      expect(jwt.client_metadata.vp_formats.mso_mdoc).to.eql({
+        alg: ['ES256']
+      });
     });
 
-    it('should build correct response URL', async function() {
-      const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
+    it('should build correct direct_post response URL', async function() {
+      const exchange = await createExchangeWithAuthRequest({
+        rp: mdocTestRP,
+        responseMode: 'direct_post'
+      });
       const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
-        `${exchange.id}/openid/client/authorization/request`;
+        `${exchange.id}/openid/client/authorization/request` +
+        '?response_mode=direct_post';
 
       const result = await handleNative18013AnnexDRequest({
         rp: mdocTestRP,
@@ -444,7 +447,8 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         exchange,
         requestUrl,
         baseUri: 'https://example.com',
-        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}]
+        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
+        profile: 'OID4VP-HAIP-1.0'
       });
 
       const {variables} = result.updatedExchange;
@@ -540,30 +544,70 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
       expect(header.x5c.length).to.be.greaterThan(0);
     });
 
-    it('should include correct client_metadata structure', async function() {
-      const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
-      const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
-        `${exchange.id}/openid/client/authorization/request`;
+    it('should include jwks in client_metadata when x5c is not present',
+      async function() {
+        const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
+        const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
+          `${exchange.id}/openid/client/authorization/request`;
 
-      const result = await handleNative18013AnnexDRequest({
-        rp: mdocTestRP,
-        exchange,
-        requestUrl,
-        baseUri: 'https://example.com',
-        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}]
+        // Use exampleKey2 without certificates, so x5c will be empty
+        const result = await handleNative18013AnnexDRequest({
+          rp: mdocTestRP,
+          exchange,
+          requestUrl,
+          baseUri: 'https://example.com',
+          signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
+          profile: 'OID4VP-HAIP-1.0'
+        });
+
+        const jwt = decodeJwt(result.jwt);
+        expect(jwt.client_metadata).to.be.an('object');
+        expect(jwt.client_metadata.vp_formats_supported).to.be.an('object');
+        expect(jwt.client_metadata.vp_formats_supported.mso_mdoc)
+          .to.be.an('object');
+        expect(jwt.client_metadata.vp_formats_supported.mso_mdoc.alg)
+          .to.eql(['ES256']);
+        // jwks should be present when x5c is not available
+        expect(jwt.client_metadata.jwks).to.be.an('object');
+        expect(jwt.client_metadata.jwks.keys).to.be.an('array');
+        expect(jwt.client_metadata.jwks.keys.length).to.equal(1);
+        expect(jwt.client_metadata.encrypted_response_enc_values_supported)
+          .to.eql(['A128GCM', 'A256GCM']);
       });
 
-      const jwt = decodeJwt(result.jwt);
-      expect(jwt.client_metadata).to.be.an('object');
-      expect(jwt.client_metadata.vp_formats).to.be.an('object');
-      expect(jwt.client_metadata.vp_formats.mso_mdoc).to.be.an('object');
-      expect(jwt.client_metadata.vp_formats.mso_mdoc.alg).to.eql(['ES256']);
-      expect(jwt.client_metadata.jwks).to.be.an('object');
-      expect(jwt.client_metadata.jwks.keys).to.be.an('array');
-      expect(jwt.client_metadata.jwks.keys.length).to.equal(1);
-      expect(jwt.client_metadata.encrypted_response_enc_values_supported)
-        .to.eql(['A128GCM', 'A256GCM']);
-    });
+    it('should not include jwks in client_metadata when x5c is present',
+      async function() {
+        const {chain} = await generateCertificateChain({length: 2});
+        const certPem = convertDerCertificateToPem(chain[0].raw);
+        const signingKey = {
+          ...exampleKey2,
+          purpose: ['authorization_request'],
+          certificatePem: certPem
+        };
+
+        const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
+        const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
+          `${exchange.id}/openid/client/authorization/request`;
+
+        const result = await handleNative18013AnnexDRequest({
+          rp: mdocTestRP,
+          exchange,
+          requestUrl,
+          baseUri: 'https://example.com',
+          signingKeys: [signingKey],
+          profile: 'OID4VP-HAIP-1.0'
+        });
+
+        const jwt = decodeJwt(result.jwt);
+        expect(jwt.client_metadata).to.be.an('object');
+        expect(jwt.client_metadata.vp_formats_supported).to.be.an('object');
+        expect(jwt.client_metadata.vp_formats_supported.mso_mdoc)
+          .to.be.an('object');
+        // jwks should NOT be present when x5c is available
+        expect(jwt.client_metadata.jwks).to.be(undefined);
+        expect(jwt.client_metadata.encrypted_response_enc_values_supported)
+          .to.eql(['A128GCM', 'A256GCM']);
+      });
   });
 
   describe('API Integration Test', function() {
@@ -622,10 +666,108 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           'application/oauth-authz-req+jwt; charset=utf-8'
         );
         const jwt = decodeJwt(await result.text());
-        expect(jwt.client_id).to.have.string('did:web:example.com');
+        // 18013-7-Annex-D profile uses x509_san_dns client_id scheme
+        expect(jwt.client_id).to.equal('x509_san_dns:example.com');
+        expect(jwt.client_id_scheme).to.equal('x509_san_dns');
+        // Default response_mode for 18013-7-Annex-D is dc_api
+        expect(jwt.response_mode).to.equal('dc_api');
         expect(jwt).to.have.property('dcql_query');
         expect(jwt).to.have.property('client_metadata');
         expect(jwt.client_metadata.vp_formats.mso_mdoc).to.be.an('object');
+      });
+
+    it('should use dc_api response mode when responseMode=dc_api',
+      async function() {
+        const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
+        findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
+          .resolves({...exchange, workflowId: mdocTestRP.clientId});
+        replaceOneStub = sinon.stub(
+          database.collections.Exchanges, 'updateOne'
+        ).resolves();
+
+        let result;
+        let err;
+        try {
+          result = await client
+            .get(
+              `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
+              `${exchange.id}/openid/client/authorization/request` +
+              `?responseMode=dc_api`
+            );
+        } catch(e) {
+          err = e;
+        }
+        expect(err).to.be(undefined);
+        expect(result.status).to.equal(200);
+        const jwt = decodeJwt(await result.text());
+        expect(jwt.response_mode).to.equal('dc_api');
+        expect(jwt).to.have.property('response_uri');
+      });
+
+    it('should use dc_api.jwt response mode and generate ephemeral key ' +
+      'when responseMode=dc_api.jwt', async function() {
+      const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
+      findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
+        .resolves({...exchange, workflowId: mdocTestRP.clientId});
+      const updateOneStub = sinon.stub(
+        database.collections.Exchanges, 'updateOne'
+      ).resolves();
+
+      let result;
+      let err;
+      try {
+        result = await client
+          .get(
+            `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
+            `${exchange.id}/openid/client/authorization/request` +
+            `?responseMode=dc_api.jwt`
+          );
+      } catch(e) {
+        err = e;
+      }
+      expect(err).to.be(undefined);
+      expect(result.status).to.equal(200);
+      const jwt = decodeJwt(await result.text());
+      expect(jwt.response_mode).to.equal('dc_api.jwt');
+      expect(jwt.client_metadata).to.have.property('jwks');
+      expect(jwt.client_metadata.jwks.keys).to.be.an('array');
+      expect(jwt.client_metadata.jwks.keys.length).to.equal(1);
+
+      // Verify that updateOne was called with ephemeral key
+      const updateCall = updateOneStub.getCall(0);
+      expect(updateCall).to.not.be(undefined);
+      const updateSet = updateCall.args[1].$set;
+      expect(updateSet['variables.ephemeralKeyAgreementPrivateKey'])
+        .to.be.an('object');
+      expect(updateSet['variables.ephemeralKeyAgreementPrivateKey'])
+        .to.have.property('kid');
+      updateOneStub.restore();
+    });
+
+    it('should default to direct_post when responseMode is not provided',
+      async function() {
+        const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
+        findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
+          .resolves({...exchange, workflowId: mdocTestRP.clientId});
+        replaceOneStub = sinon.stub(
+          database.collections.Exchanges, 'updateOne'
+        ).resolves();
+
+        let result;
+        let err;
+        try {
+          result = await client
+            .get(
+              `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
+              `${exchange.id}/openid/client/authorization/request`
+            );
+        } catch(e) {
+          err = e;
+        }
+        expect(err).to.be(undefined);
+        expect(result.status).to.equal(200);
+        const jwt = decodeJwt(await result.text());
+        expect(jwt.response_mode).to.equal('direct_post');
       });
   });
 });

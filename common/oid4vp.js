@@ -5,7 +5,6 @@ import {createId} from './utils.js';
 import {defaultDocLoader} from './documentLoader.js';
 import {domainToDidWeb} from './didWeb.js';
 import jsonld from 'jsonld';
-import {oid4vp} from '@digitalbazaar/oid4-client';
 
 const supportedVcFormats = {
   jwt_vc_json: {
@@ -118,227 +117,18 @@ const inputDescriptorsFromQuery = async ({query, description}) => {
 };
 
 /**
- * Convert claim path to input descriptor path format
+ * Get input descriptors for presentation definition.
+ * Transforms from query format (query is required in workflow config).
  */
-const convertPathForFormat = (pathKey, format) => {
-  // Ensure path is always an array
-  const ensureArray = path => Array.isArray(path) ? path : [path];
+export const getInputDescriptors = async ({rp}) => {
+  const {query} = rp;
 
-  if(format === 'jwt_vc_json') {
-    // Convert $.vc.context to $['@context']
-    if(pathKey === '$.vc.context' || pathKey === '$.vc.@context') {
-      return ['$[\'@context\']'];
-    }
-    return ensureArray(pathKey);
-  }
-
-  if(format === 'ldp_vc') {
-    // Convert $.type to $['type']
-    if(pathKey === '$.type') {
-      return ['$[\'type\']'];
-    }
-    return ensureArray(pathKey);
-  }
-
-  return ensureArray(pathKey);
-};
-
-/**
- * Group claims by path, combining values for the same path
- */
-const groupClaimsByPath = claims => {
-  const claimsByPath = new Map();
-
-  if(!claims || !Array.isArray(claims)) {
-    return claimsByPath;
-  }
-
-  for(const claim of claims) {
-    if(!claim.path || !Array.isArray(claim.path) ||
-      !claim.values || !Array.isArray(claim.values)) {
-      continue;
-    }
-
-    // Use first path as key (assuming all paths equivalent)
-    const pathKey = claim.path[0];
-    if(!claimsByPath.has(pathKey)) {
-      claimsByPath.set(pathKey, []);
-    }
-    claimsByPath.get(pathKey).push(...claim.values);
-  }
-
-  return claimsByPath;
-};
-
-/**
- * Create type field from credential meta.type_values
- */
-const createTypeField = credential => {
-  const typeValues = credential.meta?.type_values;
-  if(!Array.isArray(typeValues) || typeValues.length === 0) {
-    return null;
-  }
-
-  // Flatten type_values (array of arrays) to single array
-  const cTypes = typeValues.flat();
-  if(cTypes.length === 0) {
-    return null;
-  }
-
-  // Determine paths based on format
-  const typePaths = credential.format === 'jwt_vc_json' ?
-    ['$[\'type\']', '$[\'vc\'][\'type\']'] :
-    ['$[\'type\']'];
-
-  return {
-    path: typePaths,
-    filter: {
-      type: 'array',
-      allOf: cTypes.map(typeValue => ({
-        contains: {
-          type: 'string',
-          const: typeValue
-        }
-      }))
-    }
-  };
-};
-
-/**
- * EXPERIMENTAL: Convert dcql_query to input_descriptors
- * For now, we recommend using a vpr or query for draft18 support.
- * Reversing from DCQL is pretty complicated.
- */
-const inputDescriptorsFromDcql = async ({dcql_query, description, profile}) => {
-  // Early return for draft18 or invalid queries
-  if(profile === 'OID4VP-draft18' ||
-    !dcql_query?.credentials ||
-    !Array.isArray(dcql_query.credentials) ||
-    dcql_query.credentials.length === 0) {
-    return [];
-  }
-
-  const inputDescriptors = await Promise.all(
-    dcql_query.credentials.map(async credential => {
-      const fields = [];
-
-      // Convert claims to fields
-      const claimsByPath = groupClaimsByPath(credential.claims);
-      for(const [pathKey, allValues] of claimsByPath.entries()) {
-        const convertedPath = convertPathForFormat(pathKey, credential.format);
-        const filter = createFieldFilter(allValues);
-
-        fields.push({
-          path: convertedPath,
-          filter
-        });
-      }
-
-      // Add type field if present
-      const typeField = createTypeField(credential);
-      if(typeField) {
-        fields.push(typeField);
-      }
-
-      return {
-        id: credential.id || await createId(),
-        ...(description ? {purpose: description} : {}),
-        format: supportedVcFormats,
-        constraints: {
-          fields
-        }
-      };
-    })
-  );
-
-  return inputDescriptors;
-};
-
-/**
- * Convert verifiablePresentationRequest to input_descriptors
- */
-const inputDescriptorsFromVpr = async ({
-  verifiablePresentationRequest, challenge, domain, url
-}) => {
-  const vpr = JSON.parse(verifiablePresentationRequest ?? '{}');
-  vpr.domain = `${domain}${url.replace('request', 'response')}`;
-  vpr.challenge = challenge;
-  const fromVPR = oid4vp.fromVpr({
-    verifiablePresentationRequest: vpr,
-    prefixVC: true
-  });
-  const inputDescriptors = fromVPR.presentation_definition
-    .input_descriptors.map(i => {
-      // Normalize filter.contains to always be an array
-      // Normalize path to always be an array of strings
-      const normalizedFields = i.constraints?.fields?.map(field => {
-        const normalizedField = {...field};
-
-        // Normalize filter.contains to always be an array
-        if(field.filter?.contains) {
-          const contains = field.filter.contains;
-          normalizedField.filter = {
-            ...field.filter,
-            contains: Array.isArray(contains) ? contains : [contains]
-          };
-        }
-
-        // Normalize path to always be an array of strings
-        if(field.path !== undefined) {
-          normalizedField.path = Array.isArray(field.path) ?
-            field.path : [field.path];
-        }
-
-        return normalizedField;
-      }) || i.constraints?.fields;
-
-      return {
-        ...i,
-        format: supportedVcFormats,
-        constraints: {
-          ...i.constraints,
-          fields: normalizedFields
-        }
-      };
+  // Transform from query (query is now required)
+  return Promise.all(query.map(async q => {
+    return inputDescriptorsFromQuery({
+      query: q, description: rp.description
     });
-  return inputDescriptors;
-};
-
-/**
- * Deprecated in OID4VP draft 25, this was the old way to define what
- * credential you were looking for.
- */
-export const getInputDescriptors = async ({
-  rp, exchange, domain, url, profile
-}) => {
-  const {dcql_query, query} = rp;
-  const {challenge} = exchange;
-
-  // New compact RP config method using rp.query:
-  // OpenCredQuerySchema[]
-  if(query) {
-    return Promise.all(query.map(async q => {
-      return inputDescriptorsFromQuery({
-        query: q, description: rp.description
-      });
-    }));
-  }
-
-  // It is not recommended to customize dcql_query to convert to
-  // input_descriptors. Use the query format instead.
-  if(dcql_query) {
-    return inputDescriptorsFromDcql({
-      dcql_query, description: rp.description, profile
-    });
-  }
-
-  // Or fall back to legacy verbose config method.
-  return inputDescriptorsFromVpr({
-    verifiablePresentationRequest: rp.verifiablePresentationRequest,
-    challenge,
-    domain,
-    url,
-  });
+  }));
 };
 
 const getTypeIri = async ({contexts, type}) => {
@@ -363,124 +153,121 @@ const getTypeIri = async ({contexts, type}) => {
   }
 };
 
-export const getDcqlQuery = async ({rp, exchange, profile}) => {
+/**
+ * Get DCQL query for authorization request.
+ * Uses dcql_query override if present, otherwise transforms from query.
+ * @param {object} options
+ * @param {object} options.rp - The relying party config
+ * @param {string} options.profile - The OID4VP profile
+ * @returns {object} - Object with dcql_query property
+ */
+export const getDcqlQuery = async ({rp, profile}) => {
   // DCQL query was not invented in OID4VP-draft18
   if(profile === 'OID4VP-draft18') {
     return {};
   }
 
-  const {dcql_query, query, verifiablePresentationRequest} = rp;
-  const {challenge} = exchange;
+  const {dcql_query, query} = rp;
 
-  let requestedTypeIris;
-
+  // If dcql_query override exists in config, use it directly
   if(dcql_query) {
     return {dcql_query};
-  } else if(query) {
-    // New compact config method using rp.query
-    requestedTypeIris = await Promise.all(query.map(async q => {
-      if(!q.type || !Array.isArray(q.type) || q.type.length === 0) {
-        return [];
-      }
-      // Get IRIs for each type in the q.type array
-      const typeIris = await Promise.all(q.type.map(async type => {
-        return getTypeIri({
-          contexts: q.context,
-          type
-        });
-      }));
-      return typeIris;
+  }
+
+  // Otherwise, transform from query (query is required)
+  const requestedTypeIris = await Promise.all(query.map(async q => {
+    if(!q.type || !Array.isArray(q.type) || q.type.length === 0) {
+      return [];
+    }
+    // Skip type expansion if no context provided
+    if(!q.context || !Array.isArray(q.context) || q.context.length === 0) {
+      return [];
+    }
+    // Get IRIs for each type in the q.type array
+    const typeIris = await Promise.all(q.type.map(async type => {
+      return getTypeIri({
+        contexts: q.context,
+        type
+      });
     }));
+    return typeIris;
+  }));
 
-    // Generate credential queries for each query object and format
-    const credentials = [];
-    for(let i = 0; i < query.length; i++) {
-      const q = query[i];
-      const typeIris = requestedTypeIris[i] || [];
-      const formats = q.format || ['ldp_vc'];
-      const types = q.type || [];
-      const fields = q.fields;
+  // Generate credential queries for each query object and format
+  const credentials = [];
+  for(let i = 0; i < query.length; i++) {
+    const q = query[i];
+    const typeIris = requestedTypeIris[i] || [];
+    const formats = q.format || ['ldp_vc'];
+    const types = q.type || [];
+    const fields = q.fields;
 
-      // Create a credential query for each format
-      for(const format of formats) {
-        if(format === 'mso_mdoc' && fields) {
-          // Handle mso_mdoc format with fields (namespace -> field mappings)
-          // Each namespace in fields represents a doctype namespace
-          for(const [namespace, fieldNames] of Object.entries(fields)) {
-            if(!Array.isArray(fieldNames) || fieldNames.length === 0) {
-              continue;
-            }
-
-            // Create claims for each field in the namespace
-            const claims = fieldNames.map(fieldName => ({
-              intent_to_retain: true,
-              path: [namespace, fieldName]
-            }));
-
-            // Derive doctype_value from namespace
-            // (e.g., "org.iso.18013.5.1.mDL")
-            const doctypeValue = `${namespace}.mDL`;
-
-            credentials.push({
-              id: '0',
-              format: 'mso_mdoc',
-              multiple: false,
-              require_cryptographic_holder_binding: true,
-              meta: {
-                doctype_value: doctypeValue
-              },
-              claims
-            });
+    // Create a credential query for each format
+    for(const format of formats) {
+      if(format === 'mso_mdoc' && fields) {
+        // Handle mso_mdoc format with fields (namespace -> field mappings)
+        // Each namespace in fields represents a doctype namespace
+        for(const [namespace, fieldNames] of Object.entries(fields)) {
+          if(!Array.isArray(fieldNames) || fieldNames.length === 0) {
+            continue;
           }
-        } else {
-          // Handle other formats (jwt_vc_json, ldp_vc) or
-          // mso_mdoc without fields
-          // Determine path based on format
-          let path;
-          if(format === 'jwt_vc_json') {
-            path = ['$.vc.type', '$.verifiableCredential.type', '$.type'];
-          } else {
-            // ldp_vc or mso_mdoc
-            path = ['$.type'];
-          }
+
+          // Create claims for each field in the namespace
+          const claims = fieldNames.map(fieldName => ({
+            intent_to_retain: true,
+            path: [namespace, fieldName]
+          }));
+
+          // Derive doctype_value from namespace
+          // (e.g., "org.iso.18013.5.1.mDL")
+          const doctypeValue = `${namespace}.mDL`;
 
           credentials.push({
-            id: await createId(),
-            format,
+            id: '0',
+            format: 'mso_mdoc',
             multiple: false,
             require_cryptographic_holder_binding: true,
-            // trusted_authorities: [] // TODO - optional
             meta: {
-              type_values: typeIris
+              doctype_value: doctypeValue
             },
-            claims: [{
-              path,
-              values: types
-            }]
+            claims
           });
         }
+      } else {
+        // Handle other formats (jwt_vc_json, ldp_vc) or
+        // mso_mdoc without fields
+        // Determine path based on format
+        let path;
+        if(format === 'jwt_vc_json') {
+          path = ['$.vc.type', '$.verifiableCredential.type', '$.type'];
+        } else {
+          // ldp_vc or mso_mdoc
+          path = ['$.type'];
+        }
+
+        credentials.push({
+          id: await createId(),
+          format,
+          multiple: false,
+          require_cryptographic_holder_binding: true,
+          // trusted_authorities: [] // TODO - optional
+          meta: {
+            type_values: typeIris
+          },
+          claims: [{
+            path,
+            values: types
+          }]
+        });
       }
     }
-
-    return {
-      dcql_query: {
-        credentials
-      }
-    };
-  } else {
-    // Or fall back to legacy verifiablePresentationRequest config method.
-    const vpr = JSON.parse(verifiablePresentationRequest);
-    vpr.challenge = challenge;
-    const fromVPR = oid4vp.fromVpr({
-      verifiablePresentationRequest: vpr,
-      prefixVC: true,
-      queryFormats: {
-        dcql: true,
-        presentationExchange: false
-      }
-    });
-    return {dcql_query: fromVPR.dcql_query};
   }
+
+  return {
+    dcql_query: {
+      credentials
+    }
+  };
 };
 
 // Templates define which components are active for each profile
@@ -503,7 +290,7 @@ const TEMPLATES = {
     presentation_definition: true,
     dcql_query: true
   },
-  'OID4VP-1.0-HAIP': {
+  'OID4VP-HAIP-1.0': {
     vp_formats: false,
     vp_formats_supported: true,
     presentation_definition: false,
@@ -555,7 +342,7 @@ const getVpFormatsSupported = ({profile}) => {
   };
 
   // Add mso_mdoc format for HAIP profile
-  if(profile === 'OID4VP-1.0-HAIP') {
+  if(profile === 'OID4VP-HAIP-1.0') {
     formats.mso_mdoc = {
       alg: ['ES256']
     };
@@ -584,7 +371,7 @@ const getClientMetadata = ({profile}) => {
   };
 
   // Add HAIP-specific requirements
-  if(profile === 'OID4VP-1.0-HAIP') {
+  if(profile === 'OID4VP-HAIP-1.0') {
     // HAIP requires encrypted responses
     metadata.encrypted_response_enc_values_supported = ['A128GCM', 'A256GCM'];
   }
@@ -615,8 +402,8 @@ const getPresentationDefinition = async ({
 };
 
 export const getAuthorizationRequest = async ({
-  rp, exchange, domain, url, profile
-}) => {
+  rp, exchange, domain, url, profile, responseMode: responseModeParam
+} = {}) => {
   // If no profile provided, use system default from config
   let resolvedProfile = profile;
   if(!resolvedProfile) {
@@ -634,6 +421,13 @@ export const getAuthorizationRequest = async ({
     resolvedProfile = 'OID4VP-combined';
   }
 
+  // Determine response_mode based on responseMode parameter
+  // Default to 'direct_post' for backward compatibility
+  let responseMode = 'direct_post';
+  if(responseModeParam === 'dc_api' || responseModeParam === 'dc_api.jwt') {
+    responseMode = responseModeParam;
+  }
+
   // Compose authorization request from component functions
   const [
     presentationDefinition,
@@ -649,7 +443,7 @@ export const getAuthorizationRequest = async ({
 
   const authorizationRequest = {
     response_type: 'vp_token',
-    response_mode: 'direct_post',
+    response_mode: responseMode,
     client_id: domainToDidWeb(domain),
     client_id_scheme: 'did',
     nonce: exchange.challenge,

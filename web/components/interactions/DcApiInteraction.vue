@@ -24,14 +24,14 @@ SPDX-License-Identifier: BSD-3-Clause
           :loading="exchangeState === 'active'"
           :disabled="exchangeState === 'active'"
           @click="handleRetry">
-          {{$t('dcApiRetry') || 'Retry'}}
+          {{$t('dcApiRetry')}}
         </cadmv-button>
         <cadmv-button
           variant="secondary"
           :loading="exchangeState === 'active'"
           :disabled="exchangeState === 'active'"
           @click="handleTryAnotherWay">
-          {{$t('dcApiFallback') || 'Try Another Way'}}
+          {{$t('dcApiFallback')}}
         </cadmv-button>
       </div>
     </div>
@@ -42,15 +42,25 @@ SPDX-License-Identifier: BSD-3-Clause
       :loading="exchangeState === 'active'"
       :disabled="exchangeState === 'active'"
       @click="handleActivate">
-      {{$t('appCta') || 'Connect Wallet'}}
+      {{$t('appCta')}}
     </cadmv-button>
+    <!-- Countdown Display -->
+    <p
+      v-if="exchangeData?.createdAt && exchangeData?.ttl"
+      class="text-gray-900 mt-4">
+      {{$t('exchangeActiveExpiryMessage')}}
+      <CountdownDisplay
+        :created-at="exchangeData.createdAt"
+        :ttl="exchangeData.ttl" />
+    </p>
   </div>
 </template>
 
 <script setup>
 import {CadmvButton} from '@digitalbazaar/cadmv-ui';
+import CountdownDisplay from '../CountdownDisplay.vue';
 
-const props = defineProps({
+defineProps({
   exchangeData: {
     type: Object,
     required: true

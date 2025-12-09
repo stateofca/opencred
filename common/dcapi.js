@@ -6,21 +6,25 @@
  */
 
 /**
- * Check if DC API is available based on caStore configuration
+ * Check if DC API is available based on signing key certificate configuration
  * @param {Object} opencredConfig - The opencred configuration object
- * @param {Object} opencredConfig.caStore - Array of certificate strings
+ * @param {Array} opencredConfig.signingKeys - Array of signing key configurations
  * @returns {boolean} True if DC API can be initialized
  */
 export function isDcApiAvailable(opencredConfig) {
-  const {caStore} = opencredConfig || {};
-  if(!caStore || !Array.isArray(caStore) || caStore.length === 0) {
+  const {signingKeys} = opencredConfig || {};
+  if(!signingKeys || !Array.isArray(signingKeys)) {
     return false;
   }
-  const firstCert = caStore[0];
-  if(!firstCert || typeof firstCert !== 'string' ||
-    firstCert.trim().length === 0) {
+  const signingKey = signingKeys.find(k =>
+    k.purpose?.includes('authorization_request')
+  );
+  if(!signingKey) {
     return false;
   }
-  return true;
+  // Check if certificatePem is configured
+  return !!(signingKey.certificatePem &&
+    typeof signingKey.certificatePem === 'string' &&
+    signingKey.certificatePem.trim().length > 0);
 }
 

@@ -12,7 +12,7 @@ SPDX-License-Identifier: BSD-3-Clause
       :loading="exchangeState === 'active'"
       :disabled="exchangeState === 'active'"
       @click="handleActivate">
-      {{$t('appCta-chapi-label') || $t('appCta') || 'Connect Wallet'}}
+      {{$t('appCta-chapi-label')}}
     </cadmv-button>
   </div>
 </template>
