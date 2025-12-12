@@ -254,10 +254,9 @@ export function getAvailableInteractionMethods({
 }) {
   const methods = [];
 
-  // 1. DC API (highest priority)
-  // Only available if: system supports it, enabled in workflow, wallet supports it,
-  // protocol is not excluded, has mdoc format query
-  // (or is 18013-7-Annex-D), and not overridden
+  // 1. DC API (highest priority) Only available if: system supports it, enabled
+  //    in workflow, wallet supports it, protocol is not excluded, has mdoc
+  //    format query (or is 18013-7-Annex-D), and not overridden
   if(dcApiSystemAvailable &&
     workflow?.dcApiEnabled !== false &&
     walletSupportsDcApiForProtocol(walletsRegistry, walletId, protocolId) &&

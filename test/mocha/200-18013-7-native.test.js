@@ -30,7 +30,6 @@ import {exampleKey2} from '../fixtures/signingKeys.js';
 import expect from 'expect.js';
 import {httpClient} from '@digitalbazaar/http-client';
 import https from 'node:https';
-import {klona} from 'klona';
 
 const agent = new https.Agent({rejectUnauthorized: false});
 const client = httpClient.extend({agent});

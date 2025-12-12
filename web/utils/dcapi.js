@@ -13,13 +13,16 @@
  * @param {Object} options.httpClient - HTTP client instance
  * @param {Function} options.onExchangeUpdate - Callback when
  *   the exchange is updated
+ * @param {string} [options.clientIdScheme] - Client ID scheme to use
+ *   (e.g., 'x509_san_dns' or 'did')
  * @returns {Promise<void>}
  */
 export async function startDCApiFlow({
   exchangeData,
   httpClient,
   onExchangeUpdate,
-  selectedProtocol
+  selectedProtocol,
+  clientIdScheme
 } = {}) {
   if(!exchangeData || !exchangeData.id || !exchangeData.workflowId) {
     throw new Error('Exchange data is required');
@@ -52,6 +55,10 @@ export async function startDCApiFlow({
     // can be changed to dc_api.jwt if encryption is needed
     const urlObj = new URL(requestUrl, window.location.origin);
     urlObj.searchParams.set('response_mode', 'dc_api');
+    // Add client_id_scheme query parameter if provided
+    if(clientIdScheme) {
+      urlObj.searchParams.set('client_id_scheme', clientIdScheme);
+    }
     const requestUrlWithResponseMethod = urlObj.pathname + urlObj.search;
 
     // The response will be a JWT string with content-type

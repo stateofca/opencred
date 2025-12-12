@@ -120,7 +120,8 @@ const route = useRoute();
 const context = ref({
   workflow: {
     brand: config.brand || {}
-  }
+  },
+  initError: null
 });
 
 const brand = computed(() => context.value.workflow.brand);
@@ -135,6 +136,7 @@ onBeforeMount(async () => {
         `/context/${exchangeType}${window.location.search}`
       );
       context.value = resp.data;
+      context.value.initError = null;
       if(resp.data.workflow.brand) {
         Object.keys(resp.data.workflow.brand).forEach(key => {
           setCssVar(key, resp.data.workflow.brand[key]);
@@ -145,8 +147,15 @@ onBeforeMount(async () => {
         }
       }
     } catch(e) {
-      // Use config default on error
-      console.error('Failed to fetch context:', e);
+      // Check if this is a 400 error with a message
+      if(e.data?.message) {
+        context.value.initError = {
+          message: e.data.message
+        };
+      } else {
+        // Use config default on other errors
+        console.error('Failed to fetch context:', e);
+      }
     }
   }
 });

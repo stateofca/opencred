@@ -101,7 +101,8 @@ SPDX-License-Identifier: BSD-3-Clause
         v-model="showVideo">
         <q-card>
           <YouTubeVideo
-            v-if="context.workflow.brand?.explainerVideo?.provider === 'youtube'"
+            v-if="context.workflow.brand?.explainerVideo?.provider
+              === 'youtube'"
             :id="context.workflow.brand.explainerVideo.id" />
           <q-card-actions
             align="right">

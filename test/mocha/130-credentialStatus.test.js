@@ -40,20 +40,20 @@ const testWorkflow = {
 
 describe('Credential Status Verification', async () => {
   let exchange;
-  let rpStub;
+  let workflowStub;
   let baseService;
 
   before(() => {
     // Initialize service and stubs
     baseService = new BaseWorkflowService();
 
-    rpStub = sinon.stub(config.opencred, 'workflows').value(
-      [rp]
+    workflowStub = sinon.stub(config.opencred, 'workflows').value(
+      [testWorkflow]
     );
   });
 
   after(() => {
-    rpStub.restore();
+    workflowStub.restore();
     sinon.restore();
   });
 

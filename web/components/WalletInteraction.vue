@@ -283,6 +283,7 @@ const handleDcApiActivate = async () => {
     await startDCApiFlowUtil({
       exchangeData: props.exchangeData,
       httpClient,
+      clientIdScheme: 'x509_san_dns',
       onExchangeUpdate: updatedExchange => {
         emit('replaceExchange', updatedExchange);
       },

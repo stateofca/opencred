@@ -84,7 +84,7 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
-import {ref, watch, onMounted, onUnmounted} from 'vue';
+import {onUnmounted, ref, watch} from 'vue';
 import {CadmvButton} from '@digitalbazaar/cadmv-ui';
 import CountdownDisplay from '../CountdownDisplay.vue';
 
@@ -119,18 +119,6 @@ const emit = defineEmits(['activate', 'toggleQr']);
 const showNoSchemeHandlerWarning = ref(false);
 const urlCopied = ref(false);
 const schemeHandlerTimeout = ref(null);
-
-const handleActivate = async () => {
-  if(props.protocolType === 'copy') {
-    await copyUrlToClipboard();
-  } else if(props.protocolType === 'openid4vp') {
-    window.open(props.deepLinkUrl, '_blank');
-    detectSchemeHandler();
-  } else if(props.protocolType === 'web') {
-    window.open(props.deepLinkUrl, '_blank');
-  }
-  emit('activate');
-};
 
 const copyUrlToClipboard = async () => {
   if(props.deepLinkUrl) {
@@ -185,8 +173,20 @@ const handleToggleQr = () => {
   emit('toggleQr');
 };
 
+const handleActivate = async () => {
+  if(props.protocolType === 'copy') {
+    await copyUrlToClipboard();
+  } else if(props.protocolType === 'openid4vp') {
+    window.open(props.deepLinkUrl, '_blank');
+    detectSchemeHandler();
+  } else if(props.protocolType === 'web') {
+    window.open(props.deepLinkUrl, '_blank');
+  }
+  emit('activate');
+};
+
 // Watch for exchange becoming active to clear scheme handler timeout
-watch(() => props.exchangeState, (newState) => {
+watch(() => props.exchangeState, newState => {
   if(newState === 'active' && schemeHandlerTimeout.value) {
     clearTimeout(schemeHandlerTimeout.value);
     schemeHandlerTimeout.value = null;

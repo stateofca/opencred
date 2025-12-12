@@ -7,8 +7,17 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <template>
   <div>
+    <div
+      v-if="context.initError"
+      class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
+             md:px-16 lg:px-24 relative">
+      <ErrorView
+        :title="$t('exchangeErrorTitle')"
+        :subtitle="$t('exchangeErrorSubtitle')"
+        :message="`${$t('exchangeInitError')}: ${context.initError.message}`" />
+    </div>
     <OpenCredExchange
-      v-if="context.exchangeData?.state !== 'complete'"
+      v-else-if="context.exchangeData?.state !== 'complete'"
       purpose="verification" />
     <div
       v-else
@@ -27,6 +36,7 @@ SPDX-License-Identifier: BSD-3-Clause
 <script setup>
 import {inject, provide} from 'vue';
 import CheckDecagramIcon from 'vue-material-design-icons/CheckDecagram.vue';
+import ErrorView from '../components/ErrorView.vue';
 import OpenCredExchange from '../components/OpenCredExchange.vue';
 
 // Get context from parent component (AppLayout)

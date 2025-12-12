@@ -6,7 +6,6 @@
  */
 
 import * as z from 'zod';
-import {arrayOf} from '../common/utils.js';
 import {logger} from '../lib/logger.js';
 
 // Preset configurations
@@ -242,46 +241,6 @@ export const EntraWorkflowSchema = z.object({
   verifierDid: z.string(),
   verifierName: z.string()
 });
-
-// Generate DCQL query from queryByExample
-const generateDcqlFromQueryByExample = data => {
-  const {queryByExample} = data;
-  const context = queryByExample['@context'];
-  const type = queryByExample.type;
-
-  // Generate claims for each context
-  const claims = context.map((ctx, index) => ({
-    id: `c:CTX${index + 1}`,
-    path: ['$.vc.@context'],
-    values: [ctx]
-  }));
-
-  // Don't implement JSON-LD expansion for now, just return the existing types
-  const typeValues = arrayOf(type);
-
-  // Generate credential ID from the main type
-  // (first non-VerifiableCredential type)
-  const mainType = type.find(t => t !== 'VerifiableCredential') || type[0];
-
-  const dcqlQuery = {
-    credentials: [{
-      id: mainType,
-      format: 'jwt_vc_json',
-      multiple: false,
-      require_cryptographic_holder_binding: true,
-      claims,
-      meta: {
-        type_values: typeValues
-      }
-    }]
-  };
-
-  return {
-    ...data,
-    type: 'native', // Convert to native workflow
-    dcql_query: dcqlQuery
-  };
-};
 
 // Union of all workflow types
 export const WorkflowSchema = z.discriminatedUnion('type', [
