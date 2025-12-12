@@ -19,7 +19,7 @@ describe('OID4VP Input Descriptors', () => {
 
   describe('Query Format', () => {
     it('should convert query to input_descriptors', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           context: [
             'https://www.w3.org/2018/credentials/v1',
@@ -31,7 +31,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result).to.be.an('array');
@@ -68,7 +68,7 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should convert query with LDP format', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           context: ['https://example.org/v1'],
           type: ['TestCredential'],
@@ -77,7 +77,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result).to.be.an('array');
@@ -88,7 +88,7 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should handle multiple queries in array', async () => {
-      const rp = {
+      const workflow = {
         query: [
           {
             type: ['Type1'],
@@ -102,7 +102,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result).to.be.an('array');
@@ -112,7 +112,7 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should include purpose when description is provided', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           type: ['TestCredential'],
           format: ['jwt_vc_json']
@@ -121,7 +121,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result).to.be.an('array');
@@ -131,7 +131,7 @@ describe('OID4VP Input Descriptors', () => {
 
     it('should not include purpose field when description is not provided',
       async () => {
-        const rp = {
+        const workflow = {
           query: [{
             type: ['TestCredential'],
             format: ['jwt_vc_json']
@@ -139,7 +139,7 @@ describe('OID4VP Input Descriptors', () => {
         };
 
         const result = await getInputDescriptors({
-          rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+          workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
         });
 
         expect(result).to.be.an('array');
@@ -150,7 +150,7 @@ describe('OID4VP Input Descriptors', () => {
 
   describe('Query Format', () => {
     it('should convert query to input_descriptors', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           context: [
             'https://www.w3.org/2018/credentials/v1',
@@ -162,7 +162,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result).to.be.an('array');
@@ -184,14 +184,14 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should handle multiple types in array', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           type: ['Type1', 'Type2', 'Type3']
         }]
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result).to.be.an('array');
@@ -209,7 +209,7 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should create context field constraint', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           context: [
             'https://www.w3.org/2018/credentials/v1',
@@ -219,7 +219,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result).to.be.an('array');
@@ -238,7 +238,7 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should handle context field paths for jwt_vc_json format', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           context: ['https://example.org/v1'],
           format: ['jwt_vc_json']
@@ -246,7 +246,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result[0].constraints.fields).to.be.an('array');
@@ -262,7 +262,7 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should handle context field paths for ldp_vc format', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           context: ['https://example.org/v1'],
           format: ['ldp_vc']
@@ -270,7 +270,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result[0].constraints.fields).to.be.an('array');
@@ -286,7 +286,7 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should create field constraints from query.fields', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           type: ['TestCredential'],
           fields: {
@@ -297,7 +297,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result).to.be.an('array');
@@ -319,7 +319,7 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should handle fields with multiple values', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           fields: {
             role: ['admin', 'user', 'viewer']
@@ -328,7 +328,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result).to.be.an('array');
@@ -345,7 +345,7 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should filter format based on query.format', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           type: ['TestCredential'],
           format: ['jwt_vc_json']
@@ -353,7 +353,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result[0].format).to.have.property('jwt_vc_json');
@@ -361,7 +361,7 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should support multiple formats', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           type: ['TestCredential'],
           format: ['jwt_vc_json', 'ldp_vc']
@@ -369,7 +369,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result[0].format).to.have.property('jwt_vc_json');
@@ -377,14 +377,14 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should default to ldp_vc format when not specified', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           type: ['TestCredential']
         }]
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result[0].format).to.have.property('ldp_vc');
@@ -392,7 +392,7 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should handle query with all properties', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           type: ['TestCredential'],
           context: ['https://example.org/v1'],
@@ -404,7 +404,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result).to.be.an('array');
@@ -416,14 +416,14 @@ describe('OID4VP Input Descriptors', () => {
 
     it('should handle query with only type (backward compatibility)',
       async () => {
-        const rp = {
+        const workflow = {
           query: [{
             type: ['TestCredential']
           }]
         };
 
         const result = await getInputDescriptors({
-          rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+          workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
         });
 
         expect(result).to.be.an('array');
@@ -435,7 +435,7 @@ describe('OID4VP Input Descriptors', () => {
       });
 
     it('should handle query with type and context', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           type: ['TestCredential'],
           context: ['https://example.org/v1']
@@ -443,7 +443,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result[0].constraints.fields.length).to.be(2);
@@ -460,7 +460,7 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should handle query with type and fields', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           type: ['TestCredential'],
           fields: {
@@ -470,7 +470,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result[0].constraints.fields.length).to.be(2);
@@ -487,35 +487,35 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should not add type field for empty type array', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           type: []
         }]
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result[0].constraints.fields.length).to.be(0);
     });
 
     it('should not add context field for empty context array', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           context: []
         }]
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result[0].constraints.fields.length).to.be(0);
     });
 
     it('should not add field constraints for empty fields object', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           type: ['TestCredential'],
           fields: {}
@@ -523,7 +523,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       // Should only have type field
@@ -531,12 +531,12 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should handle query with no properties gracefully', async () => {
-      const rp = {
+      const workflow = {
         query: [{}]
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result).to.be.an('array');
@@ -547,7 +547,7 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should handle multiple query objects in array', async () => {
-      const rp = {
+      const workflow = {
         query: [
           {
             type: ['Type1']
@@ -560,7 +560,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result).to.be.an('array');
@@ -570,7 +570,7 @@ describe('OID4VP Input Descriptors', () => {
     });
 
     it('should handle query with mso_mdoc format', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           type: ['TestCredential'],
           format: ['mso_mdoc']
@@ -578,7 +578,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result).to.be.an('array');
@@ -590,7 +590,7 @@ describe('OID4VP Input Descriptors', () => {
 
     it('should handle query with mso_mdoc format and dcApiNamespaceQuery',
       async () => {
-        const rp = {
+        const workflow = {
           query: [{
             type: ['TestCredential'],
             format: ['mso_mdoc'],
@@ -601,7 +601,7 @@ describe('OID4VP Input Descriptors', () => {
         };
 
         const result = await getInputDescriptors({
-          rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+          workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
         });
 
         expect(result).to.be.an('array');
@@ -612,7 +612,7 @@ describe('OID4VP Input Descriptors', () => {
 
   describe('Query Format', () => {
     it('should convert query to input_descriptors', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           context: [
             'https://www.w3.org/2018/credentials/v1',
@@ -623,7 +623,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result).to.be.an('array');
@@ -636,7 +636,7 @@ describe('OID4VP Input Descriptors', () => {
 
   describe('Format Field', () => {
     it('should include supported formats in format field', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           type: ['TestCredential'],
           format: ['jwt_vc_json']
@@ -644,7 +644,7 @@ describe('OID4VP Input Descriptors', () => {
       };
 
       const result = await getInputDescriptors({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+        workflow, exchange: mockExchange, domain: mockDomain, url: mockUrl
       });
 
       expect(result[0].format).to.have.property('jwt_vc_json');

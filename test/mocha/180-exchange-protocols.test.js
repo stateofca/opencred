@@ -67,7 +67,7 @@ describe('Exchange Protocols', () => {
     it('should include protocols object for native workflow', async () => {
       const accessToken = await createId();
       const trustedVariables = {
-        rp: testRP,
+        workflow: testRP,
         accessToken,
         oidc: {
           code: null,
@@ -103,7 +103,7 @@ describe('Exchange Protocols', () => {
       };
       const accessToken = await createId();
       const trustedVariables = {
-        rp: vcApiRP,
+        workflow: vcApiRP,
         accessToken,
         oidc: {
           code: null,
@@ -140,7 +140,7 @@ describe('Exchange Protocols', () => {
     it('should maintain backwards compatibility with OID4VP', async () => {
       const accessToken = await createId();
       const trustedVariables = {
-        rp: testRP,
+        workflow: testRP,
         accessToken,
         oidc: {
           code: null,
@@ -170,7 +170,7 @@ describe('Exchange Protocols', () => {
         exchange.id}/openid/client/authorization/request`;
 
       const authRequest = await getAuthorizationRequest({
-        rp: testRP,
+        workflow: testRP,
         exchange,
         domain,
         url,
@@ -195,7 +195,7 @@ describe('Exchange Protocols', () => {
         exchange.id}/openid/client/authorization/request`;
 
       const authRequest = await getAuthorizationRequest({
-        rp: testRP,
+        workflow: testRP,
         exchange,
         domain,
         url,
@@ -220,7 +220,7 @@ describe('Exchange Protocols', () => {
         exchange.id}/openid/client/authorization/request`;
 
       const authRequest = await getAuthorizationRequest({
-        rp: testRP,
+        workflow: testRP,
         exchange,
         domain,
         url,
@@ -254,7 +254,7 @@ describe('Exchange Protocols', () => {
             exchange.id}/openid/client/authorization/request`;
 
           const authRequest = await getAuthorizationRequest({
-            rp: testRP,
+            workflow: testRP,
             exchange,
             domain,
             url

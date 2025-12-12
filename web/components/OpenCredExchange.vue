@@ -29,16 +29,16 @@ SPDX-License-Identifier: BSD-3-Clause
       <!-- Workflow Title -->
       <h1
         class="text-3xl mb-4 text-center"
-        :style="{color: context.rp.brand?.primary}">
-        {{context.rp.name || $t(`${purpose}Cta`)}}
+        :style="{color: context.workflow.brand?.primary}">
+        {{context.workflow.name || $t(`${purpose}Cta`)}}
       </h1>
 
       <!-- Workflow Description -->
       <div class="mb-4 text-gray-900">
         <p
-          v-if="context.rp.description"
+          v-if="context.workflow.description"
           class="text-gray-900"
-          v-html="context.rp.description" />
+          v-html="context.workflow.description" />
         <p
           class="text-gray-900"
           v-html="$t('exchangePageExplain')" />
@@ -46,7 +46,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
       <!-- Credential Query Summary -->
       <CredentialQuerySummary
-        :rp="context.rp"
+        :workflow="context.workflow"
         :exchange-data="context.exchangeData || {}" />
 
       <!-- Connect Your Wallet Heading -->
@@ -61,7 +61,7 @@ SPDX-License-Identifier: BSD-3-Clause
         :available-protocols="availableProtocols"
         :wallets-registry="walletsRegistry"
         :protocols-registry="protocolsRegistry"
-        :rp="context.rp"
+        :workflow="context.workflow"
         @select-protocol="handleSelectProtocol" />
 
       <!-- Interaction-specific info and exchange status -->
@@ -72,7 +72,7 @@ SPDX-License-Identifier: BSD-3-Clause
         :selected-wallet="selectedWallet"
         :available-protocols="availableProtocols"
         :active="state.active && !state.activeOverride"
-        :rp="context.rp"
+        :workflow="context.workflow"
         :wallets-registry="walletsRegistry"
         :protocols-registry="protocolsRegistry"
         :interaction-state="interactionState"
@@ -83,9 +83,9 @@ SPDX-License-Identifier: BSD-3-Clause
       <div class="mt-2">
         <button
           v-if="$t('qrExplainerText') !== '' &&
-            context.rp.brand?.explainerVideo?.id !== '' &&
-            context.rp.brand?.explainerVideo?.provider"
-          :style="{color: context.rp.brand?.primary}"
+            context.workflow.brand?.explainerVideo?.id !== '' &&
+            context.workflow.brand?.explainerVideo?.provider"
+          :style="{color: context.workflow.brand?.primary}"
           class="underline"
           @click="showVideo = true">
           {{$t('qrExplainerText')}}
@@ -101,8 +101,8 @@ SPDX-License-Identifier: BSD-3-Clause
         v-model="showVideo">
         <q-card>
           <YouTubeVideo
-            v-if="context.rp.brand?.explainerVideo?.provider === 'youtube'"
-            :id="context.rp.brand.explainerVideo.id" />
+            v-if="context.workflow.brand?.explainerVideo?.provider === 'youtube'"
+            :id="context.workflow.brand.explainerVideo.id" />
           <q-card-actions
             align="right">
             <q-btn
@@ -338,8 +338,7 @@ onBeforeMount(async () => {
         walletsRegistry[selectedWallet.value] : null;
       if(wallet?.getDefaultProtocol) {
         const defaultProtocol = wallet.getDefaultProtocol({
-          workflow: context.value?.rp?.workflow,
-          rp: context.value?.rp,
+          workflow: context.value?.workflow,
           availableProtocols: protocols
         });
         if(defaultProtocol && protocols.includes(defaultProtocol)) {
@@ -357,7 +356,7 @@ onBeforeMount(async () => {
 });
 
 const checkStatus = async () => {
-  if(!context.value || !context.value.rp?.clientId ||
+  if(!context.value || !context.value.workflow?.clientId ||
     !context.value.exchangeData?.id) {
     return;
   }
@@ -391,7 +390,7 @@ const checkStatus = async () => {
     ({
       data: {exchange},
     } = await httpClient.get(
-      `/workflows/${context.value.rp.clientId}/exchanges/` +
+      `/workflows/${context.value.workflow.clientId}/exchanges/` +
       `${context.value?.exchangeData?.id}`,
       {
         headers: {
@@ -462,7 +461,7 @@ const handleResetExchange = async () => {
 
   try {
     const resetResult = await httpClient.post(
-      `/workflows/${context.value.rp.clientId}/exchanges/` +
+      `/workflows/${context.value.workflow.clientId}/exchanges/` +
     `${context.value.exchangeData.id}/reset`,
       {
         headers: {

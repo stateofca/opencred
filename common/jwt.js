@@ -12,10 +12,8 @@ import jp from 'jsonpath';
 
 /**
  * Generates a JWT id_token from a VP exchange if the exchange is complete.
- * @param {import("mongodb").Document}
- * @param {import("../configs/config.js").RelyingParty} rp
  */
-export const jwtFromExchange = async (exchange, rp) => {
+export const jwtFromExchange = async (exchange, workflow) => {
   const signingKey = config.opencred.signingKeys?.find(
     sk => sk.purpose.includes('id_token')
   );
@@ -62,13 +60,13 @@ export const jwtFromExchange = async (exchange, rp) => {
   const now = Math.floor(Date.now() / 1000);
   const payload = {
     iss: config.server.baseUri,
-    aud: rp.clientId,
+    aud: workflow.clientId,
     sub: c[0].credentialSubject.id,
     iat: now,
-    exp: now + (rp.oidc?.idTokenExpirySeconds ?? 3600)
+    exp: now + (workflow.oidc?.idTokenExpirySeconds ?? 3600)
   };
 
-  for(const {name, path} of rp.oidc?.claims ?? []) {
+  for(const {name, path} of workflow.oidc?.claims ?? []) {
     const claim = jp.query(c[0].credentialSubject, path);
     if(claim) {
       payload[name] = claim[0];

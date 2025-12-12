@@ -6,7 +6,8 @@
  */
 
 import expect from 'expect.js';
-import {getAuthorizationRequest} from '../../common/oid4vp.js';
+import {generateAuthorizationRequest as generateStandard} from
+  '../../lib/workflows/profiles/native-oid4vp-standard.js';
 
 describe('OID4VP Client Metadata', () => {
   const mockExchange = {
@@ -17,9 +18,9 @@ describe('OID4VP Client Metadata', () => {
   const mockUrl = '/workflows/test/exchanges/123/openid/client/' +
     'authorization/request';
 
-  describe('vp_formats (Draft 18)', () => {
+  describe('OID4VP-draft18 profile', () => {
     it('should include vp_formats with jwt_vp_json and ldp_vp', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           context: ['https://www.w3.org/2018/credentials/v1'],
           type: ['VerifiableCredential'],
@@ -27,18 +28,28 @@ describe('OID4VP Client Metadata', () => {
         }]
       };
 
-      const result = await getAuthorizationRequest({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+      const {authorizationRequest} = await generateStandard({
+        workflow,
+        exchange: mockExchange,
+        baseUri: mockDomain,
+        requestUrl: mockUrl,
+        userAgent: '',
+        signingKeys: [],
+        profile: 'OID4VP-combined',
+        responseMode: 'direct_post'
       });
 
-      expect(result).to.have.property('client_metadata');
-      expect(result.client_metadata).to.have.property('vp_formats');
-      expect(result.client_metadata.vp_formats).to.have.property('jwt_vp_json');
-      expect(result.client_metadata.vp_formats).to.have.property('ldp_vp');
+      expect(authorizationRequest).to.have.property('client_metadata');
+      expect(authorizationRequest.client_metadata)
+        .to.have.property('vp_formats');
+      expect(authorizationRequest.client_metadata.vp_formats)
+        .to.have.property('jwt_vp_json');
+      expect(authorizationRequest.client_metadata.vp_formats)
+        .to.have.property('ldp_vp');
     });
 
     it('should have correct structure for jwt_vp_json', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           context: ['https://www.w3.org/2018/credentials/v1'],
           type: ['VerifiableCredential'],
@@ -46,11 +57,19 @@ describe('OID4VP Client Metadata', () => {
         }]
       };
 
-      const result = await getAuthorizationRequest({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+      const {authorizationRequest} = await generateStandard({
+        workflow,
+        exchange: mockExchange,
+        baseUri: mockDomain,
+        requestUrl: mockUrl,
+        userAgent: '',
+        signingKeys: [],
+        profile: 'OID4VP-combined',
+        responseMode: 'direct_post'
       });
 
-      const jwtVpJson = result.client_metadata.vp_formats.jwt_vp_json;
+      const jwtVpJson = authorizationRequest.client_metadata.vp_formats
+        .jwt_vp_json;
       expect(jwtVpJson).to.be.an('object');
       expect(jwtVpJson).to.have.property('alg');
       expect(jwtVpJson.alg).to.be.an('array');
@@ -61,7 +80,7 @@ describe('OID4VP Client Metadata', () => {
     });
 
     it('should have correct structure for ldp_vp', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           context: ['https://www.w3.org/2018/credentials/v1'],
           type: ['VerifiableCredential'],
@@ -69,11 +88,18 @@ describe('OID4VP Client Metadata', () => {
         }]
       };
 
-      const result = await getAuthorizationRequest({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl
+      const {authorizationRequest} = await generateStandard({
+        workflow,
+        exchange: mockExchange,
+        baseUri: mockDomain,
+        requestUrl: mockUrl,
+        userAgent: '',
+        signingKeys: [],
+        profile: 'OID4VP-combined',
+        responseMode: 'direct_post'
       });
 
-      const ldpVp = result.client_metadata.vp_formats.ldp_vp;
+      const ldpVp = authorizationRequest.client_metadata.vp_formats.ldp_vp;
       expect(ldpVp).to.be.an('object');
       expect(ldpVp).to.have.property('proof_type');
       expect(ldpVp.proof_type).to.be.an('array');
@@ -81,10 +107,10 @@ describe('OID4VP Client Metadata', () => {
     });
   });
 
-  describe('vp_formats_supported (OID4VP 1.0)', () => {
+  describe('OID4VP-1.0 profile', () => {
     it('should include vp_formats_supported with jwt_vc_json and ldp_vc keys',
       async () => {
-        const rp = {
+        const workflow = {
           query: [{
             context: ['https://www.w3.org/2018/credentials/v1'],
             type: ['VerifiableCredential'],
@@ -92,21 +118,28 @@ describe('OID4VP Client Metadata', () => {
           }]
         };
 
-        const result = await getAuthorizationRequest({
-          rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
-          profile: 'OID4VP-1.0'
+        const {authorizationRequest} = await generateStandard({
+          workflow,
+          exchange: mockExchange,
+          baseUri: mockDomain,
+          requestUrl: mockUrl,
+          userAgent: '',
+          signingKeys: [],
+          profile: 'OID4VP-1.0',
+          responseMode: 'direct_post'
         });
 
-        expect(result).to.have.property('client_metadata');
-        expect(result.client_metadata).to.have.property('vp_formats_supported');
-        expect(result.client_metadata.vp_formats_supported)
+        expect(authorizationRequest).to.have.property('client_metadata');
+        expect(authorizationRequest.client_metadata)
+          .to.have.property('vp_formats_supported');
+        expect(authorizationRequest.client_metadata.vp_formats_supported)
           .to.have.property('jwt_vc_json');
-        expect(result.client_metadata.vp_formats_supported)
+        expect(authorizationRequest.client_metadata.vp_formats_supported)
           .to.have.property('ldp_vc');
       });
 
     it('should have correct 1.0 structure for jwt_vc_json', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           context: ['https://www.w3.org/2018/credentials/v1'],
           type: ['VerifiableCredential'],
@@ -114,13 +147,19 @@ describe('OID4VP Client Metadata', () => {
         }]
       };
 
-      const result = await getAuthorizationRequest({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
-        profile: 'OID4VP-1.0'
+      const {authorizationRequest} = await generateStandard({
+        workflow,
+        exchange: mockExchange,
+        baseUri: mockDomain,
+        requestUrl: mockUrl,
+        userAgent: '',
+        signingKeys: [],
+        profile: 'OID4VP-1.0',
+        responseMode: 'direct_post'
       });
 
-      const jwtVcJson = result.client_metadata.vp_formats_supported
-        .jwt_vc_json;
+      const jwtVcJson =
+        authorizationRequest.client_metadata.vp_formats_supported.jwt_vc_json;
       expect(jwtVcJson).to.be.an('object');
       expect(jwtVcJson).to.have.property('alg');
       expect(jwtVcJson.alg).to.be.an('array');
@@ -131,7 +170,7 @@ describe('OID4VP Client Metadata', () => {
     });
 
     it('should have correct 1.0 structure for ldp_vc', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           context: ['https://www.w3.org/2018/credentials/v1'],
           type: ['VerifiableCredential'],
@@ -139,12 +178,19 @@ describe('OID4VP Client Metadata', () => {
         }]
       };
 
-      const result = await getAuthorizationRequest({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
-        profile: 'OID4VP-1.0'
+      const {authorizationRequest} = await generateStandard({
+        workflow,
+        exchange: mockExchange,
+        baseUri: mockDomain,
+        requestUrl: mockUrl,
+        userAgent: '',
+        signingKeys: [],
+        profile: 'OID4VP-1.0',
+        responseMode: 'direct_post'
       });
 
-      const ldpVc = result.client_metadata.vp_formats_supported.ldp_vc;
+      const ldpVc = authorizationRequest.client_metadata.vp_formats_supported
+        .ldp_vc;
       expect(ldpVc).to.be.an('object');
       expect(ldpVc).to.have.property('proof_type');
       expect(ldpVc.proof_type).to.be.an('array');
@@ -158,10 +204,10 @@ describe('OID4VP Client Metadata', () => {
     });
   });
 
-  describe('Both formats present', () => {
+  describe('OID4VP-combined profile', () => {
     it('OID4VP-combined: both vp_formats and vp_formats_supported',
       async () => {
-        const rp = {
+        const workflow = {
           query: [{
             context: ['https://www.w3.org/2018/credentials/v1'],
             type: ['VerifiableCredential'],
@@ -169,18 +215,26 @@ describe('OID4VP Client Metadata', () => {
           }]
         };
 
-        const result = await getAuthorizationRequest({
-          rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
-          profile: 'OID4VP-combined'
+        const {authorizationRequest} = await generateStandard({
+          workflow,
+          exchange: mockExchange,
+          baseUri: mockDomain,
+          requestUrl: mockUrl,
+          userAgent: '',
+          signingKeys: [],
+          profile: 'OID4VP-combined',
+          responseMode: 'direct_post'
         });
 
-        expect(result.client_metadata).to.have.property('vp_formats');
-        expect(result.client_metadata).to.have.property('vp_formats_supported');
+        expect(authorizationRequest.client_metadata)
+          .to.have.property('vp_formats');
+        expect(authorizationRequest.client_metadata)
+          .to.have.property('vp_formats_supported');
       });
 
     it('OID4VP-combined: different keys in vp_formats vs vp_formats_supported',
       async () => {
-        const rp = {
+        const workflow = {
           query: [{
             context: ['https://www.w3.org/2018/credentials/v1'],
             type: ['VerifiableCredential'],
@@ -188,52 +242,65 @@ describe('OID4VP Client Metadata', () => {
           }]
         };
 
-        const result = await getAuthorizationRequest({
-          rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
-          profile: 'OID4VP-combined'
+        const {authorizationRequest} = await generateStandard({
+          workflow,
+          exchange: mockExchange,
+          baseUri: mockDomain,
+          requestUrl: mockUrl,
+          userAgent: '',
+          signingKeys: [],
+          profile: 'OID4VP-combined',
+          responseMode: 'direct_post'
         });
 
         // Draft 18 should use jwt_vp_json and ldp_vp
-        expect(result.client_metadata.vp_formats).to.have.property(
-          'jwt_vp_json');
-        expect(result.client_metadata.vp_formats).to.have.property('ldp_vp');
-        expect(result.client_metadata.vp_formats).to.not.have.property(
-          'jwt_vc_json');
-        expect(result.client_metadata.vp_formats).to.not.have.property(
-          'ldp_vc');
+        expect(authorizationRequest.client_metadata.vp_formats)
+          .to.have.property('jwt_vp_json');
+        expect(authorizationRequest.client_metadata.vp_formats)
+          .to.have.property('ldp_vp');
+        expect(authorizationRequest.client_metadata.vp_formats)
+          .to.not.have.property('jwt_vc_json');
+        expect(authorizationRequest.client_metadata.vp_formats)
+          .to.not.have.property('ldp_vc');
 
         // OID4VP 1.0 should use jwt_vc_json and ldp_vc
-        expect(result.client_metadata.vp_formats_supported)
+        expect(authorizationRequest.client_metadata.vp_formats_supported)
           .to.have.property('jwt_vc_json');
-        expect(result.client_metadata.vp_formats_supported)
+        expect(authorizationRequest.client_metadata.vp_formats_supported)
           .to.have.property('ldp_vc');
-        expect(result.client_metadata.vp_formats_supported)
+        expect(authorizationRequest.client_metadata.vp_formats_supported)
           .to.not.have.property('jwt_vp_json');
-        expect(result.client_metadata.vp_formats_supported)
+        expect(authorizationRequest.client_metadata.vp_formats_supported)
           .to.not.have.property('ldp_vp');
       });
-  });
 
-  describe('Different RP configurations', () => {
     it('OID4VP-combined: both formats with query RP', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           type: ['TestCredential'],
           format: ['jwt_vc_json']
         }]
       };
 
-      const result = await getAuthorizationRequest({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
-        profile: 'OID4VP-combined'
+      const {authorizationRequest} = await generateStandard({
+        workflow,
+        exchange: mockExchange,
+        baseUri: mockDomain,
+        requestUrl: mockUrl,
+        userAgent: '',
+        signingKeys: [],
+        profile: 'OID4VP-combined',
+        responseMode: 'direct_post'
       });
 
-      expect(result.client_metadata).to.have.property('vp_formats');
-      expect(result.client_metadata).to.have.property('vp_formats_supported');
+      expect(authorizationRequest.client_metadata)
+        .to.have.property('vp_formats');
+      expect(authorizationRequest.client_metadata)
+        .to.have.property('vp_formats_supported');
     });
 
     it('OID4VP-combined: both formats with query RP', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           context: [
             'https://www.w3.org/2018/credentials/v1',
@@ -244,18 +311,26 @@ describe('OID4VP Client Metadata', () => {
         description: 'Test description'
       };
 
-      const result = await getAuthorizationRequest({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
-        profile: 'OID4VP-combined'
+      const {authorizationRequest} = await generateStandard({
+        workflow,
+        exchange: mockExchange,
+        baseUri: mockDomain,
+        requestUrl: mockUrl,
+        userAgent: '',
+        signingKeys: [],
+        profile: 'OID4VP-combined',
+        responseMode: 'direct_post'
       });
 
-      expect(result.client_metadata).to.have.property('vp_formats');
-      expect(result.client_metadata).to.have.property('vp_formats_supported');
+      expect(authorizationRequest.client_metadata)
+        .to.have.property('vp_formats');
+      expect(authorizationRequest.client_metadata)
+        .to.have.property('vp_formats_supported');
     });
 
     it('OID4VP-combined: both formats with verifiablePresentationRequest RP',
       async () => {
-        const rp = {
+        const workflow = {
           query: [{
             context: [
               'https://www.w3.org/2018/credentials/v1',
@@ -280,19 +355,25 @@ describe('OID4VP Client Metadata', () => {
           })
         };
 
-        const result = await getAuthorizationRequest({
-          rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
-          profile: 'OID4VP-combined'
+        const {authorizationRequest} = await generateStandard({
+          workflow,
+          exchange: mockExchange,
+          baseUri: mockDomain,
+          requestUrl: mockUrl,
+          userAgent: '',
+          signingKeys: [],
+          profile: 'OID4VP-combined',
+          responseMode: 'direct_post'
         });
 
-        expect(result.client_metadata).to.have.property('vp_formats');
-        expect(result.client_metadata).to.have.property('vp_formats_supported');
+        expect(authorizationRequest.client_metadata)
+          .to.have.property('vp_formats');
+        expect(authorizationRequest.client_metadata)
+          .to.have.property('vp_formats_supported');
       });
-  });
 
-  describe('Client metadata structure', () => {
     it('OID4VP-combined: all required client_metadata fields', async () => {
-      const rp = {
+      const workflow = {
         query: [{
           context: ['https://www.w3.org/2018/credentials/v1'],
           type: ['VerifiableCredential'],
@@ -300,22 +381,27 @@ describe('OID4VP Client Metadata', () => {
         }]
       };
 
-      const result = await getAuthorizationRequest({
-        rp, exchange: mockExchange, domain: mockDomain, url: mockUrl,
-        profile: 'OID4VP-combined'
+      const {authorizationRequest} = await generateStandard({
+        workflow,
+        exchange: mockExchange,
+        baseUri: mockDomain,
+        requestUrl: mockUrl,
+        userAgent: '',
+        signingKeys: [],
+        profile: 'OID4VP-combined',
+        responseMode: 'direct_post'
       });
 
-      expect(result.client_metadata).to.have.property('client_name');
-      expect(result.client_metadata).to.have.property(
+      expect(authorizationRequest.client_metadata)
+        .to.have.property('client_name');
+      expect(authorizationRequest.client_metadata).to.have.property(
         'subject_syntax_types_supported');
-      expect(result.client_metadata.subject_syntax_types_supported)
-        .to.be.an('array');
-      expect(result.client_metadata.subject_syntax_types_supported)
-        .to.contain('did:jwk');
-      expect(result.client_metadata.subject_syntax_types_supported)
-        .to.contain('did:key');
-      expect(result.client_metadata.subject_syntax_types_supported)
-        .to.contain('did:web');
+      const subjectSyntaxTypes =
+        authorizationRequest.client_metadata.subject_syntax_types_supported;
+      expect(subjectSyntaxTypes).to.be.an('array');
+      expect(subjectSyntaxTypes).to.contain('did:jwk');
+      expect(subjectSyntaxTypes).to.contain('did:key');
+      expect(subjectSyntaxTypes).to.contain('did:web');
     });
   });
 });

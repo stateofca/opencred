@@ -35,16 +35,15 @@ export const WALLETS_REGISTRY = {
       'or other DMV credentials on their smartphones.',
     icon: '/wallets/cadmv-wallet-icon.png',
     /**
-     * Get the default protocol for this wallet based on workflow/rp
+     * Get the default protocol for this wallet based on workflow
      * @param {Object} options - Options object
      * @param {Object} options.workflow - The workflow object (optional)
-     * @param {Object} options.rp - The relying party object (optional)
      * @param {Array<string>} options.availableProtocols - Available protocols
      * @returns {string|null} The default protocol ID or null
      */
-    getDefaultProtocol({workflow, rp, availableProtocols}) {
+    getDefaultProtocol({workflow, availableProtocols}) {
       // OID4VP-1.0 if mdoc format query, otherwise OID4VP-draft18
-      const hasMdoc = hasMdocFormat(rp || workflow);
+      const hasMdoc = hasMdocFormat(workflow);
       if(hasMdoc && availableProtocols?.includes('OID4VP-1.0')) {
         return 'OID4VP-1.0';
       }
@@ -75,6 +74,9 @@ export const WALLETS_REGISTRY = {
       },
       '18013-7-Annex-D': {
         dcapi: 'Click the button to request credentials from your wallet'
+      },
+      'OID4VP-HAIP-1.0': {
+        dcapi: 'Click the button to request credentials from your wallet'
       }
     }
   },
@@ -90,10 +92,9 @@ export const WALLETS_REGISTRY = {
     },
     homepage: 'https://lcw.app/',
     /**
-     * Get the default protocol for this wallet based on workflow/rp
+     * Get the default protocol for this wallet based on workflow
      * @param {Object} options - Options object
      * @param {Object} options.workflow - The workflow object (optional)
-     * @param {Object} options.rp - The relying party object (optional)
      * @param {Array<string>} options.availableProtocols - Available protocols
      * @returns {string|null} The default protocol ID or null
      */
@@ -164,7 +165,7 @@ export function protocolSupportsInteraction(protocolId, interactionType) {
   }
 
   // DC API protocol supports dcapi interaction
-  if(protocolId === '18013-7-Annex-D' || protocolId === 'dcApi-1.0') {
+  if(protocolId === '18013-7-Annex-D' || protocolId === 'OID4VP-HAIP-1.0') {
     return interactionType === 'dcapi';
   }
 
@@ -182,12 +183,12 @@ export function protocolSupportsInteraction(protocolId, interactionType) {
 }
 
 /**
- * Check if a workflow/rp has mdoc format credentials
- * @param {Object} rp - Relying party configuration
+ * Check if a workflow has mdoc format credentials
+ * @param {Object} workflow - Workflow configuration
  * @returns {boolean} True if any query item has mso_mdoc format
  */
-export function hasMdocFormat(rp) {
-  return rp?.query?.some(item => {
+export function hasMdocFormat(workflow) {
+  return workflow?.query?.some(item => {
     const formats = item.format || [];
     return Array.isArray(formats) && formats.includes('mso_mdoc');
   });
@@ -234,7 +235,7 @@ export function supportsInteraction({walletId, protocolId, interactionType}) {
  * @param {boolean} options.prefersSameDevice - Whether user prefers same device
  * @param {boolean} options.isMobile - Whether on mobile device
  * @param {boolean} options.dcApiSystemAvailable - Whether DC API is available
- * @param {Object} options.rp - Relying party configuration
+ * @param {Object} options.workflow - Workflow configuration
  * @param {Object} options.interactionState - Interaction state object
  * @param {Array<string>} [options.availableProtocols] - Available protocols
  *   for fallback
@@ -247,21 +248,22 @@ export function getAvailableInteractionMethods({
   protocolId,
   prefersSameDevice,
   dcApiSystemAvailable,
-  rp,
+  workflow,
   interactionState,
   availableProtocols = []
 }) {
   const methods = [];
 
   // 1. DC API (highest priority)
-  // Only available if: system supports it, enabled in rp, wallet supports it,
+  // Only available if: system supports it, enabled in workflow, wallet supports it,
   // protocol is not excluded, has mdoc format query
   // (or is 18013-7-Annex-D), and not overridden
   if(dcApiSystemAvailable &&
-    rp?.dcApiEnabled !== false &&
+    workflow?.dcApiEnabled !== false &&
     walletSupportsDcApiForProtocol(walletsRegistry, walletId, protocolId) &&
     !['chapi', 'vcapi', 'interact'].includes(protocolId) &&
-    (hasMdocFormat(rp) || protocolId === '18013-7-Annex-D') &&
+    (hasMdocFormat(workflow) || protocolId === '18013-7-Annex-D' ||
+      protocolId === 'OID4VP-HAIP-1.0') &&
     !interactionState.dcApiErrorOverride) {
     methods.push('dcapi');
   }

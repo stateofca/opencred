@@ -30,13 +30,6 @@ export const PROTOCOLS_REGISTRY = {
     description: 'A cross-version edition of OID4VP that may be ' +
       'supported by wallets regardless of their version'
   },
-  'dcApi-1.0': {
-    name: 'DC API 1.0',
-    description: 'A new web platform API that allows websites to ' +
-      'selectively request verifiable information about the user ' +
-      'through digital credentials such as a driver\'s license or a ' +
-      'national identification card stored in a digital wallet.'
-  },
   interact: {
     name: 'Interaction URL',
     description: 'A URL-based protocol for wallet interactions that ' +

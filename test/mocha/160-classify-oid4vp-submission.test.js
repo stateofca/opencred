@@ -5,15 +5,12 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+import {
+  classifyOID4VPSubmission
+} from '../../lib/workflows/profiles/common-oid4vp.js';
 import expect from 'expect.js';
-import {NativeWorkflowService} from '../../lib/workflows/native-workflow.js';
 
 describe('classifyOID4VPSubmission', () => {
-  let service;
-
-  before(() => {
-    service = new NativeWorkflowService();
-  });
 
   it('should return "oid4vp-draft18" when submission is provided', () => {
     const submission = {
@@ -25,7 +22,7 @@ describe('classifyOID4VPSubmission', () => {
       credentials: [{id: 'test-cred', format: 'jwt_vc_json'}]
     };
 
-    const result = service.classifyOID4VPSubmission({
+    const result = classifyOID4VPSubmission({
       submission,
       dcql_query
     });
@@ -43,7 +40,7 @@ describe('classifyOID4VPSubmission', () => {
       credentials: [{id: 'test-cred', format: 'jwt_vc_json'}]
     };
 
-    const result = service.classifyOID4VPSubmission({
+    const result = classifyOID4VPSubmission({
       submission,
       dcql_query
     });
@@ -61,7 +58,7 @@ describe('classifyOID4VPSubmission', () => {
       ]
     };
 
-    const result = service.classifyOID4VPSubmission({
+    const result = classifyOID4VPSubmission({
       submission,
       dcql_query
     });
@@ -76,7 +73,7 @@ describe('classifyOID4VPSubmission', () => {
       credentials: [{id: 'test-cred', format: 'jwt_vc_json'}]
     };
 
-    const result = service.classifyOID4VPSubmission({
+    const result = classifyOID4VPSubmission({
       submission,
       dcql_query
     });
@@ -89,7 +86,7 @@ describe('classifyOID4VPSubmission', () => {
     const submission = null;
     const dcql_query = null;
 
-    const result = service.classifyOID4VPSubmission({
+    const result = classifyOID4VPSubmission({
       submission,
       dcql_query
     });
@@ -101,7 +98,7 @@ describe('classifyOID4VPSubmission', () => {
     const submission = null;
     const dcql_query = {};
 
-    const result = service.classifyOID4VPSubmission({
+    const result = classifyOID4VPSubmission({
       submission,
       dcql_query
     });
@@ -115,7 +112,7 @@ describe('classifyOID4VPSubmission', () => {
       credentials: []
     };
 
-    const result = service.classifyOID4VPSubmission({
+    const result = classifyOID4VPSubmission({
       submission,
       dcql_query
     });
@@ -129,7 +126,7 @@ describe('classifyOID4VPSubmission', () => {
       credentials: 'not-an-array'
     };
 
-    const result = service.classifyOID4VPSubmission({
+    const result = classifyOID4VPSubmission({
       submission,
       dcql_query
     });

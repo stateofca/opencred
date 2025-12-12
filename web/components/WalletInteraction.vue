@@ -55,7 +55,7 @@ wallet: {{selectedWallet}}
 protocol: {{selectedProtocol}}
 available protocols: {{availableProtocols}}
 active: {{active}}
-rp: {{rp}}
+workflow: {{workflow}}
 interaction state: {{interactionState}}
 dcapi system available: {{dcApiSystemAvailable}}
 
@@ -63,7 +63,7 @@ exchange data:
 {{exchangeData}}
 
 workflow:
-{{props.rp}}
+{{props.workflow}}
     </pre>
   </div>
 </template>
@@ -110,7 +110,7 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  rp: {
+  workflow: {
     type: Object,
     required: true
   },
@@ -144,9 +144,9 @@ const isDebugMode = computed(() => {
     return false;
   }
   const context = verificationContext.value || verificationContext;
-  // Check for debug mode in options or rp
+  // Check for debug mode in options or workflow
   return context?.options?.debug === true ||
-    context?.rp?.debug === true ||
+    context?.workflow?.debug === true ||
     false;
 });
 
@@ -172,7 +172,7 @@ const activeInteractionType = computed(() => {
     prefersSameDevice: props.interactionState.prefersSameDevice ?? false,
     isMobile: $q.platform.is.mobile,
     dcApiSystemAvailable: dcApiSystemAvailable.value,
-    rp: props.rp,
+    workflow: props.workflow,
     interactionState: props.interactionState,
     availableProtocols: props.availableProtocols
   });
@@ -194,7 +194,7 @@ const protocolUrl = computed(() => {
       walletId: props.selectedWallet,
       protocol: props.selectedProtocol,
       interactionMethod,
-      workflow: props.rp?.workflow
+      workflow: props.workflow
     });
     if(walletUrl) {
       return walletUrl;

@@ -34,7 +34,7 @@ import {setCssVar} from 'quasar';
 
 // Context for exchange - will be fetched
 const context = ref({
-  rp: {
+  workflow: {
     brand: config.brand || {}
   },
   options: config.opencred?.options || {},
@@ -48,13 +48,13 @@ onBeforeMount(async () => {
       `/context/login${window.location.search}`
     );
     context.value = resp.data;
-    if(resp.data.rp.brand) {
-      Object.keys(resp.data.rp.brand).forEach(key => {
-        setCssVar(key, resp.data.rp.brand[key]);
+    if(resp.data.workflow.brand) {
+      Object.keys(resp.data.workflow.brand).forEach(key => {
+        setCssVar(key, resp.data.workflow.brand[key]);
       });
       // Set --q-primary to header color for CadmvHeader component
-      if(resp.data.rp.brand.header) {
-        setCssVar('primary', resp.data.rp.brand.header);
+      if(resp.data.workflow.brand.header) {
+        setCssVar('primary', resp.data.workflow.brand.header);
       }
     }
   } catch(e) {
@@ -75,7 +75,7 @@ watch(
         state: context.value.exchangeData.oidc.state,
         code: context.value.exchangeData.oidc.code,
       });
-      const destination = `${context.value.rp.redirectUri}?${
+      const destination = `${context.value.workflow.redirectUri}?${
         queryParams.toString()}`;
       window.location.href = destination;
     }

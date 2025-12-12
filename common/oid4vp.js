@@ -120,13 +120,13 @@ const inputDescriptorsFromQuery = async ({query, description}) => {
  * Get input descriptors for presentation definition.
  * Transforms from query format (query is required in workflow config).
  */
-export const getInputDescriptors = async ({rp}) => {
-  const {query} = rp;
+export const getInputDescriptors = async ({workflow}) => {
+  const {query} = workflow;
 
   // Transform from query (query is now required)
   return Promise.all(query.map(async q => {
     return inputDescriptorsFromQuery({
-      query: q, description: rp.description
+      query: q, description: workflow.description
     });
   }));
 };
@@ -157,17 +157,17 @@ const getTypeIri = async ({contexts, type}) => {
  * Get DCQL query for authorization request.
  * Uses dcql_query override if present, otherwise transforms from query.
  * @param {object} options
- * @param {object} options.rp - The relying party config
+ * @param {object} options.workflow - The workflow configuration
  * @param {string} options.profile - The OID4VP profile
  * @returns {object} - Object with dcql_query property
  */
-export const getDcqlQuery = async ({rp, profile}) => {
+export const getDcqlQuery = async ({workflow, profile}) => {
   // DCQL query was not invented in OID4VP-draft18
   if(profile === 'OID4VP-draft18') {
     return {};
   }
 
-  const {dcql_query, query} = rp;
+  const {dcql_query, query} = workflow;
 
   // If dcql_query override exists in config, use it directly
   if(dcql_query) {
@@ -301,7 +301,7 @@ const TEMPLATES = {
 /**
  * Returns vp_formats object or empty object based on profile
  */
-const getVpFormats = ({profile}) => {
+export const getVpFormats = ({profile}) => {
   const template = TEMPLATES[profile];
   if(!template || !template.vp_formats) {
     return {};
@@ -323,7 +323,7 @@ const getVpFormats = ({profile}) => {
 /**
  * Returns vp_formats_supported object or empty object based on profile
  */
-const getVpFormatsSupported = ({profile}) => {
+export const getVpFormatsSupported = ({profile}) => {
   const template = TEMPLATES[profile];
   if(!template || !template.vp_formats_supported) {
     return {};
@@ -356,7 +356,7 @@ const getVpFormatsSupported = ({profile}) => {
 /**
  * Returns base client_metadata merged with vp format properties
  */
-const getClientMetadata = ({profile}) => {
+export const getClientMetadata = ({profile}) => {
   const baseMetadata = {
     client_name: 'OpenCred Verifier',
     subject_syntax_types_supported: [
@@ -384,8 +384,8 @@ const getClientMetadata = ({profile}) => {
 /**
  * Returns presentation_definition object or empty object based on profile
  */
-const getPresentationDefinition = async ({
-  rp, exchange, domain, url, profile
+export const getPresentationDefinition = async ({
+  workflow, exchange, domain, url, profile
 }) => {
   const template = TEMPLATES[profile];
   if(!template || !template.presentation_definition) {
@@ -396,13 +396,18 @@ const getPresentationDefinition = async ({
     presentation_definition: {
       id: await createId(),
       input_descriptors: await getInputDescriptors({
-        rp, exchange, domain, url, profile})
+        workflow, exchange, domain, url, profile})
     }
   };
 };
 
+/**
+ * Generate authorization request for standard OID4VP profiles
+ * @deprecated Use profile-specific handlers from lib/workflows/profiles/
+ * This function is kept for backward compatibility with tests
+ */
 export const getAuthorizationRequest = async ({
-  rp, exchange, domain, url, profile, responseMode: responseModeParam
+  workflow, exchange, domain, url, profile, responseMode: responseModeParam
 } = {}) => {
   // If no profile provided, use system default from config
   let resolvedProfile = profile;
@@ -435,9 +440,9 @@ export const getAuthorizationRequest = async ({
     clientMetadata
   ] = await Promise.all([
     getPresentationDefinition({
-      rp, exchange, domain, url, profile: resolvedProfile}),
+      workflow, exchange, domain, url, profile: resolvedProfile}),
     getDcqlQuery({
-      rp, exchange, profile: resolvedProfile}),
+      workflow, profile: resolvedProfile}),
     getClientMetadata({profile: resolvedProfile})
   ]);
 

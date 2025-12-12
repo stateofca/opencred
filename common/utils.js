@@ -648,13 +648,14 @@ export function asyncHandler(middleware) {
 const MSAL_ACCESS_TOKEN_REQUEST_SCOPE =
   '3db474b9-6a0c-4840-96ac-1fceb342124f/.default';
 
-const getMsalClient = relyingParty => {
+const getMsalClient = workflow => {
   const {
     apiLoginBaseUrl,
     apiClientId,
     apiClientSecret,
     apiTenantId
-  } = relyingParty.workflow;
+  } = workflow.workflow; // TODO: Is this still correct?
+  // Make sure this is covered by tests
   const msalConfig = {
     auth: {
       clientId: apiClientId,
@@ -731,7 +732,7 @@ const getPresentationEvent = (eventType, clientId, exchangeId, error) => {
 
 /**
  * Gets a consistent presentation start event object.
- * @param {string | undefined} clientId the relying party identifier
+ * @param {string | undefined} clientId the workflow identifier
  * @returns {object}
  */
 const presentationStart = (clientId, exchangeId) => {
@@ -742,7 +743,7 @@ const presentationStart = (clientId, exchangeId) => {
 
 /**
  * Gets a consistent presentation success event object.
- * @param {string | undefined} clientId the relying party identifier
+ * @param {string | undefined} clientId the workflow identifier
  * @returns {object}
  */
 const presentationSuccess = (clientId, exchangeId) => {
@@ -753,7 +754,7 @@ const presentationSuccess = (clientId, exchangeId) => {
 
 /**
  * Gets a consistent presentation error event object.
- * @param {string | undefined} clientId the relying party identifier
+ * @param {string | undefined} clientId the workflow identifier
  * @returns {object}
  */
 const presentationError = (clientId, exchangeId, error) => {

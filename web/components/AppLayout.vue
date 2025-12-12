@@ -8,14 +8,14 @@ SPDX-License-Identifier: BSD-3-Clause
 <template>
   <div class="flex flex-col min-h-screen">
     <cadmv-header
-      :ca-gov-url="rp?.brand?.primaryLogo?.href ?? rp?.brand?.primaryLink"
-      :ca-gov-logo="typeof rp?.brand?.primaryLogo === 'string' ?
-        rp?.brand?.primaryLogo : rp?.brand?.primaryLogo?.id"
-      :ca-gov-alt="rp?.brand?.primaryLogo?.alt || 'logo-image'"
-      :dmv-url="rp?.brand?.secondaryLogo?.href ?? rp?.brand?.secondaryLink"
-      :dmv-logo="typeof rp?.brand?.secondaryLogo === 'string' ?
-        rp?.brand?.secondaryLogo : rp?.brand?.secondaryLogo?.id"
-      :dmv-alt="rp?.brand?.secondaryLogo?.alt || 'logo-image'">
+      :ca-gov-url="brand?.primaryLogo?.href ?? brand?.primaryLink"
+      :ca-gov-logo="typeof brand?.primaryLogo === 'string' ?
+        brand?.primaryLogo : brand?.primaryLogo?.id"
+      :ca-gov-alt="brand?.primaryLogo?.alt || 'logo-image'"
+      :dmv-url="brand?.secondaryLogo?.href ?? brand?.secondaryLink"
+      :dmv-logo="typeof brand?.secondaryLogo === 'string' ?
+        brand?.secondaryLogo : brand?.secondaryLogo?.id"
+      :dmv-alt="brand?.secondaryLogo?.alt || 'logo-image'">
       <div
         id="translations-btn"
         class="flex-grow flex justify-end items-center gap-3">
@@ -58,22 +58,22 @@ SPDX-License-Identifier: BSD-3-Clause
     </cadmv-header>
     <main class="relative flex-grow">
       <div
-        v-if="rp?.brand?.homeLink"
+        v-if="workflow?.brand?.homeLink"
         class="bg-white w-full text-center">
         <h2 class="font-bold">
-          <a :href="rp.brand.homeLink">
+          <a :href="workflow.brand.homeLink">
             {{$t('home')}}
           </a>
         </h2>
       </div>
       <div
         v-if="props.showBackgroundImage && !props.hasError &&
-          rp?.brand?.backgroundImage"
+          workflow?.brand?.backgroundImage"
         class="bg-no-repeat bg-cover clip-path-bg z-0 min-h-[360px]"
         :style="{ 'background-image': `url(${
-          typeof rp?.brand?.backgroundImage === 'string' ?
-            rp?.brand?.backgroundImage :
-            rp?.brand?.backgroundImage?.id})` }">
+          typeof workflow?.brand?.backgroundImage === 'string' ?
+            workflow?.brand?.backgroundImage :
+            workflow?.brand?.backgroundImage?.id})` }">
         <div class="text-center text-6xl py-10">
 &nbsp;
         </div>
@@ -116,14 +116,15 @@ const {locale, availableLocales} = useI18n({useScope: 'global'});
 
 const route = useRoute();
 
-// Context for rp - will be fetched or use config default
+// Context for current workflow - will be fetched or use config default
 const context = ref({
-  rp: {
+  workflow: {
     brand: config.brand || {}
   }
 });
 
-const rp = computed(() => context.value.rp);
+const brand = computed(() => context.value.workflow.brand);
+const workflow = computed(() => context.value.workflow);
 
 // Fetch context if needed (for initial render)
 onBeforeMount(async () => {
@@ -134,13 +135,13 @@ onBeforeMount(async () => {
         `/context/${exchangeType}${window.location.search}`
       );
       context.value = resp.data;
-      if(resp.data.rp.brand) {
-        Object.keys(resp.data.rp.brand).forEach(key => {
-          setCssVar(key, resp.data.rp.brand[key]);
+      if(resp.data.workflow.brand) {
+        Object.keys(resp.data.workflow.brand).forEach(key => {
+          setCssVar(key, resp.data.workflow.brand[key]);
         });
         // Set --q-primary to header color for CadmvHeader component
-        if(resp.data.rp.brand.header) {
-          setCssVar('primary', resp.data.rp.brand.header);
+        if(resp.data.workflow.brand.header) {
+          setCssVar('primary', resp.data.workflow.brand.header);
         }
       }
     } catch(e) {

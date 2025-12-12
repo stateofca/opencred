@@ -32,8 +32,9 @@ import {getDocumentLoader} from '../../common/documentLoader.js';
 import {withStubs} from '../utils/withStubs.js';
 
 import {NativeWorkflowService} from '../../lib/workflows/native-workflow.js';
+import {verifySubmission} from '../../lib/workflows/profiles/common-oid4vp.js';
 
-const rp = {
+const workflow = {
   type: 'native',
   clientId: 'testworkflow',
   untrustedVariableAllowList: ['redirectPath'],
@@ -102,7 +103,7 @@ describe('Exchanges (Native)', async () => {
     async () => {
       const accessToken = await createId();
       const trustedVariables = {
-        rp,
+        workflow,
         accessToken,
         oidc: {
           code: null,
@@ -122,10 +123,10 @@ describe('Exchanges (Native)', async () => {
   it('should return undefined for vc-api workflow',
     async () => {
       const accessToken = await createId();
-      const vcApiRp = klona(rp);
-      vcApiRp.type = 'vc-api';
+      const vcApiWorkflow = klona(workflow);
+      vcApiWorkflow.type = 'vc-api';
       const trustedVariables = {
-        rp: vcApiRp,
+        workflow: vcApiWorkflow,
         accessToken,
         oidc: {
           code: null,
@@ -142,7 +143,7 @@ describe('Exchanges (Native)', async () => {
   it('should get the correct exchange data', async () => {
     const accessToken = await createId();
     const trustedVariables = {
-      rp,
+      workflow,
       accessToken,
       oidc: {
         code: null,
@@ -172,7 +173,7 @@ describe('Exchanges (Native)', async () => {
       async () => {
         const accessToken = await createId();
         const trustedVariables = {
-          rp,
+          workflow,
           accessToken,
           oidc: {
             code: null,
@@ -201,8 +202,9 @@ describe('Exchanges (Native)', async () => {
   });
 
   it('should verify a submission and return verified true', async () => {
-    const rpStub = {...rp, trustedCredentialIssuers: []};
-    const exchange = await createExchangeWithAuthRequest({rp: rpStub});
+    const workflowStub = {...workflow, trustedCredentialIssuers: []};
+    const exchange = await createExchangeWithAuthRequest({
+      workflow: workflowStub});
 
     // Consider refactoring into more utility functions
     const {
@@ -242,8 +244,16 @@ describe('Exchanges (Native)', async () => {
       ]
     };
 
-    const result = await service.verifySubmission({
-      rp: rpStub, vp_token: presentation, submission, exchange});
+    const result = await verifySubmission({
+      workflow: workflowStub,
+      vp_token: presentation,
+      submission,
+      exchange,
+      baseUri: config.server.baseUri,
+      caStoreLength: config.opencred.caStore.length,
+      auditEnabled: config.opencred.audit.enable,
+      documentLoader
+    });
 
     expect(verifyStub.called).to.be(true);
     expect(result.verified).to.be(true);
@@ -266,10 +276,11 @@ describe('Exchanges (Native)', async () => {
         return [verifyUtilsStub, verifyUtilsStub2, updateStub];
       },
       async () => {
-        const rpStub = {...rp, trustedCredentialIssuers: [
+        const workflowStub = {...workflow, trustedCredentialIssuers: [
           'did:web:not-a-valid-issuer.org'
         ]};
-        const exchange = await createExchangeWithAuthRequest({rp: rpStub});
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: workflowStub});
 
         const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
           aud: domainToDidWeb(config.server.baseUri),
@@ -280,8 +291,16 @@ describe('Exchanges (Native)', async () => {
           vpToken: vp_token_jwt
         });
 
-        const result = await service.verifySubmission({
-          rp: rpStub, vp_token: vp_token_jwt, submission, exchange});
+        const result = await verifySubmission({
+          workflow: workflowStub,
+          vp_token: vp_token_jwt,
+          submission,
+          exchange,
+          baseUri: config.server.baseUri,
+          caStoreLength: config.opencred.caStore.length,
+          auditEnabled: config.opencred.audit.enable,
+          documentLoader
+        });
 
         const expectedError = 'Unaccepted credential issuer';
 
@@ -295,16 +314,23 @@ describe('Exchanges (Native)', async () => {
   it('should return an error if definition_id does not match', async () => {
     await withStubs(
       () => {
-        const rpStub = sinon.stub(config.opencred, 'workflows').value(
-          [rp]
+        const workflowStub = sinon.stub(config.opencred, 'workflows').value(
+          [workflow]
         );
-        return [rpStub];
+        return [workflowStub];
       },
       async () => {
-        const exchange = await createExchangeWithAuthRequest({rp});
+        const exchange = await createExchangeWithAuthRequest({workflow});
         presentation_submission.definition_id = 'invalid';
-        const result = await service.verifySubmission({
-          rp, vp_token, submission: presentation_submission, exchange
+        const result = await verifySubmission({
+          workflow,
+          vp_token,
+          submission: presentation_submission,
+          exchange,
+          baseUri: config.server.baseUri,
+          caStoreLength: config.opencred.caStore.length,
+          auditEnabled: config.opencred.audit.enable,
+          documentLoader
         });
 
         expect(verifyStub.called).to.be.false;
@@ -317,19 +343,27 @@ describe('Exchanges (Native)', async () => {
   it('should return an error if vp invalid', async () => {
     await withStubs(
       () => {
-        const rpStub = sinon.stub(config.opencred, 'workflows').value(
-          [rp]
+        const workflowStub = sinon.stub(config.opencred, 'workflows').value(
+          [workflow]
         );
         verifyStub.restore();
         const newVerifyStub = sinon.stub(
           verifyUtils, 'verifyPresentationDataIntegrity')
           .resolves({verified: false, error: 'invalid vp'});
-        return [rpStub, newVerifyStub];
+        return [workflowStub, newVerifyStub];
       },
       async () => {
-        const exchange = await createExchangeWithAuthRequest({rp});
-        const result = await service.verifySubmission({
-          rp, vp_token, submission: presentation_submission, exchange});
+        const exchange = await createExchangeWithAuthRequest({workflow});
+        const result = await verifySubmission({
+          workflow,
+          vp_token,
+          submission: presentation_submission,
+          exchange,
+          baseUri: config.server.baseUri,
+          caStoreLength: config.opencred.caStore.length,
+          auditEnabled: config.opencred.audit.enable,
+          documentLoader
+        });
 
         expect(verifyStub.called).to.be.true;
         expect(result.verified).to.be(false);
@@ -341,19 +375,25 @@ describe('Exchanges (Native)', async () => {
   it('should return an error if vc fails challenge', async () => {
     await withStubs(
       () => {
-        const rpStub = sinon.stub(config.opencred, 'workflows').value(
-          [rp]
+        const workflowStub = sinon.stub(config.opencred, 'workflows').value(
+          [workflow]
         );
-        return [rpStub];
+        return [workflowStub];
       },
       async () => {
-        const exchange = await createExchangeWithAuthRequest({rp});
-        const result = await service.verifySubmission({
-          rp, vp_token, submission: presentation_submission,
+        const exchange = await createExchangeWithAuthRequest({workflow});
+        const result = await verifySubmission({
+          workflow,
+          vp_token,
+          submission: presentation_submission,
           exchange: {
             ...exchange,
             challenge: `incorrect`
-          }
+          },
+          baseUri: config.server.baseUri,
+          caStoreLength: config.opencred.caStore.length,
+          auditEnabled: config.opencred.audit.enable,
+          documentLoader
         });
 
         expect(result.verified).to.be(false);
@@ -385,8 +425,9 @@ describe('Exchanges (Native)', async () => {
         return [verifyUtilsStub, verifyUtilsStub2, updateStub, caStoreStub];
       },
       async () => {
-        const rpStub = {...rp, trustedCredentialIssuers: []};
-        const exchange = await createExchangeWithAuthRequest({rp: rpStub});
+        const workflowStub = {...workflow, trustedCredentialIssuers: []};
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: workflowStub});
         const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
           aud: domainToDidWeb(config.server.baseUri),
           challenge: exchange.challenge,
@@ -398,9 +439,16 @@ describe('Exchanges (Native)', async () => {
           vpToken: vp_token_jwt
         });
 
-        const result = await service.verifySubmission({
-          rp: rpStub, vp_token: vp_token_jwt,
-          submission: presentation_submission_jwt, exchange});
+        const result = await verifySubmission({
+          workflow: workflowStub,
+          vp_token: vp_token_jwt,
+          submission: presentation_submission_jwt,
+          exchange,
+          baseUri: config.server.baseUri,
+          caStoreLength: config.opencred.caStore.length,
+          auditEnabled: config.opencred.audit.enable,
+          documentLoader
+        });
 
         expect(result.verified).to.be(false);
         expect(result.errors.length).to.be(2);
@@ -432,8 +480,9 @@ describe('Exchanges (Native)', async () => {
         return [verifyUtilsStub, verifyUtilsStub2, updateStub, caStoreStub];
       },
       async () => {
-        const rpStub = {...rp, trustedCredentialIssuers: []};
-        const exchange = await createExchangeWithAuthRequest({rp: rpStub});
+        const workflowStub = {...workflow, trustedCredentialIssuers: []};
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: workflowStub});
         const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
           aud: domainToDidWeb(config.server.baseUri),
           challenge: exchange.challenge,
@@ -459,9 +508,16 @@ describe('Exchanges (Native)', async () => {
           vpToken: vp_token_jwt
         });
 
-        const result = await service.verifySubmission({
-          rp: rpStub, vp_token: vp_token_jwt,
-          submission: presentation_submission_jwt, exchange});
+        const result = await verifySubmission({
+          workflow: workflowStub,
+          vp_token: vp_token_jwt,
+          submission: presentation_submission_jwt,
+          exchange,
+          baseUri: config.server.baseUri,
+          caStoreLength: config.opencred.caStore.length,
+          auditEnabled: config.opencred.audit.enable,
+          documentLoader
+        });
 
         expect(result.verified).to.be(false);
         expect(result.errors.length).to.be(2);
@@ -493,8 +549,9 @@ describe('Exchanges (Native)', async () => {
         return [verifyUtilsStub, verifyUtilsStub2, updateStub, caStoreStub];
       },
       async () => {
-        const rpStub = {...rp, trustedCredentialIssuers: []};
-        const exchange = await createExchangeWithAuthRequest({rp: rpStub});
+        const workflowStub = {...workflow, trustedCredentialIssuers: []};
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: workflowStub});
         const {chain, leafKeyPair} = await generateCertificateChain({
           length: 3
         });
@@ -509,9 +566,16 @@ describe('Exchanges (Native)', async () => {
           vpToken: vp_token_jwt
         });
 
-        const result = await service.verifySubmission({
-          rp: rpStub, vp_token: vp_token_jwt,
-          submission: presentation_submission_jwt, exchange});
+        const result = await verifySubmission({
+          workflow: workflowStub,
+          vp_token: vp_token_jwt,
+          submission: presentation_submission_jwt,
+          exchange,
+          baseUri: config.server.baseUri,
+          caStoreLength: config.opencred.caStore.length,
+          auditEnabled: config.opencred.audit.enable,
+          documentLoader
+        });
 
         expect(result.verified).to.be(false);
         expect(result.errors.length).to.be(2);
@@ -521,15 +585,15 @@ describe('Exchanges (Native)', async () => {
   });
 
   it('should pass X.509 validation with invalid x5c chain if' +
-    ' caStore is false in rp', async () => {
+    ' caStore is false in workflow', async () => {
     await withStubs(
       async () => {
         const {chain} = await generateCertificateChain({
           length: 3
         });
         const root = chain.pop();
-        const rpStub = sinon.stub(config.opencred, 'workflows').value(
-          [{...rp, trustedCredentialIssuers: [],
+        const workflowStub = sinon.stub(config.opencred, 'workflows').value(
+          [{...workflow, trustedCredentialIssuers: [],
             // Bypass CA checks
             caStore: false
           }]
@@ -549,12 +613,17 @@ describe('Exchanges (Native)', async () => {
         const caStoreStub = sinon.stub(config.opencred, 'caStore').value([
           convertDerCertificateToPem(root.raw, false)
         ]);
-        return [rpStub, vprCheckStub, verifyUtilsStub,
+        return [workflowStub, vprCheckStub, verifyUtilsStub,
           verifyUtilsStub2, updateStub, caStoreStub];
       },
       async () => {
-        const rpStub = {...rp, trustedCredentialIssuers: [], caStore: false};
-        const exchange = await createExchangeWithAuthRequest({rp: rpStub});
+        const workflowStub = {
+          ...workflow,
+          trustedCredentialIssuers: [],
+          caStore: false
+        };
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: workflowStub});
         const {chain} = await generateCertificateChain({
           length: 3
         });
@@ -575,9 +644,16 @@ describe('Exchanges (Native)', async () => {
           vpToken: vp_token_jwt
         });
 
-        const result = await service.verifySubmission({
-          rp: rpStub, vp_token: vp_token_jwt,
-          submission: presentation_submission_jwt, exchange});
+        const result = await verifySubmission({
+          workflow: workflowStub,
+          vp_token: vp_token_jwt,
+          submission: presentation_submission_jwt,
+          exchange,
+          baseUri: config.server.baseUri,
+          caStoreLength: config.opencred.caStore.length,
+          auditEnabled: config.opencred.audit.enable,
+          documentLoader
+        });
 
         expect(result.verified).to.be(true);
         expect(result.errors.length).to.be(0);
@@ -590,8 +666,8 @@ describe('Exchanges (Native)', async () => {
       await withStubs(
         () => {
           const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
-          const rpStub = sinon.stub(config.opencred, 'workflows').value(
-            [{...rp, trustedCredentialIssuers: []}]
+          const workflowStub = sinon.stub(config.opencred, 'workflows').value(
+            [{...workflow, trustedCredentialIssuers: []}]
           );
           const vprCheckStub = sinon.stub(
             verifyUtils, 'checkVcForVpr').resolves(true);
@@ -607,12 +683,13 @@ describe('Exchanges (Native)', async () => {
           const updateStub = sinon.stub(
             database.collections.Exchanges, 'updateOne')
             .resolves();
-          return [caStoreStub, rpStub, vprCheckStub,
+          return [caStoreStub, workflowStub, vprCheckStub,
             verifyUtilsStub, verifyUtilsStub2, updateStub];
         },
         async () => {
-          const rpStub = {...rp, trustedCredentialIssuers: []};
-          const exchange = await createExchangeWithAuthRequest({rp: rpStub});
+          const workflowStub = {...workflow, trustedCredentialIssuers: []};
+          const exchange = await createExchangeWithAuthRequest({
+            workflow: workflowStub});
           const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
             aud: domainToDidWeb(config.server.baseUri),
             challenge: exchange.challenge,
@@ -629,9 +706,16 @@ describe('Exchanges (Native)', async () => {
             vpToken: vp_token_jwt
           });
 
-          const result = await service.verifySubmission({
-            rp: rpStub, vp_token: vp_token_jwt,
-            submission: presentation_submission_jwt, exchange});
+          const result = await verifySubmission({
+            workflow: workflowStub,
+            vp_token: vp_token_jwt,
+            submission: presentation_submission_jwt,
+            exchange,
+            baseUri: config.server.baseUri,
+            caStoreLength: config.opencred.caStore.length,
+            auditEnabled: config.opencred.audit.enable,
+            documentLoader
+          });
 
           expect(result.verified).to.be(true);
           expect(result.errors.length).to.be(0);
@@ -644,8 +728,8 @@ describe('Exchanges (Native)', async () => {
     await withStubs(
       () => {
         const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
-        const rpStub = sinon.stub(config.opencred, 'workflows').value(
-          [{...rp, trustedCredentialIssuers: ['did:jwk:123']}]
+        const workflowStub = sinon.stub(config.opencred, 'workflows').value(
+          [{...workflow, trustedCredentialIssuers: ['did:jwk:123']}]
         );
         const vprCheckStub = sinon.stub(
           verifyUtils, 'checkVcForVpr').resolves(true);
@@ -659,12 +743,13 @@ describe('Exchanges (Native)', async () => {
         const updateStub = sinon.stub(
           database.collections.Exchanges, 'updateOne')
           .resolves();
-        return [caStoreStub, rpStub, vprCheckStub,
+        return [caStoreStub, workflowStub, vprCheckStub,
           verifyUtilsStub, verifyUtilsStub2, updateStub];
       },
       async () => {
-        const rpStub = {...rp, trustedCredentialIssuers: []};
-        const exchange = await createExchangeWithAuthRequest({rp: rpStub});
+        const workflowStub = {...workflow, trustedCredentialIssuers: []};
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: workflowStub});
         const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
           aud: domainToDidWeb(config.server.baseUri),
           challenge: exchange.challenge
@@ -674,9 +759,16 @@ describe('Exchanges (Native)', async () => {
           vpToken: vp_token_jwt
         });
 
-        const result = await service.verifySubmission({
-          rp: rpStub, vp_token: vp_token_jwt,
-          submission: presentation_submission_jwt, exchange});
+        const result = await verifySubmission({
+          workflow: workflowStub,
+          vp_token: vp_token_jwt,
+          submission: presentation_submission_jwt,
+          exchange,
+          baseUri: config.server.baseUri,
+          caStoreLength: config.opencred.caStore.length,
+          auditEnabled: config.opencred.audit.enable,
+          documentLoader
+        });
 
         expect(result.verified).to.be(false);
         expect(result.errors.length).to.be(1);
@@ -689,8 +781,8 @@ describe('Exchanges (Native)', async () => {
     await withStubs(
       () => {
         const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
-        const rpStub = sinon.stub(config.opencred, 'workflows').value(
-          [{...rp, trustedCredentialIssuers: ['did:jwk:123']}]
+        const workflowStub = sinon.stub(config.opencred, 'workflows').value(
+          [{...workflow, trustedCredentialIssuers: ['did:jwk:123']}]
         );
         const vprCheckStub = sinon.stub(
           verifyUtils, 'checkVcForVpr').resolves(true);
@@ -705,12 +797,13 @@ describe('Exchanges (Native)', async () => {
         const updateStub = sinon.stub(
           database.collections.Exchanges, 'updateOne')
           .resolves();
-        return [caStoreStub, rpStub, vprCheckStub,
+        return [caStoreStub, workflowStub, vprCheckStub,
           verifyUtilsStub, verifyUtilsStub2, updateStub];
       },
       async () => {
-        const rpStub = {...rp, trustedCredentialIssuers: []};
-        const exchange = await createExchangeWithAuthRequest({rp: rpStub});
+        const workflowStub = {...workflow, trustedCredentialIssuers: []};
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: workflowStub});
         const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
           aud: domainToDidWeb(config.server.baseUri),
           challenge: exchange.challenge,
@@ -721,9 +814,16 @@ describe('Exchanges (Native)', async () => {
           vpToken: vp_token_jwt
         });
 
-        const result = await service.verifySubmission({
-          rp: rpStub, vp_token: vp_token_jwt,
-          submission: presentation_submission_jwt, exchange});
+        const result = await verifySubmission({
+          workflow: workflowStub,
+          vp_token: vp_token_jwt,
+          submission: presentation_submission_jwt,
+          exchange,
+          baseUri: config.server.baseUri,
+          caStoreLength: config.opencred.caStore.length,
+          auditEnabled: config.opencred.audit.enable,
+          documentLoader
+        });
 
         expect(result.verified).to.be(false);
         expect(result.errors.length).to.be(1);
@@ -735,7 +835,7 @@ describe('Exchanges (Native)', async () => {
     async () => {
       const accessToken = await createId();
       const trustedVariables = {
-        rp,
+        workflow,
         accessToken,
         oidc: {
           code: null,
@@ -754,7 +854,7 @@ describe('Exchanges (Native)', async () => {
     async () => {
       const accessToken = await createId();
       const trustedVariables = {
-        rp,
+        workflow,
         accessToken,
         oidc: {
           code: null,

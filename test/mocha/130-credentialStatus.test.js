@@ -20,10 +20,10 @@ import {generateValidDidKeyData} from '../utils/dids.js';
 import {generateValidJwtVpToken} from '../utils/jwtVpTokens.js';
 import {generateValidSignedCredential} from '../utils/credentials.js';
 import {getAuthorizationRequest} from '../../common/oid4vp.js';
-import {NativeWorkflowService} from '../../lib/workflows/native-workflow.js';
+import {verifySubmission} from '../../lib/workflows/profiles/common-oid4vp.js';
 import {verifyUtils} from '../../common/utils.js';
 
-const rp = {
+const testWorkflow = {
   clientId: 'testworkflow',
   type: 'native',
   untrustedVariableAllowList: ['redirectPath'],
@@ -39,14 +39,12 @@ const rp = {
 };
 
 describe('Credential Status Verification', async () => {
-  let service;
   let exchange;
   let rpStub;
   let baseService;
 
   before(() => {
     // Initialize service and stubs
-    service = new NativeWorkflowService();
     baseService = new BaseWorkflowService();
 
     rpStub = sinon.stub(config.opencred, 'workflows').value(
@@ -128,7 +126,11 @@ describe('Credential Status Verification', async () => {
 
     // Generate exchange programmatically
     exchange = await baseService.initExchange(
-      {rp, accessToken: 'test-token', oidc: {code: null, state: ''}},
+      {
+        workflow: testWorkflow,
+        accessToken: 'test-token',
+        oidc: {code: null, state: ''}
+      },
       {}
     );
     exchange.createdAt = new Date();
@@ -136,11 +138,11 @@ describe('Credential Status Verification', async () => {
       exchange.createdAt.getTime() + 900000
     );
 
-    // Generate authorization request from rp and exchange
+    // Generate authorization request from workflow and exchange
     const authorizationRequest = await getAuthorizationRequest({
-      rp,
+      workflow: testWorkflow,
       exchange,
-      domain: rp.domain,
+      domain: testWorkflow.domain,
       url: '/test/authorization/request',
       profile: 'OID4VP-draft18'
     });
@@ -199,8 +201,11 @@ describe('Credential Status Verification', async () => {
       return documentLoader(url);
     };
     // Use a draft 18 approach with presentation_submission
-    const result = await service.verifySubmission({
-      vp_token: presentation, submission: presentation_submission, exchange, rp,
+    const result = await verifySubmission({
+      vp_token: presentation,
+      submission: presentation_submission,
+      exchange,
+      workflow: testWorkflow,
       documentLoader: docLoaderWithStatusCredential}
     );
 

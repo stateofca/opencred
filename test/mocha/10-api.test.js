@@ -35,12 +35,11 @@ import {generateValidSignedCredential} from '../utils/credentials.js';
 import {httpClient} from '@digitalbazaar/http-client';
 import https from 'node:https';
 import {msalUtils} from '../../common/utils.js';
-import {NativeWorkflowService} from '../../lib/workflows/native-workflow.js';
 
 const agent = new https.Agent({rejectUnauthorized: false});
 const client = httpClient.extend({agent});
 
-const testRP = {
+const testWorkflow = {
   type: 'native',
   clientId: 'test',
   query: [{
@@ -76,16 +75,16 @@ const testRP = {
   },
 };
 
-const testRP2 = klona(testRP);
-testRP2.clientId = 'test2';
-testRP2.query = [{
+const testWorkflow2 = klona(testWorkflow);
+testWorkflow2.clientId = 'test2';
+testWorkflow2.query = [{
   context: [
     'https://www.w3.org/ns/credentials/v2',
     'https://www.w3.org/ns/credentials/examples/v2'
   ],
   type: ['MyPrototypeCredential']
 }];
-testRP2.verifiablePresentationRequest = JSON.stringify({
+testWorkflow2.verifiablePresentationRequest = JSON.stringify({
   query: {
     type: 'QueryByExample',
     credentialQuery: {
@@ -101,16 +100,16 @@ testRP2.verifiablePresentationRequest = JSON.stringify({
   }
 });
 
-const testRP3 = klona(testRP);
-testRP3.clientId = 'test3';
-testRP3.query = [{
+const testWorkflow3 = klona(testWorkflow);
+testWorkflow3.clientId = 'test3';
+testWorkflow3.query = [{
   context: [
     'https://www.w3.org/2018/credentials/v1',
     'https://www.w3.org/2018/credentials/examples/v1'
   ],
   type: ['UniversityDegreeCredential']
 }];
-testRP3.verifiablePresentationRequest = JSON.stringify({
+testWorkflow3.verifiablePresentationRequest = JSON.stringify({
   query: {
     type: 'QueryByExample',
     credentialQuery: {
@@ -126,16 +125,16 @@ testRP3.verifiablePresentationRequest = JSON.stringify({
   }
 });
 
-const testRP4 = klona(testRP);
-testRP4.clientId = 'test4';
-testRP4.query = [{
+const testWorkflow4 = klona(testWorkflow);
+testWorkflow4.clientId = 'test4';
+testWorkflow4.query = [{
   context: [
     'https://www.w3.org/2018/credentials/v1',
     'https://w3id.org/citizenship/v1'
   ],
   type: ['PermanentResidentCard']
 }];
-testRP4.verifiablePresentationRequest = JSON.stringify({
+testWorkflow4.verifiablePresentationRequest = JSON.stringify({
   query: {
     type: 'QueryByExample',
     credentialQuery: {
@@ -225,7 +224,7 @@ entraExchange.recordExpiresAt = new Date();
 describe('OpenCred API - Native Workflow', function() {
   this.beforeEach(() => {
     this.rpStub = sinon.stub(config.opencred, 'workflows').value(
-      [testRP, testRP2, testRP3, testRP4]);
+      [testWorkflow, testWorkflow2, testWorkflow3, testWorkflow4]);
   });
 
   this.afterEach(() => {
@@ -237,7 +236,8 @@ describe('OpenCred API - Native Workflow', function() {
     let result;
     try {
       result = await client
-        .post(`${baseUrl}/workflows/not-the-${testRP.clientId}/exchanges`);
+        .post(`${baseUrl}/workflows/not-the-${
+          testWorkflow.clientId}/exchanges`);
     } catch(e) {
       err = e;
     }
@@ -248,7 +248,8 @@ describe('OpenCred API - Native Workflow', function() {
   });
 
   it('should create a new exchange with the workflow', async function() {
-    const exchange = await createExchangeWithAuthRequest({rp: testRP});
+    const exchange = await createExchangeWithAuthRequest({
+      workflow: testWorkflow});
     const insertStub = sinon.stub(database.collections.Exchanges, 'insertOne')
       .resolves(exchange);
     const basic = Buffer.from('test:shhh').toString('base64');
@@ -256,7 +257,7 @@ describe('OpenCred API - Native Workflow', function() {
     let err;
     try {
       result = await client
-        .post(`${baseUrl}/workflows/${testRP.clientId}/exchanges`, {
+        .post(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges`, {
           headers: {Authorization: `Basic ${basic}`}
         });
     } catch(e) {
@@ -276,7 +277,8 @@ describe('OpenCred API - Native Workflow', function() {
   });
 
   it('should return 404 if invalid workflowId', async function() {
-    const exchange = await createExchangeWithAuthRequest({rp: testRP});
+    const exchange = await createExchangeWithAuthRequest({
+      workflow: testWorkflow});
     const modifiedExchange = {...exchange, workflowId: 'WRONG'};
     const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
       .resolves(modifiedExchange);
@@ -285,7 +287,7 @@ describe('OpenCred API - Native Workflow', function() {
     try {
       result = await client
         .get(
-          `${baseUrl}/workflows/${testRP.clientId}/exchanges/` +
+          `${baseUrl}/workflows/${testWorkflow.clientId}/exchanges/` +
           `${exchange.id}/openid/client/authorization/request`);
     } catch(e) {
       err = e;
@@ -298,9 +300,10 @@ describe('OpenCred API - Native Workflow', function() {
   });
 
   it('should return Authorization Request JWT', async function() {
-    const exchange = await createExchangeWithAuthRequest({rp: testRP});
+    const exchange = await createExchangeWithAuthRequest({
+      workflow: testWorkflow});
     const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
-      .resolves({...exchange, workflowId: testRP.clientId});
+      .resolves({...exchange, workflowId: testWorkflow.clientId});
     const updateStub = sinon.stub(database.collections.Exchanges, 'updateOne')
       .resolves();
     const baseUri = sinon.stub(config.server, 'baseUri').value(
@@ -315,7 +318,7 @@ describe('OpenCred API - Native Workflow', function() {
     try {
       result = await client
         .get(
-          `${baseUrl}/workflows/${testRP.clientId}/exchanges/` +
+          `${baseUrl}/workflows/${testWorkflow.clientId}/exchanges/` +
           `${exchange.id}/openid/client/authorization/request`
         );
     } catch(e) {
@@ -336,14 +339,15 @@ describe('OpenCred API - Native Workflow', function() {
   });
 
   it('should return status on exchange', async function() {
-    const exchange = await createExchangeWithAuthRequest({rp: testRP});
+    const exchange = await createExchangeWithAuthRequest({
+      workflow: testWorkflow});
     const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
       .resolves(exchange);
     let result;
     let err;
     try {
       result = await client
-        .get(`${baseUrl}/workflows/${testRP.clientId}/exchanges/` +
+        .get(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges/` +
           `${exchange.id}`, {
           headers: {Authorization: `Bearer ${exchange.accessToken}`}
         });
@@ -358,14 +362,15 @@ describe('OpenCred API - Native Workflow', function() {
   });
 
   it('should allow POST to exchange endpoint', async function() {
-    const exchange = await createExchangeWithAuthRequest({rp: testRP});
+    const exchange = await createExchangeWithAuthRequest({
+      workflow: testWorkflow});
     const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
       .resolves(exchange);
     let result;
     let err;
     try {
       result = await client
-        .post(`${baseUrl}/workflows/${testRP.clientId}/exchanges/` +
+        .post(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges/` +
           `${exchange.id}`);
     } catch(e) {
       err = e;
@@ -377,7 +382,8 @@ describe('OpenCred API - Native Workflow', function() {
   });
 
   it('should 404 on POST to exchange endpoint if expired', async function() {
-    const exchange = await createExchangeWithAuthRequest({rp: testRP});
+    const exchange = await createExchangeWithAuthRequest({
+      workflow: testWorkflow});
     // Set createdAt to be far enough in the past that it's clearly expired
     // Default ttl is 900 seconds, so set createdAt to 2000 seconds ago
     // This ensures expiry = createdAt + ttl = (now - 2000) + 900 =
@@ -395,7 +401,7 @@ describe('OpenCred API - Native Workflow', function() {
     let err;
     try {
       result = await client
-        .post(`${baseUrl}/workflows/${testRP.clientId}/exchanges/` +
+        .post(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges/` +
           `${exchange.id}`);
     } catch(e) {
       err = e;
@@ -408,7 +414,8 @@ describe('OpenCred API - Native Workflow', function() {
   });
 
   it('OID4VP should handle DI authorization response', async function() {
-    const exchange2 = await createExchangeWithAuthRequest({rp: testRP4});
+    const exchange2 = await createExchangeWithAuthRequest({
+      workflow: testWorkflow4});
     const {
       did: holderDid, suite: holderSuite
     } = await generateValidDidKeyData();
@@ -474,7 +481,7 @@ describe('OpenCred API - Native Workflow', function() {
       searchParams.set('presentation_submission',
         JSON.stringify(presentation_submission_di));
       result = await client
-        .post(`${baseUrl}/workflows/${testRP4.clientId}/exchanges/` +
+        .post(`${baseUrl}/workflows/${testWorkflow4.clientId}/exchanges/` +
           `${exchange2.id}/openid/client/authorization/response`, {
           body: searchParams,
           headers: {
@@ -491,7 +498,8 @@ describe('OpenCred API - Native Workflow', function() {
   });
 
   it('OID4VP should reject schema mismatch', async function() {
-    const exchange = await createExchangeWithAuthRequest({rp: testRP});
+    const exchange = await createExchangeWithAuthRequest({
+      workflow: testWorkflow});
     const {
       did: holderDid, suite: holderSuite
     } = await generateValidDidKeyData();
@@ -536,9 +544,10 @@ describe('OpenCred API - Native Workflow', function() {
       searchParams.set('vp_token', JSON.stringify(presentation));
       searchParams.set('presentation_submission',
         JSON.stringify(presentation_submission_di));
-      // this test credential doesn't match the testRP schema, matches testRP2
+      // this test credential doesn't match the testWorkflow schema,
+      // matches testWorkflow2
       await client
-        .post(`${baseUrl}/workflows/${testRP.clientId}/exchanges/` +
+        .post(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges/` +
           `${exchange.id}/openid/client/authorization/response`, {
           body: searchParams,
           headers: {
@@ -556,9 +565,10 @@ describe('OpenCred API - Native Workflow', function() {
   });
 
   it('OID4VP should handle JWT authorization response', async function() {
-    const exchange = await createExchangeWithAuthRequest({rp: testRP3});
+    const exchange = await createExchangeWithAuthRequest({
+      workflow: testWorkflow3});
 
-    // Generate the VP token with template matching testRP3 requirements
+    // Generate the VP token with template matching testWorkflow3 requirements
     // Include the exchange challenge as nonce for verification
     const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
       aud: domainToDidWeb(config.server.baseUri),
@@ -591,7 +601,7 @@ describe('OpenCred API - Native Workflow', function() {
       searchParams.set('presentation_submission',
         JSON.stringify(presentation_submission_jwt));
       result = await client
-        .post(`${baseUrl}/workflows/${testRP3.clientId}/exchanges/` +
+        .post(`${baseUrl}/workflows/${testWorkflow3.clientId}/exchanges/` +
           `${exchange.id}/openid/client/authorization/response`, {
           body: searchParams,
           headers: {'content-type': 'application/x-www-form-urlencoded'}
@@ -608,9 +618,10 @@ describe('OpenCred API - Native Workflow', function() {
 
   it('should fail callback after submitting presentation',
     async function() {
-      const exchange = await createExchangeWithAuthRequest({rp: testRP});
+      const exchange = await createExchangeWithAuthRequest({
+        workflow: testWorkflow});
       this.rpStub = sinon.stub(config.opencred, 'workflows').value([{
-        ...testRP,
+        ...testWorkflow,
         callback: {
           url: 'https://api.callback.example.com'
         }
@@ -629,30 +640,36 @@ describe('OpenCred API - Native Workflow', function() {
         .resolves(exchange);
       const updateStub =
         sinon.stub(database.collections.Exchanges, 'replaceOne').resolves();
-      const verifySubmissionStub = sinon.stub(
-        NativeWorkflowService.prototype, 'verifySubmission')
-        .resolves({
-          verified: true,
-          errors: [],
-          verifiablePresentation: {}
-        });
       let result;
       let err;
-      // Use simple mock objects instead of generating real JWT tokens
-      const mockVpToken = 'mock.vp.token';
-      const mockPresentationSubmission = {
-        id: 'test-submission-id',
-        definition_id: exchange.variables.authorizationRequest
-          .presentation_definition?.id || 'test-def-id',
-        descriptor_map: []
-      };
+      // Generate real JWT tokens that will pass verification
+      const {vpToken: vp_token_jwt} = await generateValidJwtVpToken({
+        aud: domainToDidWeb(config.server.baseUri),
+        challenge: exchange.challenge,
+        template: {
+          '@context': [
+            'https://www.w3.org/2018/credentials/v1',
+            'https://w3id.org/vdl/v1',
+            'https://w3id.org/vdl/aamva/v1'
+          ],
+          type: ['VerifiableCredential', 'Iso18013DriversLicense'],
+          credentialSubject: {
+            givenName: 'John',
+            familyName: 'Doe'
+          }
+        }
+      });
+      const presentation_submission = generatePresentationSubmission({
+        authorizationRequest: exchange.variables.authorizationRequest,
+        vpToken: vp_token_jwt
+      });
       try {
         const searchParams = new URLSearchParams();
-        searchParams.set('vp_token', JSON.stringify(mockVpToken));
+        searchParams.set('vp_token', vp_token_jwt);
         searchParams.set('presentation_submission',
-          JSON.stringify(mockPresentationSubmission));
+          JSON.stringify(presentation_submission));
         result = await client
-          .post(`${baseUrl}/workflows/${testRP.clientId}/exchanges/` +
+          .post(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges/` +
             `${exchange.id}/openid/client/authorization/response`, {
             body: searchParams,
             headers: {'content-type': 'application/x-www-form-urlencoded'}
@@ -660,6 +677,9 @@ describe('OpenCred API - Native Workflow', function() {
       } catch(e) {
         err = e;
       }
+      // Check if updateStub was called
+      should.exist(updateStub.callCount);
+      expect(updateStub.callCount).to.be.greaterThan(0);
       const updatedExchange = updateStub.getCall(0)?.args[1];
       should.exist(updatedExchange);
       const updatedExchangeErrors =
@@ -676,17 +696,15 @@ describe('OpenCred API - Native Workflow', function() {
       httpClientStub.restore();
       findStub.restore();
       updateStub.restore();
-      verifySubmissionStub.restore();
     });
 });
 
 describe('OpenCred API - VC-API Workflow', function() {
   this.beforeEach(() => {
     this.rpStub = sinon.stub(config.opencred, 'workflows').value([{
-      ...testRP,
+      ...testWorkflow,
       type: 'vc-api',
       capability: '{}',
-      clientSecret: 'vcapiclientsecret',
       vpr: '{}',
       untrustedVariableAllowList: ['redirectPath']
     }]);
@@ -709,9 +727,11 @@ describe('OpenCred API - VC-API Workflow', function() {
     let result;
     let err;
     try {
-      const basic = Buffer.from('test:vcapiclientsecret').toString('base64');
+      const basic = Buffer.from(
+        `${testWorkflow.clientId}:${testWorkflow.clientSecret}`
+      ).toString('base64');
       result = await client
-        .post(`${baseUrl}/workflows/${testRP.clientId}/exchanges`, {
+        .post(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges`, {
           headers: {Authorization: `Basic ${basic}`}
         });
     } catch(e) {
@@ -729,7 +749,8 @@ describe('OpenCred API - VC-API Workflow', function() {
   });
 
   it('should return status on exchange', async function() {
-    const exchange = await createExchangeWithAuthRequest({rp: testRP});
+    const exchange = await createExchangeWithAuthRequest({
+      workflow: testWorkflow});
     const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
       .resolves(exchange);
     const zcapStub = sinon.stub(zcapClient, 'zcapReadRequest')
@@ -739,7 +760,7 @@ describe('OpenCred API - VC-API Workflow', function() {
     try {
       const token = exchange.accessToken;
       result = await client
-        .get(`${baseUrl}/workflows/${testRP.clientId}/exchanges/` +
+        .get(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges/` +
           `${exchange.id}`, {headers: {Authorization: `Bearer ${token}`}});
     } catch(e) {
       err = e;
@@ -756,7 +777,8 @@ describe('OpenCred API - VC-API Workflow', function() {
   // Draft test for once vc-api exchanges are used.
   it.skip('should updateDidDocumentHistory on complete exchange',
     async function() {
-      const exchange = await createExchangeWithAuthRequest({rp: testRP});
+      const exchange = await createExchangeWithAuthRequest({
+        workflow: testWorkflow});
       const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
         .resolves(exchange);
       const zcapStub = sinon.stub(zcapClient, 'zcapReadRequest')
@@ -782,7 +804,7 @@ describe('OpenCred API - VC-API Workflow', function() {
       try {
         const token = exchange.accessToken;
         result = await client
-          .get(`${baseUrl}/workflows/${testRP.clientId}/exchanges/` +
+          .get(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges/` +
           `${exchange.id}`, {headers: {Authorization: `Bearer ${token}`}});
       } catch(e) {
         err = e;
@@ -806,7 +828,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
   function() {
     this.beforeEach(() => {
       this.rpStub = sinon.stub(config.opencred, 'workflows').value([{
-        ...testRP,
+        ...testWorkflow,
         type: 'microsoft-entra-verified-id',
         apiBaseUrl: 'https://api.entra.microsoft.example.com/v1.0',
         apiLoginBaseUrl: 'https://login.entra.microsoft.example.com',
@@ -837,10 +859,10 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
       let result;
       let err;
       try {
-        const basic = Buffer.from(`${testRP.clientId}:${
-          testRP.clientSecret}`).toString('base64');
+        const basic = Buffer.from(`${testWorkflow.clientId}:${
+          testWorkflow.clientSecret}`).toString('base64');
         result = await client
-          .post(`${baseUrl}/workflows/${testRP.clientId}/exchanges`, {
+          .post(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges`, {
             headers: {Authorization: `Basic ${basic}`}
           });
       } catch(e) {
@@ -856,7 +878,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
         'openid4vp://?request_uri=https://requri.example.com/123&' +
         'client_id=did:web:example.com'
       );
-      result.data.workflowId.should.be.equal(testRP.clientId);
+      result.data.workflowId.should.be.equal(testWorkflow.clientId);
       insertStub.called.should.be.equal(true);
       getMsalClientStub.called.should.be.equal(true);
       makeHttpPostRequestStub.called.should.be.equal(true);
@@ -873,7 +895,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
       let err;
       try {
         result = await client
-          .get(`${baseUrl}/workflows/${testRP.clientId}/exchanges/` +
+          .get(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges/` +
             `${entraExchange.id}`, {
             headers: {Authorization: `Bearer ${entraExchange.accessToken}`}
           });
@@ -896,7 +918,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
         let err;
         try {
           result = await client
-            .get(`${baseUrl}/workflows/${testRP.clientId}/exchanges/` +
+            .get(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges/` +
               `${entraExchange.id}`, {
               headers: {Authorization: `Bearer ${entraExchange.accessToken}`}
             });
@@ -973,7 +995,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
         let err;
         try {
           result = await client
-            .get(`${baseUrl}/workflows/${testRP.clientId}/exchanges/` +
+            .get(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges/` +
               `${entraExchange.id}`, {
               headers: {Authorization: `Bearer ${entraExchange.accessToken}`}
             });
@@ -1011,7 +1033,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
         let err;
         try {
           result = await client
-            .get(`${baseUrl}/workflows/${testRP.clientId}/exchanges/` +
+            .get(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges/` +
               `${entraExchange.id}`, {
               headers: {Authorization: `Bearer ${entraExchange.accessToken}`}
             });
@@ -1405,9 +1427,9 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
       const caStoreStub = sinon.stub(config.opencred, 'caStore').value([
         convertDerCertificateToPem(root.raw, false)
       ]);
-      const rpConfigStub = sinon.stub(config.opencred, 'workflows')
+      const workflowsStub = sinon.stub(config.opencred, 'workflows')
         .value([{
-          ...testRP,
+          ...testWorkflow,
           type: 'microsoft-entra-verified-id',
           apiBaseUrl: 'https://api.entra.microsoft.example.com/v1.0',
           apiLoginBaseUrl: 'https://login.entra.microsoft.example.com',
@@ -1451,6 +1473,6 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
       findStub.restore();
       replaceStub.restore();
       caStoreStub.restore();
-      rpConfigStub.restore();
+      workflowsStub.restore();
     });
   });

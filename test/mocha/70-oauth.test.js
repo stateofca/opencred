@@ -18,7 +18,7 @@ import {database} from '../../lib/database.js';
 const agent = new https.Agent({rejectUnauthorized: false});
 const client = httpClient.extend({agent});
 
-const exampleRelyingParty = {
+const exampleWorkflow = {
   clientId: 'test',
   clientSecret: 'testsecret',
   type: 'native',
@@ -46,7 +46,7 @@ const exampleRelyingParty = {
 describe('OAuth Login Workflow', function() {
   this.beforeAll(() => {
     this.rpStub = sinon.stub(config.opencred, 'workflows').value(
-      [exampleRelyingParty]
+      [exampleWorkflow]
     );
   });
 

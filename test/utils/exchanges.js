@@ -16,7 +16,7 @@ const service = new NativeWorkflowService();
 /**
  * Helper function to create an exchange with authorization request
  * @param {Object} options - Options for exchange creation
- * @param {Object} options.rp - Relying party configuration
+ * @param {Object} options.workflow - Workflow configuration
  * @param {Object} options.trustedVariables - Trusted variables for
  *   exchange creation
  * @param {Object} options.untrustedVariables - Untrusted variables for
@@ -27,7 +27,7 @@ const service = new NativeWorkflowService();
  * @returns {Promise<Object>} Exchange object with authorization request
  */
 export async function createExchangeWithAuthRequest({
-  rp,
+  workflow,
   trustedVariables,
   untrustedVariables = {},
   profile,
@@ -38,16 +38,16 @@ export async function createExchangeWithAuthRequest({
   const oidc = trustedVariables?.oidc || {code: null, state: 'test'};
 
   const exchange = await service.initExchange(
-    {rp, accessToken, oidc},
+    {workflow, accessToken, oidc},
     untrustedVariables
   );
 
   // Generate authorization request
-  const domain = rp.domain || config.server.baseUri;
-  const url = `/workflows/${rp.clientId}/exchanges/` +
+  const domain = workflow.domain || config.server.baseUri;
+  const url = `/workflows/${workflow.clientId}/exchanges/` +
     `${exchange.id}/openid/client/authorization/request`;
   const authorizationRequest = await getAuthorizationRequest({
-    rp,
+    workflow,
     exchange,
     domain,
     url,

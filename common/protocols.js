@@ -15,7 +15,6 @@ export const PROTOCOLS_LIST = [
   'OID4VP-draft18',
   'OID4VP-1.0',
   'OID4VP-combined',
-  'dcApi-1.0',
   'interact',
   'vcapi',
   '18013-7-Annex-D'

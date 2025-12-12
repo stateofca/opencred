@@ -5,7 +5,7 @@
 
 app:
   # server:
-    # baseUri: https://evil-cows-return.loca.lt
+  # baseUri: https://evil-cows-return.loca.lt
   opencred:
     caStore:
       - pem: |
@@ -25,10 +25,10 @@ app:
         purpose:
           - authorization_request
     workflows:
-      - name: "Test Relying Party (Native)"
+      - name: "Test Workflow (Native)"
         clientId: "rp1"
         clientSecret: "DeepestAndDarkest"
-        description: "Relying Party Test App"
+        description: "Test App"
         brand:
           primaryLogo: "https://placekitten.com/200/200"
           primaryLink: "https://example.com"
@@ -61,7 +61,7 @@ app:
             client_id: exampleClientId
             scope:
               - default
-              
+
         createChallenge: true
         verifiablePresentationRequest: >
           {
@@ -82,7 +82,7 @@ app:
         # See Verifiable Credentials API Documentation: https://w3c-ccg.github.io/vc-api/
         clientId: "32bb6cec384b"
         clientSecret: "DeepestAndDarkest"
-        description: "Relying Party Test App"
+        description: "Test App"
         brand:
           primaryLogo: "https://placekitten.com/200/200"
           backgroundImage: "https://placekitten.com/800/300"
@@ -109,7 +109,7 @@ app:
         #   https://learn.microsoft.com/en-us/entra/verified-id/get-started-request-api
         #   https://learn.microsoft.com/en-us/entra/verified-id/presentation-request-api
         caStore: false
-        configFrom: 32bb6cec384b # clientId of another relying party to serve as default values
+        configFrom: 32bb6cec384b # clientId of another workflow to serve as default values
         trustedCredentialIssuers:
           - did:web:example.com
         workflow:
@@ -227,12 +227,12 @@ app:
           required: true
         - type: number
           id: height
-          name:	Height (cm)
+          name: Height (cm)
           path: "$.credentialSubject.height"
           required: false
         - type: dropdown
           id: sex
-          name:	Sex
+          name: Sex
           path: "$.credentialSubject.sex"
           required: false
           options:
@@ -240,7 +240,7 @@ app:
             "Female": 2
         - type: dropdown
           id: senior_citizen
-          name:	Are you a senior citizen?
+          name: Are you a senior citizen?
           path: "$.credentialSubject.senior_citizen"
           required: true
           options:

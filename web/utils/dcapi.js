@@ -51,7 +51,7 @@ export async function startDCApiFlow({
     // Use dc_api (unencrypted) for now;
     // can be changed to dc_api.jwt if encryption is needed
     const urlObj = new URL(requestUrl, window.location.origin);
-    urlObj.searchParams.set('responseMode', 'dc_api');
+    urlObj.searchParams.set('response_mode', 'dc_api');
     const requestUrlWithResponseMethod = urlObj.pathname + urlObj.search;
 
     // The response will be a JWT string with content-type

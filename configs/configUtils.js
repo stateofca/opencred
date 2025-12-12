@@ -22,7 +22,6 @@ const presets = {
 export const WorkflowType = {
   VcApi: 'vc-api',
   Native: 'native',
-  NativeVc: 'native-vc',
   MicrosoftEntraVerifiedId: 'microsoft-entra-verified-id'
 };
 
@@ -136,21 +135,7 @@ export const OpenCredQuerySchema = z.array(z.object({
   context: z.array(z.string()).optional(),
   fields: z.record(z.string(), z.array(z.string())).optional(),
   format: z.array(
-    z.enum(['jwt_vc_json', 'ldp_vc', 'mso_mdoc'])).default(['ldp_vc']),
-
-  // DC API namespace query for mso_mdoc format w/spruceid handler
-  dcApiNamespaceQuery: z.record(z.string(), z.array(z.string())).optional()
-}).refine(data => {
-  // dcApiNamespaceQuery can only exist if format includes mso_mdoc
-  if(data.dcApiNamespaceQuery !== undefined) {
-    return data.format && Array.isArray(data.format) &&
-      data.format.includes('mso_mdoc');
-  }
-  return true;
-}, {
-  message: 'dcApiNamespaceQuery can only be used when format includes ' +
-    'mso_mdoc',
-  path: ['dcApiNamespaceQuery']
+    z.enum(['jwt_vc_json', 'ldp_vc', 'mso_mdoc'])).default(['ldp_vc'])
 })).min(1);
 
 // Query by Example schema for lightweight VC queries
@@ -208,8 +193,11 @@ export const NativeWorkflowSchema = z.object({
   ...BaseWorkflowSchema.shape,
   type: z.literal('native'),
 
-  // Most versatile format for multi-format conversion (required)
-  query: OpenCredQuerySchema,
+  // Most versatile format for multi-format conversion
+  query: OpenCredQuerySchema.default([]),
+
+  // DC API namespace query for mso_mdoc format w/spruceid handler
+  dcApiNamespaceQuery: z.record(z.string(), z.array(z.string())).optional(),
 
   // OID4VP 1.0 DCQL format (optional override)
   dcql_query: DcqlQuerySchema.optional(),
@@ -217,6 +205,25 @@ export const NativeWorkflowSchema = z.object({
   // Presentation Exchange verifiablePresentationRequest format
   // (optional override)
   verifiablePresentationRequest: z.string().optional(),
+}).transform(data => {
+  // If dcApiNamespaceQuery is present, transform it to query format to
+  // support rendering (dcApiNamespaceQuery has higher precedence)
+  if(data.dcApiNamespaceQuery) {
+    return {
+      ...data,
+      query: [{
+        fields: data.dcApiNamespaceQuery,
+        format: ['mso_mdoc']
+      }]
+    };
+  }
+  return data;
+}).refine(data => {
+  // Ensure query has at least 1 element after transformation
+  return data.query && data.query.length >= 1;
+}, {
+  message: 'query must have at least 1 element',
+  path: ['query']
 });
 
 // Entra Workflow schema
@@ -276,22 +283,11 @@ const generateDcqlFromQueryByExample = data => {
   };
 };
 
-// Native VC Workflow schema
-export const NativeVcWorkflowSchema = z.object({
-  ...BaseWorkflowSchema.shape,
-  type: z.literal('native-vc'),
-  queryByExample: QueryByExampleSchema
-}).transform(data => {
-  // Generate DCQL query from queryByExample
-  return generateDcqlFromQueryByExample(data);
-});
-
 // Union of all workflow types
 export const WorkflowSchema = z.discriminatedUnion('type', [
   PresetWorkflowSchema,
   VcApiWorkflowSchema,
   NativeWorkflowSchema,
-  NativeVcWorkflowSchema,
   EntraWorkflowSchema
 ]);
 

@@ -219,21 +219,21 @@ describe('x509', async () => {
   describe('Configuration', function() {
     describe('allowAnyCA', function() {
       it('should return false if caStore undefined by rp', function() {
-        const rpConfig = {
+        const workflow = {
           clientId: 'test_rp'
         };
 
-        const result = allowAnyCA(rpConfig);
+        const result = allowAnyCA(workflow);
 
         expect(result).to.be(false);
       });
       it('should return true if caStore defined by rp as "false"', function() {
-        const rpConfig = {
+        const workflow = {
           clientId: 'test_rp',
           caStore: false
         };
 
-        const result = allowAnyCA(rpConfig);
+        const result = allowAnyCA(workflow);
 
         expect(result).to.be(true);
       });

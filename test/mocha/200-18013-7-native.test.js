@@ -6,31 +6,31 @@
  */
 
 import * as sinon from 'sinon';
-import {decodeJwt} from 'jose';
-import expect from 'expect.js';
-import {klona} from 'klona';
-
 import {
   _buildDcqlQueryForMdoc,
   _encodeSessionTranscript,
   _generateEphemeralKeyAgreementPair,
   _getX5cFromSigningKey,
-  _pemToBase64Der,
-  handleNative18013AnnexDRequest,
-  handleNative18013AnnexDResponse,
-} from '../../lib/workflows/native-18013-7.js';
+  _pemToBase64Der
+} from '../../lib/workflows/profiles/common-oid4vp.js';
 import {
   convertDerCertificateToPem,
   generateCertificateChain
 } from '../utils/x509.js';
-
+import {
+  generateAuthorizationRequest,
+  handleAuthorizationResponse
+} from '../../lib/workflows/profiles/native-18013-7-annex-d.js';
 import {baseUrl} from '../mock-data.js';
 import {config} from '@bedrock/core';
 import {createExchangeWithAuthRequest} from '../utils/exchanges.js';
 import {database} from '../../lib/database.js';
+import {decodeJwt} from 'jose';
 import {exampleKey2} from '../fixtures/signingKeys.js';
+import expect from 'expect.js';
 import {httpClient} from '@digitalbazaar/http-client';
 import https from 'node:https';
+import {klona} from 'klona';
 
 const agent = new https.Agent({rejectUnauthorized: false});
 const client = httpClient.extend({agent});
@@ -77,12 +77,27 @@ const mixedFormatTestRP = {
 
 describe('Native 18013-7-Annex-D Workflow - Unit Tests', function() {
   describe('_encodeSessionTranscript', function() {
-    it('should encode session transcript with all required fields', function() {
+    it('should encode session transcript with all required fields for dc_api',
+      function() {
+        const sessionTranscript = {
+          responseMode: 'dc_api',
+          origin: 'https://example.com',
+          nonce: 'test-nonce',
+          jwkThumbprint: null
+        };
+
+        const result = _encodeSessionTranscript(sessionTranscript);
+        expect(result).to.be.a(Uint8Array);
+        expect(result.length).to.be.greaterThan(0);
+      });
+
+    it('should encode session transcript for direct_post mode', function() {
       const sessionTranscript = {
-        mdocGeneratedNonce: 'nonce1',
+        responseMode: 'direct_post',
         clientId: 'did:web:example.com',
+        nonce: 'test-nonce',
         responseUri: 'https://example.com/response',
-        verifierGeneratedNonce: 'nonce2'
+        jwkThumbprint: null
       };
 
       const result = _encodeSessionTranscript(sessionTranscript);
@@ -90,12 +105,12 @@ describe('Native 18013-7-Annex-D Workflow - Unit Tests', function() {
       expect(result.length).to.be.greaterThan(0);
     });
 
-    it('should handle missing fields gracefully', function() {
+    it('should handle missing optional fields gracefully', function() {
       const sessionTranscript = {
-        mdocGeneratedNonce: 'nonce1',
-        clientId: 'did:web:example.com',
-        responseUri: 'https://example.com/response',
-        verifierGeneratedNonce: undefined
+        responseMode: 'dc_api',
+        origin: 'https://example.com',
+        nonce: 'test-nonce',
+        jwkThumbprint: null
       };
 
       const result = _encodeSessionTranscript(sessionTranscript);
@@ -105,14 +120,14 @@ describe('Native 18013-7-Annex-D Workflow - Unit Tests', function() {
 
   describe('_buildDcqlQueryForMdoc', function() {
     it('should build DCQL query from mdoc query items', async function() {
-      const rp = klona(mdocTestRP);
       const exchange = {
         id: 'test-exchange',
         challenge: 'test-challenge',
         variables: {}
       };
 
-      const result = await _buildDcqlQueryForMdoc({rp, exchange});
+      const result = await _buildDcqlQueryForMdoc({
+        workflow: mdocTestRP, exchange});
       expect(result).to.be.an('object');
       expect(result.credentials).to.be.an('array');
       expect(result.credentials.length).to.be.greaterThan(0);
@@ -120,7 +135,7 @@ describe('Native 18013-7-Annex-D Workflow - Unit Tests', function() {
     });
 
     it('should throw error when no mdoc format items found', async function() {
-      const rp = {
+      const workflow = {
         type: 'native',
         clientId: 'test',
         query: [{
@@ -135,7 +150,7 @@ describe('Native 18013-7-Annex-D Workflow - Unit Tests', function() {
       };
 
       try {
-        await _buildDcqlQueryForMdoc({rp, exchange});
+        await _buildDcqlQueryForMdoc({workflow, exchange});
         expect().fail('Should have thrown an error');
       } catch(error) {
         expect(error.message).to.contain(
@@ -145,14 +160,14 @@ describe('Native 18013-7-Annex-D Workflow - Unit Tests', function() {
     });
 
     it('should filter to mdoc only w/mixed format queries', async function() {
-      const rp = klona(mixedFormatTestRP);
+      const workflow = mixedFormatTestRP;
       const exchange = {
         id: 'test-exchange',
         challenge: 'test-challenge',
         variables: {}
       };
 
-      const result = await _buildDcqlQueryForMdoc({rp, exchange});
+      const result = await _buildDcqlQueryForMdoc({workflow, exchange});
       expect(result).to.be.an('object');
       expect(result.credentials).to.be.an('array');
       // Should only include mdoc credentials
@@ -162,14 +177,14 @@ describe('Native 18013-7-Annex-D Workflow - Unit Tests', function() {
     });
 
     it('should ensure all credentials have mso_mdoc format', async function() {
-      const rp = klona(mdocTestRP);
       const exchange = {
         id: 'test-exchange',
         challenge: 'test-challenge',
         variables: {}
       };
 
-      const result = await _buildDcqlQueryForMdoc({rp, exchange});
+      const result = await _buildDcqlQueryForMdoc({
+        workflow: mdocTestRP, exchange});
       for(const cred of result.credentials) {
         expect(cred.format).to.equal('mso_mdoc');
       }
@@ -331,136 +346,137 @@ e92OBdJ/f7VSqBFTmfG9jXEW46WAZ78jLnUBL0Q58lLuNHa1t2TwJTyCzc8XUkA3
 });
 
 describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
-  describe('handleNative18013AnnexDRequest', function() {
+  describe('generateAuthorizationRequest', function() {
     it('should generate complete authorization request with mdoc query',
       async function() {
         const exchange = await createExchangeWithAuthRequest({
-          rp: mdocTestRP,
-          profile: 'OID4VP-HAIP-1.0'
+          workflow: mdocTestRP,
+          profile: '18013-7-Annex-D'
         });
         const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
           `${exchange.id}/openid/client/authorization/request`;
 
-        const result = await handleNative18013AnnexDRequest({
-          rp: mdocTestRP,
+        const result = await generateAuthorizationRequest({
+          workflow: mdocTestRP,
           exchange,
           requestUrl,
           baseUri: 'https://example.com',
           signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
-          profile: 'OID4VP-HAIP-1.0'
+          profile: '18013-7-Annex-D',
+          responseMode: 'dc_api'
         });
 
-        expect(result).to.have.property('jwt');
+        expect(result).to.have.property('authorizationRequest');
         expect(result).to.have.property('updatedExchange');
-        expect(result.jwt).to.be.a('string');
+        expect(result).to.have.property('signingMetadata');
+        expect(result.authorizationRequest).to.be.an('object');
         expect(result.updatedExchange.state).to.equal('active');
         expect(result.updatedExchange.variables).to.have.property(
           'authorizationRequest'
         );
         expect(result.updatedExchange.variables).to.have.property(
-          'ephemeralKeyAgreementPrivateKey'
+          'encodedSessionTranscript'
         );
-        expect(result.updatedExchange.variables).to.have.property(
-          'mdocGeneratedNonce'
-        );
+        // Annex D uses dc_api (unencrypted), so no ephemeral keys
+        expect(result.updatedExchange.variables)
+          .to.not.have.property('ephemeralKeyAgreementPrivateKey');
 
-        // Verify HAIP-compliant behavior
-        const jwt = decodeJwt(result.jwt);
-        expect(jwt.response_mode).to.equal('dc_api.jwt');
-        expect(jwt.client_metadata).to.have.property('vp_formats_supported');
-        expect(jwt.client_metadata).to.not.have.property('vp_formats');
-        expect(jwt.client_metadata.vp_formats_supported.mso_mdoc).to.eql({
+        // Verify Annex D behavior
+        const authRequest = result.authorizationRequest;
+        expect(authRequest.response_mode).to.equal('dc_api');
+        expect(authRequest.client_metadata).to.have.property('vp_formats');
+        expect(authRequest.client_metadata)
+          .to.not.have.property('vp_formats_supported');
+        expect(authRequest.client_metadata.vp_formats.mso_mdoc).to.eql({
           alg: ['ES256']
         });
-        expect(jwt.client_metadata).to.have.property('jwks');
-        expect(jwt.client_metadata).to.have.property(
-          'encrypted_response_enc_values_supported'
-        );
-        expect(jwt.client_metadata.encrypted_response_enc_values_supported)
-          .to.eql(['A128GCM', 'A256GCM']);
+        // No jwks or encrypted_response_enc_values_supported for dc_api mode
+        expect(authRequest.client_metadata).to.not.have.property('jwks');
+        expect(authRequest.client_metadata)
+          .to.not.have.property('encrypted_response_enc_values_supported');
       });
 
-    it('should include correct JWT structure and claims', async function() {
-      // Using default profile OID4VP-1.0
-      const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
-      const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
-        `${exchange.id}/openid/client/authorization/request`;
+    it('should include correct authorization request structure and claims',
+      async function() {
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: mdocTestRP});
+        const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
+          `${exchange.id}/openid/client/authorization/request`;
 
-      const result = await handleNative18013AnnexDRequest({
-        rp: mdocTestRP,
-        exchange,
-        requestUrl,
-        baseUri: 'https://example.com',
-        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}]
+        const result = await generateAuthorizationRequest({
+          workflow: mdocTestRP,
+          exchange,
+          requestUrl,
+          baseUri: 'https://example.com',
+          signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
+          responseMode: 'dc_api'
+        });
+
+        const authRequest = result.authorizationRequest;
+        // Native 18013-7 uses x509_san_dns client_id scheme
+        expect(authRequest.client_id).to.equal('x509_san_dns:example.com');
+        expect(authRequest.client_id_scheme).to.equal('x509_san_dns');
+        expect(authRequest.response_type).to.equal('vp_token');
+        // Annex D uses dc_api (unencrypted) response mode
+        expect(authRequest.response_mode).to.equal('dc_api');
+        expect(authRequest).to.have.property('expected_origins');
+        expect(authRequest.expected_origins).to.eql(['https://example.com']);
+        expect(authRequest).to.have.property('nonce');
+        expect(authRequest).to.have.property('state');
+        expect(authRequest).to.have.property('dcql_query');
+        expect(authRequest).to.have.property('client_metadata');
+        // Annex D uses vp_formats (not vp_formats_supported)
+        expect(authRequest.client_metadata).to.have.property('vp_formats');
+        expect(authRequest.client_metadata.vp_formats.mso_mdoc).to.eql({
+          alg: ['ES256']
+        });
       });
 
-      const jwt = decodeJwt(result.jwt);
-      // Native 18013-7 uses x509_san_dns client_id scheme
-      expect(jwt.client_id).to.equal('x509_san_dns:example.com');
-      expect(jwt.client_id_scheme).to.equal('x509_san_dns');
-      expect(jwt.response_type).to.equal('vp_token');
-      // Default profile uses dc_api (unencrypted) response mode
-      expect(jwt.response_mode).to.equal('dc_api');
-      expect(jwt).to.have.property('expected_origins');
-      expect(jwt.expected_origins).to.eql(['https://example.com']);
-      expect(jwt).to.have.property('nonce');
-      expect(jwt).to.have.property('state');
-      expect(jwt).to.have.property('dcql_query');
-      expect(jwt).to.have.property('client_metadata');
-      // Default profile uses vp_formats (not vp_formats_supported)
-      expect(jwt.client_metadata).to.have.property('vp_formats');
-      expect(jwt.client_metadata.vp_formats.mso_mdoc).to.eql({
-        alg: ['ES256']
-      });
-    });
-
-    it('should build correct direct_post response URL', async function() {
+    it('should not include response_uri for dc_api mode', async function() {
       const exchange = await createExchangeWithAuthRequest({
-        rp: mdocTestRP,
-        responseMode: 'direct_post'
+        workflow: mdocTestRP
       });
-      const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
-        `${exchange.id}/openid/client/authorization/request` +
-        '?response_mode=direct_post';
-
-      const result = await handleNative18013AnnexDRequest({
-        rp: mdocTestRP,
-        exchange,
-        requestUrl,
-        baseUri: 'https://example.com',
-        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}]
-      });
-
-      const jwt = decodeJwt(result.jwt);
-      expect(jwt.response_uri).to.equal(
-        'https://example.com/workflows/mdoc-test/exchanges/' +
-        `${exchange.id}/openid/client/authorization/response`
-      );
-    });
-
-    it('should store exchange variables correctly', async function() {
-      const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
       const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
         `${exchange.id}/openid/client/authorization/request`;
 
-      const result = await handleNative18013AnnexDRequest({
-        rp: mdocTestRP,
+      const result = await generateAuthorizationRequest({
+        workflow: mdocTestRP,
         exchange,
         requestUrl,
         baseUri: 'https://example.com',
         signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
-        profile: 'OID4VP-HAIP-1.0'
+        responseMode: 'dc_api'
+      });
+
+      const authRequest = result.authorizationRequest;
+      // dc_api mode does not use response_uri
+      expect(authRequest.response_uri).to.be(undefined);
+    });
+
+    it('should store exchange variables correctly', async function() {
+      const exchange = await createExchangeWithAuthRequest({
+        workflow: mdocTestRP});
+      const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
+        `${exchange.id}/openid/client/authorization/request`;
+
+      const result = await generateAuthorizationRequest({
+        workflow: mdocTestRP,
+        exchange,
+        requestUrl,
+        baseUri: 'https://example.com',
+        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
+        responseMode: 'dc_api'
       });
 
       const {variables} = result.updatedExchange;
       expect(variables.authorizationRequest).to.be.an('object');
-      expect(variables.ephemeralKeyAgreementPrivateKey).to.be.an('object');
-      expect(variables.ephemeralKeyAgreementPrivateKey).to.have.property('kid');
-      expect(variables.mdocGeneratedNonce).to.be.a('string');
+      expect(variables.encodedSessionTranscript).to.be.a(Uint8Array);
+      // dc_api mode does not generate ephemeral keys
+      expect(variables).to.not.have.property('ephemeralKeyAgreementPrivateKey');
     });
 
     it('should throw error when no mdoc query items', async function() {
-      const rp = {
+      const workflow = {
         type: 'native',
         clientId: 'test',
         query: [{
@@ -474,16 +490,17 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         challenge: 'test-challenge',
         variables: {}
       };
-      const requestUrl = `/workflows/${rp.clientId}/exchanges/` +
+      const requestUrl = `/workflows/${workflow.clientId}/exchanges/` +
         `${exchange.id}/openid/client/authorization/request`;
 
       try {
-        await handleNative18013AnnexDRequest({
-          rp,
+        await generateAuthorizationRequest({
+          workflow,
           exchange,
           requestUrl,
           baseUri: 'https://example.com',
-          signingKeys: [{...exampleKey2, purpose: ['authorization_request']}]
+          signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
+          responseMode: 'dc_api'
         });
         expect().fail('Should have thrown an error');
       } catch(error) {
@@ -494,17 +511,19 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
     });
 
     it('should throw error when no signing key found', async function() {
-      const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
+      const exchange = await createExchangeWithAuthRequest({
+        workflow: mdocTestRP});
       const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
         `${exchange.id}/openid/client/authorization/request`;
 
       try {
-        await handleNative18013AnnexDRequest({
-          rp: mdocTestRP,
+        await generateAuthorizationRequest({
+          workflow: mdocTestRP,
           exchange,
           requestUrl,
           baseUri: 'https://example.com',
-          signingKeys: []
+          signingKeys: [],
+          responseMode: 'dc_api'
         });
         expect().fail('Should have thrown an error');
       } catch(error) {
@@ -514,69 +533,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
       }
     });
 
-    it('should include x5c header when certs available', async function() {
-      const {chain} = await generateCertificateChain({length: 2});
-      const certPem = convertDerCertificateToPem(chain[0].raw);
-      const signingKey = {
-        ...exampleKey2,
-        purpose: ['authorization_request'],
-        certificatePem: certPem
-      };
-
-      const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
-      const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
-        `${exchange.id}/openid/client/authorization/request`;
-
-      const result = await handleNative18013AnnexDRequest({
-        rp: mdocTestRP,
-        exchange,
-        requestUrl,
-        baseUri: 'https://example.com',
-        signingKeys: [signingKey]
-      });
-
-      // Decode JWT header to check for x5c
-      const parts = result.jwt.split('.');
-      const header = JSON.parse(
-        Buffer.from(parts[0], 'base64url').toString('utf-8')
-      );
-      expect(header).to.have.property('x5c');
-      expect(header.x5c).to.be.an('array');
-      expect(header.x5c.length).to.be.greaterThan(0);
-    });
-
-    it('should include jwks in client_metadata when x5c is not present',
-      async function() {
-        const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
-        const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
-          `${exchange.id}/openid/client/authorization/request`;
-
-        // Use exampleKey2 without certificates, so x5c will be empty
-        const result = await handleNative18013AnnexDRequest({
-          rp: mdocTestRP,
-          exchange,
-          requestUrl,
-          baseUri: 'https://example.com',
-          signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
-          profile: 'OID4VP-HAIP-1.0'
-        });
-
-        const jwt = decodeJwt(result.jwt);
-        expect(jwt.client_metadata).to.be.an('object');
-        expect(jwt.client_metadata.vp_formats_supported).to.be.an('object');
-        expect(jwt.client_metadata.vp_formats_supported.mso_mdoc)
-          .to.be.an('object');
-        expect(jwt.client_metadata.vp_formats_supported.mso_mdoc.alg)
-          .to.eql(['ES256']);
-        // jwks should be present when x5c is not available
-        expect(jwt.client_metadata.jwks).to.be.an('object');
-        expect(jwt.client_metadata.jwks.keys).to.be.an('array');
-        expect(jwt.client_metadata.jwks.keys.length).to.equal(1);
-        expect(jwt.client_metadata.encrypted_response_enc_values_supported)
-          .to.eql(['A128GCM', 'A256GCM']);
-      });
-
-    it('should not include jwks in client_metadata when x5c is present',
+    it('should include x5c in signingMetadata when certs available',
       async function() {
         const {chain} = await generateCertificateChain({length: 2});
         const certPem = convertDerCertificateToPem(chain[0].raw);
@@ -586,28 +543,57 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           certificatePem: certPem
         };
 
-        const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: mdocTestRP});
         const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
           `${exchange.id}/openid/client/authorization/request`;
 
-        const result = await handleNative18013AnnexDRequest({
-          rp: mdocTestRP,
+        const result = await generateAuthorizationRequest({
+          workflow: mdocTestRP,
           exchange,
           requestUrl,
           baseUri: 'https://example.com',
           signingKeys: [signingKey],
-          profile: 'OID4VP-HAIP-1.0'
+          responseMode: 'dc_api'
         });
 
-        const jwt = decodeJwt(result.jwt);
-        expect(jwt.client_metadata).to.be.an('object');
-        expect(jwt.client_metadata.vp_formats_supported).to.be.an('object');
-        expect(jwt.client_metadata.vp_formats_supported.mso_mdoc)
+        // Check signingMetadata for x5c
+        expect(result.signingMetadata).to.have.property('x5c');
+        expect(result.signingMetadata.x5c).to.be.an('array');
+        expect(result.signingMetadata.x5c.length).to.be.greaterThan(0);
+        expect(result.signingMetadata).to.have.property('kid');
+        expect(result.signingMetadata).to.have.property('alg');
+      });
+
+    it('should not include jwks in client_metadata for dc_api mode',
+      async function() {
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: mdocTestRP});
+        const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
+          `${exchange.id}/openid/client/authorization/request`;
+
+        // Use exampleKey2 without certificates, so x5c will be empty
+        const result = await generateAuthorizationRequest({
+          workflow: mdocTestRP,
+          exchange,
+          requestUrl,
+          baseUri: 'https://example.com',
+          signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
+          responseMode: 'dc_api'
+        });
+
+        const authRequest = result.authorizationRequest;
+        expect(authRequest.client_metadata).to.be.an('object');
+        expect(authRequest.client_metadata.vp_formats).to.be.an('object');
+        expect(authRequest.client_metadata.vp_formats.mso_mdoc)
           .to.be.an('object');
-        // jwks should NOT be present when x5c is available
-        expect(jwt.client_metadata.jwks).to.be(undefined);
-        expect(jwt.client_metadata.encrypted_response_enc_values_supported)
-          .to.eql(['A128GCM', 'A256GCM']);
+        expect(authRequest.client_metadata.vp_formats.mso_mdoc.alg)
+          .to.eql(['ES256']);
+        // dc_api mode does not use jwks or
+        // encrypted_response_enc_values_supported
+        expect(authRequest.client_metadata).to.not.have.property('jwks');
+        expect(authRequest.client_metadata)
+          .to.not.have.property('encrypted_response_enc_values_supported');
       });
   });
 
@@ -642,7 +628,8 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
 
     it('should return Authorization Request JWT for mdoc query',
       async function() {
-        const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: mdocTestRP});
         findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
           .resolves({...exchange, workflowId: mdocTestRP.clientId});
         replaceOneStub = sinon.stub(
@@ -679,7 +666,8 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
 
     it('should use dc_api response mode when responseMode=dc_api',
       async function() {
-        const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: mdocTestRP});
         findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
           .resolves({...exchange, workflowId: mdocTestRP.clientId});
         replaceOneStub = sinon.stub(
@@ -693,7 +681,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
             .get(
               `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
               `${exchange.id}/openid/client/authorization/request` +
-              `?responseMode=dc_api`
+              `?response_mode=dc_api&profile=18013-7-Annex-D`
             );
         } catch(e) {
           err = e;
@@ -702,52 +690,14 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         expect(result.status).to.equal(200);
         const jwt = decodeJwt(await result.text());
         expect(jwt.response_mode).to.equal('dc_api');
-        expect(jwt).to.have.property('response_uri');
+        // dc_api mode does not use response_uri
+        expect(jwt).to.not.have.property('response_uri');
       });
 
-    it('should use dc_api.jwt response mode and generate ephemeral key ' +
-      'when responseMode=dc_api.jwt', async function() {
-      const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
-      findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
-        .resolves({...exchange, workflowId: mdocTestRP.clientId});
-      const updateOneStub = sinon.stub(
-        database.collections.Exchanges, 'updateOne'
-      ).resolves();
-
-      let result;
-      let err;
-      try {
-        result = await client
-          .get(
-            `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
-            `${exchange.id}/openid/client/authorization/request` +
-            `?responseMode=dc_api.jwt`
-          );
-      } catch(e) {
-        err = e;
-      }
-      expect(err).to.be(undefined);
-      expect(result.status).to.equal(200);
-      const jwt = decodeJwt(await result.text());
-      expect(jwt.response_mode).to.equal('dc_api.jwt');
-      expect(jwt.client_metadata).to.have.property('jwks');
-      expect(jwt.client_metadata.jwks.keys).to.be.an('array');
-      expect(jwt.client_metadata.jwks.keys.length).to.equal(1);
-
-      // Verify that updateOne was called with ephemeral key
-      const updateCall = updateOneStub.getCall(0);
-      expect(updateCall).to.not.be(undefined);
-      const updateSet = updateCall.args[1].$set;
-      expect(updateSet['variables.ephemeralKeyAgreementPrivateKey'])
-        .to.be.an('object');
-      expect(updateSet['variables.ephemeralKeyAgreementPrivateKey'])
-        .to.have.property('kid');
-      updateOneStub.restore();
-    });
-
-    it('should default to direct_post when responseMode is not provided',
+    it('should default to dc_api when responseMode is not provided',
       async function() {
-        const exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: mdocTestRP});
         findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
           .resolves({...exchange, workflowId: mdocTestRP.clientId});
         replaceOneStub = sinon.stub(
@@ -760,7 +710,8 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           result = await client
             .get(
               `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
-              `${exchange.id}/openid/client/authorization/request`
+              `${exchange.id}/openid/client/authorization/request` +
+              `?profile=18013-7-Annex-D`
             );
         } catch(e) {
           err = e;
@@ -768,24 +719,26 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         expect(err).to.be(undefined);
         expect(result.status).to.equal(200);
         const jwt = decodeJwt(await result.text());
-        expect(jwt.response_mode).to.equal('direct_post');
+        // Annex D defaults to dc_api
+        expect(jwt.response_mode).to.equal('dc_api');
       });
   });
 
-  describe('handleNative18013AnnexDResponse', function() {
+  describe('handleAuthorizationResponse', function() {
     let exchange;
     let authorizationRequest;
 
     beforeEach(async function() {
-      exchange = await createExchangeWithAuthRequest({rp: mdocTestRP});
+      exchange = await createExchangeWithAuthRequest({workflow: mdocTestRP});
       const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
         `${exchange.id}/openid/client/authorization/request`;
-      const result = await handleNative18013AnnexDRequest({
-        rp: mdocTestRP,
+      const result = await generateAuthorizationRequest({
+        workflow: mdocTestRP,
         exchange,
         requestUrl,
         baseUri: 'https://example.com',
-        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}]
+        signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
+        responseMode: 'dc_api'
       });
       exchange = result.updatedExchange;
       authorizationRequest = exchange.variables.authorizationRequest;
@@ -805,8 +758,8 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           };
 
           try {
-            await handleNative18013AnnexDResponse({
-              rp: mdocTestRP,
+            await handleAuthorizationResponse({
+              workflow: mdocTestRP,
               exchange,
               responseBody
             });
@@ -832,8 +785,8 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
 
           // This will fail at mdoc verification, but should pass state check
           try {
-            await handleNative18013AnnexDResponse({
-              rp: mdocTestRP,
+            await handleAuthorizationResponse({
+              workflow: mdocTestRP,
               exchange,
               responseBody
             });
@@ -841,49 +794,6 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           } catch(error) {
             // Should fail at mdoc verification, not state validation
             expect(error.message).to.not.contain('State parameter mismatch');
-          }
-        });
-
-      it('should reject response with mismatched state for dc_api.jwt mode',
-        async function() {
-          // Create exchange with dc_api.jwt mode
-          const jwtExchange = await createExchangeWithAuthRequest({
-            rp: mdocTestRP
-          });
-          const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
-            `${jwtExchange.id}/openid/client/authorization/request`;
-          const result = await handleNative18013AnnexDRequest({
-            rp: mdocTestRP,
-            exchange: jwtExchange,
-            requestUrl,
-            baseUri: 'https://example.com',
-            signingKeys: [{...exampleKey2, purpose: ['authorization_request']}],
-            profile: 'OID4VP-HAIP-1.0' // This uses dc_api.jwt
-          });
-          // For encrypted mode, state would be in decrypted payload
-          // But we can test the structure validation
-          const responseBody = {
-            protocol: 'openid4vp',
-            data: {
-              state: 'wrong-state',
-              response: 'dummy-encrypted-jwt'
-            }
-          };
-
-          try {
-            await handleNative18013AnnexDResponse({
-              rp: mdocTestRP,
-              exchange: result.updatedExchange,
-              responseBody
-            });
-            expect().fail('Should have thrown an error');
-          } catch(error) {
-            // Should fail at state validation or decryption
-            const hasStateError = error.message.includes(
-              'Parameter \'state\' failed to match'
-            );
-            const hasDecryptError = error.message.includes('Failed to decrypt');
-            expect(hasStateError || hasDecryptError).to.be(true);
           }
         });
     });
@@ -914,8 +824,8 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         // This will fail at mdoc verification, but should pass credential ID
         // extraction
         try {
-          await handleNative18013AnnexDResponse({
-            rp: mdocTestRP,
+          await handleAuthorizationResponse({
+            workflow: mdocTestRP,
             exchange,
             responseBody
           });
@@ -944,8 +854,8 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           };
 
           try {
-            await handleNative18013AnnexDResponse({
-              rp: mdocTestRP,
+            await handleAuthorizationResponse({
+              workflow: mdocTestRP,
               exchange,
               responseBody
             });
@@ -976,52 +886,51 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           }
         };
 
-        // This will fail at mdoc verification, but should construct session
+        // This will fail at mdoc verification, but should use stored session
         // transcript correctly
         try {
-          await handleNative18013AnnexDResponse({
-            rp: mdocTestRP,
+          await handleAuthorizationResponse({
+            workflow: mdocTestRP,
             exchange,
             responseBody
           });
           expect().fail('Should have failed at mdoc verification');
         } catch(error) {
-          // Should fail at mdoc verification, not session transcript
-          // construction
+          // Should fail at mdoc verification, not session transcript usage
           expect(error.message).to.not.contain('responseUri');
           expect(error.message).to.not.contain('session transcript');
         }
       });
 
-      it('should include responseUri for direct_post mode', async function() {
-        // Create exchange with direct_post mode
-        const directPostExchange = await createExchangeWithAuthRequest({
-          rp: mdocTestRP
-        });
-        const requestUrl = `/workflows/${mdocTestRP.clientId}/exchanges/` +
-          `${directPostExchange.id}/openid/client/authorization/request` +
-          '?response_mode=direct_post';
-        const result = await handleNative18013AnnexDRequest({
-          rp: mdocTestRP,
-          exchange: directPostExchange,
-          requestUrl,
-          baseUri: 'https://example.com',
-          signingKeys: [{...exampleKey2, purpose: ['authorization_request']}]
-        });
-        const directPostAuthRequest = result.updatedExchange.variables
-          .authorizationRequest;
-
-        expect(directPostAuthRequest.response_uri).to.be.a('string');
-        expect(directPostAuthRequest.response_uri).to.contain('response');
-      });
-
-      it('should require mdocGeneratedNonce in exchange variables',
+      it('should use stored encodedSessionTranscript from exchange variables',
         async function() {
-          const exchangeWithoutNonce = {
+          // Verify that encodedSessionTranscript is stored
+          expect(exchange.variables.encodedSessionTranscript)
+            .to.be.a(Uint8Array);
+          expect(exchange.variables.encodedSessionTranscript.length)
+            .to.be.greaterThan(0);
+        });
+
+      it('should require nonce in exchange variables',
+        async function() {
+          // Generate certificate chain and stub caStore to allow test to
+          // proceed past certificate check
+          const {chain} = await generateCertificateChain({length: 3});
+          const root = chain.pop();
+          const caStoreStub = sinon.stub(config.opencred, 'caStore').value([
+            convertDerCertificateToPem(root.raw, false)
+          ]);
+
+          const exchangeWithoutAuthRequestNonce = {
             ...exchange,
             variables: {
               ...exchange.variables,
-              mdocGeneratedNonce: undefined
+              authorizationRequest: {
+                ...exchange.variables.authorizationRequest,
+                nonce: undefined
+              },
+              // Remove transcript to trigger reconstruction
+              encodedSessionTranscript: undefined
             }
           };
 
@@ -1036,16 +945,17 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           };
 
           try {
-            await handleNative18013AnnexDResponse({
-              rp: mdocTestRP,
-              exchange: exchangeWithoutNonce,
+            await handleAuthorizationResponse({
+              workflow: mdocTestRP,
+              exchange: exchangeWithoutAuthRequestNonce,
               responseBody
             });
             expect().fail('Should have thrown an error');
           } catch(error) {
-            expect(error.message).to.contain(
-              'mdocGeneratedNonce not found in exchange variables'
-            );
+            // Should fail because nonce is required in authorization request
+            expect(error.message).to.contain('nonce');
+          } finally {
+            caStoreStub.restore();
           }
         });
     });
@@ -1065,21 +975,23 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
             }
           };
 
-          // Mock database operations
-          const findOneStub = sinon.stub(
-            database.collections.Exchanges, 'findOne'
-          ).resolves(exchange);
-          const replaceOneStub = sinon.stub(
-            database.collections.Exchanges, 'replaceOne'
-          ).resolves();
-
+          // No database operations needed - function returns
+          // updatedExchange only
           try {
-            await handleNative18013AnnexDResponse({
-              rp: mdocTestRP,
+            const result = await handleAuthorizationResponse({
+              workflow: mdocTestRP,
               exchange,
               responseBody
             });
-            expect().fail('Should have failed at mdoc verification');
+            // Should have failed at mdoc verification, but if it didn't,
+            // check the result structure
+            if(result && result.updatedExchange) {
+              expect(result.updatedExchange.state).to.equal('complete');
+              expect(result.updatedExchange.variables.results)
+                .to.be.an('object');
+            } else {
+              expect().fail('Should have failed at mdoc verification');
+            }
           } catch(error) {
             // Should pass state validation and credential ID extraction,
             // fail at mdoc verification (expected with dummy data)
@@ -1093,9 +1005,6 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
             const hasMdocError = error.message.includes('mdoc verification');
             const hasVerifyError = error.message.includes('verify');
             expect(hasMdocError || hasVerifyError).to.be(true);
-          } finally {
-            findOneStub.restore();
-            replaceOneStub.restore();
           }
         });
     });

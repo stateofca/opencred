@@ -207,7 +207,7 @@ const props = defineProps({
     type: Object,
     default: () => PROTOCOLS_REGISTRY
   },
-  rp: {
+  workflow: {
     type: Object,
     default: null
   }
@@ -265,8 +265,8 @@ const handleWalletSelect = walletId => {
     let selectedProtocol = null;
 
     // CA DMV wallet: select DC API if mdoc format, otherwise draft18
-    if(walletId === 'cadmv-wallet' && props.rp) {
-      const hasMdoc = hasMdocFormat(props.rp);
+    if(walletId === 'cadmv-wallet' && props.workflow) {
+      const hasMdoc = hasMdocFormat(props.workflow);
       if(hasMdoc && supportedProtocols.includes('18013-7-Annex-D') &&
         props.availableProtocols.includes('18013-7-Annex-D')) {
         selectedProtocol = '18013-7-Annex-D';

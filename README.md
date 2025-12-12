@@ -557,7 +557,7 @@ Notes:
 * You must configure a signing key with the `id_token` purpose in the config to
   use this method of integration. The public key will be published in the
   `/.well-known/jwks.json` endpoint.
-* You must configure `claims` of your relyingParty to specify which claims you
+* You must configure `claims` of your workflow to specify which claims you
   want to extract from the credential and include in the `id_token` result.
 * `ES256` is the only supported signing algorithm for id_tokens to date.
 * `PKCE` not yet supported.

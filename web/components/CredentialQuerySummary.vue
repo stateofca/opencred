@@ -30,7 +30,7 @@ import {computed} from 'vue';
 import {useI18n} from 'vue-i18n';
 
 const props = defineProps({
-  rp: {
+  workflow: {
     type: Object,
     required: true
   },
@@ -59,13 +59,13 @@ const getHumanReadableName = type => {
   return translated !== translationKey ? translated : type;
 };
 
-// Extract credential types from rp.query or rp.dcql_query
+// Extract credential types from workflow.query or workflow.dcql_query
 const credentialTypes = computed(() => {
   const types = [];
 
   // Check for simplified query format
-  if(props.rp?.query && Array.isArray(props.rp.query)) {
-    for(const q of props.rp.query) {
+  if(props.workflow?.query && Array.isArray(props.workflow.query)) {
+    for(const q of props.workflow.query) {
       // Handle mso_mdoc format queries with fields
       if(q.format && Array.isArray(q.format) && q.format.includes('mso_mdoc')) {
         if(q.fields && typeof q.fields === 'object') {
@@ -91,9 +91,9 @@ const credentialTypes = computed(() => {
   }
 
   // Check for DCQL query format
-  if(props.rp?.dcql_query?.credentials &&
-    Array.isArray(props.rp.dcql_query.credentials)) {
-    for(const cred of props.rp.dcql_query.credentials) {
+  if(props.workflow?.dcql_query?.credentials &&
+    Array.isArray(props.workflow.dcql_query.credentials)) {
+    for(const cred of props.workflow.dcql_query.credentials) {
       // Try to get friendly name from meta.type_values or use id
       if(cred.meta?.type_values && Array.isArray(cred.meta.type_values)) {
         // Filter out VerifiableCredential and use the first meaningful type

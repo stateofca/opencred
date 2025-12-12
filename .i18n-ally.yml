@@ -5,7 +5,7 @@
 localeDir: common/i18n
 
 # Path matcher for locale files
-pathMatcher: '{locale}.json'
+pathMatcher: "{locale}.json"
 
 # Source language (default/fallback)
 sourceLanguage: en
@@ -35,4 +35,3 @@ keepFulfilled: true
 # Enable extract functionality
 extract:
   autoDetect: true
-
