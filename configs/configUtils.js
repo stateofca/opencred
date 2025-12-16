@@ -377,7 +377,7 @@ export const OpenCredConfigSchema = z.object({
   translations: z.record(z.string(), z.record(z.string(), z.string()))
     .optional(),
   defaultBrand: BrandSchema.default(DEFAULT_BRAND),
-  didWeb: DidWebSchema.default({mainEnabled: false, linkageEnabled: false}),
+  didWeb: DidWebSchema.default({mainEnabled: true, linkageEnabled: false}),
   signingKeys: z.array(SigningKeySchema).default([]),
   trustedCredentialIssuers: z.array(z.string()).optional(),
   caStore: z.array(z.object({pem: z.string()})).default([])
