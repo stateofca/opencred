@@ -43,9 +43,6 @@ brVue.initialize({
     // ensure CHAPI is available
     await polyfill.loadOnce();
 
-    const title = appConfig.translations[appConfig.defaultLanguage].pageTitle ??
-      'Login';
-
     // create router
     const router = createRouter({
       routes: [
@@ -67,22 +64,18 @@ brVue.initialize({
               path: 'verification',
               name: 'verification',
               component: VerificationView
+            },
+            {
+              path: 'audit-presentation',
+              name: 'Audit Presentation',
+              component: AuditPresentation
             }
-          ],
-          meta: {
-            title
-          }
-        },
-        {
-          path: '/audit-vp',
-          component: () => import('./views/AuditPresentation.vue'),
-          meta: {
-            title: 'Audit VP'
-          }
+          ]
         }
       ],
       history: createWebHistory(),
     });
+
     brVue.augmentRouter({app, router});
     app.use(router);
     const i18n = createI18n({

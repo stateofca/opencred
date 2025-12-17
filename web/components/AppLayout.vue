@@ -89,7 +89,7 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
-import {computed, onBeforeMount, onMounted, provide, ref} from 'vue';
+import {computed, onBeforeMount, onMounted, provide, ref, watch} from 'vue';
 import {CadmvHeader} from '@digitalbazaar/cadmv-ui';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
@@ -112,7 +112,7 @@ const props = defineProps({
 const emit = defineEmits(['changeLanguage']);
 
 const useNativeTranslations = ref(true);
-const {locale, availableLocales} = useI18n({useScope: 'global'});
+const {locale, availableLocales, t} = useI18n({useScope: 'global'});
 
 const route = useRoute();
 
@@ -130,7 +130,8 @@ const workflow = computed(() => context.value.workflow);
 // Fetch context if needed (for initial render)
 onBeforeMount(async () => {
   const exchangeType = route.name;
-  if(exchangeType) {
+  // Skip context fetching for audit route (no context endpoint exists)
+  if(exchangeType && exchangeType !== 'Audit Presentation') {
     try {
       const resp = await httpClient.get(
         `/context/${exchangeType}${window.location.search}`
@@ -167,6 +168,27 @@ const handleLanguageChange = lang => {
   locale.value = lang;
   emit('changeLanguage', lang);
 };
+
+// Map route names to translation keys for page titles
+const getPageTitleKey = routeName => {
+  const routeTitleMap = {
+    login: 'pageTitleLogin',
+    verification: 'pageTitleVerification',
+    'Audit Presentation': 'pageTitleAuditPresentation'
+  };
+  return routeTitleMap[routeName] || 'pageTitleHome';
+};
+
+// Set document title reactively based on route and locale
+watch(
+  [() => route.name, locale],
+  () => {
+    const titleKey = getPageTitleKey(route.name);
+    const title = t(titleKey);
+    useHead({title});
+  },
+  {immediate: true}
+);
 
 onMounted(() => {
   if(config.customTranslateScript) {

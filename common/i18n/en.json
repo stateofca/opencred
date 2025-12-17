@@ -24,6 +24,7 @@
     "qrFooter": "Note: Already on your phone with a Wallet app? Open the Wallet app, then come back and tap on the QR code above.",
     "qrFooterHelp": "",
     "qrDisclaimer": "If you don't have a Wallet app download it from the app store.",
+    "homePageGreeting": "Welcome to OpenCred, a service that enables you to verify credentials from a digital wallet.",
     "openid4vpAnotherWay": "Scan a QR code",
     "openid4vpAnotherWayLabel": "",
     "openid4vpQrAnotherWay": "Use a wallet on this device.",
@@ -32,11 +33,17 @@
     "chapiPageAnotherWay": "Looking for a QR code to scan with your wallet app instead?",
     "copyright": "Powered by OpenCred",
     "home": "Home",
+    "pageTitleHome": "Home",
+    "pageTitleLogin": "Log in",
+    "pageTitleVerification": "Verify credential",
+    "pageTitleAuditPresentation": "Audit presentation",
     "dcApiRetry": "Try Again",
     "dcApiFallback": "Try another way",
     "verificationCta": "Verify a credential",
     "creds.Iso18013DriversLicenseCredential": "Verifiable Driver's License",
     "creds.VehicleTitleCredential": "Verifiable Vehicle Credential",
     "creds.OpenBadgeCredential": "Open Badge",
-    "creds.org.iso.18013.5.1": "mDL - Mobile Driver's License"
+    "creds.org.iso.18013.5.1": "mDL - Mobile Driver's License",
+    "verifyCredentialsTitle": "Verify Credentials",
+    "selectWorkflow": "Select a workflow to verify credentials"
 }

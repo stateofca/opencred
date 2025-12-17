@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+import {arrayOf} from './utils.js';
 import {defaultDocLoader} from './documentLoader.js';
 import {SUITES} from './suites.js';
 import {verifyUtils} from './utils.js';
@@ -43,8 +44,10 @@ export async function verifyLdpPresentation({
     errors.push(Array.isArray(errorMsg) ? errorMsg.join(', ') : errorMsg);
   }
 
+  // The credential we are looking for is either the one that matches the query.
+  // Future may call for better support for multi-credential presentations.
   const vc = vcQuery ?
-    vcQuery(presentation) : presentation.verifiableCredential[0];
+    vcQuery(presentation) : arrayOf(presentation.verifiableCredential ?? [])[0];
   if(!vc) {
     errors.push('No verifiable credential found in presentation');
     verified = false;

@@ -164,6 +164,7 @@ export const BaseWorkflowSchema = z.object({
     .transform(
       val => val.includes('redirectPath') ? val : [...val, 'redirectPath']
     ), // Ensure 'redirectPath' is always included
+  public: z.boolean().default(false)
 });
 
 export const PresetWorkflowSchema = z.object({
@@ -271,7 +272,8 @@ export const OptionsSchema = z.object({
   includeQRByDefault: z.boolean().default(true),
   OID4VPdefault: z.enum([
     'OID4VP-draft18', 'OID4VP', 'OID4VP-combined', 'OID4VP-1.0'
-  ]).default('OID4VP-combined')
+  ]).default('OID4VP-combined'),
+  workflowListingEnabled: z.boolean().default(false)
 }).transform(data => {
   // exchangeTtlSeconds cannot exceed recordExpiresDurationMs
   const maxExchangeTtl = Math.min(900, data.recordExpiresDurationMs / 1000);
@@ -313,21 +315,29 @@ export const AuditSchema = z.object({
   return {
     ...data,
     types: data.types.map(
-      t => typeof t === 'string' ? presets[t].auditConfig : t)
+      t => t.preset ? presets[t.preset]?.auditConfig : t)
   };
 }).refine(data => {
   if(data.enable === false) {
     return true;
   }
-  const auditfieldsHaveUniquePaths = data.types.map(
-    t => t.path).sort().reduce((unique, currentPath, currentIndex, paths) =>
-    unique && currentPath !== paths[currentIndex - 1], true);
-  if(!auditfieldsHaveUniquePaths) {
-    return false;
+  for(const type of data.types) {
+    if(!type.fields) {
+      continue;
+    }
+    const paths = type.fields.map(f => f.path);
+    const sortedPaths = paths.sort();
+    const hasUniquePaths = sortedPaths.every(
+      (currentPath, currentIndex) =>
+        currentIndex === 0 || currentPath !== sortedPaths[currentIndex - 1]
+    );
+    if(!hasUniquePaths) {
+      return false;
+    }
   }
   return true;
 }, {
-  message: 'Each object in "audit.types" must have a unique "path".'
+  message: 'Each field in "audit.types[].fields" must have a unique "path".'
 });
 
 // reCAPTCHA schema with conditional validation

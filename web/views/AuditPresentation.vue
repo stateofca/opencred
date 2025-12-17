@@ -6,13 +6,13 @@ SPDX-License-Identifier: BSD-3-Clause
 -->
 
 <template>
-  <div class="flex flex-col">
-    <main
+  <div>
+    <div
+      v-if="currentFields.length > 0"
       ref="mainContent"
-      class="main relative flex-grow mt-20">
+      class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
+             px-16 lg:px-24 relative">
       <form
-        v-if="config.audit.fields && config.audit.fields.length > 0"
-        class="px-6 py-8 border rounded"
         @submit.prevent="requestSubmit">
         <h1
           class="text-center text-xl font-bold mb-3">
@@ -21,8 +21,44 @@ SPDX-License-Identifier: BSD-3-Clause
         <p class="required-asterisk mb-6">
           * Required
         </p>
+        <div
+          v-if="hasMultipleTypes"
+          class="mb-5">
+          <label
+            for="auditType"
+            class="font-md font-bold mr-5">
+            Select audit configuration
+          </label>
+          <select
+            id="auditType"
+            v-model="selectedAuditTypeIndex"
+            :disabled="hasEnteredData"
+            class="col-6 font-md border rounded px-2 py-2 mr-5">
+            <option
+              v-for="(type, index) in auditTypes"
+              :key="index"
+              :value="index">
+              {{type.name}}
+            </option>
+          </select>
+          <button
+            type="button"
+            :disabled="!hasEnteredData"
+            class="text-white py-2 px-4 rounded-xl"
+            :style="{ background: '#0979c4' }"
+            @click="resetAuditFields">
+            Reset
+          </button>
+        </div>
+        <div
+          v-else-if="auditTypes.length === 1"
+          class="mb-5">
+          <p class="font-md font-bold">
+            Audit Configuration: {{auditTypes[0].name}}
+          </p>
+        </div>
         <p class="text-lg mb-3">
-          Please provide the VP token
+          Please provide the Verifiable Presentation (vp token)
           that you would like to audit.
         </p>
         <div class="mb-5">
@@ -74,13 +110,13 @@ SPDX-License-Identifier: BSD-3-Clause
           </p>
         </div>
         <p class="text-lg mt-6 mb-3">
-          Please provide the proper values for each of the
+          Please provide the expected values for each of the
           following fields associated with this VP token.
         </p>
         <div class="container">
           <ul>
             <li
-              v-for="field in config.audit.fields"
+              v-for="field in currentFields"
               :key="field.id">
               <div
                 :class="
@@ -153,21 +189,18 @@ SPDX-License-Identifier: BSD-3-Clause
           :style="{ background: '#0979c4' }"
           :disabled="reCaptchaResults.loading || auditResults.loading">
       </form>
+    </div>
+    <div
+      v-if="auditResults.loading"
+      class="loading-overlay">
       <div
-        v-if="auditResults.loading"
-        class="loading-overlay">
-        <div
-          class="inline-block h-20 w-20 py-2 my-8 animate-spin rounded-full
-                border-4 border-solid border-current border-r-transparent
-                motion-reduce:animate-[spin_1.5s_linear_infinite]
-                align-[-0.125em]"
-          :style="{ color: '#0979c4' }"
-          role="status" />
-      </div>
-    </main>
-    <footer
-      class="footer text-left p-3"
-      v-html="config.translations[config.defaultLanguage].copyright" />
+        class="inline-block h-20 w-20 py-2 my-8 animate-spin rounded-full
+              border-4 border-solid border-current border-r-transparent
+              motion-reduce:animate-[spin_1.5s_linear_infinite]
+              align-[-0.125em]"
+        :style="{ color: '#0979c4' }"
+        role="status" />
+    </div>
     <div
       v-if="reCaptchaResults.loading"
       class="recaptcha">
@@ -183,12 +216,12 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
+import {computed, ref, watch} from 'vue';
 import CheckCircleIcon from 'vue-material-design-icons/CheckCircle.vue';
 import CloseCircleIcon from 'vue-material-design-icons/CloseCircle.vue';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
 import ReCaptcha from '../components/ReCaptcha.vue';
-import {ref} from 'vue';
 
 const NON_INPUT_TYPES = ['dropdown'];
 
@@ -203,15 +236,59 @@ const getDefaultValueForField = f => {
   }
   return f.default ?? undefined;
 };
+
 const mainContent = ref(null);
-const auditFieldValues = ref(
-  Object.fromEntries(
-    config.audit.fields
-      .map(f => [
-        f.path, getDefaultValueForField(f)
-      ])
-  )
+
+// Audit type selection state
+const auditTypes = computed(() => config.audit.types || []);
+const selectedAuditTypeIndex = ref(
+  auditTypes.value.length > 0 ? 0 : null
 );
+const hasMultipleTypes = computed(() => auditTypes.value.length > 1);
+const selectedAuditType = computed(() => {
+  if(selectedAuditTypeIndex.value === null ||
+    selectedAuditTypeIndex.value >= auditTypes.value.length) {
+    return null;
+  }
+  return auditTypes.value[selectedAuditTypeIndex.value];
+});
+const currentFields = computed(() => selectedAuditType.value?.fields || []);
+
+// Cache for field values to maintain state across type changes
+const fieldValuesCache = ref({});
+
+// Computed auditFieldValues based on selected type
+const auditFieldValues = computed({
+  get() {
+    if(!selectedAuditType.value) {
+      return {};
+    }
+    return Object.fromEntries(
+      selectedAuditType.value.fields.map(f => [
+        f.path,
+        fieldValuesCache.value[f.path] ?? getDefaultValueForField(f)
+      ])
+    );
+  },
+  set(newValue) {
+    // Update cache when values change
+    fieldValuesCache.value = {...newValue};
+  }
+});
+
+// Track if any data has been entered (compared to defaults)
+const hasEnteredData = computed(() => {
+  if(!selectedAuditType.value) {
+    return false;
+  }
+  // Check if any field value differs from its default
+  return selectedAuditType.value.fields.some(field => {
+    const defaultValue = getDefaultValueForField(field);
+    const currentValue = fieldValuesCache.value[field.path] ?? defaultValue;
+    // Compare values - if they differ, data has been entered
+    return currentValue !== defaultValue;
+  });
+});
 
 const vpTokenInput = ref({
   data: '',
@@ -325,21 +402,19 @@ function clearAuditResults() {
     loading: false
   };
 }
+
+function resetAuditFields() {
+  // Clear the cache to reset all field values to defaults
+  fieldValuesCache.value = {};
+}
+
+// Watch for type changes and clear field values (but not vpTokenInput)
+watch(selectedAuditTypeIndex, () => {
+  fieldValuesCache.value = {};
+});
 </script>
 
 <style>
-.main {
-  display: flex;
-  justify-content: center;
-  align-self: center;
-  align-items: center;
-  max-width: 75%;
-}
-.footer {
-  position: fixed;
-  bottom: 5px;
-  left: 5px
-}
 .centered-x {
   position: relative;
   left: 50%;
