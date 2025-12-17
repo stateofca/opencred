@@ -232,12 +232,13 @@ describe('Wallet Protocols', () => {
 
         expect(link).to.contain('https://lcw.app/');
         expect(link).to.contain('request=');
-        expect(link).to.contain(encodeURIComponent('https://example.com/exchanges/123'));
-        expect(link).to.contain('issuer=');
-        expect(link).to.contain(encodeURIComponent('did:web:example.com'));
-        expect(link).to.contain('auth_type=bearer');
-        expect(link).to.contain('challenge=');
-        expect(link).to.contain(encodeURIComponent('test-challenge-123'));
+        // Verify the request parameter contains JSON with protocols.vcapi
+        const urlParams = new URLSearchParams(link.split('?')[1]);
+        const requestParam = decodeURIComponent(urlParams.get('request'));
+        const requestObject = JSON.parse(requestParam);
+        expect(requestObject).to.have.property('protocols');
+        expect(requestObject.protocols).to.have.property('vcapi');
+        expect(requestObject.protocols.vcapi).to.be('https://example.com/exchanges/123');
       });
 
       it('should generate deep link for vcapi with link', () => {
@@ -257,12 +258,13 @@ describe('Wallet Protocols', () => {
 
         expect(link).to.contain('https://lcw.app/');
         expect(link).to.contain('request=');
-        expect(link).to.contain(encodeURIComponent('https://example.com/exchanges/456'));
-        expect(link).to.contain('issuer=');
-        expect(link).to.contain(encodeURIComponent('did:web:example.com'));
-        expect(link).to.contain('auth_type=bearer');
-        expect(link).to.contain('challenge=');
-        expect(link).to.contain(encodeURIComponent('test-challenge-456'));
+        // Verify the request parameter contains JSON with protocols.vcapi
+        const urlParams = new URLSearchParams(link.split('?')[1]);
+        const requestParam = decodeURIComponent(urlParams.get('request'));
+        const requestObject = JSON.parse(requestParam);
+        expect(requestObject).to.have.property('protocols');
+        expect(requestObject.protocols).to.have.property('vcapi');
+        expect(requestObject.protocols.vcapi).to.be('https://example.com/exchanges/456');
       });
 
       it('should handle empty challenge', () => {
@@ -280,8 +282,15 @@ describe('Wallet Protocols', () => {
           interactionMethod: 'qr'
         });
 
-        expect(link).to.contain('challenge=');
-        expect(link).to.contain(encodeURIComponent(''));
+        expect(link).to.contain('https://lcw.app/');
+        expect(link).to.contain('request=');
+        // Verify the request parameter contains JSON with protocols.vcapi
+        const urlParams = new URLSearchParams(link.split('?')[1]);
+        const requestParam = decodeURIComponent(urlParams.get('request'));
+        const requestObject = JSON.parse(requestParam);
+        expect(requestObject).to.have.property('protocols');
+        expect(requestObject.protocols).to.have.property('vcapi');
+        expect(requestObject.protocols.vcapi).to.be('https://example.com/exchanges/999');
       });
 
       it('should return null when vcapi not in exchange', () => {

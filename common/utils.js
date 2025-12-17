@@ -299,12 +299,14 @@ const verifyJWTVP = async (jwt, options = {}) => {
  * definition object (legacy format).
  * @param {object} [options.presentation_submission] - The Presentation
  * Submission object (Draft 18 format indicator).
+ * @param {Array} [options.query] - The workflow.query array (fallback option).
  * @returns boolean - true if the VC matches the query specification
  * @throws {Error} if more than one query type is specified or none are
  * specified
  */
 function checkVcQueryMatch({
-  vc, vpr, dcql_query, presentation_definition, presentation_submission}) {
+  vc, vpr, dcql_query, presentation_definition, presentation_submission,
+  query}) {
   // If submission against draft18, check that first,
   // otherwise check dcql_query, or fall back to vpr
   if(presentation_definition && (presentation_submission || !dcql_query)) {
@@ -317,6 +319,10 @@ function checkVcQueryMatch({
   // Handle presentation exchange VPR (Doesn't depend on submission format)
   if(vpr) {
     return checkVcForVpr(vc, vpr);
+  }
+  // Fallback to workflow.query if vpr not available
+  if(query) {
+    return checkVcForQuery(vc, query);
   }
 
   return false;
@@ -355,6 +361,57 @@ function checkVcForVpr(vc, vpr) {
     }
   }
   return true;
+}
+
+/**
+ * Checks if a Verifiable Credential matches a workflow.query array
+ * @param {object} vc - The Verifiable Credential to check
+ * @param {Array} query - Array of query objects from workflow.query
+ * @returns boolean - true if the VC matches any query item in the array
+ */
+function checkVcForQuery(vc, query) {
+  if(!Array.isArray(query) || query.length === 0) {
+    return false;
+  }
+
+  // Check all query items, return true if any match
+  for(const queryItem of query) {
+    if(!queryItem || typeof queryItem !== 'object') {
+      continue;
+    }
+
+    let matches = true;
+
+    // Check context if specified
+    if(queryItem.context && Array.isArray(queryItem.context) &&
+      queryItem.context.length > 0) {
+      const expectedContext = queryItem.context;
+      const vcContext = arrayOf(vc['@context']);
+      if(!expectedContext.every(ctx => vcContext.includes(ctx))) {
+        matches = false;
+        continue;
+      }
+    }
+
+    // Check type if specified
+    if(queryItem.type && Array.isArray(queryItem.type) &&
+      queryItem.type.length > 0) {
+      const expectedType = queryItem.type;
+      const vcType = arrayOf(vc.type);
+      if(!expectedType.every(type => vcType.includes(type))) {
+        matches = false;
+        continue;
+      }
+    }
+
+    // If we get here, this query item matches
+    if(matches) {
+      return true;
+    }
+  }
+
+  // No query items matched
+  return false;
 }
 
 /**

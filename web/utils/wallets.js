@@ -5,23 +5,22 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import {domainToDidWeb} from '../../common/didWeb.js';
-
 export const vcapiDeepLink = ({exchange, origin}) => {
   const vcapiUrl = exchange.protocols?.vcapi;
   if(!vcapiUrl) {
     return null;
   }
 
-  // Extract issuer from exchange or use default
-  const issuer = domainToDidWeb(new URL(vcapiUrl).origin);
-  const challenge = exchange.challenge || '';
+  // Construct Wallet API message in the format expected by LCW
+  const walletApiMessage = {
+    protocols: {
+      vcapi: vcapiUrl
+    }
+  };
 
-  // Construct LCW deep link
-  return `${origin}/?request=${encodeURIComponent(vcapiUrl)}` +
-    `&issuer=${encodeURIComponent(issuer)}` +
-    `&auth_type=bearer` +
-    `&challenge=${encodeURIComponent(challenge)}`;
+  // Construct LCW deep link with JSON-encoded request parameter
+  const requestParam = encodeURIComponent(JSON.stringify(walletApiMessage));
+  return `${origin}/request?request=${requestParam}`;
 };
 const lcwDeepLink = ({exchange}) => vcapiDeepLink({exchange, origin: 'https://lcw.app'});
 

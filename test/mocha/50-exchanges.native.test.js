@@ -250,8 +250,6 @@ describe('Exchanges (Native)', async () => {
       submission,
       exchange,
       baseUri: config.server.baseUri,
-      caStoreLength: config.opencred.caStore.length,
-      auditEnabled: config.opencred.audit.enable,
       documentLoader
     });
 
@@ -297,8 +295,6 @@ describe('Exchanges (Native)', async () => {
           submission,
           exchange,
           baseUri: config.server.baseUri,
-          caStoreLength: config.opencred.caStore.length,
-          auditEnabled: config.opencred.audit.enable,
           documentLoader
         });
 
@@ -328,8 +324,6 @@ describe('Exchanges (Native)', async () => {
           submission: presentation_submission,
           exchange,
           baseUri: config.server.baseUri,
-          caStoreLength: config.opencred.caStore.length,
-          auditEnabled: config.opencred.audit.enable,
           documentLoader
         });
 
@@ -360,8 +354,6 @@ describe('Exchanges (Native)', async () => {
           submission: presentation_submission,
           exchange,
           baseUri: config.server.baseUri,
-          caStoreLength: config.opencred.caStore.length,
-          auditEnabled: config.opencred.audit.enable,
           documentLoader
         });
 
@@ -391,8 +383,6 @@ describe('Exchanges (Native)', async () => {
             challenge: `incorrect`
           },
           baseUri: config.server.baseUri,
-          caStoreLength: config.opencred.caStore.length,
-          auditEnabled: config.opencred.audit.enable,
           documentLoader
         });
 
@@ -445,8 +435,6 @@ describe('Exchanges (Native)', async () => {
           submission: presentation_submission_jwt,
           exchange,
           baseUri: config.server.baseUri,
-          caStoreLength: config.opencred.caStore.length,
-          auditEnabled: config.opencred.audit.enable,
           documentLoader
         });
 
@@ -514,8 +502,6 @@ describe('Exchanges (Native)', async () => {
           submission: presentation_submission_jwt,
           exchange,
           baseUri: config.server.baseUri,
-          caStoreLength: config.opencred.caStore.length,
-          auditEnabled: config.opencred.audit.enable,
           documentLoader
         });
 
@@ -572,8 +558,6 @@ describe('Exchanges (Native)', async () => {
           submission: presentation_submission_jwt,
           exchange,
           baseUri: config.server.baseUri,
-          caStoreLength: config.opencred.caStore.length,
-          auditEnabled: config.opencred.audit.enable,
           documentLoader
         });
 
@@ -650,8 +634,6 @@ describe('Exchanges (Native)', async () => {
           submission: presentation_submission_jwt,
           exchange,
           baseUri: config.server.baseUri,
-          caStoreLength: config.opencred.caStore.length,
-          auditEnabled: config.opencred.audit.enable,
           documentLoader
         });
 
@@ -712,8 +694,6 @@ describe('Exchanges (Native)', async () => {
             submission: presentation_submission_jwt,
             exchange,
             baseUri: config.server.baseUri,
-            caStoreLength: config.opencred.caStore.length,
-            auditEnabled: config.opencred.audit.enable,
             documentLoader
           });
 
@@ -765,8 +745,6 @@ describe('Exchanges (Native)', async () => {
           submission: presentation_submission_jwt,
           exchange,
           baseUri: config.server.baseUri,
-          caStoreLength: config.opencred.caStore.length,
-          auditEnabled: config.opencred.audit.enable,
           documentLoader
         });
 
@@ -820,8 +798,6 @@ describe('Exchanges (Native)', async () => {
           submission: presentation_submission_jwt,
           exchange,
           baseUri: config.server.baseUri,
-          caStoreLength: config.opencred.caStore.length,
-          auditEnabled: config.opencred.audit.enable,
           documentLoader
         });
 

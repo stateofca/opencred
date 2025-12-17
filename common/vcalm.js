@@ -39,7 +39,7 @@ export async function verifyLdpPresentation({
   });
   verified = vpResult.verified;
   if(!vpResult.verified) {
-    const errorMsg = vpResult.error;
+    const errorMsg = vpResult.error?.errors?.map(e => e.message).join(', ');
     errors.push(Array.isArray(errorMsg) ? errorMsg.join(', ') : errorMsg);
   }
 

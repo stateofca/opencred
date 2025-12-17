@@ -52,6 +52,18 @@ describe('VC Query Match', () => {
     }
   };
 
+  const openBadgeVc = {
+    '@context': [
+      'https://www.w3.org/2018/credentials/v1',
+      'https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json'
+    ],
+    type: ['VerifiableCredential', 'OpenBadgeCredential'],
+    credentialSubject: {
+      id: 'did:example:holder111',
+      name: 'Test Badge'
+    }
+  };
+
   describe('DCQL Query Matching', () => {
     it('should match a credential that satisfies the DCQL query', () => {
       const dcqlQuery = {
@@ -380,6 +392,346 @@ describe('VC Query Match', () => {
       });
 
       expect(result).to.be(false);
+    });
+  });
+
+  describe('Workflow Query Matching', () => {
+    describe('Basic Matching', () => {
+      it('should match credential that satisfies query with type only', () => {
+        const query = [{
+          type: ['OpenBadgeCredential'],
+          format: ['ldp_vc']
+        }];
+
+        const result = verifyUtils.checkVcQueryMatch({
+          vc: openBadgeVc,
+          query
+        });
+
+        expect(result).to.be(true);
+      });
+
+      it('should match credential that satisfies query with context only',
+        () => {
+          const query = [{
+            context: ['https://www.w3.org/2018/credentials/v1']
+          }];
+
+          const result = verifyUtils.checkVcQueryMatch({
+            vc: driverLicenseVc,
+            query
+          });
+
+          expect(result).to.be(true);
+        });
+
+      it('should match credential with both type and context', () => {
+        const query = [{
+          type: ['DriverLicenseCredential'],
+          context: [
+            'https://www.w3.org/2018/credentials/v1',
+            'https://w3id.org/citizenship/v1'
+          ]
+        }];
+
+        const result = verifyUtils.checkVcQueryMatch({
+          vc: driverLicenseVc,
+          query
+        });
+
+        expect(result).to.be(true);
+      });
+    });
+
+    describe('Non-Matching', () => {
+      it('should not match when type doesn\'t match', () => {
+        const query = [{
+          type: ['OpenBadgeCredential'],
+          format: ['ldp_vc']
+        }];
+
+        const result = verifyUtils.checkVcQueryMatch({
+          vc: wrongTypeVc,
+          query
+        });
+
+        expect(result).to.be(false);
+      });
+
+      it('should not match when context doesn\'t match', () => {
+        const query = [{
+          context: [
+            'https://www.w3.org/2018/credentials/v1',
+            'https://w3id.org/nonexistent/v1'
+          ]
+        }];
+
+        const result = verifyUtils.checkVcQueryMatch({
+          vc: driverLicenseVc,
+          query
+        });
+
+        expect(result).to.be(false);
+      });
+
+      it('should not match when type partially matches', () => {
+        const query = [{
+          type: [
+            'VerifiableCredential',
+            'DriverLicenseCredential',
+            'RequiredType'
+          ]
+        }];
+
+        const result = verifyUtils.checkVcQueryMatch({
+          vc: driverLicenseVc,
+          query
+        });
+
+        expect(result).to.be(false);
+      });
+    });
+
+    describe('Multiple Query Items', () => {
+      it('should match when any query item matches', () => {
+        const query = [
+          {
+            type: ['NonExistentCredential']
+          },
+          {
+            type: ['DriverLicenseCredential'],
+            context: [
+              'https://www.w3.org/2018/credentials/v1',
+              'https://w3id.org/citizenship/v1'
+            ]
+          }
+        ];
+
+        const result = verifyUtils.checkVcQueryMatch({
+          vc: driverLicenseVc,
+          query
+        });
+
+        expect(result).to.be(true);
+      });
+
+      it('should not match when no query items match', () => {
+        const query = [
+          {
+            type: ['NonExistentCredential1']
+          },
+          {
+            type: ['NonExistentCredential2']
+          }
+        ];
+
+        const result = verifyUtils.checkVcQueryMatch({
+          vc: driverLicenseVc,
+          query
+        });
+
+        expect(result).to.be(false);
+      });
+    });
+
+    describe('Edge Cases', () => {
+      it('should return false for empty query array', () => {
+        const query = [];
+
+        const result = verifyUtils.checkVcQueryMatch({
+          vc: driverLicenseVc,
+          query
+        });
+
+        expect(result).to.be(false);
+      });
+
+      it('should match when query has no type or context (format only)', () => {
+        const query = [{
+          format: ['ldp_vc']
+        }];
+
+        const result = verifyUtils.checkVcQueryMatch({
+          vc: driverLicenseVc,
+          query
+        });
+
+        expect(result).to.be(true);
+      });
+
+      it('should skip invalid query items and match valid ones', () => {
+        const query = [
+          null,
+          {
+            type: ['DriverLicenseCredential']
+          },
+          'invalid'
+        ];
+
+        const result = verifyUtils.checkVcQueryMatch({
+          vc: driverLicenseVc,
+          query
+        });
+
+        expect(result).to.be(true);
+      });
+
+      it('should ignore empty type array in query item', () => {
+        const query = [{
+          type: [],
+          context: ['https://www.w3.org/2018/credentials/v1']
+        }];
+
+        const result = verifyUtils.checkVcQueryMatch({
+          vc: driverLicenseVc,
+          query
+        });
+
+        expect(result).to.be(true);
+      });
+
+      it('should ignore empty context array in query item', () => {
+        const query = [{
+          type: ['DriverLicenseCredential'],
+          context: []
+        }];
+
+        const result = verifyUtils.checkVcQueryMatch({
+          vc: driverLicenseVc,
+          query
+        });
+
+        expect(result).to.be(true);
+      });
+    });
+
+    describe('Priority', () => {
+      it('should use query when vpr is not present', () => {
+        const query = [{
+          type: ['DriverLicenseCredential']
+        }];
+
+        const result = verifyUtils.checkVcQueryMatch({
+          vc: driverLicenseVc,
+          query
+        });
+
+        expect(result).to.be(true);
+      });
+
+      it('should use vpr when both vpr and query are present', () => {
+        const vpr = {
+          query: {
+            type: 'QueryByExample',
+            credentialQuery: {
+              reason: 'Test',
+              example: {
+                '@context': [
+                  'https://www.w3.org/ns/credentials/v2',
+                  'https://www.w3.org/ns/credentials/examples/v2'
+                ],
+                type: 'MyPrototypeCredential'
+              }
+            }
+          }
+        };
+
+        const query = [{
+          type: ['DriverLicenseCredential']
+        }];
+
+        // vpr should take priority, so it should match prototypeVc,
+        // not driverLicenseVc
+        const resultWithPrototype = verifyUtils.checkVcQueryMatch({
+          vc: prototypeVc,
+          vpr,
+          query
+        });
+
+        const resultWithDriverLicense = verifyUtils.checkVcQueryMatch({
+          vc: driverLicenseVc,
+          vpr,
+          query
+        });
+
+        expect(resultWithPrototype).to.be(true);
+        expect(resultWithDriverLicense).to.be(false);
+      });
+
+      it('should use dcql_query when both dcql_query and query present',
+        () => {
+          const dcqlQuery = {
+            credentials: [{
+              id: 'test',
+              format: 'ldp_vc',
+              meta: {
+                '@context': [
+                  'https://www.w3.org/2018/credentials/v1',
+                  'https://w3id.org/citizenship/v1'
+                ],
+                type: ['VerifiableCredential', 'DriverLicenseCredential']
+              }
+            }]
+          };
+
+          const query = [{
+            type: ['NonExistentCredential']
+          }];
+
+          // dcql_query should take priority, so it should match driverLicenseVc
+          const result = verifyUtils.checkVcQueryMatch({
+            vc: driverLicenseVc,
+            dcql_query: dcqlQuery,
+            query
+          });
+
+          expect(result).to.be(true);
+        });
+
+      it('should use presentation_definition when both present', () => {
+        const presentationDefinition = {
+          id: 'test-presentation-definition',
+          input_descriptors: [{
+            id: 'permanent-resident-card',
+            constraints: {
+              fields: [
+                {
+                  path: '$[\'type\']',
+                  filter: {
+                    type: 'array',
+                    contains: [
+                      {
+                        type: 'string',
+                        const: 'PermanentResidentCard'
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }]
+        };
+
+        const query = [{
+          type: ['NonExistentCredential']
+        }];
+
+        // presentation_definition should take priority
+        const resultWithPermanentResident = verifyUtils.checkVcQueryMatch({
+          vc: permanentResidentVc,
+          presentation_definition: presentationDefinition,
+          query
+        });
+
+        const resultWithDriverLicense = verifyUtils.checkVcQueryMatch({
+          vc: driverLicenseVc,
+          presentation_definition: presentationDefinition,
+          query
+        });
+
+        expect(resultWithPermanentResident).to.be(true);
+        expect(resultWithDriverLicense).to.be(false);
+      });
     });
   });
 
