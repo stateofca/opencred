@@ -11,8 +11,8 @@
     ".": "./web/index.js"
   },
   "scripts": {
-    "generate:prime256v1": "node ./common/generatePrime256v1Key.js",
-    "generate:rsa256": "node ./common/generateRSA256Key.js",
+    "generate:prime256v1": "node ./scripts/generatePrime256v1Key.js",
+    "generate:rsa256": "node ./scripts/generateRSA256Key.js",
     "tunnel": "lt -p 22080",
     "audit-vp": "node ./test/utils/auditVpToken.js",
     "lint": "eslint --ext .cjs,.js,.vue .",

@@ -193,13 +193,36 @@ export const getDcqlQuery = async ({workflow, profile}) => {
     return typeIris;
   }));
 
+  // Expand field types to IRIs for each query
+  const requestedFieldTypeIris = await Promise.all(query.map(async q => {
+    // Only expand fields.type if fields exist and context is provided
+    if(!q.fields || typeof q.fields !== 'object' || !q.fields.type) {
+      return [];
+    }
+    if(!Array.isArray(q.fields.type) || q.fields.type.length === 0) {
+      return [];
+    }
+    // Skip type expansion if no context provided
+    if(!q.context || !Array.isArray(q.context) || q.context.length === 0) {
+      return [];
+    }
+    // Get IRIs for each type in the fields.type array
+    const fieldTypeIris = await Promise.all(q.fields.type.map(async type => {
+      return getTypeIri({
+        contexts: q.context,
+        type
+      });
+    }));
+    return fieldTypeIris;
+  }));
+
   // Generate credential queries for each query object and format
   const credentials = [];
   for(let i = 0; i < query.length; i++) {
     const q = query[i];
     const typeIris = requestedTypeIris[i] || [];
+    const fieldTypeIris = requestedFieldTypeIris[i] || [];
     const formats = q.format || ['ldp_vc'];
-    const types = q.type || [];
     const fields = q.fields;
 
     // Create a credential query for each format
@@ -245,7 +268,20 @@ export const getDcqlQuery = async ({workflow, profile}) => {
           path = ['$.type'];
         }
 
-        credentials.push({
+        // Build claims array
+        const claims = [];
+
+        // If fields.type exists, add expanded IRIs as claims
+        if(fieldTypeIris.length > 0) {
+          claims.push({
+            path,
+            values: fieldTypeIris
+          });
+        }
+
+        // Only include claims if we have field types
+        // Base types go in meta.type_values, not in claims
+        const credentialQuery = {
           id: await createId(),
           format,
           multiple: false,
@@ -253,12 +289,15 @@ export const getDcqlQuery = async ({workflow, profile}) => {
           // trusted_authorities: [] // TODO - optional
           meta: {
             type_values: typeIris
-          },
-          claims: [{
-            path,
-            values: types
-          }]
-        });
+          }
+        };
+
+        // Only add claims property if we have claims
+        if(claims.length > 0) {
+          credentialQuery.claims = claims;
+        }
+
+        credentials.push(credentialQuery);
       }
     }
   }

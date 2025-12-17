@@ -7,8 +7,8 @@
 
 import {importPKCS8, importSPKI} from 'jose';
 import expect from 'expect.js';
-import {generateP256SigningKey} from '../../common/generatePrime256v1Key.js';
-import {generateRSA256SigningKey} from '../../common/generateRSA256Key.js';
+import {generateP256SigningKey} from '../../scripts/generatePrime256v1Key.js';
+import {generateRSA256SigningKey} from '../../scripts/generateRSA256Key.js';
 
 describe('generatePrime256v1', function() {
   it('should generate valid key', async () => {
