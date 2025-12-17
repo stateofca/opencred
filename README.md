@@ -93,7 +93,12 @@ the user with a list of credentials that can be used to satisfy the request.
 
 #### Configuring did:web endpoint
 You can use OpenCred as a did:web endpoint by configuring the `didWeb` section
-of the config file. The following would result in a DID document being published
+of the config file. Just setting mainEnabled to true will result in a DID
+document being published with relevant keys used for authorization requests. It
+is possible to also customize the document with additional keys related to other
+systems that sign on behalf of this DID.
+
+The following would result in a DID document being published
 for the DID `did:web:example.com`. The document would be available from OpenCred
 at `/.well-known/did.json`. If domain linkage is supported, you can find that
 document at `/.well-known/did-configuration.json`.
@@ -190,6 +195,55 @@ signingKeys:
       - authorization_request
 ```
 
+#### X.509 Certificate Configuration
+
+For OID4VP verification exchanges that use the `x509_san_dns` `client_id_scheme`,
+you can optionally configure an X.509 certificate chain in the signing key
+configuration. When configured, the certificate will be included in the `x5c`
+header of the authorization request JWT.
+
+To configure a certificate, add the `certificatePem` field to your signing key
+configuration. The certificate chain should be provided in PEM format, with
+multiple certificates concatenated if you have an intermediate chain:
+
+```yaml
+signingKeys:
+  - type: ES256
+    id: 91705ba8b54357e00953b2d5cc2d805c25f86bbec4777ea4f0dc883dd84b4803
+    privateKeyPem: |
+      -----BEGIN PRIVATE KEY-----
+      MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgdU1KX0SdMjy4AzVm
+      5awy7B3tHz0y+mckq/x2V8fWwrmhRANCAARkJ4rsoMcdayGPTcAbgLfKRdqwN57I
+      n9CRsED9Yno+oC4R7xz6xXpT2CQAkioPDmou1DYYU+oMaV9lCjvw9vqs
+      -----END PRIVATE KEY-----
+    publicKeyPem: |
+      -----BEGIN PUBLIC KEY-----
+      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZCeK7KDHHWshj03AG4C3ykXasDee
+      yJ/QkbBA/WJ6PqAuEe8c+sV6U9gkAJIqDw5qLtQ2GFPqDGlfZQo78Pb6rA==
+      -----END PUBLIC KEY-----
+    certificatePem: |
+      -----BEGIN CERTIFICATE-----
+      MIICXjCCAcegAwIBAgIU... (leaf certificate)
+      -----END CERTIFICATE-----
+      -----BEGIN CERTIFICATE-----
+      MIICXjCCAcegAwIBAgIU... (intermediate certificate, if any)
+      -----END CERTIFICATE-----
+    purpose:
+      - authorization_request
+```
+
+**Important requirements:**
+
+- The domain name of the OpenCred server must be included in Subject
+  Alternative Names (SANs) in the certificate. The certificate's public key
+  must match the signing key's public key.
+
+- **Certificate trust**: Some wallets allow self-signed certificates, while
+  others require leaf certificates from a particular trusted chain. The trust
+  anchor (root CA certificate) is automatically excluded from the `x5c` header
+  per HAIP specification, so only the leaf certificate and any intermediate
+  certificates should be included in the `certificatePem` field.
+
 #### Configuring id_token claims for OIDC
 Within your workflow configuration, you may configure claims that will be
 extracted from a credential and included in the id_token result of an Open ID
@@ -202,12 +256,11 @@ workflows:
   - clientId: example
     clientSecret: example
     type: native
-    redirectUri: http://localhost:8080/oidc/callback
-    workflow:
-      ...
-    claims:
-      - name: email
-        path: userEmail
+    oidc:
+      redirectUri: http://localhost:8080/oidc/callback
+      claims:
+        - name: email
+          path: userEmail
 ```
 
 This configuration will place an `email` claim in the JWT, and the value of that
@@ -235,12 +288,9 @@ workflows:
   - clientId: example
     clientSecret: example
     type: native
-    workflow:
-      type: native
-      id: example-workflow
-      untrustedVariableAllowList:
-        - caseId
-        - color
+    untrustedVariableAllowList:
+      - caseId
+      - color
 ```
 
 #### Configuring a Workflow Step
@@ -288,6 +338,41 @@ options:
 
 If this section is omitted, both protocols (`openid4vp` and `chapi`)
 will be offered, with an OID4VP QR code offered to the user first.
+
+#### Public Workflow Listing
+
+By default, workflows in OpenCred are private and are accessed directly via their
+specific endpoints or through OIDC client configurations. However, some use cases
+may benefit from displaying a public listing of available workflows on the home
+route, allowing users to browse and select from available verification workflows.
+
+To enable public workflow listing, set `workflowListingEnabled` to `true` in the
+`options` section of your configuration:
+
+```yaml
+options:
+  workflowListingEnabled: true
+```
+
+When enabled, any workflow with `public: true` will be displayed on the home
+route (`/`) as a selectable card. Each workflow can be marked as public by
+adding the `public: true` property to its configuration:
+
+```yaml
+workflows:
+  - clientId: example
+    clientSecret: example
+    type: native
+    public: true
+    name: "Example Verification"
+    description: "An example verification workflow"
+    query:
+      ...
+```
+
+The public workflow listing feature is disabled by default (`workflowListingEnabled: false`).
+Only workflows explicitly marked with `public: true` will appear in the listing,
+ensuring that sensitive or internal workflows remain private.
 
 #### Configuring Translations
 
@@ -343,66 +428,110 @@ customTranslateScript: https://translate.google.com/translate_a/element.js?cb=go
 ```
 
 #### Configuring Audit
-You can add auditing support to OpenCred to ensure that a VP token presented in the past was valid at the time it was presented. The VP token can be one of two formats: (1) JWT or (2) Data Integrity. In order to enable this feature, use the boolean field `audit.enable` and the array field `audit.fields` in the config file. Additionally, you may optionally configure the following fields: `reCaptcha.enable` (boolean), `reCaptcha.version` (number), `reCaptcha.siteKey` (string), `reCaptcha.secretKey` (string), and `reCaptcha.pages` (array) (more on these later). Here is a sample audit configuration:
+You can add auditing support to OpenCred to ensure that a VP token presented in the past was valid at the time it was presented. The VP token can be one of two formats: (1) JWT or (2) Data Integrity. In order to enable this feature, use the boolean field `audit.enable` and the array field `audit.types` in the config file. Additionally, you may optionally configure the following fields: `reCaptcha.enable` (boolean), `reCaptcha.version` (number), `reCaptcha.siteKey` (string), `reCaptcha.secretKey` (string), and `reCaptcha.pages` (array) (more on these later).
+
+The `audit.enable` field enables support for auditing in an OpenCred deployment (default: `false`).
+
+The `audit.types` field is an array that can contain multiple audit profiles. Each profile can be either:
+- A **preset** (built-in configuration) - Use the `preset` field to reference a built-in audit configuration
+- A **custom** profile - Use the `name` field and `fields` array to define your own audit profile
+
+##### Using Built-in Presets
+
+OpenCred includes a built-in preset for auditing ISO 18013 Driver's License credentials. The preset `Iso18013DriversLicenseCredential:2025` provides a pre-configured audit profile named "Driver's License or ID Card" with the following fields:
+- First Name
+- Last Name
+- Date of Birth
+- Sex (dropdown with options: Male, Female, Not Known, Not Applicable)
+- Veteran status (dropdown: Yes/No)
+- Issuing Authority
+- Document Number (DL/ID Number)
+- REAL ID Compliance (dropdown: Fully Compliant/Non-Compliant)
+- Issue Date
+- Expiry Date
+
+To use the preset, simply reference it in your configuration:
 
 ```yaml
 audit:
   enable: true
-  fields:
-    - type: text
-      id: given_name
-      name: First Name
-      path: "$.credentialSubject.given_name"
-      required: true
-    - type: text
-      id: family_name
-      name: Last Name
-      path: "$.credentialSubject.family_name"
-      required: false
-    - type: date
-      id: birth_date
-      name: Date of Birth
-      path: "$.credentialSubject.birth_date"
-      required: true
-    - type: number
-      id: height
-      name: Height (cm)
-      path: "$.credentialSubject.height"
-      required: false
-    - type: dropdown
-      id: sex
-      name: Sex
-      path: "$.credentialSubject.sex"
-      required: false
-      options:
-        "Male": 1
-        "Female": 2
-    - type: dropdown
-      id: senior_citizen
-      name: Are you a senior citizen?
-      path: "$.credentialSubject.senior_citizen"
-      required: true
-      options:
-        "Yes": 1
-        "No": null
-      default: "No"
-reCaptcha:
-  enable: true
-  version: 2
-  siteKey: 6LcNDSjdAAAAAAAAIe2uy0gavf0reiuhfer12345
-  secretKey: 6LcNDSjdAAAAAAAAIe3uy1gavf1reiuhfer67890
-  pages:
-    - audit
+  types:
+    - preset: Iso18013DriversLicenseCredential:2025
 ```
 
-The `audit.enable` field enables support for auditing in an OpenCred deployment (default: `false`).
-If you would also like to check for matching values in the token's credential
+##### Defining Custom Audit Types
+
+If you need to create a custom audit profile, you can define it with a `name` and `fields` array. Here is a sample custom audit configuration:
+
+```yaml
+audit:
+  enable: true
+  types:
+    - name: Custom DL
+      fields:
+        - type: text
+          id: given_name
+          name: First Name
+          path: "$.credentialSubject.driversLicense.given_name"
+          required: false
+        - type: text
+          id: family_name
+          name: Last Name
+          path: "$.credentialSubject.driversLicense.family_name"
+          required: false
+        - type: date
+          id: birth_date
+          name: Date of Birth
+          path: "$.credentialSubject.driversLicense.birth_date"
+          required: false
+        - type: dropdown
+          id: sex
+          name: Sex
+          path: "$.credentialSubject.driversLicense.sex"
+          required: false
+          options:
+            Male: 1
+            Female: 2
+            "Not Known": 0
+            "Not Applicable": 9
+          default: Male
+        - type: dropdown
+          id: senior_citizen
+          name: Are you a senior citizen?
+          path: "$.credentialSubject.senior_citizen"
+          required: true
+          options:
+            "Yes": 1
+            "No": null
+          default: "No"
+```
+
+##### Combining Preset and Custom Types
+
+You can combine both preset and custom audit types in the same configuration:
+
+```yaml
+audit:
+  enable: true
+  types:
+    - preset: Iso18013DriversLicenseCredential:2025
+    - name: Custom DL
+      fields:
+        - type: text
+          id: given_name
+          name: First Name
+          path: "$.credentialSubject.driversLicense.given_name"
+          required: false
+        # ... more fields ...
+```
+
+If you would like to check for matching values in the token's credential
 in a web interface, you can specify the following attributes for each
-field of interest via the `audit.fields` field and visit `BASE_URL/audit-vp` in the browser:
+field of interest within each audit type's `fields` array and visit `BASE_URL/audit-vp` in the browser:
 - `type` - The field type (currently, supports `text`, `number`, `date`, and `dropdown`).
-- `id` - The field ID (can be anything, but must be unique among other fields).
+- `id` - The field ID (can be anything, but must be unique among other fields within the same audit type).
 - `name` - The field name that appears in the web interface.
-- `path` - The field path in the credential (must be unique among other fields).
+- `path` - The field path in the credential (must be unique among other fields within the same audit type).
 - `required` - Whether the admin user is required to enter a value for the field in the web interface.
 - `options` - Data binding from user-friendly name to associated value for the field in the web interface. This property is used whenever a field can have one of multiple possible machine-readable values in a discrete set of options (e.g., `Male` -> `1`, `Female` -> `2`). The input for this field will be presented as a dropdown selection element. If one of the options is the absence of the field from the credential, you can represent this by binding the field to `null`. For example, here are the expectations for each selection for the field named `Are you a senior citizen?` in the sample snippet above:
   - `Yes` - There exists a field with path `$.credentialSubject.senior_citizen` containing value `1` in the credential.
@@ -609,7 +738,7 @@ npm install -g artillery@latest
 ```
 
 Ensure that there is a workflow configuration in `combined.example.yaml` for a
-load test relying party with `clientId: load-test` matching the configuration
+load test client with `clientId: load-test` matching the configuration
 for that client. Load testing requires on this configuration remaining congruent
 with hardcoded fixtures and credentials in the load tests.
 

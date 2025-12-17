@@ -1,5 +1,25 @@
 # opencred-platform Changelog
 
+## 10.0.0 - 2026-01-XX
+
+### Added
+- Add optional public workflow listing feature with "enable".
+- Add support for mso_mdoc format credentials such as mDL Driver's Licenses
+- Add support for experimental W3C Digital Crednetials API
+- Add support for `x509_san_dns` client_id_scheme in OID4VP exchanges.
+- Add wallet selection feature with default and advanced selection of exchange protocols.
+- Add multiple OID4VP protocol versions to support different wallets and enable developer testing.
+- Improve VCALM / VC-API exchanges support for additional wallets.
+- Added `@spruceid/opencred-dc-api` to support DC API interaction method exchanges requesting mDoc crednetials only.
+- Added new simplified "query" format for workflows enabling simpler query construction for requested credential types.
+- Added workflow "presets" for common use cases, starting with ISO 18013 Driver's License Verifiable Credentials.
+
+### Changed
+- BREAKING: Simplified config schema with workflows and presets.
+- Terminology: Changed "relying party" to "workflow" across the application code and configuration.
+- Improve UI by implementing several @digitalbazaar/cadmv-ui Vue components.
+- Enable did web document by default, as this is required for most OID4VP workflows.
+
 ## 9.0.7 - 2026-01-23
 
 ### Added

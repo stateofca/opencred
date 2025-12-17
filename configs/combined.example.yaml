@@ -28,6 +28,7 @@ app:
       - name: "Test Workflow (Native)"
         clientId: "rp1"
         clientSecret: "DeepestAndDarkest"
+        type: native
         description: "Test App"
         brand:
           primaryLogo: "https://placekitten.com/200/200"
@@ -56,13 +57,11 @@ app:
           headersVariable: callbackHeaders
           oauth:
             issuer: http://example.com
-            token_url: http://example.com/token
-            client_secret: exampleClientSecret
-            client_id: exampleClientId
+            tokenUrl: http://example.com/token
+            clientSecret: exampleClientSecret
+            clientId: exampleClientId
             scope:
               - default
-
-        createChallenge: true
         verifiablePresentationRequest: >
           {
             "query": {
@@ -78,10 +77,11 @@ app:
             }
           }
       - name: "Test App"
-        # An example that uses a remove VC-API exchanger to connect with a wallet
+        # An example that uses a remote VC-API exchanger to connect with a wallet
         # See Verifiable Credentials API Documentation: https://w3c-ccg.github.io/vc-api/
         clientId: "32bb6cec384b"
         clientSecret: "DeepestAndDarkest"
+        type: vc-api
         description: "Test App"
         brand:
           primaryLogo: "https://placekitten.com/200/200"
@@ -98,37 +98,47 @@ app:
           scopes:
             - name: "openid"
               description: "Open ID Connect"
-        workflow:
-          type: vc-api
-          baseUrl: https://example.org/workflows/123
-          capability: "example"
-          clientSecret: "example"
+        baseUrl: https://example.org/workflows/123
+        capability: "example"
+        verifiablePresentationRequest: >
+          {
+            "query": {
+              "type": "QueryByExample",
+              "credentialQuery": {
+                "reason": "Please present your VC.",
+                "example": {
+                  "type": [
+                    "VerifiableCredential"
+                  ]
+                }
+              }
+            }
+          }
       - clientId: 4e3a8b7b4b7b4b7b4b7b
         # Microsoft Entra Verified Id workflow config
         # Many of these config fields map to request fields in the APIs linked below:
         #   https://learn.microsoft.com/en-us/entra/verified-id/get-started-request-api
         #   https://learn.microsoft.com/en-us/entra/verified-id/presentation-request-api
+        type: microsoft-entra-verified-id
         caStore: false
         configFrom: 32bb6cec384b # clientId of another workflow to serve as default values
         trustedCredentialIssuers:
           - did:web:example.com
-        workflow:
-          type: microsoft-entra-verified-id
-          apiBaseUrl: https://api.entra.microsoft.example.com/v1.0 # required (will generally be https://verifiedid.did.msidentity.com/v1.0)
-          apiLoginBaseUrl: https://login.entra.microsoft.example.com # required (will generally be https://login.microsoftonline.com)
-          apiClientId: "TODO" # required
-          apiClientSecret: "TODO" # required
-          apiTenantId: "TODO" # required
-          verifierDid: "TODO" # required
-          verifierName: "TODO" # required
-          acceptedCredentialType: "TODO" # required
-          credentialVerificationPurpose: "So that we can evaluate your permission to access the requested resource" # optional (default populated in middleware unless overridden here)
-          allowRevokedCredentials: false # optional (default populated in middleware unless overridden here)
-          validateLinkedDomain: false # optional (default populated in middleware unless overridden here)
-          includeQrCode: true # optional (default populated in middleware unless overridden here)
+        apiBaseUrl: https://api.entra.microsoft.example.com/v1.0 # required (will generally be https://verifiedid.did.msidentity.com/v1.0)
+        apiLoginBaseUrl: https://login.entra.microsoft.example.com # required (will generally be https://login.microsoftonline.com)
+        apiClientId: "TODO" # required
+        apiClientSecret: "TODO" # required
+        apiTenantId: "TODO" # required
+        verifierDid: "TODO" # required
+        verifierName: "TODO" # required
+        acceptedCredentialType: "TODO" # required
+        credentialVerificationPurpose: "So that we can evaluate your permission to access the requested resource" # optional (default populated in middleware unless overridden here)
+        allowRevokedCredentials: false # optional (default populated in middleware unless overridden here)
+        validateLinkedDomain: false # optional (default populated in middleware unless overridden here)
       - name: "load-test"
         clientId: "load-test"
         clientSecret: "DeepestAndDarkest"
+        type: native
         description: "Load Testing Profile"
         brand:
           primaryLogo: "https://imagedelivery.net/I-hc6FAYxquPgv-npvTcWQ/241cb0c9-d92c-40b7-1745-6d5e68a45d00/public"
@@ -145,7 +155,6 @@ app:
           scopes:
             - name: "openid"
               description: "Open ID Connect"
-        createChallenge: true
         verifiablePresentationRequest: >
           {
             "query": {
@@ -160,11 +169,10 @@ app:
               }
             }
           }
-        workflow:
-          type: native
       - name: "Permanent Resident Card Verifier"
         clientId: "prc-verifier"
         clientSecret: "DeepestAndDarkest"
+        type: native
         description: "Permanent Resident Card Verification Service"
         brand:
           primaryLogo: "https://placekitten.com/200/200"
@@ -178,26 +186,48 @@ app:
           scopes:
             - name: "openid"
               description: "Open ID Connect"
-        createChallenge: true
-        verifiablePresentationRequest: >
-          {
-            "query": {
-              "type": "QueryByExample",
-              "credentialQuery": {
-                "reason": "Please present your Permanent Resident Card credential.",
-                "example": {
-                  "@context": [
-                    "https://www.w3.org/2018/credentials/v1",
-                    "https://w3id.org/citizenship/v1",
-                    "https://w3id.org/security/suites/ed25519-2020/v1"
-                  ],
-                  "type": ["PermanentResidentCard"]
-                }
-              }
-            }
-          }
-        workflow:
-          type: native
+        query:
+          - type:
+              - PermanentResidentCard
+            context:
+              - "https://www.w3.org/2018/credentials/v1"
+              - "https://w3id.org/citizenship/v1"
+              - "https://w3id.org/security/suites/ed25519-2020/v1"
+            format:
+              - ldp_vc
+      - name: "Driver's License (Preset)"
+        clientId: "basic-dl"
+        clientSecret: "basic-dl-secret"
+        type: preset
+        preset: Iso18013DriversLicenseCredential:2025
+        trustedCredentialIssuers:
+          - did:web:example.com
+        public: true
+      - name: "Mobile Driver's License (DC API)"
+        clientId: "native-mdl"
+        clientSecret: "native-mdl-secret"
+        type: native
+        dcApiNamespaceQuery:
+          org.iso.18013.5.1:
+            - family_name
+            - given_name
+            - document_number
+        dcApiEnabled: true
+        public: true
+      - name: "Driver's License Query"
+        clientId: "query-dl"
+        clientSecret: "query-dl-secret"
+        type: native
+        query:
+          - type:
+              - Iso18013DriversLicenseCredential
+            context:
+              - "https://www.w3.org/2018/credentials/v1"
+              - "https://w3id.org/vdl/v1"
+              - "https://w3id.org/vdl/aamva/v1"
+            format:
+              - jwt_vc_json
+        public: true
     options:
       exchangeProtocols:
         - chapi
@@ -209,44 +239,47 @@ app:
       header: "#0979c4"
     audit:
       enable: true
-      fields:
-        - type: text
-          id: given_name
-          name: First Name
-          path: "$.credentialSubject.given_name"
-          required: true
-        - type: text
-          id: family_name
-          name: Last Name
-          path: "$.credentialSubject.family_name"
-          required: false
-        - type: date
-          id: birth_date
-          name: Date of Birth
-          path: "$.credentialSubject.birth_date"
-          required: true
-        - type: number
-          id: height
-          name: Height (cm)
-          path: "$.credentialSubject.height"
-          required: false
-        - type: dropdown
-          id: sex
-          name: Sex
-          path: "$.credentialSubject.sex"
-          required: false
-          options:
-            "Male": 1
-            "Female": 2
-        - type: dropdown
-          id: senior_citizen
-          name: Are you a senior citizen?
-          path: "$.credentialSubject.senior_citizen"
-          required: true
-          options:
-            "Yes": 1
-            "No": null
-          default: "No"
+      types:
+        - preset: Iso18013DriversLicenseCredential:2025
+        - name: Custom Audit Profile
+          fields:
+            - type: text
+              id: given_name
+              name: First Name
+              path: "$.credentialSubject.given_name"
+              required: true
+            - type: text
+              id: family_name
+              name: Last Name
+              path: "$.credentialSubject.family_name"
+              required: false
+            - type: date
+              id: birth_date
+              name: Date of Birth
+              path: "$.credentialSubject.birth_date"
+              required: true
+            - type: number
+              id: height
+              name: Height (cm)
+              path: "$.credentialSubject.height"
+              required: false
+            - type: dropdown
+              id: sex
+              name: Sex
+              path: "$.credentialSubject.sex"
+              required: false
+              options:
+                "Male": 1
+                "Female": 2
+            - type: dropdown
+              id: senior_citizen
+              name: Are you a senior citizen?
+              path: "$.credentialSubject.senior_citizen"
+              required: true
+              options:
+                "Yes": 1
+                "No": null
+              default: "No"
     reCaptcha:
       enable: true
       version: 2
