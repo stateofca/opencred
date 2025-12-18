@@ -845,3 +845,134 @@ describe('Exchanges (Native)', async () => {
       expect(dbStub.called).to.be(true);
     });
 });
+
+describe('NativeWorkflowService getExchange', async () => {
+  let service;
+  let findOneStub;
+
+  before(() => {
+    service = new NativeWorkflowService();
+  });
+
+  afterEach(() => {
+    if(findOneStub) {
+      findOneStub.restore();
+      findOneStub = null;
+    }
+  });
+
+  it('should mark expired exchange as invalid and add expiration error',
+    async () => {
+      const exchangeId = await createId();
+      const ttl = 900; // 15 minutes in seconds
+      const expiredCreatedAt = new Date(
+        new Date().getTime() - (ttl + 100) * 1000); // 100 seconds past expiry
+
+      const exchange = {
+        id: exchangeId,
+        state: 'pending',
+        step: 'default',
+        ttl,
+        createdAt: expiredCreatedAt,
+        variables: {},
+        workflowId: 'testworkflow',
+        oidc: {code: null, state: 'test'},
+        accessToken: await createId()
+      };
+
+      findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
+        .resolves(exchange);
+
+      const result = await service.getExchange({
+        id: exchangeId,
+        allowExpired: true
+      });
+
+      expect(result).to.not.be(null);
+      expect(result.state).to.be('invalid');
+      expect(result.variables.results).to.have.property('default');
+      expect(result.variables.results.default).to.have.property('errors');
+      expect(result.variables.results.default.errors).to.be.an('array');
+      expect(result.variables.results.default.errors.length).to.be(1);
+      expect(result.variables.results.default.errors[0])
+        .to.be('The exchange has expired.');
+    });
+
+  it('should not modify already invalid exchange with prior errors',
+    async () => {
+      const exchangeId = await createId();
+      const ttl = 900; // 15 minutes in seconds
+      const expiredCreatedAt = new Date(
+        new Date().getTime() - (ttl + 100) * 1000); // 100 seconds past expiry
+
+      const existingError = 'Some prior error occurred.';
+      const exchange = {
+        id: exchangeId,
+        state: 'invalid',
+        step: 'default',
+        ttl,
+        createdAt: expiredCreatedAt,
+        variables: {
+          results: {
+            default: {
+              errors: [existingError]
+            }
+          }
+        },
+        workflowId: 'testworkflow',
+        oidc: {code: null, state: 'test'},
+        accessToken: await createId()
+      };
+
+      findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
+        .resolves(exchange);
+
+      const result = await service.getExchange({
+        id: exchangeId,
+        allowExpired: true
+      });
+
+      expect(result).to.not.be(null);
+      expect(result.state).to.be('invalid');
+      expect(result.variables.results).to.have.property('default');
+      expect(result.variables.results.default).to.have.property('errors');
+      expect(result.variables.results.default.errors).to.be.an('array');
+      // Should only have original error, no expiration error added
+      // because exchange is already invalid
+      expect(result.variables.results.default.errors.length).to.be(1);
+      expect(result.variables.results.default.errors[0])
+        .to.be(existingError);
+    });
+
+  it('should not modify non-expired pending exchange', async () => {
+    const exchangeId = await createId();
+    const ttl = 900; // 15 minutes in seconds
+    const recentCreatedAt = new Date(
+      new Date().getTime() - 100 * 1000); // 100 seconds ago (not expired)
+
+    const exchange = {
+      id: exchangeId,
+      state: 'pending',
+      step: 'default',
+      ttl,
+      createdAt: recentCreatedAt,
+      variables: {},
+      workflowId: 'testworkflow',
+      oidc: {code: null, state: 'test'},
+      accessToken: await createId()
+    };
+
+    findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
+      .resolves(exchange);
+
+    const result = await service.getExchange({
+      id: exchangeId,
+      allowExpired: true
+    });
+
+    expect(result).to.not.be(null);
+    expect(result.state).to.be('pending');
+    // Should not have results structure added
+    expect(result.variables.results).to.be(undefined);
+  });
+});

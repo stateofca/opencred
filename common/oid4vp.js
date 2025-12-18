@@ -267,8 +267,6 @@ export const getDcqlQuery = async ({workflow, profile}) => {
           // ldp_vc or mso_mdoc
           path = ['$.type'];
         }
-
-        // Build claims array
         const claims = [];
 
         // If fields.type exists, add expanded IRIs as claims
@@ -292,7 +290,6 @@ export const getDcqlQuery = async ({workflow, profile}) => {
           }
         };
 
-        // Only add claims property if we have claims
         if(claims.length > 0) {
           credentialQuery.claims = claims;
         }
