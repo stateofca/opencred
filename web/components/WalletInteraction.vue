@@ -23,6 +23,7 @@ SPDX-License-Identifier: BSD-3-Clause
       :exchange-state="exchangeState"
       :exchange-data="exchangeData"
       :qr-state="interactionState.qrState"
+      :active="active"
       @toggle-same-device="handleToggleSameDevice"
       @go-back="qrDisplayOverrideOff" />
     <SameDeviceLinkInteraction
@@ -32,8 +33,9 @@ SPDX-License-Identifier: BSD-3-Clause
       :exchange-data="exchangeData"
       :same-device-state="interactionState.sameDeviceState"
       :protocol-type="protocolType"
+      :active="active"
       @activate="handleSameDeviceActivate"
-      @toggle-qr="handleToggleQr" />
+      @toggle-qr="setPreferQr" />
     <ChapiInteraction
       v-else-if="activeInteractionType === 'chapi'"
       :exchange-data="exchangeData"
@@ -130,7 +132,8 @@ const props = defineProps({
 
 const emit = defineEmits([
   'updateInteractionState',
-  'replaceExchange'
+  'replaceExchange',
+  'overrideActive'
 ]);
 
 const $q = useQuasar();
@@ -322,18 +325,18 @@ const handleDcApiRetry = () => {
 // Handle same device activation
 const handleSameDeviceActivate = () => {
   // The SameDeviceLinkInteraction component handles the actual activation
-  // This is just for tracking state if needed
+  // TODO: This is just for tracking state if needed
 };
 
-// Handle toggle to same device (from QR)
-const handleToggleSameDevice = () => {
+// Set preference for same device interaction (from QR)
+const setPreferSameDevice = () => {
   emit('updateInteractionState', {
     prefersSameDevice: true
   });
 };
 
-// Handle toggle to QR (from same device)
-const handleToggleQr = () => {
+// Set preference for QR code interaction (from same device)
+const setPreferQr = () => {
   emit('updateInteractionState', {
     prefersSameDevice: false
   });
@@ -344,6 +347,7 @@ const qrDisplayOverrideOff = () => {
   emit('updateInteractionState', {
     prefersSameDevice: false
   });
+  emit('overrideActive');
 };
 
 // Handle CHAPI activation

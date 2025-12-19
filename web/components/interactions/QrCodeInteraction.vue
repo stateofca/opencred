@@ -25,9 +25,9 @@ SPDX-License-Identifier: BSD-3-Clause
         v-if="props.qrCodeDataUri"
         :src="props.qrCodeDataUri"
         class="mx-auto"
-        :style="{ opacity: exchangeState === 'active' ? 0.2 : 1 }">
+        :style="{ opacity: active ? 0.2 : 1 }">
       <q-spinner-tail
-        v-if="exchangeState === 'active'"
+        v-if="active"
         class="no-pointer-events absolute-center text-primary"
         size="5em" />
     </div>
@@ -39,7 +39,7 @@ SPDX-License-Identifier: BSD-3-Clause
         :ttl="exchangeData.ttl" />
     </p>
     <button
-      v-if="exchangeState === 'active'"
+      v-if="active"
       class="mx-auto max-w-prose text-sm underline text-gray-900 mt-2"
       @click="handleGoBack">
       {{$t('exchangeActiveGoBack')}}
@@ -85,6 +85,10 @@ const props = defineProps({
   qrState: {
     type: Object,
     default: () => ({})
+  },
+  active: {
+    type: Boolean,
+    default: false
   }
 });
 

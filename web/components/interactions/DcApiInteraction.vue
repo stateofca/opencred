@@ -21,15 +21,15 @@ SPDX-License-Identifier: BSD-3-Clause
       <div class="flex gap-4">
         <cadmv-button
           variant="primary"
-          :loading="exchangeState === 'active'"
-          :disabled="exchangeState === 'active'"
+          :loading="!error && exchangeState === 'active'"
+          :disabled="!error && exchangeState === 'active'"
           @click="handleRetry">
           {{$t('dcApiRetry')}}
         </cadmv-button>
         <cadmv-button
           variant="secondary"
-          :loading="exchangeState === 'active'"
-          :disabled="exchangeState === 'active'"
+          :loading="!error && exchangeState === 'active'"
+          :disabled="!error && exchangeState === 'active'"
           @click="handleTryAnotherWay">
           {{$t('dcApiFallback')}}
         </cadmv-button>

@@ -10,11 +10,11 @@ SPDX-License-Identifier: BSD-3-Clause
     <!-- openid4vp:// Button -->
     <div
       v-if="protocolType === 'openid4vp'"
-      class="my-8">
+      class="flex flex-col items-center my-8">
       <cadmv-button
         variant="primary"
-        :loading="exchangeState === 'active'"
-        :disabled="exchangeState === 'active'"
+        :loading="active"
+        :disabled="active"
         @click="handleActivate">
         {{$t('appCta')}}
       </cadmv-button>
@@ -31,11 +31,11 @@ SPDX-License-Identifier: BSD-3-Clause
     <!-- Web/Deep Link Button -->
     <div
       v-else-if="protocolType === 'web'"
-      class="my-8">
+      class="flex flex-col items-center my-8">
       <cadmv-button
         variant="primary"
-        :loading="exchangeState === 'active'"
-        :disabled="exchangeState === 'active'"
+        :loading="active"
+        :disabled="active"
         @click="handleActivate">
         {{$t('appCta')}}
       </cadmv-button>
@@ -47,8 +47,8 @@ SPDX-License-Identifier: BSD-3-Clause
       class="flex flex-col items-center my-8">
       <cadmv-button
         variant="primary"
-        :loading="exchangeState === 'active'"
-        :disabled="exchangeState === 'active'"
+        :loading="active"
+        :disabled="active"
         @click="handleActivate">
         {{urlCopied ? $t('urlCopied') : $t('copyUrl')}}
       </cadmv-button>
@@ -111,6 +111,10 @@ const props = defineProps({
   protocolType: {
     type: String,
     required: true
+  },
+  active: {
+    type: Boolean,
+    default: false
   }
 });
 

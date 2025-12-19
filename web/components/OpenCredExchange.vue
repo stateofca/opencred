@@ -77,7 +77,8 @@ SPDX-License-Identifier: BSD-3-Clause
         :protocols-registry="protocolsRegistry"
         :interaction-state="interactionState"
         @update-interaction-state="handleUpdateInteractionState"
-        @replace-exchange="handleReplaceExchange" />
+        @replace-exchange="handleReplaceExchange"
+        @override-active="handleOverrideActive" />
 
       <!-- Explainer Video Link -->
       <div class="mt-2">
@@ -170,6 +171,7 @@ const context = parentContext;
 
 const state = reactive({
   active: false,
+  activeOverride: false,
   error: null,
   intervalId: null,
   statusCheckCount: 0
@@ -297,6 +299,10 @@ const handleReplaceExchange = updatedExchange => {
   };
 };
 
+const handleOverrideActive = () => {
+  state.activeOverride = true;
+};
+
 // Track if we've loaded from cookies to avoid reloading
 const cookiesLoaded = ref(false);
 
@@ -324,6 +330,20 @@ watch(() => context.value?.exchangeData, () => {
 
   cookiesLoaded.value = true;
 }, {immediate: true});
+
+// Watch for DC API to QR code transition
+// When user selects "try another way" from DC API, we should override the
+// active state to prevent showing spinner. This handles both cases:
+// 1. Exchange is already active when switching
+// 2. Exchange becomes active later due to race condition (UI hasn't polled yet)
+watch(
+  () => interactionState.dcApiErrorOverride,
+  newValue => {
+    if(newValue) {
+      state.activeOverride = true;
+    }
+  }
+);
 
 onBeforeMount(async () => {
   if($q.platform.is.mobile) {
