@@ -24,7 +24,7 @@ SPDX-License-Identifier: BSD-3-Clause
       :exchange-data="exchangeData"
       :qr-state="interactionState.qrState"
       :active="active"
-      @toggle-same-device="handleToggleSameDevice"
+      @toggle-same-device="setPreferSameDevice"
       @go-back="qrDisplayOverrideOff" />
     <SameDeviceLinkInteraction
       v-else-if="activeInteractionType === 'samedevice'"
