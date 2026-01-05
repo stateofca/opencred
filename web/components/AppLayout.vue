@@ -69,7 +69,8 @@ SPDX-License-Identifier: BSD-3-Clause
       <div
         v-if="props.showBackgroundImage && !props.hasError &&
           workflow?.brand?.backgroundImage"
-        class="bg-no-repeat bg-cover clip-path-bg z-0 min-h-[360px]"
+        class="absolute top-0 left-0 right-0 bg-no-repeat bg-cover
+               clip-path-bg z-0 min-h-[360px]"
         :style="{ 'background-image': `url(${
           typeof workflow?.brand?.backgroundImage === 'string' ?
             workflow?.brand?.backgroundImage :
@@ -78,9 +79,11 @@ SPDX-License-Identifier: BSD-3-Clause
 &nbsp;
         </div>
       </div>
-      <router-view
-        :has-error="props.hasError"
-        @change-language="handleLanguageChange" />
+      <div class="absolute left-0 right-0 mt-4 z-10">
+        <router-view
+          :has-error="props.hasError"
+          @change-language="handleLanguageChange" />
+      </div>
     </main>
     <footer
       class="text-left p-3"

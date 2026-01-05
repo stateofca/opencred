@@ -6,7 +6,7 @@ SPDX-License-Identifier: BSD-3-Clause
 -->
 
 <template>
-  <div class="p-4 md:p-5 space-y-4">
+  <div class="p-4 md:p-5 space-y-4 bg-white rounded-md">
     <h2 class="text-2xl md:text-3xl font-bold text-gray-900">
       {{title}}
     </h2>
@@ -21,7 +21,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
     <div
       v-if="resettable"
-      class="space-y-2">
+      class="space-y-4">
       <p class="text-base text-gray-600">
         {{$t('exchangeResetTitle')}}
       </p>

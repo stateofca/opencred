@@ -9,13 +9,14 @@ SPDX-License-Identifier: BSD-3-Clause
   <div>
     <div
       v-if="context.exchangeData?.state === 'complete'"
-      class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
+      class="bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
              md:px-16 lg:px-24 relative text-center">
       <!-- Completion handled by parent -->
     </div>
     <div
       v-else-if="state.error"
-      class="flex justify-center pt-8">
+      class="bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
+             md:px-16 lg:px-24 relative">
       <ErrorView
         :title="state.error.title"
         :message="state.error.message"
@@ -24,7 +25,7 @@ SPDX-License-Identifier: BSD-3-Clause
     </div>
     <div
       v-else
-      class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
+      class="bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
              md:px-16 lg:px-24 relative">
       <!-- Workflow Title -->
       <h1

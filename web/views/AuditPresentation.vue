@@ -10,7 +10,7 @@ SPDX-License-Identifier: BSD-3-Clause
     <div
       v-if="currentFields.length > 0"
       ref="mainContent"
-      class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
+      class="bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
              px-16 lg:px-24 relative">
       <form
         @submit.prevent="requestSubmit">

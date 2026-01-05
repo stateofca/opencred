@@ -9,7 +9,7 @@ SPDX-License-Identifier: BSD-3-Clause
   <div>
     <div
       v-if="context.initError"
-      class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
+      class="bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
              md:px-16 lg:px-24 relative">
       <ErrorView
         :title="$t('exchangeErrorTitle')"
@@ -21,7 +21,7 @@ SPDX-License-Identifier: BSD-3-Clause
       purpose="verification" />
     <div
       v-else
-      class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
+      class="bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
              px-16 lg:px-24 relative">
       <div class="mx-auto py-24 flex items-center justify-center gap-5 text-xl">
         <check-decagram-icon

@@ -6,8 +6,10 @@ SPDX-License-Identifier: BSD-3-Clause
 -->
 
 <template>
-  <div class="-mt-72 bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
-             md:px-16 lg:px-24 relative flex flex-col items-center justify-center">
+  <div
+    class="bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
+             md:px-16 lg:px-24 relative flex flex-col items-center
+             justify-center">
     <h1 class="text-3xl font-bold mb-8 text-center">
       {{$t('verifyCredentialsTitle')}}
     </h1>
