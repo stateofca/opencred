@@ -42,13 +42,13 @@ export const PROTOCOLS_REGISTRY = {
   },
   '18013-7-Annex-C': {
     name: 'ISO 18013-7-Annex-C',
-    description: 'An emerging method for requesting ISO mDL driver' +
+    description: 'An emerging method for requesting ISO mDL driver\'s ' +
       'license credentials from a wallet on the same or different device.' +
       'Requires experimental Chrome flags enabled. (Apple/iOS devices)'
   },
   '18013-7-Annex-D': {
     name: 'ISO 18013-7-Annex-D',
-    description: 'An emerging method for requesting ISO mDL driver' +
+    description: 'An emerging method for requesting ISO mDL driver\'s ' +
       'license credentials from a wallet on the same or different device.' +
       'Requires experimental Chrome flags enabled. (Android devices)'
   }
