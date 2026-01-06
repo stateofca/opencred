@@ -61,29 +61,87 @@ export async function startDCApiFlow({
     }
     const requestUrlWithResponseMethod = urlObj.pathname + urlObj.search;
 
-    // The response will be a JWT string with content-type
-    // 'application/oauth-authz-req+jwt'
-    const response = await httpClient.get(requestUrlWithResponseMethod, {
+    // Determine if this is an Annex C request (returns JSON) or
+    // Annex D (returns JWT text)
+    const isAnnexC = selectedProtocol === '18013-7-Annex-C';
+
+    // Configure response handling based on request type
+    const requestOptions = {
       headers: {
         Authorization: `Bearer ${exchangeData.accessToken}`
-      },
-      responseType: 'text' // Get response as text, not JSON
-    });
-    const jwt = await response.text();
+      }
+    };
+
+    if(isAnnexC) {
+      // Annex C returns JSON, so request JSON response
+      requestOptions.responseType = 'json';
+    } else {
+      // Annex D returns JWT as text
+      requestOptions.responseType = 'text';
+    }
+
+    const response = await httpClient.get(
+      requestUrlWithResponseMethod, requestOptions);
+
+    // Handle response based on type
+    let jwt;
+    let annexCData;
+    if(isAnnexC) {
+      // Annex C: response.data contains the JSON object with
+      // deviceRequest and encryptionInfo
+      annexCData = response.data;
+      if(!annexCData?.deviceRequest || !annexCData?.encryptionInfo) {
+        throw new Error(
+          'Annex C response missing required fields: ' +
+          'deviceRequest or encryptionInfo'
+        );
+      }
+    } else {
+      // Annex D: response is text (JWT string)
+      // If responseType: 'text' was set, the httpClient might have
+      // already parsed it
+      // Check if response has a .text() method or if it's already a string
+      if(typeof response === 'string') {
+        jwt = response;
+      } else if(response.text && typeof response.text === 'function') {
+        jwt = await response.text();
+      } else if(response.data) {
+        jwt = response.data;
+      } else {
+        throw new Error('Unable to extract JWT from response');
+      }
+    }
 
     // Use the Digital Credentials API to get credentials
     const controller = new AbortController();
+
+    // Build request structure based on request type
+    let credentialRequest;
+    if(isAnnexC) {
+      // Annex C uses protocol "org-iso-mdoc" with deviceRequest and
+      // encryptionInfo
+      credentialRequest = {
+        protocol: 'org-iso-mdoc',
+        data: {
+          deviceRequest: annexCData.deviceRequest,
+          encryptionInfo: annexCData.encryptionInfo
+        }
+      };
+    } else {
+      // Annex D uses protocol "openid4vp" with JWT request
+      credentialRequest = {
+        protocol: 'openid4vp',
+        data: {
+          request: jwt
+        }
+      };
+    }
 
     const credentialResponse = await navigator.credentials.get({
       signal: controller.signal,
       mediation: 'required',
       digital: {
-        requests: [{
-          protocol: 'openid4vp',
-          data: {
-            request: jwt
-          }
-        }]
+        requests: [credentialRequest]
       }
     });
 
