@@ -71,8 +71,13 @@ export const WALLETS_REGISTRY = {
         qr: 'Select Scan website QR code from within the app',
         link: 'Click the button to launch your CA DMV wallet on this device'
       },
+      '18013-7-Annex-C': {
+        dcapi: 'Click the button to request credentials from your wallet ' +
+        '(iOS devices)'
+      },
       '18013-7-Annex-D': {
-        dcapi: 'Click the button to request credentials from your wallet'
+        dcapi: 'Click the button to request credentials from your wallet ' +
+        '(Android devices)'
       },
       'OID4VP-HAIP-1.0': {
         dcapi: 'Click the button to request credentials from your wallet'

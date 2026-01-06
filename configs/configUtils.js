@@ -143,6 +143,8 @@ export const QueryByExampleSchema = z.object({
   type: z.array(z.string()).min(1)
 });
 
+export const availableWallets = ['cadmv-wallet', 'lcw'];
+
 // Base Workflow schema
 export const BaseWorkflowSchema = z.object({
   clientId: z.string(), // Used to identify the workflow
@@ -154,6 +156,7 @@ export const BaseWorkflowSchema = z.object({
   caStore: z.boolean().default(true), // If false, cert/x5c checks are skipped
   // By default,experimental DC API is disabled
   dcApiEnabled: z.boolean().default(false),
+  wallets: z.array(z.enum(availableWallets)).optional(),
   oidc: OpenIdConnectSchema.optional(),
   callback: CallbackSchema.optional(),
   translations: z.record(z.string(), z.record(z.string(), z.string()))
@@ -257,6 +260,8 @@ export const availableExchangeProtocols = ['openid4vp', 'chapi'];
 export const OptionsSchema = z.object({
   exchangeProtocols: z.array(z.enum(availableExchangeProtocols))
     .default(['openid4vp', 'chapi']),
+  wallets: z.array(z.enum(availableWallets))
+    .default(['cadmv-wallet', 'lcw']),
   recordExpiresDurationMs: z.number()
     .default(86400000) // 1 day in milliseconds
     .transform(val => Math.floor(Math.max(

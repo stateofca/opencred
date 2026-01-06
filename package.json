@@ -73,6 +73,7 @@
     "base64url": "^3.0.1",
     "bnid": "^3.0.0",
     "cbor-x": "^1.6.0",
+    "hpke-js": "^1.6.5",
     "cors": "^2.8.5",
     "credential-handler-polyfill": "^4.0.0",
     "did-context": "^3.1.1",

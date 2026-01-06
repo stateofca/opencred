@@ -40,10 +40,16 @@ export const PROTOCOLS_REGISTRY = {
     description: 'A Verifiable Credentials API endpoint for wallet ' +
       'interactions. Copy the URL to your wallet app.'
   },
+  '18013-7-Annex-C': {
+    name: 'ISO 18013-7-Annex-C',
+    description: 'An emerging method for requesting ISO mDL driver' +
+      'license credentials from a wallet on the same or different device.' +
+      'Requires experimental Chrome flags enabled. (Apple/iOS devices)'
+  },
   '18013-7-Annex-D': {
     name: 'ISO 18013-7-Annex-D',
     description: 'An emerging method for requesting ISO mDL driver' +
       'license credentials from a wallet on the same or different device.' +
-      'Requires experimental Chrome flags enabled.'
+      'Requires experimental Chrome flags enabled. (Android devices)'
   }
 };

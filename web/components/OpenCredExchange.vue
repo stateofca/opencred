@@ -198,7 +198,6 @@ const interactionState = reactive({
   }
 });
 
-const walletsRegistry = WALLETS_REGISTRY;
 const protocolsRegistry = PROTOCOLS_REGISTRY;
 
 const showVideo = ref(false);
@@ -233,6 +232,31 @@ const availableProtocols = computed(() => {
     return p;
   });
 });
+
+// Get enabled wallets from options, defaulting to all available wallets
+const enabledWallets = computed(() => {
+  const wallets = context.value?.options?.wallets;
+  if(wallets && Array.isArray(wallets) && wallets.length > 0) {
+    return wallets;
+  }
+  // Default to all available wallets if not specified
+  return Object.keys(WALLETS_REGISTRY);
+});
+
+// Filter wallets registry to only include enabled wallets
+const filteredWalletsRegistry = computed(() => {
+  const enabled = enabledWallets.value;
+  const filtered = {};
+  for(const walletId of enabled) {
+    if(WALLETS_REGISTRY[walletId]) {
+      filtered[walletId] = WALLETS_REGISTRY[walletId];
+    }
+  }
+  return filtered;
+});
+
+// Use filtered wallets registry
+const walletsRegistry = filteredWalletsRegistry;
 
 /**
  * Set state.error to the given error object, with defaults applied.
@@ -319,13 +343,43 @@ watch(() => context.value?.exchangeData, () => {
   // Only use cookie values if they're supported by the exchange
   if(cookieProtocol && availableProtocols.value.includes(cookieProtocol)) {
     selectedProtocol.value = cookieProtocol;
+  } else if(availableProtocols.value.length > 0) {
+    // Reset to first available protocol if cookie protocol is not valid
+    selectedProtocol.value = availableProtocols.value[0];
   }
+
   if(cookieWallet !== undefined) {
-    // Check if wallet supports the selected protocol or if protocol-only mode
-    if(cookieWallet === null ||
-      walletsRegistry[cookieWallet]?.supportedProtocols?.[
+    // Check if wallet is enabled and supports the selected protocol
+    // or if protocol-only mode
+    if(cookieWallet === null) {
+      selectedWallet.value = null;
+    } else if(enabledWallets.value.includes(cookieWallet) &&
+      walletsRegistry.value[cookieWallet]?.supportedProtocols?.[
         selectedProtocol.value]) {
       selectedWallet.value = cookieWallet;
+    } else {
+      // Cookie wallet is not enabled or doesn't support the protocol,
+      // select first available enabled wallet instead
+      if(enabledWallets.value.length > 0) {
+        const firstEnabledWallet = enabledWallets.value[0];
+        selectedWallet.value = firstEnabledWallet;
+
+        // Update protocol to one supported by the selected wallet
+        const wallet = walletsRegistry.value[firstEnabledWallet];
+        if(wallet?.getDefaultProtocol) {
+          const walletProtocol = wallet.getDefaultProtocol({
+            workflow: context.value?.workflow,
+            availableProtocols: availableProtocols.value
+          });
+          if(walletProtocol &&
+            availableProtocols.value.includes(walletProtocol)) {
+            selectedProtocol.value = walletProtocol;
+          }
+        }
+      } else {
+        // Fallback: no wallets enabled (shouldn't happen with defaults)
+        selectedWallet.value = null;
+      }
     }
   }
 
@@ -351,13 +405,21 @@ onBeforeMount(async () => {
     interactionState.prefersSameDevice = true;
   }
 
+  // Validate selected wallet is enabled
+  if(selectedWallet.value &&
+    !enabledWallets.value.includes(selectedWallet.value)) {
+    selectedWallet.value = null;
+  }
+
   // Initialize selected protocol if not set or if default is not available
   if(availableProtocols.value.length > 0) {
     const protocols = availableProtocols.value;
     if(!selectedProtocol.value || !protocols.includes(selectedProtocol.value)) {
       // Use wallet's getDefaultProtocol function if available
-      const wallet = selectedWallet.value ?
-        walletsRegistry[selectedWallet.value] : null;
+      // and wallet is enabled
+      const wallet = selectedWallet.value &&
+        enabledWallets.value.includes(selectedWallet.value) ?
+        walletsRegistry.value[selectedWallet.value] : null;
       if(wallet?.getDefaultProtocol) {
         const defaultProtocol = wallet.getDefaultProtocol({
           workflow: context.value?.workflow,
@@ -369,9 +431,29 @@ onBeforeMount(async () => {
           selectedProtocol.value = protocols[0];
         }
       } else {
-        // Default: prefer OID4VP-draft18
-        selectedProtocol.value = protocols.includes('OID4VP-draft18') ?
-          'OID4VP-draft18' : protocols[0];
+        // Try to find a protocol supported by at least one enabled wallet
+        let preferredProtocol = null;
+        for(const walletId of enabledWallets.value) {
+          const enabledWallet = walletsRegistry.value[walletId];
+          if(enabledWallet?.getDefaultProtocol) {
+            const walletProtocol = enabledWallet.getDefaultProtocol({
+              workflow: context.value?.workflow,
+              availableProtocols: protocols
+            });
+            if(walletProtocol && protocols.includes(walletProtocol)) {
+              preferredProtocol = walletProtocol;
+              break;
+            }
+          }
+        }
+        // Default: prefer OID4VP-draft18, or use preferred protocol
+        // from enabled wallet
+        if(preferredProtocol) {
+          selectedProtocol.value = preferredProtocol;
+        } else {
+          selectedProtocol.value = protocols.includes('OID4VP-draft18') ?
+            'OID4VP-draft18' : protocols[0];
+        }
       }
     }
   }
