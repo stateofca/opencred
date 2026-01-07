@@ -24,7 +24,6 @@ import {baseUrl} from '../mock-data.js';
 import {config} from '@bedrock/core';
 import {createExchangeWithAuthRequest} from '../utils/exchanges.js';
 import {database} from '../../lib/database.js';
-import {decodeJwt} from 'jose';
 import {exampleKey2} from '../fixtures/signingKeys.js';
 import expect from 'expect.js';
 import {httpClient} from '@digitalbazaar/http-client';
@@ -210,27 +209,23 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
           responseMode: 'dc_api'
         });
 
-        expect(result).to.have.property('authorizationRequest');
+        expect(result).to.have.property('annexCRequest');
         expect(result).to.have.property('updatedExchange');
         expect(result).to.have.property('signingMetadata');
-        expect(result.authorizationRequest).to.be.an('object');
-        expect(result.updatedExchange.state).to.equal('active');
-        expect(result.updatedExchange.variables).to.have.property(
-          'authorizationRequest'
-        );
-        expect(result.updatedExchange.variables).to.have.property(
-          'encodedSessionTranscript'
-        );
+        expect(result.annexCRequest).to.be.an('object');
+        expect(result.annexCRequest).to.have.property('deviceRequest');
+        expect(result.annexCRequest).to.have.property('encryptionInfo');
+        const ue = result.updatedExchange;
+        expect(ue.state).to.equal('active');
+        expect(ue.variables).to.have.property('authorizationRequest');
+        expect(ue.variables).to.have.property('encodedSessionTranscript');
         // Annex C uses HPKE encryption, so HPKE keys should be stored
-        expect(result.updatedExchange.variables)
-          .to.have.property('hpkeRecipientPrivateKey');
-        expect(result.updatedExchange.variables)
-          .to.have.property('base64EncryptionInfo');
-        expect(result.updatedExchange.variables)
-          .to.have.property('base64DeviceRequest');
+        expect(ue.variables).to.have.property('hpkeRecipientPrivateKey');
+        expect(ue.variables).to.have.property('base64EncryptionInfo');
+        expect(ue.variables).to.have.property('base64DeviceRequest');
 
         // Verify Annex C behavior
-        const authRequest = result.authorizationRequest;
+        const authRequest = ue.variables.authorizationRequest;
         expect(authRequest.response_mode).to.equal('dc_api');
         expect(authRequest.client_metadata).to.have.property('vp_formats');
         expect(authRequest.client_metadata)
@@ -256,7 +251,8 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
           responseMode: 'dc_api'
         });
 
-        const authRequest = result.authorizationRequest;
+        const authRequest = result.updatedExchange.variables.
+          authorizationRequest;
         // Native 18013-7 uses x509_san_dns client_id scheme
         expect(authRequest.client_id).to.equal('x509_san_dns:example.com');
         expect(authRequest.client_id_scheme).to.equal('x509_san_dns');
@@ -445,17 +441,14 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
         expect(err).to.be(undefined);
         expect(result.status).to.equal(200);
         expect(result.headers.get('content-type')).to.equal(
-          'application/oauth-authz-req+jwt; charset=utf-8'
+          'application/json; charset=utf-8'
         );
-        const jwt = decodeJwt(await result.text());
-        // 18013-7-Annex-C profile uses x509_san_dns client_id scheme
-        expect(jwt.client_id).to.equal('x509_san_dns:example.com');
-        expect(jwt.client_id_scheme).to.equal('x509_san_dns');
-        // Default response_mode for 18013-7-Annex-C is dc_api
-        expect(jwt.response_mode).to.equal('dc_api');
-        expect(jwt).to.have.property('dcql_query');
-        expect(jwt).to.have.property('client_metadata');
-        expect(jwt.client_metadata.vp_formats.mso_mdoc).to.be.an('object');
+        const json = result.data;
+        // Annex C returns JSON with deviceRequest and encryptionInfo
+        expect(json).to.have.property('deviceRequest');
+        expect(json).to.have.property('encryptionInfo');
+        expect(json.deviceRequest).to.be.a('string');
+        expect(json.encryptionInfo).to.be.a('string');
       });
 
     it('should use dc_api response mode when responseMode=dc_api',
@@ -482,8 +475,10 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
         }
         expect(err).to.be(undefined);
         expect(result.status).to.equal(200);
-        const jwt = decodeJwt(await result.text());
-        expect(jwt.response_mode).to.equal('dc_api');
+        // Annex C returns JSON, not JWT
+        const json = await result.data;
+        expect(json).to.have.property('deviceRequest');
+        expect(json).to.have.property('encryptionInfo');
       });
   });
 
