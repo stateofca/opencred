@@ -131,7 +131,8 @@ const checkTrust = async (certs, caSource = 'config') => {
     if(i < certs.length - 1) {
       const issued = certs[i].checkIssued(certs[i + 1]);
       if(!issued) {
-        errors.push(`X509 certificate at index ${i} not issued by parent.`);
+        errors.push(
+          `X509 certificate chain broken: index ${i} not issued by parent.`);
       } else {
         const verified = await checkSignature(certs[i], certs[i + 1], i);
         if(!verified.verified) {
@@ -161,8 +162,7 @@ const checkTrust = async (certs, caSource = 'config') => {
         }
       }
       if(!found) {
-        errors.push(
-          `Issuer of X509 certificate at index ${i} not found in CA store`);
+        errors.push(`Certificate issuer not recognized.`);
       }
     }
     i++;
@@ -212,7 +212,7 @@ export const extractCertsFromX5C = async jwk => {
     // Verify public key matches certificate
     const key = createPublicKey({key: jwk, format: 'jwk'});
     if(!certs[0].publicKey.equals(key)) {
-      logger.error('Public key is not found in leaf certificate');
+      logger.error('Public key is misisng from leaf certificate');
       return null;
     }
     return certs;
