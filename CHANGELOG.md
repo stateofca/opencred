@@ -1,5 +1,13 @@
 # opencred-platform Changelog
 
+## 9.0.7 - 2026-xx-xx
+
+### Added
+- Use "VC Disabled Parking Placard" JSON-LD contexts from:
+  - `@digitalbazaar/vc-dpp-context@1`
+- Use "Verifiable Vehicle Credentials" JSON-LD contexts from:
+  - `@digitalbazaar/vvc-context@1`
+
 ## 9.0.6 - 2025-10-21
 
 ### Changed

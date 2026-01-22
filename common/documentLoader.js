@@ -30,11 +30,17 @@ import {
   contexts as SL_CONTEXT_MAP
 } from '@digitalbazaar/vc-status-list-context';
 import {
+  contexts as VC_DPP_CONTEXT_MAP
+} from '@digitalbazaar/vc-dpp-context';
+import {
   contexts as VDL_AAMVA_CONTEXT_MAP,
 } from '@digitalbazaar/vdl-aamva-context';
 import {
   contexts as VDL_CONTEXT_MAP
 } from '@digitalbazaar/vdl-context';
+import {
+  contexts as VVC_CONTEXT_MAP
+} from '@digitalbazaar/vvc-context';
 import {
   contexts as X25519_KEY_AGREEMENT_CONTEXT_MAP
 } from 'x25519-key-agreement-2020-context';
@@ -91,10 +97,16 @@ export const getDocumentLoader = () => {
   SL_CONTEXT_MAP.forEach((context, url) => {
     jsonLdDocLoader.addStatic(url, context);
   });
+  VC_DPP_CONTEXT_MAP.forEach((context, url) => {
+    jsonLdDocLoader.addStatic(url, context);
+  });
   VDL_CONTEXT_MAP.forEach((context, url) => {
     jsonLdDocLoader.addStatic(url, context);
   });
   VDL_AAMVA_CONTEXT_MAP.forEach((context, url) => {
+    jsonLdDocLoader.addStatic(url, context);
+  });
+  VVC_CONTEXT_MAP.forEach((context, url) => {
     jsonLdDocLoader.addStatic(url, context);
   });
 
