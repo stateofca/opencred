@@ -78,37 +78,17 @@ didResolver.use(didWebDriver);
 export const getDocumentLoader = () => {
   const jsonLdDocLoader = new JsonLdDocumentLoader();
 
-  // handle static contexts
-  ED25519_SIG_2020_CONTEXT_MAP.forEach((context, url) => {
-    jsonLdDocLoader.addStatic(url, context);
-  });
-  X25519_KEY_AGREEMENT_CONTEXT_MAP.forEach((context, url) => {
-    jsonLdDocLoader.addStatic(url, context);
-  });
-  DATA_INTEGRITY_CONTEXT_MAP.forEach((context, url) => {
-    jsonLdDocLoader.addStatic(url, context);
-  });
-  DID_CONTEXT_MAP.forEach((context, url) => {
-    jsonLdDocLoader.addStatic(url, context);
-  });
-  CRED_CONTEXT_MAP.forEach((context, url) => {
-    jsonLdDocLoader.addStatic(url, context);
-  });
-  SL_CONTEXT_MAP.forEach((context, url) => {
-    jsonLdDocLoader.addStatic(url, context);
-  });
-  VC_DPP_CONTEXT_MAP.forEach((context, url) => {
-    jsonLdDocLoader.addStatic(url, context);
-  });
-  VDL_CONTEXT_MAP.forEach((context, url) => {
-    jsonLdDocLoader.addStatic(url, context);
-  });
-  VDL_AAMVA_CONTEXT_MAP.forEach((context, url) => {
-    jsonLdDocLoader.addStatic(url, context);
-  });
-  VVC_CONTEXT_MAP.forEach((context, url) => {
-    jsonLdDocLoader.addStatic(url, context);
-  });
+  // handle static context maps
+  jsonLdDocLoader.addDocuments({documents: ED25519_SIG_2020_CONTEXT_MAP});
+  jsonLdDocLoader.addDocuments({documents: X25519_KEY_AGREEMENT_CONTEXT_MAP});
+  jsonLdDocLoader.addDocuments({documents: DATA_INTEGRITY_CONTEXT_MAP});
+  jsonLdDocLoader.addDocuments({documents: DID_CONTEXT_MAP});
+  jsonLdDocLoader.addDocuments({documents: CRED_CONTEXT_MAP});
+  jsonLdDocLoader.addDocuments({documents: SL_CONTEXT_MAP});
+  jsonLdDocLoader.addDocuments({documents: VC_DPP_CONTEXT_MAP});
+  jsonLdDocLoader.addDocuments({documents: VDL_CONTEXT_MAP});
+  jsonLdDocLoader.addDocuments({documents: VDL_AAMVA_CONTEXT_MAP});
+  jsonLdDocLoader.addDocuments({documents: VVC_CONTEXT_MAP});
 
   // handle DIDs
   jsonLdDocLoader.setDidResolver(didResolver);
