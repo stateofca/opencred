@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 9.0.7 - 2026-xx-xx
+## 9.0.7 - 2026-01-23
 
 ### Added
 - Use "VC Disabled Parking Placard" JSON-LD contexts from:

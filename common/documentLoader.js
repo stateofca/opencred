@@ -9,7 +9,6 @@ import * as DidJwk from '@digitalbazaar/did-method-jwk';
 import * as DidKey from '@digitalbazaar/did-method-key';
 import * as DidWeb from '@digitalbazaar/did-method-web';
 import * as EcdsaMultikey from '@digitalbazaar/ecdsa-multikey';
-
 import {CachedResolver} from '@digitalbazaar/did-io';
 import {
   contexts as CRED_CONTEXT_MAP
