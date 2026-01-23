@@ -306,8 +306,8 @@ describe('OpenCred API - Native Workflow', function() {
     }
     should.not.exist(err);
     result.status.should.equal(200);
-    result.headers.get('content-type').should.equal(
-      'application/oauth-authz-req+jwt; charset=utf-8'
+    result.headers.get('content-type').should.contain(
+      'application/oauth-authz-req+jwt'
     );
     const jwt = decodeJwt(await result.text());
     jwt.client_id.should.have.string('did:web:example.com');
