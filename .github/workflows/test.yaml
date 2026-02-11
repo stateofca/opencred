@@ -1,0 +1,32 @@
+# Copyright 2023 - 2026 California Department of Motor Vehicles
+# Copyright 2023 - 2026 Digital Bazaar, Inc.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+name: Test
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x, 24.x]
+    services:
+      mongodb:
+        image: mongo:8
+        ports:
+        - 27017:27017
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        persist-credentials: false
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm install
+    - name: Run test with Node.js ${{ matrix.node-version }}
+      run: npm run test
