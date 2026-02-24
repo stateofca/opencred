@@ -13,7 +13,7 @@ import {verifyUtils} from './utils.js';
 /**
  * Verify an LDP VerifiablePresentation and its contained credential.
  *
- * @param {object} options
+ * @param {object} options - Options for LDP VP verification.
  * @param {object} options.presentation - The VerifiablePresentation object.
  * @param {object} options.exchange - The exchange object.
  * @param {Function} options.vcQuery - Optional function to extract VC from VP.
