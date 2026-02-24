@@ -650,7 +650,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         expect(err).to.be(undefined);
         expect(result.status).to.equal(200);
         expect(result.headers.get('content-type')).to.equal(
-          'application/oauth-authz-req+jwt; charset=utf-8'
+          'application/oauth-authz-req+jwt'
         );
         const jwt = decodeJwt(await result.text());
         // 18013-7-Annex-D profile uses x509_san_dns client_id scheme
