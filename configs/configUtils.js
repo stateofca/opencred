@@ -263,9 +263,9 @@ export const OptionsSchema = z.object({
   wallets: z.array(z.enum(availableWallets))
     .default(['cadmv-wallet', 'lcw']),
   recordExpiresDurationMs: z.number()
-    .default(86400000) // 1 day in milliseconds
+    .default(24 * 60 * 60 * 1000) // 1 day in milliseconds
     .transform(val => Math.floor(Math.max(
-      Math.min(val, 86400000 * 30), // Max 30 days
+      Math.min(val, 24 * 60 * 60 * 1000 * 30), // Max 30 days
       60000 // Min 1 minute
     ))),
   exchangeTtlSeconds: z.number()
