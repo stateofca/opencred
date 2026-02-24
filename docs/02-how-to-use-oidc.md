@@ -20,7 +20,7 @@ Ensure you have:
 
 ### 1. Create a new OIDC Relying Party Application
 
-In your favourite OIDC authentication provider, createa a new application. For
+In your favorite OIDC authentication provider, create a a new application. For
 this example we will be using Auth0. These instructions will need to be adjusted
 for different providers.
 
