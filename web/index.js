@@ -8,6 +8,7 @@
 import * as brQuasar from '@bedrock/quasar';
 import * as brVue from '@bedrock/vue';
 import * as polyfill from 'credential-handler-polyfill';
+import {applyTheme, setupFavicon} from '@digitalbazaar/cadmv-ui';
 import {config, extend} from '@bedrock/web';
 import {createRouter, createWebHistory} from 'vue-router';
 import App from './App.vue';
@@ -87,12 +88,14 @@ brVue.initialize({
     app.use(i18n);
     app.use(VueCookies);
 
+    setupFavicon();
     await brQuasar.initialize({app, quasarOptions: {
       runMode: 'web-client',
       plugins: {
         Notify
       }
     }});
+    applyTheme(); // set baseline defaults.
     await brQuasar.theme({brand: appConfig.brand});
     createHead();
     // create root Vue component
