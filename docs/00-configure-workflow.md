@@ -1,19 +1,21 @@
-# How to Configure OpenCred with a Relying Party Using a Native Exchange
+# How to Configure a Workflow in OpenCred Using a Native Exchange
 
 ## Introduction
 
-In this guide, we will configure OpenCred to set up a relying party that will be
-requesting a "VerifiedEmailCredential" from users. We will setup OpenCred to be
-run locally using a **native** workflow.
+In this guide, we will configure OpenCred to set up a workflow that will handle
+requests from a relying party (an external application that connects to OpenCred
+via OpenID Connect). The workflow will request a "VerifiedEmailCredential" from
+users. We will setup OpenCred to be run locally using a **native** workflow.
 
 ## Prerequisites
 
 Ensure you have:
 
 - OpenCred cloned from [Github](https://github.com/stateofca/opencred)
-- Node.js v20 or higher
+- Node.js v22 or higher
 - Dependencies installed (`npm install`)
-- The necessary `VerifiedEmailCredential` to be presented to the relying party.
+- The necessary `VerifiedEmailCredential` to be presented when a relying party
+  requests it through the workflow.
 
 ## Steps
 
@@ -52,12 +54,15 @@ OpenCred deployment.
 certificate in the `pem` property under `caStore`. If not, remove the `caStore`
 property and its children.
 
-If you need to keep the `caStore` for other relying parties you can selectively bypass the CA checks 
+If you need to keep the `caStore` for workflows that may interact with different
+relying parties, you can selectively bypass the CA checks.
 
 ### 4. Configure the Workflow
 
-Remove all of the example relying parties under the `workflows` section and
-add a new entry for your relying party with a `native` workflow. Example:
+Remove all of the example workflows under the `workflows` section and
+add a new entry for your workflow with a `native` workflow type. This workflow
+configuration defines how OpenCred will interact with external relying parties
+that connect via OpenID Connect. Example:
 
 ```yaml
 workflows:
@@ -72,20 +77,13 @@ workflows:
       claims:
         - name: email
           path: credentialSubject.email
-      verifiablePresentationRequest: >
-        {
-          "query": {
-            "type": "QueryByExample",
-            "credentialQuery": {
-              "reason": "Please present your Verified Email Credential.",
-              "example": {
-                "type": [
-                  "VerifiedEmailCredential"
-                ]
-              }
-            }
-          }
-        }
+      query:
+        - type:
+            - VerifiedEmailCredential
+          context:
+            - "https://www.w3.org/2018/credentials/v1"
+          format:
+            - jwt_vc_json
 ```
 
 ### 5. Generate and Configure the `id_token` Signing Key
@@ -167,7 +165,7 @@ Verify that the server is running and there are no errors.
 
 ## Summary
 
-By following these steps, you have configured OpenCred to work with a relying
-party using a native exchange workflow. This setup allows the relying party to
-request and verify the `VerifiedEmailCredential` from users securely through
-their digital wallet.
+By following these steps, you have configured a workflow in OpenCred that uses a
+native exchange type. This workflow allows external relying parties (applications
+that connect to OpenCred via OpenID Connect) to request and verify the
+`VerifiedEmailCredential` from users securely through their digital wallet.

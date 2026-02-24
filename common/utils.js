@@ -99,7 +99,7 @@ const _unenvelopeVcJwtVc = vcTokens => {
       if(typeof credentialId === 'string' &&
           credentialId.startsWith('data:application/jwt')) {
         const jwt = credentialId.split(',')[1];
-        const vc = decodeJwt(jwt).vc;
+        const {vc} = decodeJwt(jwt);
         // Preserve the JWT string in proof.jwt for verification
         return {
           ...vc,

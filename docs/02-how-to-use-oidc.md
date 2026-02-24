@@ -13,7 +13,7 @@ Ensure you have:
 - A digital wallet capable of completing OID4VP exchanges
 - A `VerifiedEmailCredential` to be presented during authentication
 - A locally running OpenCred deployment
-[(see tutorial)](./00-configure-relying-party.md)
+[(see tutorial)](./00-configure-workflow.md)
   - For this tutorial the localtunnel URL will be `https://blue-deer-lead.loca.lt`
 
 ## Basic Steps

@@ -14,7 +14,7 @@ Ensure you have:
 - A digital wallet capable of completing OID4VP exchanges
 - A `VerifiedEmailCredential` in that wallet
 - A locally running OpenCred deployment
-[(see tutorial)](./00-configure-relying-party.md)
+[(see tutorial)](./00-configure-workflow.md)
 
 ## Basic Steps
 

@@ -6,15 +6,13 @@
  */
 
 import * as bedrock from '@bedrock/core';
-import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 
 import '@bedrock/express';
 
 const {config} = bedrock;
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootPath = path.join(__dirname, '..');
+const rootPath = path.join(import.meta.dirname, '..');
 
 // Configure static file serving for the web directory
 // This allows app store button images and other static assets to be served
