@@ -18,7 +18,9 @@
     "lint": "eslint --ext .cjs,.js,.vue .",
     "preview": "vite preview",
     "start": "node --preserve-symlinks dev.js",
-    "test": "npm run test-node",
+    "test": "npm run lint && npm run test:unit && npm run test:bedrock",
+    "test:unit": "mocha",
+    "test:bedrock": "cross-env NODE_ENV=test node --preserve-symlinks test.js test",
     "test:bail": "cross-env MOCHA_BAIL=true DEBUG_ERRORS=true npm run test-node",
     "test-node": "cross-env NODE_ENV=test node --trace-warnings --preserve-symlinks test.js test",
     "test:load": "artillery run ./test/load/artillery.yaml",
@@ -120,5 +122,12 @@
     "expect.js": "^0.3.1",
     "klona": "^2.0.6",
     "sinon": "^17.0.1"
+  },
+  "mocha": {
+    "spec": [
+      "test/unit/**/*.test.js"
+    ],
+    "recursive": true,
+    "timeout": 10000
   }
 }
