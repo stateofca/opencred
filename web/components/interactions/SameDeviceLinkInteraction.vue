@@ -86,6 +86,7 @@ SPDX-License-Identifier: BSD-3-Clause
 <script setup>
 import {onUnmounted, ref, watch} from 'vue';
 import {CadmvButton} from '@digitalbazaar/cadmv-ui';
+import {copyToClipboard} from 'quasar';
 import CountdownDisplay from '../CountdownDisplay.vue';
 
 const props = defineProps({
@@ -125,33 +126,17 @@ const urlCopied = ref(false);
 const schemeHandlerTimeout = ref(null);
 
 const copyUrlToClipboard = async () => {
-  if(props.deepLinkUrl) {
-    try {
-      await navigator.clipboard.writeText(props.deepLinkUrl);
-      urlCopied.value = true;
-      setTimeout(() => {
-        urlCopied.value = false;
-      }, 3000);
-    } catch(err) {
-      console.error('Failed to copy URL:', err);
-      // Fallback to legacy copy command for older browsers
-      const textArea = document.createElement('textarea');
-      textArea.value = props.deepLinkUrl;
-      textArea.style.position = 'fixed';
-      textArea.style.opacity = '0';
-      document.body.appendChild(textArea);
-      textArea.select();
-      try {
-        document.execCommand('copy');
-        urlCopied.value = true;
-        setTimeout(() => {
-          urlCopied.value = false;
-        }, 3000);
-      } catch(fallbackErr) {
-        console.error('Fallback copy failed:', fallbackErr);
-      }
-      document.body.removeChild(textArea);
-    }
+  if(!props.deepLinkUrl) {
+    return;
+  }
+  try {
+    await copyToClipboard(props.deepLinkUrl);
+    urlCopied.value = true;
+    setTimeout(() => {
+      urlCopied.value = false;
+    }, 3000);
+  } catch(err) {
+    console.error('Failed to copy URL:', err);
   }
 };
 
