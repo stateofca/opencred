@@ -247,13 +247,14 @@ export function supportsInteraction({walletId, protocolId, interactionType}) {
  * @param {object} options.protocolsRegistry - The protocols registry.
  * @param {string} options.walletId - The wallet ID (or null).
  * @param {string} options.protocolId - The protocol ID.
- * @param {boolean} options.prefersSameDevice - Whether user prefers same device.
+ * @param {boolean} options.prefersSameDevice - Whether user prefers
+ *   same device.
  * @param {boolean} options.isMobile - Whether on mobile device.
  * @param {boolean} options.dcApiSystemAvailable - Whether DC API is available.
  * @param {object} options.workflow - Workflow configuration.
  * @param {object} options.interactionState - Interaction state object.
- * @param {Array<string>} [options.availableProtocols] - Available protocols
- *   for fallback.
+ * @param {Array<string>} [options.availableProtocols] - Available
+ *   protocols for fallback.
  * @returns {Array<string>} Array of available interaction methods in
  *   priority order.
  */

@@ -1,5 +1,4 @@
 <template>
-  <!-- eslint-disable max-len -->
   <svg
     width="20"
     height="20"
