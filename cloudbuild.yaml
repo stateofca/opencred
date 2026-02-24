@@ -1,24 +1,27 @@
-# Copyright 2023 - 2025 California Department of Motor Vehicles
-# Copyright 2023 - 2025 Digital Bazaar, Inc.
+# Copyright 2023 - 2026 California Department of Motor Vehicles
+# Copyright 2023 - 2026 Digital Bazaar, Inc.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
 steps:
-  - name: 'gcr.io/cloud-builders/docker'
-    args: [ 'build',
-          '--build-arg',
-          'NODE_AUTH_TOKEN=${_NODE_AUTH_TOKEN}',
-          '-t',
-          '$TAG_NAME',
-          '.' ]
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "--build-arg",
+        "NODE_AUTH_TOKEN=${_NODE_AUTH_TOKEN}",
+        "-t",
+        "$TAG_NAME",
+        ".",
+      ]
 
-  - name: 'gcr.io/cloud-builders/docker'
-    id: 'Push Docker Image to Repository'
-    args: [ 'push', '$TAG_NAME']
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Push Docker Image to Repository"
+    args: ["push", "$TAG_NAME"]
 
-  - name: 'gcr.io/$PROJECT_ID/cloudbuild-attestor'
-    id: 'Attest Image (Binary Auth)'
-    entrypoint: 'sh'
+  - name: "gcr.io/$PROJECT_ID/cloudbuild-attestor"
+    id: "Attest Image (Binary Auth)"
+    entrypoint: "sh"
     args:
       - -xe
       - -c

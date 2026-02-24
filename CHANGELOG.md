@@ -15,7 +15,7 @@
 - Added workflow "presets" for common use cases, starting with ISO 18013 Driver's License Verifiable Credentials.
 
 ### Changed
-- BREAKING: Simplified config schema with workflows and presets.
+- **BREAKING**: Simplified config schema with workflows and presets.
 - Terminology: Changed "relying party" to "workflow" across the application code and configuration.
 - Improve UI by implementing several @digitalbazaar/cadmv-ui Vue components.
 - Enable did web document by default, as this is required for most OID4VP workflows.

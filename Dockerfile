@@ -1,9 +1,9 @@
-# Copyright 2023 - 2025 California Department of Motor Vehicles
-# Copyright 2023 - 2025 Digital Bazaar, Inc.
+# Copyright 2023 - 2026 California Department of Motor Vehicles
+# Copyright 2023 - 2026 Digital Bazaar, Inc.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 RUN mkdir -p /home/node/app && chown -R node:node /home/node/app
 WORKDIR /home/node/app
 
