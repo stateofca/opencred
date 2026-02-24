@@ -137,25 +137,22 @@ export const normalizeVpTokenJwt = vpToken => {
   if(typeof vpToken !== 'string') {
     return vpToken;
   }
-  // Check if it's a JSON-stringified JWT (starts and ends with quotes)
-  if(vpToken.startsWith('"') && vpToken.endsWith('"')) {
-    try {
-      const parsed = JSON.parse(vpToken);
-      // If parsing succeeds and result is still a string, it was
-      // JSON-stringified
-      if(typeof parsed === 'string') {
-        return parsed;
-      }
-      // If parsing results in an object, return original (shouldn't happen
-      // for JWT)
-      return vpToken;
-    } catch {
-      // If JSON parsing fails, it's not JSON-stringified, return as-is
-      return vpToken;
+  // Handle OID4VP Draft 18 edge case: vp_token may be JSON-stringified.
+  // Attempt to parse; if it's JSON-stringified, unwrap it. If parsing fails
+  // or results in a non-string, return the original value.
+  try {
+    const parsed = JSON.parse(vpToken);
+    // If parsing succeeds and result is still a string, it was JSON-stringified
+    if(typeof parsed === 'string') {
+      return parsed;
     }
+    // If parsing results in an object, return original (shouldn't happen
+    // for JWT)
+    return vpToken;
+  } catch {
+    // If JSON parsing fails, it's not JSON-stringified, return as-is
+    return vpToken;
   }
-  // Not JSON-stringified, return as-is
-  return vpToken;
 };
 
 export const unenvelopeJwtVp = vpToken => {

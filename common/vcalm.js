@@ -21,11 +21,10 @@ import {verifyUtils} from './utils.js';
  * @returns {object} - {verified, errors, verifiablePresentation, vc}.
  */
 export async function verifyLdpPresentation({
-  presentation, exchange, vcQuery, documentLoader
+  presentation, exchange, vcQuery, documentLoader = defaultDocLoader
 }) {
   const errors = [];
   let verified = false;
-  const loader = documentLoader ?? defaultDocLoader;
 
   if(!presentation) {
     errors.push('Presentation is required');
@@ -34,7 +33,7 @@ export async function verifyLdpPresentation({
 
   const vpResult = await verifyUtils.verifyPresentationDataIntegrity({
     presentation,
-    documentLoader: loader,
+    documentLoader,
     suite: SUITES,
     challenge: exchange.challenge,
     checkStatus: verifyUtils.checkStatus
