@@ -18,15 +18,15 @@ jobs:
       mongodb:
         image: mongo:8
         ports:
-        - 27017:27017
+          - 27017:27017
     steps:
-    - uses: actions/checkout@v6
-      with:
-        persist-credentials: false
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v6
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm install
-    - name: Run test with Node.js ${{ matrix.node-version }}
-      run: npm run test
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm install
+      - name: Run test with Node.js ${{ matrix.node-version }}
+        run: npm run test
