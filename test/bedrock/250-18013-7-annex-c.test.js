@@ -45,8 +45,8 @@ const mdocTestRP = {
   clientSecret: 'shhh',
   oidc: {
     redirectUri: 'https://example.com',
-    scopes: [{name: 'openid'}],
-  },
+    scopes: [{name: 'openid'}]
+  }
 };
 
 // Test RP with mixed formats
@@ -68,8 +68,8 @@ const mixedFormatTestRP = {
   clientSecret: 'shhh',
   oidc: {
     redirectUri: 'https://example.com',
-    scopes: [{name: 'openid'}],
-  },
+    scopes: [{name: 'openid'}]
+  }
 };
 
 describe('Native 18013-7-Annex-C Workflow - Unit Tests', function() {

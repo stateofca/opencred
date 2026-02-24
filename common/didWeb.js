@@ -7,6 +7,7 @@
 
 /**
  * Converts configured domain to DID web format.
+ *
  * @param {string} domain
  * @returns {string}
  */

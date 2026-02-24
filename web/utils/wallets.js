@@ -34,11 +34,12 @@ export const WALLETS_REGISTRY = {
       'or other DMV credentials on their smartphones.',
     icon: '/wallets/cadmv-wallet-icon.png',
     /**
-     * Get the default protocol for this wallet based on workflow
-     * @param {Object} options - Options object
-     * @param {Object} options.workflow - The workflow object (optional)
-     * @param {Array<string>} options.availableProtocols - Available protocols
-     * @returns {string|null} The default protocol ID or null
+     * Get the default protocol for this wallet based on workflow.
+     *
+     * @param {object} options - Options object.
+     * @param {object} options.workflow - The workflow object (optional).
+     * @param {Array<string>} options.availableProtocols - Available protocols.
+     * @returns {string|null} The default protocol ID or null.
      */
     getDefaultProtocol({workflow, availableProtocols}) {
       // OID4VP-1.0 if mdoc format query, otherwise OID4VP-draft18
@@ -96,11 +97,12 @@ export const WALLETS_REGISTRY = {
     },
     homepage: 'https://lcw.app/',
     /**
-     * Get the default protocol for this wallet based on workflow
-     * @param {Object} options - Options object
-     * @param {Object} options.workflow - The workflow object (optional)
-     * @param {Array<string>} options.availableProtocols - Available protocols
-     * @returns {string|null} The default protocol ID or null
+     * Get the default protocol for this wallet based on workflow.
+     *
+     * @param {object} options - Options object.
+     * @param {object} options.workflow - The workflow object (optional).
+     * @param {Array<string>} options.availableProtocols - Available protocols.
+     * @returns {string|null} The default protocol ID or null.
      */
     getDefaultProtocol({availableProtocols}) {
       // LCW wallet defaults to vcapi
@@ -126,13 +128,14 @@ export const WALLETS_REGISTRY = {
 };
 
 /**
- * Check if a wallet supports a protocol with a specific interaction type
- * @param {string} walletId - The wallet ID
- * @param {string} protocolId - The protocol ID
+ * Check if a wallet supports a protocol with a specific interaction type.
+ *
+ * @param {string} walletId - The wallet ID.
+ * @param {string} protocolId - The protocol ID.
  * @param {string} interactionType - The interaction type
- *   ('qr', 'link', 'dcapi', 'chapi')
+ *   ('qr', 'link', 'dcapi', 'chapi').
  * @returns {boolean} True if the wallet supports the protocol with
- *   the interaction type
+ *   the interaction type.
  */
 export function walletSupportsProtocol(walletId, protocolId, interactionType) {
   if(!walletId || !protocolId || !interactionType) {
@@ -151,11 +154,12 @@ export function walletSupportsProtocol(walletId, protocolId, interactionType) {
 }
 
 /**
- * Check if a protocol supports a specific interaction type
- * @param {string} protocolId - The protocol ID
+ * Check if a protocol supports a specific interaction type.
+ *
+ * @param {string} protocolId - The protocol ID.
  * @param {string} interactionType - The interaction type
- *   ('qr', 'link', 'dcapi', 'chapi')
- * @returns {boolean} True if the protocol supports the interaction type
+ *   ('qr', 'link', 'dcapi', 'chapi').
+ * @returns {boolean} True if the protocol supports the interaction type.
  */
 export function protocolSupportsInteraction(protocolId, interactionType) {
   if(!protocolId || !interactionType) {
@@ -187,9 +191,10 @@ export function protocolSupportsInteraction(protocolId, interactionType) {
 }
 
 /**
- * Check if a workflow has mdoc format credentials
- * @param {Object} workflow - Workflow configuration
- * @returns {boolean} True if any query item has mso_mdoc format
+ * Check if a workflow has mdoc format credentials.
+ *
+ * @param {object} workflow - Workflow configuration.
+ * @returns {boolean} True if any query item has mso_mdoc format.
  */
 export function hasMdocFormat(workflow) {
   return workflow?.query?.some(item => {
@@ -199,11 +204,12 @@ export function hasMdocFormat(workflow) {
 }
 
 /**
- * Check if a wallet supports DC API for a specific protocol
- * @param {Object} walletsRegistry - The wallets registry
- * @param {string} walletId - The wallet ID
- * @param {string} protocolId - The protocol ID
- * @returns {boolean} True if the wallet supports DC API for the protocol
+ * Check if a wallet supports DC API for a specific protocol.
+ *
+ * @param {object} walletsRegistry - The wallets registry.
+ * @param {string} walletId - The wallet ID.
+ * @param {string} protocolId - The protocol ID.
+ * @returns {boolean} True if the wallet supports DC API for the protocol.
  */
 export function walletSupportsDcApiForProtocol(walletsRegistry, walletId,
   protocolId) {
@@ -214,13 +220,17 @@ export function walletSupportsDcApiForProtocol(walletsRegistry, walletId,
 }
 
 /**
- * Check if a wallet or protocol supports a specific interaction type
- * @param {Object} walletsRegistry - The wallets registry
- * @param {Object} protocolsRegistry - The protocols registry
- * @param {string} walletId - The wallet ID (or null)
- * @param {string} protocolId - The protocol ID
- * @param {string} interactionType - The interaction type
- * @returns {boolean} True if supported
+ * Check if a wallet or protocol supports a specific interaction type.
+ *
+ * @param {object} walletsRegistry - The wallets registry.
+ * @param {object} protocolsRegistry - The protocols registry.
+ * @param {string} walletId - The wallet ID (or null).
+ * @param walletsRegistry.walletId
+ * @param {string} protocolId - The protocol ID.
+ * @param walletsRegistry.protocolId
+ * @param {string} interactionType - The interaction type.
+ * @param walletsRegistry.interactionType
+ * @returns {boolean} True if supported.
  */
 export function supportsInteraction({walletId, protocolId, interactionType}) {
   if(walletId) {
@@ -230,21 +240,22 @@ export function supportsInteraction({walletId, protocolId, interactionType}) {
 }
 
 /**
- * Get available interaction methods in priority order
- * @param {Object} options - Options object
- * @param {Object} options.walletsRegistry - The wallets registry
- * @param {Object} options.protocolsRegistry - The protocols registry
- * @param {string} options.walletId - The wallet ID (or null)
- * @param {string} options.protocolId - The protocol ID
- * @param {boolean} options.prefersSameDevice - Whether user prefers same device
- * @param {boolean} options.isMobile - Whether on mobile device
- * @param {boolean} options.dcApiSystemAvailable - Whether DC API is available
- * @param {Object} options.workflow - Workflow configuration
- * @param {Object} options.interactionState - Interaction state object
+ * Get available interaction methods in priority order.
+ *
+ * @param {object} options - Options object.
+ * @param {object} options.walletsRegistry - The wallets registry.
+ * @param {object} options.protocolsRegistry - The protocols registry.
+ * @param {string} options.walletId - The wallet ID (or null).
+ * @param {string} options.protocolId - The protocol ID.
+ * @param {boolean} options.prefersSameDevice - Whether user prefers same device.
+ * @param {boolean} options.isMobile - Whether on mobile device.
+ * @param {boolean} options.dcApiSystemAvailable - Whether DC API is available.
+ * @param {object} options.workflow - Workflow configuration.
+ * @param {object} options.interactionState - Interaction state object.
  * @param {Array<string>} [options.availableProtocols] - Available protocols
- *   for fallback
+ *   for fallback.
  * @returns {Array<string>} Array of available interaction methods in
- *   priority order
+ *   priority order.
  */
 export function getAvailableInteractionMethods({
   walletsRegistry,
@@ -330,26 +341,28 @@ export function getAvailableInteractionMethods({
 
 /**
  * Default link generation handler for a protocol supported by a wallet.
- * @param {Object} options - Options object
- * @param {Object} options.exchange - The exchagne object with protocols
- *   and challenge
- * @param {string} options.protocol - The protocol ID
- * @returns {string|null} - The generated link URL, or null if not supported
+ *
+ * @param {object} options - Options object.
+ * @param {object} options.exchange - The exchagne object with protocols
+ *   and challenge.
+ * @param {string} options.protocol - The protocol ID.
+ * @returns {string|null} - The generated link URL, or null if not supported.
  */
 export const getUrlDefault = ({exchange, protocol}) =>
   exchange.protocols?.[protocol] || null;
 
 /**
- * Generate a wallet-specific link for QR codes or same-device links
- * @param {Object} options - Options object
- * @param {Object} options.exchange - The exchange object with protocols
- *   and challenge
- * @param {string} options.walletId - The wallet ID
- * @param {string} options.protocol - The protocol ID
+ * Generate a wallet-specific link for QR codes or same-device links.
+ *
+ * @param {object} options - Options object.
+ * @param {object} options.exchange - The exchange object with protocols
+ *   and challenge.
+ * @param {string} options.walletId - The wallet ID.
+ * @param {string} options.protocol - The protocol ID.
  * @param {string} options.interactionMethod - The interaction method
- *   ('qr' or 'link')
- * @param {Object} [options.workflow] - The workflow object (optional)
- * @returns {string|null} The generated link URL, or null if not supported
+ *   ('qr' or 'link').
+ * @param {object} [options.workflow] - The workflow object (optional).
+ * @returns {string|null} The generated link URL, or null if not supported.
  */
 export function generateWalletLink({
   exchange, walletId, protocol, interactionMethod, workflow

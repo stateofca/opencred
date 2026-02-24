@@ -6,14 +6,15 @@
  */
 
 /**
- * Classifies which OID4VP interoperability profile is being used
+ * Classifies which OID4VP interoperability profile is being used.
+ *
  * @param {object} options
  * @param {object} options.submission - The presentation_submission
- * (if present)
+ * (if present).
  * @param {object} options.dcql_query - The dcql_query from authorization
- * request
+ * request.
  * @returns {string|null} - 'oid4vp-draft18', 'oid4vp-1.0', or null if
- * unable to determine
+ * unable to determine.
  */
 export function classifyOID4VPSubmission({submission, dcql_query}) {
   // Draft 18: Uses presentation_submission with descriptor_map

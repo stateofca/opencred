@@ -73,7 +73,7 @@ brVue.initialize({
           ]
         }
       ],
-      history: createWebHistory(),
+      history: createWebHistory()
     });
 
     brVue.augmentRouter({app, router});

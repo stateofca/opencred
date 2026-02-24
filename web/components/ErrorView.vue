@@ -40,20 +40,20 @@ import {CadmvButton} from '@digitalbazaar/cadmv-ui';
 defineProps({
   title: {
     type: String,
-    default: () => 'Error',
+    default: () => 'Error'
   },
   subtitle: {
     type: String,
-    default: () => 'The following error was encountered:',
+    default: () => 'The following error was encountered:'
   },
   message: {
     type: String,
-    default: () => 'An error occurred.',
+    default: () => 'An error occurred.'
   },
   resettable: {
     type: Boolean,
-    default: () => false,
-  },
+    default: () => false
+  }
 });
 
 defineEmits(['reset']);

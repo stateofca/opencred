@@ -1,12 +1,12 @@
 /**
- * Test helper for safely managing sinon stubs with automatic cleanup
+ * Test helper for safely managing sinon stubs with automatic cleanup.
  *
  * This helper ensures that stubs are properly restored even if tests fail,
  * preventing TypeErrors in subsequent tests when stubs are already restored.
  *
- * @param {Function} setupStubs - Function that creates and returns stubs
- * @param {Function} testBody - The actual test function to execute
- * @returns {Promise} Promise that resolves when test completes
+ * @param {Function} setupStubs - Function that creates and returns stubs.
+ * @param {Function} testBody - The actual test function to execute.
+ * @returns {Promise} Promise that resolves when test completes.
  *
  * @example
  * await withStubs(

@@ -113,14 +113,15 @@ export const generateValidJwtVpToken = async ({
 };
 
 /**
- * Generates a presentation_submission that matches an authorization request
- * @param {Object} options - Options for submission generation
- * @param {Object} options.authorizationRequest - The authorization request
- *   containing presentation_definition
- * @param {string|Object} options.vpToken - The VP token (JWT string or
- *   LDP object)
- * @returns {Object} - Presentation submission object with id, definition_id,
- *   and descriptor_map
+ * Generates a presentation_submission that matches an authorization request.
+ *
+ * @param {object} options - Options for submission generation.
+ * @param {object} options.authorizationRequest - The authorization request
+ *   containing presentation_definition.
+ * @param {string | object} options.vpToken - The VP token (JWT string or
+ *   LDP object).
+ * @returns {object} - Presentation submission object with id, definition_id,
+ *   and descriptor_map.
  */
 export const generatePresentationSubmission = ({
   authorizationRequest,

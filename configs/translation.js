@@ -13,8 +13,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const i18nDir = path.join(__dirname, '..', 'common', 'i18n');
 
 /**
- * Loads default translations from JSON files in common/i18n/
- * @returns {Object} Object with locale keys mapping to translation objects
+ * Loads default translations from JSON files in common/i18n/.
+ *
+ * @returns {object} Object with locale keys mapping to translation objects.
  */
 const loadDefaultTranslations = () => {
   const translations = {};

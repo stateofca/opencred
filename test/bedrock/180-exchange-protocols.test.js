@@ -44,8 +44,8 @@ const testRP = {
   clientSecret: 'shhh',
   oidc: {
     redirectUri: 'https://example.com',
-    scopes: [{name: 'openid'}],
-  },
+    scopes: [{name: 'openid'}]
+  }
 };
 
 describe('Exchange Protocols', () => {
@@ -99,7 +99,7 @@ describe('Exchange Protocols', () => {
         verifiablePresentationRequest: JSON.stringify({}),
         clientSecret: 'shhh',
         baseUrl: 'https://example.com',
-        capability: 'https://example.com/cap',
+        capability: 'https://example.com/cap'
       };
       const accessToken = await createId();
       const trustedVariables = {

@@ -18,7 +18,9 @@ const supportedVcFormats = {
 };
 
 /**
- * Create field filter from values
+ * Create field filter from values.
+ *
+ * @param values
  */
 const createFieldFilter = values => {
   const uniqueValues = [...new Set(values)];
@@ -38,7 +40,11 @@ const createFieldFilter = values => {
 };
 
 /**
- * Construct legacy input_descriptors from compact query format
+ * Construct legacy input_descriptors from compact query format.
+ *
+ * @param root0
+ * @param root0.query
+ * @param root0.description
  */
 const inputDescriptorsFromQuery = async ({query, description}) => {
   const fields = [];
@@ -119,6 +125,9 @@ const inputDescriptorsFromQuery = async ({query, description}) => {
 /**
  * Get input descriptors for presentation definition.
  * Transforms from query format (query is required in workflow config).
+ *
+ * @param root0
+ * @param root0.workflow
  */
 export const getInputDescriptors = async ({workflow}) => {
   const {query} = workflow;
@@ -156,10 +165,11 @@ const getTypeIri = async ({contexts, type}) => {
 /**
  * Get DCQL query for authorization request.
  * Uses dcql_query override if present, otherwise transforms from query.
+ *
  * @param {object} options
- * @param {object} options.workflow - The workflow configuration
- * @param {string} options.profile - The OID4VP profile
- * @returns {object} - Object with dcql_query property
+ * @param {object} options.workflow - The workflow configuration.
+ * @param {string} options.profile - The OID4VP profile.
+ * @returns {object} - Object with dcql_query property.
  */
 export const getDcqlQuery = async ({workflow, profile}) => {
   // DCQL query was not invented in OID4VP-draft18
@@ -335,7 +345,10 @@ const TEMPLATES = {
 };
 
 /**
- * Returns vp_formats object or empty object based on profile
+ * Returns vp_formats object or empty object based on profile.
+ *
+ * @param root0
+ * @param root0.profile
  */
 export const getVpFormats = ({profile}) => {
   const template = TEMPLATES[profile];
@@ -347,17 +360,20 @@ export const getVpFormats = ({profile}) => {
     vp_formats: {
       jwt_vp_json: {
         alg: ['ES256'],
-        alg_values: ['ES256'],
+        alg_values: ['ES256']
       },
       ldp_vp: {
-        proof_type: ['ecdsa-rdfc-2019'],
+        proof_type: ['ecdsa-rdfc-2019']
       }
     }
   };
 };
 
 /**
- * Returns vp_formats_supported object or empty object based on profile
+ * Returns vp_formats_supported object or empty object based on profile.
+ *
+ * @param root0
+ * @param root0.profile
  */
 export const getVpFormatsSupported = ({profile}) => {
   const template = TEMPLATES[profile];
@@ -368,7 +384,7 @@ export const getVpFormatsSupported = ({profile}) => {
     // OID4VP 1.0 format: vp_formats_supported with jwt_vc_json and ldp_vc keys
     jwt_vc_json: {
       alg: ['ES256'],
-      alg_values: ['ES256'],
+      alg_values: ['ES256']
     },
     ldp_vc: {
       proof_type: ['ecdsa-rdfc-2019'],
@@ -390,7 +406,10 @@ export const getVpFormatsSupported = ({profile}) => {
 };
 
 /**
- * Returns base client_metadata merged with vp format properties
+ * Returns base client_metadata merged with vp format properties.
+ *
+ * @param root0
+ * @param root0.profile
  */
 export const getClientMetadata = ({profile}) => {
   const baseMetadata = {
@@ -418,7 +437,14 @@ export const getClientMetadata = ({profile}) => {
 };
 
 /**
- * Returns presentation_definition object or empty object based on profile
+ * Returns presentation_definition object or empty object based on profile.
+ *
+ * @param root0
+ * @param root0.workflow
+ * @param root0.exchange
+ * @param root0.domain
+ * @param root0.url
+ * @param root0.profile
  */
 export const getPresentationDefinition = async ({
   workflow, exchange, domain, url, profile
@@ -438,9 +464,17 @@ export const getPresentationDefinition = async ({
 };
 
 /**
- * Generate authorization request for standard OID4VP profiles
+ * Generate authorization request for standard OID4VP profiles.
+ *
+ * @param root0
+ * @param root0.workflow
+ * @param root0.exchange
+ * @param root0.domain
+ * @param root0.url
+ * @param root0.profile
+ * @param root0.responseMode
  * @deprecated Use profile-specific handlers from lib/workflows/profiles/
- * This function is kept for backward compatibility with tests
+ * This function is kept for backward compatibility with tests.
  */
 export const getAuthorizationRequest = async ({
   workflow, exchange, domain, url, profile, responseMode: responseModeParam

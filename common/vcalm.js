@@ -11,13 +11,14 @@ import {SUITES} from './suites.js';
 import {verifyUtils} from './utils.js';
 
 /**
- * Verify an LDP VerifiablePresentation and its contained credential
+ * Verify an LDP VerifiablePresentation and its contained credential.
+ *
  * @param {object} options
- * @param {object} options.presentation - The VerifiablePresentation object
- * @param {object} options.exchange - The exchange object
- * @param {function} options.vcQuery - Optional function to extract VC from VP
- * @param {function} options.documentLoader - Document loader function
- * @returns {object} - {verified, errors, verifiablePresentation, vc}
+ * @param {object} options.presentation - The VerifiablePresentation object.
+ * @param {object} options.exchange - The exchange object.
+ * @param {function} options.vcQuery - Optional function to extract VC from VP.
+ * @param {function} options.documentLoader - Document loader function.
+ * @returns {object} - {verified, errors, verifiablePresentation, vc}.
  */
 export async function verifyLdpPresentation({
   presentation, exchange, vcQuery, documentLoader

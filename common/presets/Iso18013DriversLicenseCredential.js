@@ -12,21 +12,21 @@ const workflow = {
             id: 'c:VCDM1.1',
             path: ['$.vc.context'],
             values: [
-              'https://www.w3.org/2018/credentials/v1',
+              'https://www.w3.org/2018/credentials/v1'
             ]
           },
           {
             id: 'c:VDL1',
             path: ['$.vc.context'],
             values: [
-              'https://w3id.org/vdl/v1',
+              'https://w3id.org/vdl/v1'
             ]
           },
           {
             id: 'c:AAMVA1',
             path: ['$.vc.context'],
             values: [
-              'https://w3id.org/vdl/aamva/v1',
+              'https://w3id.org/vdl/aamva/v1'
             ]
           }
         ],
@@ -35,11 +35,11 @@ const workflow = {
             [
               'https://www.w3.org/2018/credentials#VerifiableCredential',
               'https://w3id.org/vdl#Iso18013DriversLicenseCredential'
-            ],
+            ]
           ]
         }
-      },
-    ],
+      }
+    ]
   },
   query: [
     {
@@ -49,8 +49,8 @@ const workflow = {
         'https://w3id.org/vdl/v1',
         'https://w3id.org/vdl/aamva/v1'
       ],
-      format: ['jwt_vc_json'],
-    },
+      format: ['jwt_vc_json']
+    }
   ]
 };
 

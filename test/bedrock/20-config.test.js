@@ -24,7 +24,7 @@ const app1 = {
   brand: {
     cta: '#111111',
     primary: '#a11111',
-    header: '#a11111',
+    header: '#a11111'
   }
 };
 
@@ -34,7 +34,7 @@ const app2 = {
   brand: {
     cta: '#222222',
     primary: '#a22222',
-    header: '#a22222',
+    header: '#a22222'
   }
 };
 

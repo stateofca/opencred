@@ -27,7 +27,7 @@ export const generateValidCredential = ({
         id: holderDid,
         mySubjectProperty: 'mySubjectValue'
       },
-      ...(template ? template : {}),
+      ...(template ? template : {})
     };
   }
 
@@ -45,7 +45,7 @@ export const generateValidCredential = ({
         name: 'Bachelor of Science and Arts'
       }
     },
-    ...(template ? template : {}),
+    ...(template ? template : {})
   };
 };
 

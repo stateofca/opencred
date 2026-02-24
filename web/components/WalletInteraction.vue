@@ -272,7 +272,7 @@ watch([protocolUrl, () => props.selectedProtocol], async () => {
     qrProtocols.includes(props.selectedProtocol)) {
     try {
       qrCodeDataUri.value = await QRCode.toDataURL(protocolUrl.value);
-    } catch{
+    } catch {
       qrCodeDataUri.value = props.exchangeData?.QR || '';
     }
   } else {

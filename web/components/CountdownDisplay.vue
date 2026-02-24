@@ -17,12 +17,12 @@ import {onMounted, onUnmounted, ref} from 'vue';
 const props = defineProps({
   createdAt: {
     type: String,
-    required: true,
+    required: true
   },
   ttl: {
     type: Number,
-    required: true,
-  },
+    required: true
+  }
 });
 
 // Refs for time tracking

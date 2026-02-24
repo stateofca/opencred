@@ -14,17 +14,18 @@ import {NativeWorkflowService} from '../../lib/workflows/native-workflow.js';
 const service = new NativeWorkflowService();
 
 /**
- * Helper function to create an exchange with authorization request
- * @param {Object} options - Options for exchange creation
- * @param {Object} options.workflow - Workflow configuration
- * @param {Object} options.trustedVariables - Trusted variables for
- *   exchange creation
- * @param {Object} options.untrustedVariables - Untrusted variables for
- *   exchange creation
- * @param {string} options.profile - OID4VP profile identifier
+ * Helper function to create an exchange with authorization request.
+ *
+ * @param {object} options - Options for exchange creation.
+ * @param {object} options.workflow - Workflow configuration.
+ * @param {object} options.trustedVariables - Trusted variables for
+ *   exchange creation.
+ * @param {object} options.untrustedVariables - Untrusted variables for
+ *   exchange creation.
+ * @param {string} options.profile - OID4VP profile identifier.
  * @param {string} options.responseMode - Response mode for authorization
- *   request
- * @returns {Promise<Object>} Exchange object with authorization request
+ *   request.
+ * @returns {Promise<object>} Exchange object with authorization request.
  */
 export async function createExchangeWithAuthRequest({
   workflow,

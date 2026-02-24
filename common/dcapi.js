@@ -6,11 +6,12 @@
  */
 
 /**
- * Check if DC API is available based on signing key certificate configuration
- * @param {Object} opencredConfig - The opencred configuration object
+ * Check if DC API is available based on signing key certificate configuration.
+ *
+ * @param {object} opencredConfig - The opencred configuration object.
  * @param {Array} opencredConfig.signingKeys - Array of signing key
- *   configurations
- * @returns {boolean} True if DC API can be initialized
+ *   configurations.
+ * @returns {boolean} True if DC API can be initialized.
  */
 export function isDcApiAvailable(opencredConfig) {
   const {signingKeys} = opencredConfig || {};

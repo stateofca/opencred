@@ -73,7 +73,7 @@ watch(
     if(newState === 'complete') {
       const queryParams = new URLSearchParams({
         state: context.value.exchangeData.oidc.state,
-        code: context.value.exchangeData.oidc.code,
+        code: context.value.exchangeData.oidc.code
       });
       const destination = `${context.value.workflow.redirectUri}?${
         queryParams.toString()}`;

@@ -260,7 +260,8 @@ const walletsRegistry = filteredWalletsRegistry;
 
 /**
  * Set state.error to the given error object, with defaults applied.
- * @param {Object} error
+ *
+ * @param {object} error
  * @param {string?} error.title
  * @param {string?} error.message
  * @param {boolean?} error.resettable
@@ -492,7 +493,7 @@ const checkStatus = async () => {
   try {
     let exchange = {};
     ({
-      data: {exchange},
+      data: {exchange}
     } = await httpClient.get(
       `/workflows/${context.value.workflow.clientId}/exchanges/` +
       `${context.value?.exchangeData?.id}`,

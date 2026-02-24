@@ -66,13 +66,13 @@ const testWorkflow = {
           ]
         }
       }
-    },
+    }
   }),
   clientSecret: 'shhh',
   oidc: {
     redirectUri: 'https://example.com',
-    scopes: [{name: 'openid'}],
-  },
+    scopes: [{name: 'openid'}]
+  }
 };
 
 const testWorkflow2 = klona(testWorkflow);
@@ -834,7 +834,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
         apiLoginBaseUrl: 'https://login.entra.microsoft.example.com',
         verifierDid: 'did:web:example.com',
         verifierName: 'Test Entra Verifier',
-        acceptedCredentialType: 'Iso18013DriversLicenseCredential',
+        acceptedCredentialType: 'Iso18013DriversLicenseCredential'
       }]);
     });
 
@@ -1237,7 +1237,7 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
             },
             json: {
               requestId: 'c656dad8-a8fa-4361-baef-51af0c2e428e',
-              requestStatus: 'presentation_error',
+              requestStatus: 'presentation_error'
             }
           });
       } catch(e) {

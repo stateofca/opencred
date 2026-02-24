@@ -11,8 +11,9 @@ import base64url from 'base64url';
 
 /**
  * Normalize VP token (Data Integrity format) to array of credential objects.
- * @param {string|object|Array} vpToken - VP token in various formats
- * @returns {Array|null} - Array of credential objects, or null if invalid
+ *
+ * @param {string|object|Array} vpToken - VP token in various formats.
+ * @returns {Array|null} - Array of credential objects, or null if invalid.
  */
 export const normalizeVpTokenDataIntegrity = vpToken => {
   if(typeof vpToken === 'string') {

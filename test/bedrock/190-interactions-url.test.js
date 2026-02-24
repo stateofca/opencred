@@ -45,8 +45,8 @@ const testRP = {
   clientSecret: 'shhh',
   oidc: {
     redirectUri: 'https://example.com',
-    scopes: [{name: 'openid'}],
-  },
+    scopes: [{name: 'openid'}]
+  }
 };
 
 describe('Interactions URL Endpoint', () => {
@@ -114,7 +114,7 @@ describe('Interactions URL Endpoint', () => {
         verifiablePresentationRequest: JSON.stringify({}),
         clientSecret: 'shhh',
         baseUrl: 'https://example.com',
-        capability: 'https://example.com/cap',
+        capability: 'https://example.com/cap'
       };
 
       const exchange = {

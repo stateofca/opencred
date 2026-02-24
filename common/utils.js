@@ -128,9 +128,10 @@ const _unenvelopeVcJwtVc = vcTokens => {
 /**
  * Normalizes a vp_token JWT string to handle both plain JWT strings and
  * JSON-stringified JWT strings (per OID4VP Draft 18 ambiguity).
+ *
  * @param {string} vpToken - The vp_token value (may be plain JWT or
- *   JSON-stringified JWT)
- * @returns {string} - The normalized JWT string (unwrapped if needed)
+ *   JSON-stringified JWT).
+ * @returns {string} - The normalized JWT string (unwrapped if needed).
  */
 export const normalizeVpTokenJwt = vpToken => {
   if(typeof vpToken !== 'string') {
@@ -171,7 +172,7 @@ export const unenvelopeJwtVp = vpToken => {
 // Verify Utilities
 
 const SUPPORTED_STATUS_ENTRY_TYPES = [
-  'BitstringStatusListEntry',
+  'BitstringStatusListEntry'
 ];
 
 const checkStatus = async options => {
@@ -255,7 +256,8 @@ const verifyJWTVP = async (jwt, options = {}) => {
 };
 
 /**
- * Checks if a Verifiable Credential matches a query specification
+ * Checks if a Verifiable Credential matches a query specification.
+ *
  * @param {object} options - Options object containing:
  * @param {object} options.vc - The Verifiable Credential object to check.
  * @param {object} [options.vpr] - The Verifiable Presentation Request (legacy
@@ -296,11 +298,12 @@ function checkVcQueryMatch({
 }
 
 /**
- * Checks if a Verifiable Credential matches a Verifiable Presentation Request
- * @param {object} vc - The Verifiable Credential to check
+ * Checks if a Verifiable Credential matches a Verifiable Presentation Request.
+ *
+ * @param {object} vc - The Verifiable Credential to check.
  * @param {object} vpr - The Verifiable Presentation Request containing the
- * query
- * @returns boolean - true if the VC matches the VPR
+ * query.
+ * @returns Boolean - true if the VC matches the VPR.
  */
 function checkVcForVpr(vc, vpr) {
   // Extract the example from the VPR (only QueryByExample supported)
@@ -331,10 +334,11 @@ function checkVcForVpr(vc, vpr) {
 }
 
 /**
- * Checks if a Verifiable Credential matches a workflow.query array
- * @param {object} vc - The Verifiable Credential to check
- * @param {Array} query - Array of query objects from workflow.query
- * @returns boolean - true if the VC matches any query item in the array
+ * Checks if a Verifiable Credential matches a workflow.query array.
+ *
+ * @param {object} vc - The Verifiable Credential to check.
+ * @param {Array} query - Array of query objects from workflow.query.
+ * @returns Boolean - true if the VC matches any query item in the array.
  */
 function checkVcForQuery(vc, query) {
   if(!Array.isArray(query) || query.length === 0) {
@@ -382,10 +386,11 @@ function checkVcForQuery(vc, query) {
 }
 
 /**
- * Checks if a Verifiable Credential matches a single credential query
- * @param {object} vc - The Verifiable Credential to check
- * @param {object} credentialQuery - A single credential query from DCQL
- * @returns {object} - Object with `matches` (boolean) and `errors` (array)
+ * Checks if a Verifiable Credential matches a single credential query.
+ *
+ * @param {object} vc - The Verifiable Credential to check.
+ * @param {object} credentialQuery - A single credential query from DCQL.
+ * @returns {object} - Object with `matches` (boolean) and `errors` (array).
  */
 function checkVcAgainstCredentialQuery(vc, credentialQuery) {
   const errors = [];
@@ -433,10 +438,11 @@ function checkVcAgainstCredentialQuery(vc, credentialQuery) {
 }
 
 /**
- * Checks if a Verifiable Credential matches a DCQL query
- * @param {object} vc - The Verifiable Credential to check
- * @param {object} dcql_query - The DCQL query
- * @returns boolean - true if the VC matches any of the credential queries
+ * Checks if a Verifiable Credential matches a DCQL query.
+ *
+ * @param {object} vc - The Verifiable Credential to check.
+ * @param {object} dcql_query - The DCQL query.
+ * @returns Boolean - true if the VC matches any of the credential queries.
  */
 function checkVcForDcql(vc, dcql_query) {
   if(!dcql_query.credentials || !Array.isArray(dcql_query.credentials)) {
@@ -478,10 +484,11 @@ function checkVcForDcql(vc, dcql_query) {
 }
 
 /**
- * Checks if a Verifiable Credential matches an OID4VP presentation definition
- * @param {object} vc - The Verifiable Credential to check
- * @param {object} presentation_definition - The OID4VP presentation definition
- * @returns boolean - true if the VC matches the presentation definition
+ * Checks if a Verifiable Credential matches an OID4VP presentation definition.
+ *
+ * @param {object} vc - The Verifiable Credential to check.
+ * @param {object} presentation_definition - The OID4VP presentation definition.
+ * @returns Boolean - true if the VC matches the presentation definition.
  */
 function checkVcForPresentationDefinition(vc, presentation_definition) {
   if(!presentation_definition.input_descriptors ||
@@ -699,7 +706,7 @@ const getMsalClient = workflow => {
 
 const acquireAccessToken = async msalClient => {
   const tokenRequest = {
-    scopes: [MSAL_ACCESS_TOKEN_REQUEST_SCOPE],
+    scopes: [MSAL_ACCESS_TOKEN_REQUEST_SCOPE]
   };
   try {
     return msalClient.acquireTokenByClientCredential(tokenRequest);
@@ -756,7 +763,9 @@ const getPresentationEvent = (eventType, clientId, exchangeId, error) => {
 
 /**
  * Gets a consistent presentation start event object.
- * @param {string | undefined} clientId the workflow identifier
+ *
+ * @param {string | undefined} clientId - The workflow identifier.
+ * @param exchangeId
  * @returns {object}
  */
 const presentationStart = (clientId, exchangeId) => {
@@ -767,7 +776,9 @@ const presentationStart = (clientId, exchangeId) => {
 
 /**
  * Gets a consistent presentation success event object.
- * @param {string | undefined} clientId the workflow identifier
+ *
+ * @param {string | undefined} clientId - The workflow identifier.
+ * @param exchangeId
  * @returns {object}
  */
 const presentationSuccess = (clientId, exchangeId) => {
@@ -778,7 +789,10 @@ const presentationSuccess = (clientId, exchangeId) => {
 
 /**
  * Gets a consistent presentation error event object.
- * @param {string | undefined} clientId the workflow identifier
+ *
+ * @param {string | undefined} clientId - The workflow identifier.
+ * @param exchangeId
+ * @param error
  * @returns {object}
  */
 const presentationError = (clientId, exchangeId, error) => {

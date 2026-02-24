@@ -58,7 +58,7 @@ config['bedrock-webpack'].configs.push({
               plugins: [
                 'postcss-preset-env',
                 'tailwindcss',
-                'autoprefixer',
+                'autoprefixer'
               ]
             }
           }

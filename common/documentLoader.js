@@ -23,7 +23,7 @@ import {
   contexts as DID_CONTEXT_MAP
 } from 'did-context';
 import {
-  contexts as ED25519_SIG_2020_CONTEXT_MAP,
+  contexts as ED25519_SIG_2020_CONTEXT_MAP
 } from 'ed25519-signature-2020-context';
 import {Ed25519VerificationKey2020}
   from '@digitalbazaar/ed25519-verification-key-2020';
@@ -35,7 +35,7 @@ import {
   contexts as VC_DPP_CONTEXT_MAP
 } from '@digitalbazaar/vc-dpp-context';
 import {
-  contexts as VDL_AAMVA_CONTEXT_MAP,
+  contexts as VDL_AAMVA_CONTEXT_MAP
 } from '@digitalbazaar/vdl-aamva-context';
 import {
   contexts as VDL_CONTEXT_MAP
@@ -69,7 +69,7 @@ didJwkDriver.use({
 });
 didKeyDriver.use({
   fromMultibase: EcdsaMultikey.from,
-  multibaseMultikeyHeader: 'zDna',
+  multibaseMultikeyHeader: 'zDna'
 });
 
 export const didResolver = new CachedResolver();
@@ -126,6 +126,8 @@ export const didRequiresHistoricalTracking = async did => {
 /**
  * Uses default resolver, in tandem with overrides, to resolve DIDs.
  * This is necessary for presentation auditing with old DID documents.
+ *
+ * @param overrides
  */
 export const getOverrideDidResolver = overrides => {
   const resolve = async did => {

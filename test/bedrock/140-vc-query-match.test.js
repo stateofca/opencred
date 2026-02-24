@@ -155,7 +155,7 @@ describe('VC Query Match', () => {
 
       const result = verifyUtils.checkVcQueryMatch({
         vc: permanentResidentVc,
-        presentation_definition: presentationDefinition,
+        presentation_definition: presentationDefinition
       });
 
       expect(result).to.be(true);
@@ -276,7 +276,7 @@ describe('VC Query Match', () => {
 
       const result = verifyUtils.checkVcQueryMatch({
         vc: driverLicenseVcWithAllContexts,
-        presentation_definition: presentationDefinition,
+        presentation_definition: presentationDefinition
       });
 
       expect(result).to.be(true);
@@ -336,7 +336,7 @@ describe('VC Query Match', () => {
 
       const result = verifyUtils.checkVcQueryMatch({
         vc: driverLicenseVcMissingContext,
-        presentation_definition: presentationDefinition,
+        presentation_definition: presentationDefinition
       });
 
       expect(result).to.be(false);

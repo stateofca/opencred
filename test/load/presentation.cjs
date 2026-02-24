@@ -56,7 +56,7 @@ module.exports = {
           format: 'jwt_vp_json',
           path_nested: {
             format: 'jwt_vc',
-            path: '$.verifiableCredential[0]',
+            path: '$.verifiableCredential[0]'
           }
         }))
       };

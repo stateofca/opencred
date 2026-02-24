@@ -26,7 +26,7 @@ if(!process.env.BEDROCK_CONFIG) {
   }
 }
 
-if(!!localConfig) {
+if(localConfig) {
   const based = Buffer.from(localConfig).toString('base64');
   process.env.BEDROCK_CONFIG = based;
   logger.info('Loaded config from ' + configPath);

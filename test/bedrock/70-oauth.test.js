@@ -39,7 +39,7 @@ const exampleWorkflow = {
   brand: {
     cta: '#8A2BE2',
     primary: '#6A5ACD',
-    header: '#9370DB',
+    header: '#9370DB'
   }
 };
 

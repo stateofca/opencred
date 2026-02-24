@@ -14,7 +14,7 @@ describe('Translations', async () => {
     const exampleDefaults = {
       en: {
         turnipsAvailable: 'Turnips are available for 99 bells each',
-        turnipsNotAvailable: 'Turnips are not available right now',
+        turnipsNotAvailable: 'Turnips are not available right now'
       }
     };
 
@@ -34,7 +34,7 @@ describe('Translations', async () => {
     const exampleDefaults = {
       en: {
         turnipsAvailable: 'Turnips are available for 99 bells each',
-        turnipsNotAvailable: 'Turnips are not available right now',
+        turnipsNotAvailable: 'Turnips are not available right now'
       }
     };
 
@@ -45,7 +45,7 @@ describe('Translations', async () => {
       fr: {
         turnipsAvailable: 'Les navets sont disponibles pour 99 cloches chacun',
         turnipsNotAvailable:
-          'Les navets ne sont pas disponibles en ce moment',
+          'Les navets ne sont pas disponibles en ce moment'
       }
     };
 
@@ -58,13 +58,13 @@ describe('Translations', async () => {
     const exampleDefaults = {
       en: {
         turnipsAvailable: 'Turnips are available for 99 bells each',
-        turnipsNotAvailable: 'Turnips are not available right now',
+        turnipsNotAvailable: 'Turnips are not available right now'
       }
     };
 
     const customTranslations = {
       fr: {
-        turnipsAvailable: 'Les navets sont disponibles pour 99 cloches chacun',
+        turnipsAvailable: 'Les navets sont disponibles pour 99 cloches chacun'
       }
     };
 

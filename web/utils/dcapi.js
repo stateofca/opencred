@@ -7,14 +7,16 @@
 
 /**
  * Starts the DC API flow by requesting authorization and using
- *   navigator.credentials.get
- * @param {Object} options - Options for the DC API flow
- * @param {Object} options.exchangeData - The exchange data object
- * @param {Object} options.httpClient - HTTP client instance
+ *   navigator.credentials.get.
+ *
+ * @param {object} options - Options for the DC API flow.
+ * @param {object} options.exchangeData - The exchange data object.
+ * @param {object} options.httpClient - HTTP client instance.
  * @param {Function} options.onExchangeUpdate - Callback when
- *   the exchange is updated
+ *   the exchange is updated.
+ * @param options.selectedProtocol
  * @param {string} [options.clientIdScheme] - Client ID scheme to use
- *   (e.g., 'x509_san_dns' or 'did')
+ *   (e.g., 'x509_san_dns' or 'did').
  * @returns {Promise<void>}
  */
 export async function startDCApiFlow({

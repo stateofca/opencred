@@ -43,9 +43,10 @@ const props = defineProps({
 const {t} = useI18n({useScope: 'global'});
 
 /**
- * Get human-readable name for a credential type
- * @param {string} type - The credential type identifier
- * @returns {string} - Human-readable name or original type if no mapping exists
+ * Get human-readable name for a credential type.
+ *
+ * @param {string} type - The credential type identifier.
+ * @returns {string} - Human-readable name or original type if no mapping found.
  */
 const getHumanReadableName = type => {
   if(!type) {

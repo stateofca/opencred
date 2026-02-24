@@ -50,20 +50,20 @@ export const BrandSchema = z.object({
   primaryLink: z.string().optional(),
   secondaryLink: z.string().optional(),
   homeLink: z.string().optional(),
-  backgroundImage: z.url().optional(),
+  backgroundImage: z.url().optional()
 });
 
 const OpenIdConnectSchema = z.object({
   redirectUri: z.url(),
   scopes: z.array(z.object({
     name: z.literal('openid'),
-    description: z.string(),
+    description: z.string()
   })).default([{name: 'openid', description: 'Open ID Connect'}]),
   claims: z.array(z.object({
     name: z.string(),
-    path: z.string(),
+    path: z.string()
   })).default([]),
-  idTokenExpirySeconds: z.number().default(3600),
+  idTokenExpirySeconds: z.number().default(3600)
 });
 
 export const CallbackSchema = z.object({
@@ -101,7 +101,7 @@ export const DcqlCredentialQuerySchema = z.object({
   multiple: z.boolean().default(false),
   require_cryptographic_holder_binding: z.boolean().default(true),
   meta: DcqlCredentialMetaSchema.optional(),
-  claims: z.array(DcqlClaimsSchema).min(1).optional(),
+  claims: z.array(DcqlClaimsSchema).min(1).optional()
   // TODO: claim_sets processing
   // claim_sets: z.array(z.array(z.string())).min(1).optional()
 }).refine(() => {
@@ -123,7 +123,7 @@ export const DcqlCredentialSetQuerySchema = z.object({
 
 // DCQL Query schema
 export const DcqlQuerySchema = z.object({
-  credentials: z.array(DcqlCredentialQuerySchema).min(1), // non-empty array
+  credentials: z.array(DcqlCredentialQuerySchema).min(1) // non-empty array
   // TODO: credential_sets processing
   // credential_sets: z.array(DcqlCredentialSetQuerySchema).min(1).optional()
 });
@@ -173,7 +173,7 @@ export const BaseWorkflowSchema = z.object({
 export const PresetWorkflowSchema = z.object({
   ...BaseWorkflowSchema.shape,
   type: z.literal('preset'),
-  preset: z.string(), // The name of the built-inpreset to use
+  preset: z.string() // The name of the built-inpreset to use
 }).transform(data => {
   return {
     ...data,
@@ -207,7 +207,7 @@ export const NativeWorkflowSchema = z.object({
 
   // Presentation Exchange verifiablePresentationRequest format
   // (optional override)
-  verifiablePresentationRequest: z.string().optional(),
+  verifiablePresentationRequest: z.string().optional()
 }).transform(data => {
   // If dcApiNamespaceQuery is present, transform it to query format to
   // support rendering (dcApiNamespaceQuery has higher precedence)
@@ -410,7 +410,15 @@ export const OpenCredConfigSchema = z.object({
   };
 });
 
-/** Populate workflow with defaults from root and configFrom peers */
+/**
+ * Populate workflow with defaults from root and configFrom peers.
+ *
+ * @param root0
+ * @param root0.opencred
+ * @param root0.workflows
+ * @param root0.workflow
+ * @param root0.refs
+ */
 export const applyWorkflowDefaults = (
   {opencred, workflows, workflow, refs = []}
 ) => {

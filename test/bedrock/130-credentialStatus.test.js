@@ -8,7 +8,7 @@
 import * as sinon from 'sinon';
 import {
   createList as createBitstringStatusList,
-  createCredential as createStatusCredential,
+  createCredential as createStatusCredential
 } from '@digitalbazaar/vc-bitstring-status-list';
 import {createPresentation, signPresentation} from '@digitalbazaar/vc';
 import expect from 'expect.js';

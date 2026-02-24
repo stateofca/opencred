@@ -202,7 +202,7 @@ export async function generateCertificateChain({
         dataEncipherment: false, // bit 3
         keyAgreement: false, // bit 4
         keyCertSign: true, // bit 5
-        cRLSign: false, // bit 6
+        cRLSign: false // bit 6
       });
 
       certIssuer.extensions = [];

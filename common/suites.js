@@ -18,5 +18,5 @@ export const SUITES = [
   new Ed25519Signature2018(),
   new Ed25519Signature2020(),
   new DataIntegrityProof({cryptosuite: ecdsaRdfc2019Cryptosuite}),
-  new DataIntegrityProof({cryptosuite: eddsaRdfc2022Cryptosuite}),
+  new DataIntegrityProof({cryptosuite: eddsaRdfc2022Cryptosuite})
 ];

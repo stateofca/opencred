@@ -220,7 +220,7 @@ describe('Wallet Protocols', () => {
           protocols: {
             vcapi: 'https://example.com/exchanges/123'
           },
-          challenge: 'test-challenge-123',
+          challenge: 'test-challenge-123'
         };
 
         const link = generateWalletLink({
@@ -246,7 +246,7 @@ describe('Wallet Protocols', () => {
           protocols: {
             vcapi: 'https://example.com/exchanges/456'
           },
-          challenge: 'test-challenge-456',
+          challenge: 'test-challenge-456'
         };
 
         const link = generateWalletLink({

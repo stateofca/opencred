@@ -45,8 +45,8 @@ const testWorkflow = {
   clientSecret: 'shhh',
   oidc: {
     redirectUri: 'https://example.com',
-    scopes: [{name: 'openid'}],
-  },
+    scopes: [{name: 'openid'}]
+  }
 };
 
 describe('OID4VP Standard - x509_san_dns Client ID Scheme', function() {
