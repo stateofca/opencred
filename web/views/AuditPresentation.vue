@@ -221,9 +221,9 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import {computed, ref, watch} from 'vue';
-import {QIcon} from 'quasar';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
+import {QIcon} from 'quasar';
 import ReCaptcha from '../components/ReCaptcha.vue';
 
 const NON_INPUT_TYPES = ['dropdown'];

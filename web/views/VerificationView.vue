@@ -36,9 +36,9 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import {inject, provide} from 'vue';
-import {QIcon} from 'quasar';
 import ErrorView from '../components/ErrorView.vue';
 import OpenCredExchange from '../components/OpenCredExchange.vue';
+import {QIcon} from 'quasar';
 
 // Get context from parent component (AppLayout)
 const context = inject('exchangeContext');

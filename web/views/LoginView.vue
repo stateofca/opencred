@@ -27,10 +27,10 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import {onBeforeMount, provide, ref, watch} from 'vue';
-import {QIcon} from 'quasar';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
 import OpenCredExchange from '../components/OpenCredExchange.vue';
+import {QIcon} from 'quasar';
 import {setCssVar} from 'quasar';
 
 // Context for exchange - will be fetched
