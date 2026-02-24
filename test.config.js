@@ -13,7 +13,7 @@ import '@bedrock/mongodb';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-config.mocha.tests.push(path.join(__dirname, 'test', 'mocha'));
+config.mocha.tests.push(path.join(__dirname, 'test', 'bedrock'));
 
 // Bail out on first failure to focus on one test at a time
 // because many subsequent failures are related to inability to
