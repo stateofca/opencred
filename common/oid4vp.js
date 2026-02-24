@@ -43,9 +43,10 @@ const createFieldFilter = values => {
 /**
  * Construct legacy input_descriptors from compact query format.
  *
- * @param {object} root0 - Options object.
- * @param {object} root0.query - Query object w/ format, type, context, fields.
- * @param {string} root0.description - Description text for input descriptor.
+ * @param {object} options - Options object.
+ * @param {object} options.query - Query object w/ format, type, context,
+ *   fields.
+ * @param {string} options.description - Description text for input descriptor.
  * @returns {Promise<object>} - Input descriptor object with id, format,
  *   purpose (optional), and constraints.
  */
@@ -129,14 +130,14 @@ const inputDescriptorsFromQuery = async ({query, description}) => {
  * Get input descriptors for presentation definition.
  * Transforms from query format (query is required in workflow config).
  *
- * @param {object} root0 - Options object.
- * @param {object} root0.workflow - The workflow configuration object.
+ * @param {object} options - Options object.
+ * @param {object} options.workflow - The workflow configuration object.
  * @returns {Promise<Array>} - Array of input descriptor objects.
  */
 export const getInputDescriptors = async ({workflow}) => {
   const {query} = workflow;
 
-  // Transform from query (query is now required)
+  // Transform from query (query is now required, checked via configUtils)
   return Promise.all(query.map(async q => {
     return inputDescriptorsFromQuery({
       query: q, description: workflow.description
@@ -188,7 +189,8 @@ export const getDcqlQuery = async ({workflow, profile}) => {
     return {dcql_query};
   }
 
-  // Otherwise, transform from query (query is required)
+  // Otherwise, transform from query (query is required and
+  // checked via configUtils)
   const requestedTypeIris = await Promise.all(query.map(async q => {
     if(!q.type || !Array.isArray(q.type) || q.type.length === 0) {
       return [];
@@ -351,8 +353,8 @@ const TEMPLATES = {
 /**
  * Returns vp_formats object or empty object based on profile.
  *
- * @param {object} root0 - Options object.
- * @param {string} root0.profile - The OID4VP profile name.
+ * @param {object} options - Options object.
+ * @param {string} options.profile - The OID4VP profile name.
  * @returns {object} - Object with vp_formats property or empty object.
  */
 export const getVpFormats = ({profile}) => {
@@ -377,8 +379,8 @@ export const getVpFormats = ({profile}) => {
 /**
  * Returns vp_formats_supported object or empty object based on profile.
  *
- * @param {object} root0 - Options object.
- * @param {string} root0.profile - The OID4VP profile name.
+ * @param {object} options - Options object.
+ * @param {string} options.profile - The OID4VP profile name.
  * @returns {object} - Object with vp_formats_supported property or
  *   empty object.
  */
@@ -415,8 +417,8 @@ export const getVpFormatsSupported = ({profile}) => {
 /**
  * Returns base client_metadata merged with vp format properties.
  *
- * @param {object} root0 - Options object.
- * @param {string} root0.profile - The OID4VP profile name.
+ * @param {object} options - Options object.
+ * @param {string} options.profile - The OID4VP profile name.
  * @returns {object} - Object with client_metadata property.
  */
 export const getClientMetadata = ({profile}) => {
@@ -447,12 +449,12 @@ export const getClientMetadata = ({profile}) => {
 /**
  * Returns presentation_definition object or empty object based on profile.
  *
- * @param {object} root0 - Options object.
- * @param {object} root0.workflow - The workflow configuration object.
- * @param {object} root0.exchange - The exchange object.
- * @param {string} root0.domain - The domain for the authorization request.
- * @param {string} root0.url - The URL path for the authorization request.
- * @param {string} root0.profile - The OID4VP profile name.
+ * @param {object} options - Options object.
+ * @param {object} options.workflow - The workflow configuration object.
+ * @param {object} options.exchange - The exchange object.
+ * @param {string} options.domain - The domain for the authorization request.
+ * @param {string} options.url - The URL path for the authorization request.
+ * @param {string} options.profile - The OID4VP profile name.
  * @returns {Promise<object>} - Object with presentation_definition property
  *   or empty object.
  */
@@ -476,13 +478,13 @@ export const getPresentationDefinition = async ({
 /**
  * Generate authorization request for standard OID4VP profiles.
  *
- * @param {object} root0 - Options object.
- * @param {object} root0.workflow - The workflow configuration object.
- * @param {object} root0.exchange - The exchange object.
- * @param {string} root0.domain - The domain for the authorization request.
- * @param {string} root0.url - The URL path for the authorization request.
- * @param {string} root0.profile - The OID4VP profile name.
- * @param {string} root0.responseMode - Response mode (e.g. 'direct_post'
+ * @param {object} options - Options object.
+ * @param {object} options.workflow - The workflow configuration object.
+ * @param {object} options.exchange - The exchange object.
+ * @param {string} options.domain - The domain for the authorization request.
+ * @param {string} options.url - The URL path for the authorization request.
+ * @param {string} options.profile - The OID4VP profile name.
+ * @param {string} options.responseMode - Response mode (e.g. 'direct_post'
  *   'dc_api', 'dc_api.jwt', etc.).
  * @returns {Promise<object>} - Authorization request object for OID4VP.
  * @deprecated Use profile-specific handlers from lib/workflows/profiles/

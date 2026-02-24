@@ -413,11 +413,11 @@ export const OpenCredConfigSchema = z.object({
 /**
  * Populate workflow with defaults from root and configFrom peers.
  *
- * @param {object} root0 - Options object.
- * @param {object} root0.opencred - The opencred configuration object.
- * @param {Array} root0.workflows - Array of workflow configurations.
- * @param {object} root0.workflow - The workflow configuration to populate.
- * @param {Array} root0.refs - Array of reference configurations.
+ * @param {object} options - Options object.
+ * @param {object} options.opencred - The opencred configuration object.
+ * @param {Array} options.workflows - Array of workflow configurations.
+ * @param {object} options.workflow - The workflow configuration to populate.
+ * @param {Array} options.refs - Array of reference configurations.
  * @returns {object} - Workflow configuration object with defaults applied.
  */
 export const applyWorkflowDefaults = (
