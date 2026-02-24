@@ -6,7 +6,7 @@
  */
 
 import expect from 'expect.js';
-import {normalizeVpTokenDataIntegrity} from '../../common/utils.js';
+import {normalizeVpTokenDataIntegrity} from '../../common/utils/vpToken.js';
 
 describe('normalizeVpTokenDataIntegrity', () => {
 

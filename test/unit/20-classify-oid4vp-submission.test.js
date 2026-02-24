@@ -7,7 +7,7 @@
 
 import {
   classifyOID4VPSubmission
-} from '../../lib/workflows/profiles/common-oid4vp.js';
+} from '../../common/classifyOid4vpSubmission.js';
 import expect from 'expect.js';
 
 describe('classifyOID4VPSubmission', () => {
@@ -134,4 +134,3 @@ describe('classifyOID4VPSubmission', () => {
     expect(result).to.be(null);
   });
 });
-

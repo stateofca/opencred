@@ -16,7 +16,6 @@ import {
   verifyCredential as verifyCredentialJWT,
   verifyPresentation as verifyPresentationJWT
 } from 'did-jwt-vc';
-import base64url from 'base64url';
 import {
   checkStatus as checkStatusBitstring
 } from '@digitalbazaar/vc-bitstring-status-list';
@@ -167,38 +166,6 @@ export const unenvelopeJwtVp = vpToken => {
     )
   };
   return decodedVpPayload;
-};
-
-export const normalizeVpTokenDataIntegrity = vpToken => {
-  if(typeof vpToken === 'string') {
-    try {
-      return [JSON.parse(vpToken)];
-    } catch(e) {
-      return null;
-    }
-  }
-
-  if(typeof vpToken === 'object' && !Array.isArray(vpToken)) {
-    return [vpToken];
-  }
-
-  if(Array.isArray(vpToken)) {
-    return vpToken.map(item => {
-      if(typeof item === 'string') {
-        try {
-          return JSON.parse(base64url.decode(item));
-        } catch(e) {
-          logger.error('vp_token contains invalid Base64 encoded JSON.');
-          return null;
-        }
-      } else {
-        return item;
-      }
-    });
-  }
-
-  logger.error('vp_token format is not recognized.');
-  return null;
 };
 
 // Verify Utilities
