@@ -97,10 +97,10 @@ const inputDescriptorsFromQuery = async ({query, description}) => {
         let fieldPath;
         if(hasJwtFormat) {
           // For JWT format, use both paths
-          fieldPath = [`$[\'vc\'][\'${fieldKey}\']`, `$[\'${fieldKey}\']`];
+          fieldPath = [`$['vc']['${fieldKey}']`, `$['${fieldKey}']`];
         } else {
           // For LDP format, use single path
-          fieldPath = [`$[\'${fieldKey}\']`];
+          fieldPath = [`$['${fieldKey}']`];
         }
 
         fields.push({
@@ -150,7 +150,7 @@ const getTypeIri = async ({contexts, type}) => {
       documentLoader: defaultDocLoader
     });
     return expanded[0]['@type'][0];
-  } catch(error) {
+  } catch {
     throw new bedrock.util.BedrockError(
       `Type "${type}" is not defined in the provided context(s). ` +
       'Please check for typos or ensure the type is included in the context.',

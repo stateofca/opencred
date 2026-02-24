@@ -54,7 +54,7 @@ export const isValidJwt = jwt => {
   try {
     decodeJwt(jwt);
     return true;
-  } catch(error) {
+  } catch {
     return false;
   }
 };
@@ -69,7 +69,7 @@ export const isValidJson = json => {
       return true;
     }
     return false;
-  } catch(error) {
+  } catch {
     return false;
   }
 };
@@ -86,7 +86,7 @@ export const getValidJson = json => {
       return JSON.parse(json);
     }
     return null;
-  } catch(error) {
+  } catch {
     return null;
   }
 };
@@ -149,7 +149,7 @@ export const normalizeVpTokenJwt = vpToken => {
       // If parsing results in an object, return original (shouldn't happen
       // for JWT)
       return vpToken;
-    } catch(e) {
+    } catch {
       // If JSON parsing fails, it's not JSON-stringified, return as-is
       return vpToken;
     }
@@ -534,7 +534,7 @@ function checkVcForPresentationDefinition(vc, presentation_definition) {
           fieldName = lastExpression.expression.value;
           break;
         }
-      } catch(e) {
+      } catch {
         // Skip invalid paths
         continue;
       }

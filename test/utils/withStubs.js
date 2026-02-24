@@ -33,7 +33,7 @@ async function withStubs(setupStubs, testBody) {
     if(!Array.isArray(stubs) || stubs.some(stub => !stub || !stub.restore)) {
       throw TypeError('Stubs must be returned from setupStubs function');
     }
-  } catch(error) {
+  } catch {
     console.warn('Skipping test due to previous failures. Stubs already set.');
     return;
   }
@@ -48,7 +48,7 @@ async function withStubs(setupStubs, testBody) {
         if(stub && typeof stub.restore === 'function') {
           stub.restore();
         }
-      } catch(restoreError) {
+      } catch {
         // Silently ignore restore errors (e.g., stub already restored)
         // This prevents cascading errors in test suites
       }

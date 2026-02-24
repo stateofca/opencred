@@ -19,7 +19,7 @@ export const normalizeVpTokenDataIntegrity = vpToken => {
   if(typeof vpToken === 'string') {
     try {
       return [JSON.parse(vpToken)];
-    } catch(e) {
+    } catch {
       return null;
     }
   }
@@ -33,7 +33,7 @@ export const normalizeVpTokenDataIntegrity = vpToken => {
       if(typeof item === 'string') {
         try {
           return JSON.parse(base64url.decode(item));
-        } catch(e) {
+        } catch {
           return null;
         }
       }

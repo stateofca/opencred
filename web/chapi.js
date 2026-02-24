@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-/* global navigator */
 import * as polyfill from 'credential-handler-polyfill';
 
 const recommendedHandlerOrigins = [

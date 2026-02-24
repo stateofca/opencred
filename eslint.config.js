@@ -14,7 +14,8 @@ export default [
   ...vue3Config,
   {
     rules: {
-      'vue/no-v-html': 'off'
+      'vue/no-v-html': 'off',
+      'jsdoc/check-tag-names': ['error', {definedTags: ['openapi']}]
     }
   }
 ];

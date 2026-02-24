@@ -150,7 +150,7 @@ export function walletSupportsProtocol(walletId, protocolId, interactionType) {
     return false;
   }
   // Check if the interaction type is supported
-  return protocolSupport.hasOwnProperty(interactionType);
+  return Object.hasOwn(protocolSupport, interactionType);
 }
 
 /**

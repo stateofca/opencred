@@ -584,7 +584,7 @@ const handleResetExchange = async () => {
     context.value.exchangeData = exchangeData;
     state.error = null;
     startStatusCheck();
-  } catch(e) {
+  } catch {
     handleError({
       title: 'Error',
       message: 'An error occurred while resetting the exchange.'

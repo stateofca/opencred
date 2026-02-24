@@ -172,7 +172,7 @@ export const updateIssuerDidDocumentHistory = async vpToken => {
         });
       }
     }
-  } catch(error) {
+  } catch {
     // The failure of this function is often due to an attempt
     // for two processes to update audit data for a DID,
     // which has been configured with a unique index.
