@@ -8,7 +8,7 @@
 /**
  * Classifies which OID4VP interoperability profile is being used.
  *
- * @param {object} options
+ * @param {object} options - Options object.
  * @param {object} options.submission - The presentation_submission
  * (if present).
  * @param {object} options.dcql_query - The dcql_query from authorization

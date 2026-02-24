@@ -261,10 +261,10 @@ const walletsRegistry = filteredWalletsRegistry;
 /**
  * Set state.error to the given error object, with defaults applied.
  *
- * @param {object} error
- * @param {string?} error.title
- * @param {string?} error.message
- * @param {boolean?} error.resettable
+ * @param {object} error - Error object to display.
+ * @param {string} [error.title] - Error title.
+ * @param {string} [error.message] - Error message.
+ * @param {boolean} [error.resettable] - Whether the error can be reset.
  */
 const handleError = error => {
   state.intervalId = clearInterval(state.intervalId);

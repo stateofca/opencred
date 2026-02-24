@@ -16,8 +16,8 @@ import {verifyUtils} from './utils.js';
  * @param {object} options
  * @param {object} options.presentation - The VerifiablePresentation object.
  * @param {object} options.exchange - The exchange object.
- * @param {function} options.vcQuery - Optional function to extract VC from VP.
- * @param {function} options.documentLoader - Document loader function.
+ * @param {Function} options.vcQuery - Optional function to extract VC from VP.
+ * @param {Function} options.documentLoader - Document loader function.
  * @returns {object} - {verified, errors, verifiablePresentation, vc}.
  */
 export async function verifyLdpPresentation({

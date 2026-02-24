@@ -8,8 +8,8 @@
 /**
  * Converts configured domain to DID web format.
  *
- * @param {string} domain
- * @returns {string}
+ * @param {string} domain - The domain to convert.
+ * @returns {string} The DID web format string.
  */
 export const domainToDidWeb = domain => {
   const didWeb = `did:web:${domain.replace(/^https?:\/\//, '')}`;

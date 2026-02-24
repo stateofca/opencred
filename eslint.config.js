@@ -17,5 +17,13 @@ export default [
       'vue/no-v-html': 'off',
       'jsdoc/check-tag-names': ['error', {definedTags: ['openapi']}]
     }
+  },
+  // Disable jsdoc/require-description-complete-sentence for files with
+  // decorative block comments that cause circular fixes with --fix
+  {
+    files: ['configs/config.js', 'lib/database.js'],
+    rules: {
+      'jsdoc/require-description-complete-sentence': 'off'
+    }
   }
 ];

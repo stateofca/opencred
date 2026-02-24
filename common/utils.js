@@ -258,7 +258,7 @@ const verifyJWTVP = async (jwt, options = {}) => {
 /**
  * Checks if a Verifiable Credential matches a query specification.
  *
- * @param {object} options - Options object containing:
+ * @param {object} options - Options object containing VC and query specs.
  * @param {object} options.vc - The Verifiable Credential object to check.
  * @param {object} [options.vpr] - The Verifiable Presentation Request (legacy
  * format) object.
@@ -269,9 +269,9 @@ const verifyJWTVP = async (jwt, options = {}) => {
  * @param {object} [options.presentation_submission] - The Presentation
  * Submission object (Draft 18 format indicator).
  * @param {Array} [options.query] - The workflow.query array (fallback option).
- * @returns boolean - true if the VC matches the query specification
- * @throws {Error} if more than one query type is specified or none are
- * specified
+ * @returns {boolean} True if the VC matches the query specification.
+ * @throws {Error} If more than one query type is specified or none are
+ * specified.
  */
 function checkVcQueryMatch({
   vc, vpr, dcql_query, presentation_definition, presentation_submission,
@@ -303,7 +303,7 @@ function checkVcQueryMatch({
  * @param {object} vc - The Verifiable Credential to check.
  * @param {object} vpr - The Verifiable Presentation Request containing the
  * query.
- * @returns Boolean - true if the VC matches the VPR.
+ * @returns {boolean} True if the VC matches the VPR.
  */
 function checkVcForVpr(vc, vpr) {
   // Extract the example from the VPR (only QueryByExample supported)
@@ -338,7 +338,7 @@ function checkVcForVpr(vc, vpr) {
  *
  * @param {object} vc - The Verifiable Credential to check.
  * @param {Array} query - Array of query objects from workflow.query.
- * @returns Boolean - true if the VC matches any query item in the array.
+ * @returns {boolean} True if the VC matches any query item in the array.
  */
 function checkVcForQuery(vc, query) {
   if(!Array.isArray(query) || query.length === 0) {
@@ -442,7 +442,7 @@ function checkVcAgainstCredentialQuery(vc, credentialQuery) {
  *
  * @param {object} vc - The Verifiable Credential to check.
  * @param {object} dcql_query - The DCQL query.
- * @returns Boolean - true if the VC matches any of the credential queries.
+ * @returns {boolean} True if the VC matches any of the credential queries.
  */
 function checkVcForDcql(vc, dcql_query) {
   if(!dcql_query.credentials || !Array.isArray(dcql_query.credentials)) {
@@ -488,7 +488,7 @@ function checkVcForDcql(vc, dcql_query) {
  *
  * @param {object} vc - The Verifiable Credential to check.
  * @param {object} presentation_definition - The OID4VP presentation definition.
- * @returns Boolean - true if the VC matches the presentation definition.
+ * @returns {boolean} True if the VC matches the presentation definition.
  */
 function checkVcForPresentationDefinition(vc, presentation_definition) {
   if(!presentation_definition.input_descriptors ||
@@ -765,8 +765,8 @@ const getPresentationEvent = (eventType, clientId, exchangeId, error) => {
  * Gets a consistent presentation start event object.
  *
  * @param {string | undefined} clientId - The workflow identifier.
- * @param exchangeId
- * @returns {object}
+ * @param {string} exchangeId - The exchange identifier.
+ * @returns {object} Presentation start event object.
  */
 const presentationStart = (clientId, exchangeId) => {
   const startEvent = getPresentationEvent(
@@ -778,8 +778,8 @@ const presentationStart = (clientId, exchangeId) => {
  * Gets a consistent presentation success event object.
  *
  * @param {string | undefined} clientId - The workflow identifier.
- * @param exchangeId
- * @returns {object}
+ * @param {string} exchangeId - The exchange identifier.
+ * @returns {object} Presentation success event object.
  */
 const presentationSuccess = (clientId, exchangeId) => {
   const successEvent = getPresentationEvent(
@@ -791,9 +791,9 @@ const presentationSuccess = (clientId, exchangeId) => {
  * Gets a consistent presentation error event object.
  *
  * @param {string | undefined} clientId - The workflow identifier.
- * @param exchangeId
- * @param error
- * @returns {object}
+ * @param {string} exchangeId - The exchange identifier.
+ * @param {Error} error - The error that occurred.
+ * @returns {object} Presentation error event object.
  */
 const presentationError = (clientId, exchangeId, error) => {
   const errorEvent = getPresentationEvent(

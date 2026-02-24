@@ -127,7 +127,8 @@ export const didRequiresHistoricalTracking = async did => {
  * Uses default resolver, in tandem with overrides, to resolve DIDs.
  * This is necessary for presentation auditing with old DID documents.
  *
- * @param overrides
+ * @param {object} overrides - Map of DID to resolved document overrides.
+ * @returns {object} Resolver with resolve function.
  */
 export const getOverrideDidResolver = overrides => {
   const resolve = async did => {

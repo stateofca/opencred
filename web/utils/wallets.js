@@ -100,7 +100,6 @@ export const WALLETS_REGISTRY = {
      * Get the default protocol for this wallet based on workflow.
      *
      * @param {object} options - Options object.
-     * @param {object} options.workflow - The workflow object (optional).
      * @param {Array<string>} options.availableProtocols - Available protocols.
      * @returns {string|null} The default protocol ID or null.
      */
@@ -222,14 +221,10 @@ export function walletSupportsDcApiForProtocol(walletsRegistry, walletId,
 /**
  * Check if a wallet or protocol supports a specific interaction type.
  *
- * @param {object} walletsRegistry - The wallets registry.
- * @param {object} protocolsRegistry - The protocols registry.
- * @param {string} walletId - The wallet ID (or null).
- * @param walletsRegistry.walletId
- * @param {string} protocolId - The protocol ID.
- * @param walletsRegistry.protocolId
- * @param {string} interactionType - The interaction type.
- * @param walletsRegistry.interactionType
+ * @param {object} options - Options object.
+ * @param {string} options.walletId - The wallet ID (or null).
+ * @param {string} options.protocolId - The protocol ID.
+ * @param {string} options.interactionType - The interaction type.
  * @returns {boolean} True if supported.
  */
 export function supportsInteraction({walletId, protocolId, interactionType}) {
@@ -244,12 +239,10 @@ export function supportsInteraction({walletId, protocolId, interactionType}) {
  *
  * @param {object} options - Options object.
  * @param {object} options.walletsRegistry - The wallets registry.
- * @param {object} options.protocolsRegistry - The protocols registry.
  * @param {string} options.walletId - The wallet ID (or null).
  * @param {string} options.protocolId - The protocol ID.
  * @param {boolean} options.prefersSameDevice - Whether user prefers
  *   same device.
- * @param {boolean} options.isMobile - Whether on mobile device.
  * @param {boolean} options.dcApiSystemAvailable - Whether DC API is available.
  * @param {object} options.workflow - Workflow configuration.
  * @param {object} options.interactionState - Interaction state object.

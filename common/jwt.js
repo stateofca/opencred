@@ -13,8 +13,9 @@ import jp from 'jsonpath';
 /**
  * Generates a JWT id_token from a VP exchange if the exchange is complete.
  *
- * @param exchange
- * @param workflow
+ * @param {object} exchange - The exchange object.
+ * @param {object} workflow - The workflow configuration.
+ * @returns {Promise<string>} The JWT id_token.
  */
 export const jwtFromExchange = async (exchange, workflow) => {
   const signingKey = config.opencred.signingKeys?.find(

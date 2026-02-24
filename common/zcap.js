@@ -137,7 +137,6 @@ function _getDataAndStatus({result = {}, error = {}}) {
  * @param {object} [options.json] - JSON for the request.
  * @param {object} [options.headers] - Headers for the request.
  * @param {string} options.method - The HTTP method for the request.
- * @param {object} [options.oauth2] - OAuth2 credentialss.
  * @param {object} [options.searchParams] - URL Queries for the request.
  *
  * @returns {object} The results from the request.

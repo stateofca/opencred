@@ -14,7 +14,7 @@
  * @param {object} options.httpClient - HTTP client instance.
  * @param {Function} options.onExchangeUpdate - Callback when
  *   the exchange is updated.
- * @param options.selectedProtocol
+ * @param {string} options.selectedProtocol - The selected protocol ID.
  * @param {string} [options.clientIdScheme] - Client ID scheme to use
  *   (e.g., 'x509_san_dns' or 'did').
  * @returns {Promise<void>}

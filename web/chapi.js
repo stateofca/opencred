@@ -15,9 +15,6 @@ const recommendedHandlerOrigins = [
  * Gets credentials using CHAPI.
  *
  * @param {object} options - The options to use.
- * @param {object} options.queries - The credential queries to use.
- * @param {string} options.challenge - The challenge to use.
- * @param {string} options.domain - The domain to use.
  * @param {object} options.protocols - The protocol URLs to use (vcapi, OID4VP).
  * @returns {Promise} - A promise that resolves after CHAPI has received
  * the credentials.
