@@ -103,7 +103,6 @@
     "vue-cookies": "^1.8.4",
     "vue-i18n": "^9.9.0",
     "vue-json-pretty": "^2.3.0",
-    "vue-material-design-icons": "^5.3.0",
     "vue-router": "^4.6.4",
     "x25519-key-agreement-2020-context": "^1.0.0",
     "zod": "^4.3.6"

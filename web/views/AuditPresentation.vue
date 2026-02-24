@@ -94,14 +94,16 @@ SPDX-License-Identifier: BSD-3-Clause
           <div
             v-if="auditResults.data.verified !== null && !auditResults.loading"
             class="col">
-            <check-circle-icon
+            <q-icon
               v-if="auditResults.data.verified"
-              fill-color="green"
-              size="30" />
-            <close-circle-icon
+              name="fas fa-circle-check"
+              size="30px"
+              color="green" />
+            <q-icon
               v-else-if="!auditResults.data.verified"
-              fill-color="red"
-              size="30" />
+              name="fas fa-circle-xmark"
+              size="30px"
+              color="red" />
           </div>
           <p
             v-if="auditResults.data.verified === false && !auditResults.loading"
@@ -161,14 +163,16 @@ SPDX-License-Identifier: BSD-3-Clause
                   v-if="Object.entries(auditResults.data.matches).length > 0 &&
                     !auditResults.loading"
                   class="col">
-                  <check-circle-icon
+                  <q-icon
                     v-if="auditResults.data.matches[field.path]"
-                    fill-color="green"
-                    size="30" />
-                  <close-circle-icon
+                    name="fas fa-circle-check"
+                    size="30px"
+                    color="green" />
+                  <q-icon
                     v-else-if="!auditResults.data.matches[field.path]"
-                    fill-color="red"
-                    size="30" />
+                    name="fas fa-circle-xmark"
+                    size="30px"
+                    color="red" />
                 </div>
               </div>
               <p
@@ -217,8 +221,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import {computed, ref, watch} from 'vue';
-import CheckCircleIcon from 'vue-material-design-icons/CheckCircle.vue';
-import CloseCircleIcon from 'vue-material-design-icons/CloseCircle.vue';
+import {QIcon} from 'quasar';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
 import ReCaptcha from '../components/ReCaptcha.vue';

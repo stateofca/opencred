@@ -15,9 +15,10 @@ SPDX-License-Identifier: BSD-3-Clause
       class="bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
              px-16 lg:px-24 relative">
       <div class="mx-auto py-24 flex items-center justify-center gap-5 text-xl">
-        <check-decagram-icon
-          fill-color="green"
-          size="60" />
+        <q-icon
+          name="fas fa-circle-check"
+          size="60px"
+          color="green" />
         {{$t('verificationSuccess')}}
       </div>
     </div>
@@ -26,7 +27,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import {onBeforeMount, provide, ref, watch} from 'vue';
-import CheckDecagramIcon from 'vue-material-design-icons/CheckDecagram.vue';
+import {QIcon} from 'quasar';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
 import OpenCredExchange from '../components/OpenCredExchange.vue';
