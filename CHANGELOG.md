@@ -7,18 +7,40 @@
 - Add support for `mso_mdoc` format credentials such as mDL Driver's Licenses
 - Add support for experimental W3C Digital Credentials API
 - Add support for `x509_san_dns` client_id_scheme in OID4VP exchanges.
-- Add wallet selection feature with default and advanced selection of exchange protocols.
-- Add multiple OID4VP protocol versions to support different wallets and enable developer testing.
+- Add wallet selection feature in UI.
+- Add multiple OID4VP protocol versions to support different wallets and enable
+  developer testing.
 - Improve VCALM / VC-API exchanges support for additional wallets.
-- Added `@spruceid/opencred-dc-api` to support DC API interaction method exchanges requesting mDoc credentials only.
-- Added new simplified "query" format for workflows enabling simpler query construction for requested credential types.
-- Added workflow "presets" for common use cases, starting with ISO 18013 Driver's License Verifiable Credentials.
+- Add `@spruceid/opencred-dc-api` to support DC API interaction method
+  exchanges requesting mDoc credentials only.
+- Add new simplified "query" format for workflows enabling simpler query
+  construction for requested credential types.
+- Add workflow "presets" for common use cases, starting with ISO 18013
+  Driver's License Verifiable Credentials.
+- Add new category of "unit" tests run through mocha with `npm run test:unit`
+  for faster testing of targeted sections of code.
+- Add mDoc claims to id_token for OIDC flows.
+- Add theme defaults and favicon support.
+- Add test command to package.json and CI.
+- Add GitHub Actions test workflow.
 
 ### Changed
 - **BREAKING**: Simplified config schema with workflows and presets.
-- Terminology: Changed "relying party" to "workflow" across the application code and configuration.
+- Terminology: Changed "relying party" to "workflow" across the application code
+  and configuration.
 - Improve UI by implementing several `@digitalbazaar/cadmv-ui` Vue components.
-- Enable did web document by default, as this is required for most OID4VP workflows.
+- Enable did web document by default, as this is required for most OID4VP
+  workflows.
+- Set default OID4VP protocol to OID4VP-combined.
+- Improve DID Auth support in authorization requests.
+- Improve icon consistency with `@digitalbazaar/cadmv-ui` components.
+- Use Quasar copyToClipboard for same-device links.
+- Fix inconsistent node version and date references across config.
+- Update minor dependencies.
+- Update copyright date to 2026.
+
+### Fixed
+- Add index for exchange query by accessToken (performance).
 
 ## 9.0.7 - 2026-01-23
 
