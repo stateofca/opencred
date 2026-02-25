@@ -48,7 +48,7 @@ describe('classifyOID4VPSubmission', () => {
     expect(result).to.be('oid4vp-draft18');
   });
 
-  it('should return "oid4vp-1.0" when dcql_query.credentials' +
+  it('should return "oid4vp-1.0" when dcql_query.credentials ' +
     'exists and no submission', () => {
     const submission = null;
     const dcql_query = {
@@ -66,7 +66,7 @@ describe('classifyOID4VPSubmission', () => {
     expect(result).to.be('oid4vp-1.0');
   });
 
-  it('should return "oid4vp-1.0" when dcql_query.credentials' +
+  it('should return "oid4vp-1.0" when dcql_query.credentials ' +
     'exists and submission is undefined', () => {
     const submission = undefined;
     const dcql_query = {

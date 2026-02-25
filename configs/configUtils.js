@@ -61,7 +61,8 @@ const OpenIdConnectSchema = z.object({
   })).default([{name: 'openid', description: 'Open ID Connect'}]),
   claims: z.array(z.object({
     name: z.string(),
-    path: z.string()
+    path: z.string(),
+    format: z.enum(['ldp_vc', 'mso_mdoc']).default('ldp_vc')
   })).default([]),
   idTokenExpirySeconds: z.number().default(3600)
 });
