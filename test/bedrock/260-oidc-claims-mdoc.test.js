@@ -10,10 +10,10 @@ import {importSPKI, jwtVerify} from 'jose';
 import {httpClient} from '@digitalbazaar/http-client';
 import https from 'node:https';
 
-import {exampleKey} from '../fixtures/signingKeys.js';
 import {baseUrl} from '../mock-data.js';
 import {config} from '@bedrock/core';
 import {database} from '../../lib/database.js';
+import {exampleKey} from '../fixtures/signingKeys.js';
 import expect from 'expect.js';
 
 const agent = new https.Agent({rejectUnauthorized: false});
