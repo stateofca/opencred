@@ -27,7 +27,6 @@ const exampleWorkflow = {
   }],
   oidc: {
     redirectUri: 'https://example.com',
-    scopes: [{name: 'openid'}],
     idTokenExpirySeconds: 3600,
     claims: [
       {

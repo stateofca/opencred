@@ -31,7 +31,6 @@ const mdocWorkflowWithClaims = {
   }],
   oidc: {
     redirectUri: 'https://example.com',
-    scopes: [{name: 'openid'}],
     claims: [
       {
         name: 'given_name',
@@ -65,7 +64,6 @@ const hybridWorkflowWithClaims = {
   ],
   oidc: {
     redirectUri: 'https://example.com',
-    scopes: [{name: 'openid'}],
     claims: [
       {
         name: 'email',

@@ -55,10 +55,6 @@ export const BrandSchema = z.object({
 
 const OpenIdConnectSchema = z.object({
   redirectUri: z.url(),
-  scopes: z.array(z.object({
-    name: z.literal('openid'),
-    description: z.string()
-  })).default([{name: 'openid', description: 'Open ID Connect'}]),
   claims: z.array(z.object({
     name: z.string(),
     path: z.string(),

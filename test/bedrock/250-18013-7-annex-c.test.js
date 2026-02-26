@@ -44,8 +44,7 @@ const mdocTestRP = {
   }],
   clientSecret: 'shhh',
   oidc: {
-    redirectUri: 'https://example.com',
-    scopes: [{name: 'openid'}]
+    redirectUri: 'https://example.com'
   }
 };
 
@@ -67,8 +66,7 @@ const mixedFormatTestRP = {
   ],
   clientSecret: 'shhh',
   oidc: {
-    redirectUri: 'https://example.com',
-    scopes: [{name: 'openid'}]
+    redirectUri: 'https://example.com'
   }
 };
 

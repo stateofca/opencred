@@ -71,19 +71,16 @@ workflows:
     type: native
     oidc:
       redirectUri: http://localhost:8080/oidc/callback
-      scopes:
-        - name: "openid"
-          description: "Open ID Connect"
       claims:
         - name: email
           path: credentialSubject.email
-      query:
-        - type:
-            - VerifiedEmailCredential
-          context:
-            - "https://www.w3.org/2018/credentials/v1"
-          format:
-            - jwt_vc_json
+    query:
+      - type:
+          - VerifiedEmailCredential
+        context:
+          - "https://www.w3.org/2018/credentials/v1"
+        format:
+          - jwt_vc_json
 ```
 
 ### 5. Generate and Configure the `id_token` Signing Key

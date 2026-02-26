@@ -25,7 +25,9 @@
 - Add GitHub Actions test workflow.
 
 ### Changed
-- **BREAKING**: Simplified config schema with workflows and presets.
+- **BREAKING**: Simplified config schema with workflows and presets. Removed
+  separate `workflow.id` separate from `clientId`.
+- **BREAKING**: Removed `scopes` from OIDC section of config schema.
 - Terminology: Changed "relying party" to "workflow" across the application code
   and configuration.
 - Improve UI by implementing several `@digitalbazaar/cadmv-ui` Vue components.

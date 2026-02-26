@@ -16,7 +16,6 @@ const app1 = {
   caStore: false,
   oidc: {
     redirectUri: 'https://example.com',
-    scopes: [{name: 'openid', description: 'Open ID Connect'}],
     claims: [],
     idTokenExpirySeconds: 3600
   },

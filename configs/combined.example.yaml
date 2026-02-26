@@ -49,9 +49,6 @@ app:
           claims:
             - name: "dl_number"
               path: "driversLicense.document_number"
-          scopes:
-            - name: "openid"
-              description: "Open ID Connect"
         callback:
           url: http://localhost:9000/callback
           headersVariable: callbackHeaders
@@ -95,9 +92,6 @@ app:
           claims:
             - name: "email"
               path: "email"
-          scopes:
-            - name: "openid"
-              description: "Open ID Connect"
         baseUrl: https://example.org/workflows/123
         capability: "example"
         verifiablePresentationRequest: >
@@ -152,9 +146,6 @@ app:
           claims:
             - name: "dl_number"
               path: "driversLicense.document_number"
-          scopes:
-            - name: "openid"
-              description: "Open ID Connect"
         verifiablePresentationRequest: >
           {
             "query": {
@@ -183,9 +174,6 @@ app:
         oidc:
           redirectUri: "http://localhost:3000"
           idTokenExpirySeconds: 3600
-          scopes:
-            - name: "openid"
-              description: "Open ID Connect"
         query:
           - type:
               - PermanentResidentCard

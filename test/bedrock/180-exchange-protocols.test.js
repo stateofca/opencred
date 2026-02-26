@@ -43,8 +43,7 @@ const testRP = {
   }),
   clientSecret: 'shhh',
   oidc: {
-    redirectUri: 'https://example.com',
-    scopes: [{name: 'openid'}]
+    redirectUri: 'https://example.com'
   }
 };
 
