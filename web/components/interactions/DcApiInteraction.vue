@@ -35,15 +35,20 @@ SPDX-License-Identifier: BSD-3-Clause
         </cadmv-button>
       </div>
     </div>
-    <!-- Normal State -->
-    <cadmv-button
+    <!-- Normal State: wallet launch buttons -->
+    <div
       v-else
-      variant="primary"
-      :loading="exchangeState === 'active'"
-      :disabled="exchangeState === 'active'"
-      @click="handleActivate">
-      {{$t('appCta')}}
-    </cadmv-button>
+      class="flex flex-col gap-3 w-full max-w-md mx-auto">
+      <WalletLaunchButton
+        v-for="{walletId, protocolId} in compatibleWallets"
+        :key="walletId"
+        :wallet="walletsRegistry?.[walletId]"
+        :wallet-id="walletId"
+        :protocol-id="protocolId"
+        :loading="exchangeState === 'active' && walletId === selectedWallet"
+        :disabled="exchangeState === 'active'"
+        @launch="handleLaunch" />
+    </div>
     <!-- Countdown Display -->
     <p
       v-if="exchangeData?.createdAt && exchangeData?.ttl"
@@ -58,9 +63,12 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import {CadmvButton} from '@digitalbazaar/cadmv-ui';
+import {computed} from 'vue';
 import CountdownDisplay from '../CountdownDisplay.vue';
+import {getDcApiCompatibleWallets} from '../../utils/wallets.js';
+import WalletLaunchButton from '../WalletLaunchButton.vue';
 
-defineProps({
+const props = defineProps({
   exchangeData: {
     type: Object,
     required: true
@@ -76,13 +84,41 @@ defineProps({
   error: {
     type: [Object, String],
     default: null
+  },
+  walletsRegistry: {
+    type: Object,
+    default: () => ({})
+  },
+  availableProtocols: {
+    type: Array,
+    default: () => []
+  },
+  workflow: {
+    type: Object,
+    default: null
+  },
+  enabledWallets: {
+    type: Array,
+    default: null
+  },
+  selectedWallet: {
+    type: String,
+    default: null
   }
 });
 
-const emit = defineEmits(['activate', 'errorOverride', 'retry']);
+const emit = defineEmits(['activate', 'errorOverride', 'launch', 'retry']);
 
-const handleActivate = () => {
-  emit('activate');
+const compatibleWallets = computed(() =>
+  getDcApiCompatibleWallets({
+    walletsRegistry: props.walletsRegistry,
+    availableProtocols: props.availableProtocols,
+    workflow: props.workflow,
+    enabledWallets: props.enabledWallets
+  }));
+
+const handleLaunch = ({walletId, protocolId}) => {
+  emit('launch', {walletId, protocolId});
 };
 
 const handleTryAnotherWay = () => {

@@ -74,7 +74,7 @@ export const WALLETS_REGISTRY = {
       },
       '18013-7-Annex-C': {
         dcapi: 'Click the button to request credentials from your wallet ' +
-        '(iOS devices)'
+          '(iOS devices)'
       },
       '18013-7-Annex-D': {
         dcapi: 'Click the button to request credentials from your wallet ' +
@@ -121,6 +121,32 @@ export const WALLETS_REGISTRY = {
           description: 'Click the button to open your wallet app',
           getUrl: lcwDeepLink
         }
+      }
+    }
+  },
+  'google-wallet': {
+    id: 'google-wallet',
+    name: 'Google Wallet',
+    description: 'Google Wallet for storing and presenting digital ' +
+      'credentials on Android devices.',
+    icon: '/wallets/google-wallet-icon.png',
+    supportedProtocols: {
+      '18013-7-Annex-D': {
+        dcapi: 'Click the button to request credentials from your wallet ' +
+          '(Android devices)'
+      }
+    }
+  },
+  'apple-wallet': {
+    id: 'apple-wallet',
+    name: 'Apple Wallet',
+    description: 'Apple Wallet for storing and presenting digital ' +
+      'credentials on iOS devices.',
+    icon: '/wallets/apple-wallet-icon.png',
+    supportedProtocols: {
+      '18013-7-Annex-C': {
+        dcapi: 'Click the button to request credentials from your wallet ' +
+          '(iOS devices)'
       }
     }
   }
@@ -200,6 +226,70 @@ export function hasMdocFormat(workflow) {
     const formats = item.format || [];
     return Array.isArray(formats) && formats.includes('mso_mdoc');
   });
+}
+
+/**
+ * Get wallets that support DC API for at least one of the exchange's
+ *   available protocols.
+ *
+ * @param {object} options - Options object.
+ * @param {object} options.walletsRegistry - The wallets registry.
+ * @param {Array<string>} options.availableProtocols - Available protocols
+ *   for the exchange.
+ * @param {object} options.workflow - Workflow configuration.
+ * @param {Array<string>} [options.enabledWallets] - Wallet IDs to consider.
+ *   Defaults to all keys in walletsRegistry.
+ * @returns {Array<{walletId: string, protocolId: string}>} Array of
+ *   compatible wallet/protocol pairs.
+ */
+export function getDcApiCompatibleWallets({
+  walletsRegistry,
+  availableProtocols = [],
+  workflow,
+  enabledWallets
+}) {
+  const walletIds = enabledWallets && enabledWallets.length > 0 ?
+    enabledWallets : Object.keys(walletsRegistry || {});
+  const hasMdoc = hasMdocFormat(workflow);
+
+  // DC API eligible protocols: Annex D and HAIP always; Annex C only with mdoc
+  const dcApiEligibleProtocols = availableProtocols.filter(p => {
+    if(p === '18013-7-Annex-D' || p === 'OID4VP-HAIP-1.0') {
+      return true;
+    }
+    if(p === '18013-7-Annex-C') {
+      return hasMdoc;
+    }
+    return false;
+  });
+
+  const result = [];
+  for(const walletId of walletIds) {
+    const wallet = walletsRegistry?.[walletId];
+    if(!wallet?.supportedProtocols) {
+      continue;
+    }
+
+    let protocolId = null;
+    if(typeof wallet.getDefaultProtocol === 'function') {
+      const defaultProtocol = wallet.getDefaultProtocol({
+        workflow,
+        availableProtocols: dcApiEligibleProtocols
+      });
+      if(defaultProtocol &&
+        walletSupportsProtocol(walletId, defaultProtocol, 'dcapi')) {
+        protocolId = defaultProtocol;
+      }
+    }
+    if(!protocolId) {
+      protocolId = dcApiEligibleProtocols.find(p =>
+        walletSupportsProtocol(walletId, p, 'dcapi'));
+    }
+    if(protocolId) {
+      result.push({walletId, protocolId});
+    }
+  }
+  return result;
 }
 
 /**

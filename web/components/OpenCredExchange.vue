@@ -55,8 +55,10 @@ SPDX-License-Identifier: BSD-3-Clause
         {{$t('connectWalletHeading')}}
       </p>
 
-      <!-- Wallet Selection -->
+      <!-- Wallet Selection (hidden when DC API; always in DOM for footer) -->
       <WalletSelection
+        v-show="activeInteractionType !== 'dcapi'"
+        ref="walletSelectionRef"
         :selected-wallet="selectedWallet"
         :selected-protocol="selectedProtocol"
         :available-protocols="availableProtocols"
@@ -67,6 +69,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
       <!-- Interaction-specific info and exchange status -->
       <WalletInteraction
+        ref="walletInteractionRef"
         :exchange-data="context.exchangeData || {}"
         :exchange-state="context.exchangeData?.state || 'pending'"
         :selected-protocol="selectedProtocol"
@@ -75,11 +78,15 @@ SPDX-License-Identifier: BSD-3-Clause
         :active="state.active && !state.activeOverride"
         :workflow="context.workflow"
         :wallets-registry="walletsRegistry"
+        :enabled-wallets="enabledWallets"
         :protocols-registry="protocolsRegistry"
         :interaction-state="interactionState"
         @update-interaction-state="handleUpdateInteractionState"
         @replace-exchange="handleReplaceExchange"
-        @override-active="handleOverrideActive" />
+        @override-active="handleOverrideActive"
+        @launch="handleDcApiLaunch"
+        @reset-wallet-selection="handleResetWalletSelection"
+        @update:active-interaction-type="activeInteractionType = $event" />
 
       <!-- Explainer Video Link -->
       <div class="mt-2">
@@ -134,8 +141,8 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
-import {computed, inject, onBeforeMount, onMounted, onUnmounted, reactive,
-  ref, watch} from 'vue';
+import {computed, inject, nextTick, onBeforeMount, onMounted, onUnmounted,
+  reactive, ref, watch} from 'vue';
 import {CadmvDialog} from '@digitalbazaar/cadmv-ui';
 import CredentialQuerySummary from './CredentialQuerySummary.vue';
 import ErrorView from './ErrorView.vue';
@@ -158,6 +165,7 @@ defineProps({
 
 const $cookies = inject('$cookies');
 const $q = useQuasar();
+const registerOpenWalletSelection = inject('registerOpenWalletSelection', null);
 
 // Get context from parent component (LoginView or VerificationView)
 // Context must be provided by parent - this component does not fetch it
@@ -180,6 +188,9 @@ const state = reactive({
 
 const selectedProtocol = ref('OID4VP-draft18');
 const selectedWallet = ref('cadmv-wallet');
+const activeInteractionType = ref(null);
+const walletInteractionRef = ref(null);
+const walletSelectionRef = ref(null);
 
 // Interaction state management
 const interactionState = reactive({
@@ -307,6 +318,21 @@ const handleSelectProtocol = ({protocol, wallet, prefersSameDevice}) => {
   }
   if(prefersSameDevice !== undefined) {
     interactionState.prefersSameDevice = prefersSameDevice;
+  }
+};
+
+const handleDcApiLaunch = ({walletId, protocolId}) => {
+  handleSelectProtocol({protocol: protocolId, wallet: walletId});
+  nextTick(() => {
+    walletInteractionRef.value?.launchDcApi?.();
+  });
+};
+
+const handleResetWalletSelection = () => {
+  selectedWallet.value = null;
+  // Optionally clear cookie
+  if($cookies) {
+    $cookies.remove('selectedWallet');
   }
 };
 
@@ -605,11 +631,17 @@ const handleStatusDialogAction = action => {
 };
 
 onMounted(async () => {
+  if(registerOpenWalletSelection) {
+    registerOpenWalletSelection(() => walletSelectionRef.value?.open?.());
+  }
   setTimeout(checkStatus, 500);
   startStatusCheck();
 });
 
 onUnmounted(() => {
+  if(registerOpenWalletSelection) {
+    registerOpenWalletSelection(null);
+  }
   if(state.intervalId) {
     state.intervalId = clearInterval(state.intervalId);
   }

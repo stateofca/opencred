@@ -140,7 +140,8 @@ export const QueryByExampleSchema = z.object({
   type: z.array(z.string()).min(1)
 });
 
-export const availableWallets = ['cadmv-wallet', 'lcw'];
+export const availableWallets = [
+  'cadmv-wallet', 'lcw', 'google-wallet', 'apple-wallet'];
 
 // Base Workflow schema
 export const BaseWorkflowSchema = z.object({

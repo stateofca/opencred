@@ -9,6 +9,8 @@ import expect from 'expect.js';
 
 import {
   generateWalletLink,
+  getDcApiCompatibleWallets,
+  WALLETS_REGISTRY,
   walletSupportsProtocol
 } from '../../web/utils/wallets.js';
 
@@ -411,6 +413,82 @@ describe('Wallet Protocols', () => {
 
         expect(link).to.be(null);
       });
+    });
+  });
+
+  describe('getDcApiCompatibleWallets', () => {
+    it('should return cadmv, google, apple for mdoc with Annex C and D', () => {
+      const result = getDcApiCompatibleWallets({
+        walletsRegistry: WALLETS_REGISTRY,
+        availableProtocols: ['18013-7-Annex-C', '18013-7-Annex-D'],
+        workflow: {query: [{format: ['mso_mdoc']}]},
+        enabledWallets: ['cadmv-wallet', 'google-wallet', 'apple-wallet']
+      });
+      expect(result).to.have.length(3);
+      const walletIds = result.map(r => r.walletId);
+      expect(walletIds).to.contain('cadmv-wallet');
+      expect(walletIds).to.contain('google-wallet');
+      expect(walletIds).to.contain('apple-wallet');
+    });
+
+    it('should return only Annex D wallets when no mdoc format', () => {
+      const result = getDcApiCompatibleWallets({
+        walletsRegistry: WALLETS_REGISTRY,
+        availableProtocols: ['18013-7-Annex-C', '18013-7-Annex-D'],
+        workflow: {query: [{format: ['jwt_vc_json']}]},
+        enabledWallets: ['cadmv-wallet', 'google-wallet', 'apple-wallet']
+      });
+      expect(result).to.have.length(2);
+      const walletIds = result.map(r => r.walletId);
+      expect(walletIds).to.contain('cadmv-wallet');
+      expect(walletIds).to.contain('google-wallet');
+      expect(walletIds).to.not.contain('apple-wallet');
+    });
+
+    it('should return google-wallet with Annex D', () => {
+      const result = getDcApiCompatibleWallets({
+        walletsRegistry: WALLETS_REGISTRY,
+        availableProtocols: ['18013-7-Annex-D'],
+        workflow: {},
+        enabledWallets: ['google-wallet']
+      });
+      expect(result).to.eql([
+        {walletId: 'google-wallet', protocolId: '18013-7-Annex-D'}
+      ]);
+    });
+
+    it('should return apple-wallet with Annex C when mdoc', () => {
+      const result = getDcApiCompatibleWallets({
+        walletsRegistry: WALLETS_REGISTRY,
+        availableProtocols: ['18013-7-Annex-C'],
+        workflow: {query: [{format: ['mso_mdoc']}]},
+        enabledWallets: ['apple-wallet']
+      });
+      expect(result).to.eql([
+        {walletId: 'apple-wallet', protocolId: '18013-7-Annex-C'}
+      ]);
+    });
+
+    it('should filter by enabledWallets', () => {
+      const result = getDcApiCompatibleWallets({
+        walletsRegistry: WALLETS_REGISTRY,
+        availableProtocols: ['18013-7-Annex-D'],
+        workflow: {},
+        enabledWallets: ['google-wallet']
+      });
+      expect(result).to.have.length(1);
+      expect(result[0].walletId).to.be('google-wallet');
+    });
+
+    it('should exclude lcw (no DC API support)', () => {
+      const result = getDcApiCompatibleWallets({
+        walletsRegistry: WALLETS_REGISTRY,
+        availableProtocols: ['vcapi', '18013-7-Annex-D'],
+        workflow: {},
+        enabledWallets: ['lcw', 'google-wallet']
+      });
+      expect(result).to.have.length(1);
+      expect(result[0].walletId).to.be('google-wallet');
     });
   });
 });

@@ -85,9 +85,20 @@ SPDX-License-Identifier: BSD-3-Clause
           @change-language="handleLanguageChange" />
       </div>
     </main>
-    <footer
-      class="text-left p-3"
-      v-html="$t('copyright')" />
+    <footer class="flex items-center justify-between p-3">
+      <div
+        class="text-left"
+        v-html="$t('copyright')" />
+      <q-btn
+        v-if="showSettingsButton"
+        flat
+        dense
+        size="sm"
+        :label="$t('settings')"
+        icon="settings"
+        class="text-gray-600 hover:text-gray-900"
+        @click="handleSettingsClick" />
+    </footer>
   </div>
 </template>
 
@@ -166,6 +177,21 @@ onBeforeMount(async () => {
 
 // Provide context to child components
 provide('exchangeContext', context);
+
+// Registration for footer settings to open WalletSelection
+const openWalletSelectionRef = ref(null);
+provide('registerOpenWalletSelection', callback => {
+  openWalletSelectionRef.value = callback;
+});
+
+const showSettingsButton = computed(() => {
+  const name = route.name;
+  return name === 'verification' || name === 'login';
+});
+
+const handleSettingsClick = () => {
+  openWalletSelectionRef.value?.();
+};
 
 const handleLanguageChange = lang => {
   locale.value = lang;

@@ -14,7 +14,13 @@ SPDX-License-Identifier: BSD-3-Clause
       :exchange-state="exchangeState"
       :dc-api-state="interactionState.dcApiState"
       :error="interactionState.errors.dcApiError"
+      :wallets-registry="walletsRegistry"
+      :available-protocols="availableProtocols"
+      :workflow="workflow"
+      :enabled-wallets="enabledWallets"
+      :selected-wallet="selectedWallet"
       @activate="handleDcApiActivate"
+      @launch="handleDcApiLaunch"
       @error-override="handleDcApiErrorOverride"
       @retry="handleDcApiRetry" />
     <QrCodeInteraction
@@ -74,7 +80,8 @@ workflow:
 import {computed, inject, onMounted, ref, watch} from 'vue';
 import {
   generateWalletLink,
-  getAvailableInteractionMethods
+  getAvailableInteractionMethods,
+  getDcApiCompatibleWallets
 } from '../utils/wallets.js';
 import ChapiInteraction from './interactions/ChapiInteraction.vue';
 import DcApiInteraction from './interactions/DcApiInteraction.vue';
@@ -127,13 +134,20 @@ const props = defineProps({
   interactionState: {
     type: Object,
     required: true
+  },
+  enabledWallets: {
+    type: Array,
+    default: null
   }
 });
 
 const emit = defineEmits([
   'updateInteractionState',
   'replaceExchange',
-  'overrideActive'
+  'overrideActive',
+  'launch',
+  'update:activeInteractionType',
+  'resetWalletSelection'
 ]);
 
 const $q = useQuasar();
@@ -314,18 +328,38 @@ const handleDcApiErrorOverride = () => {
 
 // Handle DC API retry
 const handleDcApiRetry = () => {
+  // Compute compatible wallets
+  const compatibleWallets = getDcApiCompatibleWallets({
+    walletsRegistry: props.walletsRegistry,
+    availableProtocols: props.availableProtocols,
+    workflow: props.workflow,
+    enabledWallets: props.enabledWallets
+  });
+
+  // Clear error
   emit('updateInteractionState', {
     errors: {
       dcApiError: null
     }
   });
-  handleDcApiActivate();
+
+  // If only one wallet, retry immediately
+  if(compatibleWallets.length === 1) {
+    handleDcApiActivate();
+  } else {
+    // Multiple wallets: reset selection so user can choose again
+    emit('resetWalletSelection');
+  }
+};
+
+// Handle DC API launch (from wallet button) - re-emit to parent
+const handleDcApiLaunch = ({walletId, protocolId}) => {
+  emit('launch', {walletId, protocolId});
 };
 
 // Handle same device activation
 const handleSameDeviceActivate = () => {
-  // The SameDeviceLinkInteraction component handles the actual activation
-  // TODO: This is just for tracking state if needed
+  // SameDeviceLinkInteraction handles the activation
 };
 
 // Set preference for same device interaction (from QR)
@@ -365,7 +399,15 @@ const handleChapiError = error => {
   });
 };
 
+watch(activeInteractionType, value => {
+  emit('update:activeInteractionType', value);
+}, {immediate: true});
+
 onMounted(() => {
   checkDCApiAvailability();
+});
+
+defineExpose({
+  launchDcApi: handleDcApiActivate
 });
 </script>

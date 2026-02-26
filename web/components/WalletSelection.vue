@@ -49,7 +49,7 @@ SPDX-License-Identifier: BSD-3-Clause
             @click="showDialog = false" />
           <div class="mb-4">
             <p class="font-semibold mb-3 text-gray-900">
-              Select Wallet
+              Select Preferred Wallet
             </p>
             <div
               v-for="(wallet, walletId) in walletsRegistry"
@@ -310,6 +310,12 @@ const handleDialogAction = action => {
     showDialog.value = false;
   }
 };
+
+const open = () => {
+  showDialog.value = true;
+};
+
+defineExpose({open});
 </script>
 
 <style scoped>
