@@ -85,7 +85,9 @@ SPDX-License-Identifier: BSD-3-Clause
           @change-language="handleLanguageChange" />
       </div>
     </main>
-    <footer class="flex items-center justify-between p-3">
+    <footer
+      class="flex flex-col md:flex-row items-center md:items-center
+             justify-center md:justify-between gap-2 md:gap-0 p-3">
       <div
         class="text-left"
         v-html="$t('copyright')" />
@@ -185,8 +187,9 @@ provide('registerOpenWalletSelection', callback => {
 });
 
 const showSettingsButton = computed(() => {
-  const name = route.name;
-  return name === 'verification' || name === 'login';
+  const isEligibleRoute = ['verification', 'login'].includes(route.name);
+  const isExchangeComplete = context.value.exchangeData?.state === 'complete';
+  return isEligibleRoute && !isExchangeComplete;
 });
 
 const handleSettingsClick = () => {
