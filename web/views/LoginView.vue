@@ -14,12 +14,26 @@ SPDX-License-Identifier: BSD-3-Clause
       v-else
       class="bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
              px-16 lg:px-24 relative">
-      <div class="mx-auto py-24 flex items-center justify-center gap-5 text-xl">
-        <q-icon
-          name="fas fa-circle-check"
-          size="60px"
-          color="green" />
-        {{$t('verificationSuccess')}}
+      <div
+        class="mx-auto py-24 flex flex-col items-center justify-center
+             gap-5 text-xl">
+        <div class="flex items-center justify-center gap-5">
+          <q-icon
+            name="fas fa-circle-check"
+            size="60px"
+            color="green" />
+          {{$t('verificationSuccess')}}
+        </div>
+        <cadmv-button
+          v-if="context.autoRedirectToClient === false &&
+            context.exchangeData?.oidc?.code &&
+            context.workflow?.redirectUri"
+          variant="primary"
+          @click="continueToClient">
+          {{$t('continueToClient', {
+            name: context.workflow.name || 'client'
+          })}}
+        </cadmv-button>
       </div>
     </div>
   </div>
@@ -27,6 +41,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import {onBeforeMount, provide, ref, watch} from 'vue';
+import {CadmvButton} from '@digitalbazaar/cadmv-ui';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
 import OpenCredExchange from '../components/OpenCredExchange.vue';
@@ -42,12 +57,15 @@ const context = ref({
   exchangeData: null
 });
 
-// Fetch context from /context/login endpoint
+// Fetch context from /context/login or /context/continue when exchange_token
 onBeforeMount(async () => {
   try {
-    const resp = await httpClient.get(
-      `/context/login${window.location.search}`
-    );
+    const exchangeToken = new URLSearchParams(window.location.search)
+      .get('exchange_token');
+    const url = exchangeToken ?
+      `/context/continue?exchange_token=${encodeURIComponent(exchangeToken)}` :
+      `/context/login${window.location.search}`;
+    const resp = await httpClient.get(url);
     context.value = resp.data;
     if(resp.data.workflow.brand) {
       Object.keys(resp.data.workflow.brand).forEach(key => {
@@ -67,18 +85,28 @@ onBeforeMount(async () => {
 // Provide context to child components (OpenCredExchange)
 provide('exchangeContext', context);
 
-// Watch for exchange completion and redirect
+// Navigate to client redirect URI with code and state
+const continueToClient = () => {
+  const {exchangeData, workflow} = context.value;
+  if(!exchangeData?.oidc?.code || !workflow?.redirectUri) {
+    return;
+  }
+  const queryParams = new URLSearchParams({
+    state: exchangeData.oidc.state,
+    code: exchangeData.oidc.code
+  });
+  window.location.href = `${workflow.redirectUri}?${queryParams.toString()}`;
+};
+
+// Watch for exchange completion and auto-redirect
+// (only when autoRedirectToClient)
 watch(
   () => context.value.exchangeData?.state,
   newState => {
-    if(newState === 'complete') {
-      const queryParams = new URLSearchParams({
-        state: context.value.exchangeData.oidc.state,
-        code: context.value.exchangeData.oidc.code
-      });
-      const destination = `${context.value.workflow.redirectUri}?${
-        queryParams.toString()}`;
-      window.location.href = destination;
+    const shouldAutoRedirect = newState === 'complete' &&
+      context.value.autoRedirectToClient !== false;
+    if(shouldAutoRedirect) {
+      continueToClient();
     }
   },
   {immediate: true}

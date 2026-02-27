@@ -20,6 +20,10 @@
 - Add new category of "unit" tests run through mocha with `npm run test:unit`
   for faster testing of targeted sections of code.
 - Add mDoc claims to id_token for OIDC flows.
+- Add authorization response redirect_uri flow: wallet receives
+  `redirect_uri` with `exchange_token` JWT; frontend detects token, fetches
+  `/context/continue`, and for login shows "Continue to [client]" when
+  `autoRedirectToClient` is false.
 - Add theme defaults and favicon support.
 - Add test command to package.json and CI.
 - Add GitHub Actions test workflow.

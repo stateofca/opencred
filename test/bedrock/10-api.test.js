@@ -17,6 +17,7 @@ import {
   generateCertificateChain
 } from '../utils/x509.js';
 import {createPresentation, signPresentation} from '@digitalbazaar/vc';
+import {exampleKey, exampleKey2} from '../fixtures/signingKeys.js';
 import {
   generatePresentationSubmission,
   generateValidJwtVpToken
@@ -29,7 +30,6 @@ import {createExchangeWithAuthRequest} from '../utils/exchanges.js';
 import {database} from '../../lib/database.js';
 import {documentLoader} from '../utils/testDocumentLoader.js';
 import {domainToDidWeb} from '../../lib/didWeb.js';
-import {exampleKey2} from '../fixtures/signingKeys.js';
 import {generateValidDidKeyData} from '../utils/dids.js';
 import {generateValidSignedCredential} from '../utils/credentials.js';
 import {httpClient} from '@digitalbazaar/http-client';
@@ -224,10 +224,13 @@ describe('OpenCred API - Native Workflow', function() {
   this.beforeEach(() => {
     this.rpStub = sinon.stub(config.opencred, 'workflows').value(
       [testWorkflow, testWorkflow2, testWorkflow3, testWorkflow4]);
+    this.signingKeysStub = sinon.stub(config.opencred, 'signingKeys')
+      .value([{...exampleKey, purpose: ['id_token']}]);
   });
 
   this.afterEach(() => {
     this.rpStub.restore();
+    this.signingKeysStub?.restore();
   });
 
   it('should return 404 for unknown workflow id', async function() {
@@ -490,7 +493,10 @@ describe('OpenCred API - Native Workflow', function() {
       err = e;
     }
     should.not.exist(err);
-    result.status.should.be.equal(204);
+    result.status.should.be.equal(200);
+    result.data.redirect_uri.should.be.a('string');
+    result.data.redirect_uri.should.contain('exchange_token=');
+    result.data.redirect_uri.should.contain('/verification');
 
     findStub.restore();
     updateStub.restore();
@@ -609,7 +615,10 @@ describe('OpenCred API - Native Workflow', function() {
       err = e;
     }
     should.not.exist(err);
-    result.status.should.be.equal(204);
+    result.status.should.be.equal(200);
+    result.data.redirect_uri.should.be.a('string');
+    result.data.redirect_uri.should.contain('exchange_token=');
+    result.data.redirect_uri.should.contain('/verification');
 
     findStub.restore();
     updateStub.restore();
@@ -704,8 +713,7 @@ describe('OpenCred API - VC-API Workflow', function() {
       ...testWorkflow,
       type: 'vc-api',
       capability: '{}',
-      vpr: '{}',
-      untrustedVariableAllowList: ['redirectPath']
+      vpr: '{}'
     }]);
   });
 

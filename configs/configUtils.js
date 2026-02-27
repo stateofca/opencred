@@ -160,11 +160,7 @@ export const BaseWorkflowSchema = z.object({
   translations: z.record(z.string(), z.record(z.string(), z.string()))
     .optional(), // Override default text labels in the UI
   trustedCredentialIssuers: z.array(z.string()).optional(),
-  untrustedVariableAllowList: z.array(z.string())
-    .default(['redirectPath'])
-    .transform(
-      val => val.includes('redirectPath') ? val : [...val, 'redirectPath']
-    ), // Ensure 'redirectPath' is always included
+  untrustedVariableAllowList: z.array(z.string()).default([]),
   public: z.boolean().default(false)
 });
 

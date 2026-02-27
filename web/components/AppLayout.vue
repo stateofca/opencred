@@ -140,9 +140,13 @@ onBeforeMount(async () => {
   // Skip context fetching for audit route (no context endpoint exists)
   if(exchangeType && exchangeType !== 'Audit Presentation') {
     try {
-      const resp = await httpClient.get(
-        `/context/${exchangeType}${window.location.search}`
-      );
+      const exchangeToken = new URLSearchParams(window.location.search)
+        .get('exchange_token');
+      const url = exchangeToken ?
+        `/context/continue?exchange_token=${encodeURIComponent(
+          exchangeToken)}` :
+        `/context/${exchangeType}${window.location.search}`;
+      const resp = await httpClient.get(url);
       context.value = resp.data;
       context.value.initError = null;
       if(resp.data.workflow.brand) {

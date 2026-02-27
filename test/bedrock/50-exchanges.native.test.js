@@ -37,7 +37,6 @@ import {verifySubmission} from '../../lib/workflows/profiles/common-oid4vp.js';
 const workflow = {
   type: 'native',
   clientId: 'testworkflow',
-  untrustedVariableAllowList: ['redirectPath'],
   query: [{
     context: [
       'https://www.w3.org/ns/credentials/v2',

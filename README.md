@@ -280,8 +280,7 @@ originate from the client side application and so should be treated as
 "untrusted".
 
 While configuring a workflow an `untrustedVariableAllowList` property contains a
-list of variables that are allowed to be passed in this manner. There is a
-default `redirectPath` variable that will always be included.
+list of variables that are allowed to be passed in this manner.
 
 ```yaml
 workflows:

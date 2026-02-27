@@ -26,7 +26,6 @@ import {verifyUtils} from '../../common/utils.js';
 const testWorkflow = {
   clientId: 'testworkflow',
   type: 'native',
-  untrustedVariableAllowList: ['redirectPath'],
   query: [{
     type: ['MyPrototypeCredential'],
     context: [

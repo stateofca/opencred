@@ -49,5 +49,7 @@
   "linkCopiedToClipboard": "Link has been copied to clipboard.",
   "urlCopied": "URL copied",
   "copyUrl": "Copy URL",
-  "pasteUrlInWallet": "Paste the URL in your wallet app."
+  "pasteUrlInWallet": "Paste the URL in your wallet app.",
+  "continueToClient": "Continue to {name}",
+  "verificationSuccess": "Success! Your credential has been shared."
 }
