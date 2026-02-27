@@ -9,8 +9,8 @@ SPDX-License-Identifier: BSD-3-Clause
   <div class="flex flex-col items-center justify-center">
     <cadmv-button
       variant="primary"
-      :loading="exchangeState === 'active'"
-      :disabled="exchangeState === 'active'"
+      :loading="active"
+      :disabled="active"
       @click="handleActivate">
       {{$t('appCta-chapi-label')}}
     </cadmv-button>
@@ -26,13 +26,9 @@ const props = defineProps({
     type: Object,
     required: true
   },
-  exchangeState: {
-    type: String,
-    default: 'pending'
-  },
-  chapiState: {
-    type: Object,
-    default: () => ({})
+  active: {
+    type: Boolean,
+    default: false
   }
 });
 

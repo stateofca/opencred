@@ -608,6 +608,65 @@ describe('OID4VP Input Descriptors', () => {
         expect(result.length).to.be(1);
         expect(result[0].format).to.have.property('ldp_vc');
       });
+
+    it('should exclude mso_mdoc-only query items for OID4VP-draft18 profile',
+      async () => {
+        const workflow = {
+          description: 'Hybrid VC and mDL',
+          query: [
+            {
+              type: ['Iso18013DriversLicenseCredential'],
+              context: [
+                'https://www.w3.org/2018/credentials/v1',
+                'https://w3id.org/vdl/v1',
+                'https://w3id.org/vdl/aamva/v1'
+              ],
+              format: ['jwt_vc_json']
+            },
+            {
+              fields: {
+                'org.iso.18013.5.1': [
+                  'family_name', 'given_name', 'document_number']
+              },
+              format: ['mso_mdoc']
+            }
+          ]
+        };
+
+        const result = await getInputDescriptors({
+          workflow,
+          exchange: mockExchange,
+          domain: mockDomain,
+          url: mockUrl,
+          profile: 'OID4VP-draft18'
+        });
+
+        expect(result).to.be.an('array');
+        expect(result.length).to.be(1);
+        expect(result[0].format).to.have.property('jwt_vc_json');
+        expect(result[0].format).to.not.have.property('ldp_vc');
+      });
+
+    it('should return empty array for mso_mdoc-only workflow with draft-18',
+      async () => {
+        const workflow = {
+          query: [{
+            fields: {'org.iso.18013.5.1': ['family_name']},
+            format: ['mso_mdoc']
+          }]
+        };
+
+        const result = await getInputDescriptors({
+          workflow,
+          exchange: mockExchange,
+          domain: mockDomain,
+          url: mockUrl,
+          profile: 'OID4VP-draft18'
+        });
+
+        expect(result).to.be.an('array');
+        expect(result.length).to.be(0);
+      });
   });
 
   describe('Query Format', () => {

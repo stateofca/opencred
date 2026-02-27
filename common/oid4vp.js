@@ -127,18 +127,42 @@ const inputDescriptorsFromQuery = async ({query, description}) => {
 };
 
 /**
+ * Check if a query item should be excluded from OID4VP-draft18 input
+ * descriptors. Mso_mdoc-only query items are excluded because CA DMV wallet
+ * doesn't support mso_mdoc format in draft-18 input_descriptors. Mso_mdoc is
+ * served via DC API / dcql_query for OID4VP 1.0 and Annex profiles..
+ *
+ * @param {object} q - Query item from workflow.query.
+ * @returns {boolean} - True if query should be excluded from draft-18.
+ */
+const isExcludedFromDraft18 = q => {
+  const formats = q.format || ['ldp_vc'];
+  const hasVcFormat = formats.includes('jwt_vc_json') || formats.includes(
+    'ldp_vc');
+  return !hasVcFormat;
+};
+
+/**
  * Get input descriptors for presentation definition.
  * Transforms from query format (query is required in workflow config).
  *
  * @param {object} options - Options object.
  * @param {object} options.workflow - The workflow configuration object.
+ * @param {string} [options.profile] - OID4VP profile (e.g. 'OID4VP-draft18').
+ *   When 'OID4VP-draft18', mso_mdoc-only query items are excluded.
  * @returns {Promise<Array>} - Array of input descriptor objects.
  */
-export const getInputDescriptors = async ({workflow}) => {
+export const getInputDescriptors = async ({workflow, profile}) => {
   const {query} = workflow;
 
+  // For OID4VP-draft18, exclude mso_mdoc-only query items. Draft-18
+  // input_descriptors do not properly support mso_mdoc; the QR fallback
+  // path uses VC formats. mso_mdoc is served via DC API (dcql_query).
+  const filteredQuery = profile === 'OID4VP-draft18' ?
+    query.filter(q => !isExcludedFromDraft18(q)) : query;
+
   // Transform from query (query is now required, checked via configUtils)
-  return Promise.all(query.map(async q => {
+  return Promise.all(filteredQuery.map(async q => {
     return inputDescriptorsFromQuery({
       query: q, description: workflow.description
     });

@@ -141,7 +141,7 @@ export const QueryByExampleSchema = z.object({
 });
 
 export const availableWallets = [
-  'cadmv-wallet', 'lcw', 'google-wallet', 'apple-wallet'];
+  'cadmv-wallet', 'lcw', 'google-wallet', 'apple-wallet', 'vcalm-interaction'];
 
 // Base Workflow schema
 export const BaseWorkflowSchema = z.object({
@@ -276,7 +276,8 @@ export const OptionsSchema = z.object({
   OID4VPdefault: z.enum([
     'OID4VP-draft18', 'OID4VP', 'OID4VP-combined', 'OID4VP-1.0'
   ]).default('OID4VP-combined'),
-  workflowListingEnabled: z.boolean().default(false)
+  workflowListingEnabled: z.boolean().default(false),
+  debug: z.boolean().default(false)
 }).transform(data => {
   // exchangeTtlSeconds cannot exceed recordExpiresDurationMs
   const maxExchangeTtl = Math.min(900, data.recordExpiresDurationMs / 1000);

@@ -79,7 +79,7 @@ SPDX-License-Identifier: BSD-3-Clause
 &nbsp;
         </div>
       </div>
-      <div class="absolute left-0 right-0 mt-4 z-10">
+      <div class="relative mt-4 z-10">
         <router-view
           :has-error="props.hasError"
           @change-language="handleLanguageChange" />
@@ -91,15 +91,6 @@ SPDX-License-Identifier: BSD-3-Clause
       <div
         class="text-left"
         v-html="$t('copyright')" />
-      <q-btn
-        v-if="showSettingsButton"
-        flat
-        dense
-        size="sm"
-        :label="$t('settings')"
-        icon="settings"
-        class="text-gray-600 hover:text-gray-900"
-        @click="handleSettingsClick" />
     </footer>
   </div>
 </template>
@@ -179,22 +170,6 @@ onBeforeMount(async () => {
 
 // Provide context to child components
 provide('exchangeContext', context);
-
-// Registration for footer settings to open WalletSelection
-const openWalletSelectionRef = ref(null);
-provide('registerOpenWalletSelection', callback => {
-  openWalletSelectionRef.value = callback;
-});
-
-const showSettingsButton = computed(() => {
-  const isEligibleRoute = ['verification', 'login'].includes(route.name);
-  const isExchangeComplete = context.value.exchangeData?.state === 'complete';
-  return isEligibleRoute && !isExchangeComplete;
-});
-
-const handleSettingsClick = () => {
-  openWalletSelectionRef.value?.();
-};
 
 const handleLanguageChange = lang => {
   locale.value = lang;

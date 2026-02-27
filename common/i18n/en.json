@@ -46,5 +46,8 @@
   "creds.org.iso.18013.5.1": "mDL - Mobile Driver's License",
   "verifyCredentialsTitle": "Verify Credentials",
   "selectWorkflow": "Select a workflow to verify credentials",
-  "settings": "Settings"
+  "linkCopiedToClipboard": "Link has been copied to clipboard.",
+  "urlCopied": "URL copied",
+  "copyUrl": "Copy URL",
+  "pasteUrlInWallet": "Paste the URL in your wallet app."
 }

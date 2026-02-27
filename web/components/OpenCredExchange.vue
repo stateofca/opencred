@@ -55,37 +55,14 @@ SPDX-License-Identifier: BSD-3-Clause
         {{$t('connectWalletHeading')}}
       </p>
 
-      <!-- Wallet Selection (hidden when DC API; always in DOM for footer) -->
-      <WalletSelection
-        v-show="activeInteractionType !== 'dcapi'"
-        ref="walletSelectionRef"
-        :selected-wallet="selectedWallet"
-        :selected-protocol="selectedProtocol"
-        :available-protocols="availableProtocols"
-        :wallets-registry="walletsRegistry"
-        :protocols-registry="protocolsRegistry"
-        :workflow="context.workflow"
-        @select-protocol="handleSelectProtocol" />
-
       <!-- Interaction-specific info and exchange status -->
       <WalletInteraction
         ref="walletInteractionRef"
-        :exchange-data="context.exchangeData || {}"
-        :exchange-state="context.exchangeData?.state || 'pending'"
-        :selected-protocol="selectedProtocol"
-        :selected-wallet="selectedWallet"
         :available-protocols="availableProtocols"
-        :active="state.active && !state.activeOverride"
+        :active="state.active"
         :workflow="context.workflow"
-        :wallets-registry="walletsRegistry"
-        :enabled-wallets="enabledWallets"
-        :protocols-registry="protocolsRegistry"
-        :interaction-state="interactionState"
-        @update-interaction-state="handleUpdateInteractionState"
         @replace-exchange="handleReplaceExchange"
-        @override-active="handleOverrideActive"
         @launch="handleDcApiLaunch"
-        @reset-wallet-selection="handleResetWalletSelection"
         @update:active-interaction-type="activeInteractionType = $event" />
 
       <!-- Explainer Video Link -->
@@ -141,19 +118,15 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
-import {computed, inject, nextTick, onBeforeMount, onMounted, onUnmounted,
-  reactive, ref, watch} from 'vue';
+import {computed, inject, nextTick, onMounted, onUnmounted,
+  reactive, ref} from 'vue';
 import {CadmvDialog} from '@digitalbazaar/cadmv-ui';
 import CredentialQuerySummary from './CredentialQuerySummary.vue';
 import ErrorView from './ErrorView.vue';
 import {httpClient} from '@digitalbazaar/http-client';
-import {PROTOCOLS_REGISTRY} from '../utils/protocols.js';
 import QRCode from 'qrcode';
 import {useI18n} from 'vue-i18n';
-import {useQuasar} from 'quasar';
 import WalletInteraction from './WalletInteraction.vue';
-import {WALLETS_REGISTRY} from '../utils/wallets.js';
-import WalletSelection from './WalletSelection.vue';
 
 defineProps({
   purpose: {
@@ -162,10 +135,6 @@ defineProps({
     validator: value => ['verification', 'login'].includes(value)
   }
 });
-
-const $cookies = inject('$cookies');
-const $q = useQuasar();
-const registerOpenWalletSelection = inject('registerOpenWalletSelection', null);
 
 // Get context from parent component (LoginView or VerificationView)
 // Context must be provided by parent - this component does not fetch it
@@ -180,36 +149,13 @@ const context = parentContext;
 
 const state = reactive({
   active: false,
-  activeOverride: false,
   error: null,
   intervalId: null,
   statusCheckCount: 0
 });
 
-const selectedProtocol = ref('OID4VP-draft18');
-const selectedWallet = ref('cadmv-wallet');
 const activeInteractionType = ref(null);
 const walletInteractionRef = ref(null);
-const walletSelectionRef = ref(null);
-
-// Interaction state management
-const interactionState = reactive({
-  dcApiErrorOverride: false,
-  // User preference for same device vs remote (QR/DC API)
-  prefersSameDevice: false,
-  dcApiState: {},
-  chapiState: {},
-  qrState: {},
-  sameDeviceState: {},
-  errors: {
-    dcApiError: null,
-    qrError: null,
-    exchangeError: null,
-    sameDeviceLinkError: null
-  }
-});
-
-const protocolsRegistry = PROTOCOLS_REGISTRY;
 
 const showVideo = ref(false);
 
@@ -244,31 +190,6 @@ const availableProtocols = computed(() => {
   });
 });
 
-// Get enabled wallets from options, defaulting to all available wallets
-const enabledWallets = computed(() => {
-  const wallets = context.value?.options?.wallets;
-  if(wallets && Array.isArray(wallets) && wallets.length > 0) {
-    return wallets;
-  }
-  // Default to all available wallets if not specified
-  return Object.keys(WALLETS_REGISTRY);
-});
-
-// Filter wallets registry to only include enabled wallets
-const filteredWalletsRegistry = computed(() => {
-  const enabled = enabledWallets.value;
-  const filtered = {};
-  for(const walletId of enabled) {
-    if(WALLETS_REGISTRY[walletId]) {
-      filtered[walletId] = WALLETS_REGISTRY[walletId];
-    }
-  }
-  return filtered;
-});
-
-// Use filtered wallets registry
-const walletsRegistry = filteredWalletsRegistry;
-
 /**
  * Set state.error to the given error object, with defaults applied.
  *
@@ -286,62 +207,16 @@ const handleError = error => {
     resettable: !!error?.resettable || false
   };
   state.active = false;
-  state.activeOverride = false;
   state.statusCheckCount = 0;
-  $cookies.remove('accessToken');
-  $cookies.remove('exchangeId');
 };
 
 const {t: translate} = useI18n({useScope: 'global'});
 
-const handleSelectProtocol = ({protocol, wallet, prefersSameDevice}) => {
-  if(protocol) {
-    selectedProtocol.value = protocol;
-    // Set cookie for protocol
-    if($cookies) {
-      $cookies.set('selectedProtocol', protocol, {expires: '1Y'});
-    }
-    // Reset status check count when protocol changes
-    state.statusCheckCount = 0;
-  }
-  // wallet can be null when protocol is selected directly
-  if(wallet !== undefined) {
-    selectedWallet.value = wallet;
-    // Set cookie for wallet (or remove if null)
-    if($cookies) {
-      if(wallet) {
-        $cookies.set('selectedWallet', wallet, {expires: '1Y'});
-      } else {
-        $cookies.remove('selectedWallet');
-      }
-    }
-  }
-  if(prefersSameDevice !== undefined) {
-    interactionState.prefersSameDevice = prefersSameDevice;
-  }
-};
-
-const handleDcApiLaunch = ({walletId, protocolId}) => {
-  handleSelectProtocol({protocol: protocolId, wallet: walletId});
+const handleDcApiLaunch = ({protocolId}) => {
+  // Launch DC API directly with wallet/protocol
   nextTick(() => {
-    walletInteractionRef.value?.launchDcApi?.();
+    walletInteractionRef.value?.launchDcApi?.(protocolId);
   });
-};
-
-const handleResetWalletSelection = () => {
-  selectedWallet.value = null;
-  // Optionally clear cookie
-  if($cookies) {
-    $cookies.remove('selectedWallet');
-  }
-};
-
-const handleUpdateInteractionState = updates => {
-  Object.assign(interactionState, updates);
-  // Handle nested errors object updates
-  if(updates.errors) {
-    Object.assign(interactionState.errors, updates.errors);
-  }
 };
 
 const handleReplaceExchange = updatedExchange => {
@@ -350,141 +225,6 @@ const handleReplaceExchange = updatedExchange => {
     ...updatedExchange
   };
 };
-
-const handleOverrideActive = () => {
-  state.activeOverride = true;
-};
-
-// Track if we've loaded from cookies to avoid reloading
-const cookiesLoaded = ref(false);
-
-// Load from cookies when exchange data becomes available
-watch(() => context.value?.exchangeData, () => {
-  if(cookiesLoaded.value || !$cookies || !context.value?.exchangeData) {
-    return;
-  }
-
-  const cookieProtocol = $cookies.get('selectedProtocol');
-  const cookieWallet = $cookies.get('selectedWallet');
-
-  // Only use cookie values if they're supported by the exchange
-  if(cookieProtocol && availableProtocols.value.includes(cookieProtocol)) {
-    selectedProtocol.value = cookieProtocol;
-  } else if(availableProtocols.value.length > 0) {
-    // Reset to first available protocol if cookie protocol is not valid
-    selectedProtocol.value = availableProtocols.value[0];
-  }
-
-  if(cookieWallet !== undefined) {
-    // Check if wallet is enabled and supports the selected protocol
-    // or if protocol-only mode
-    if(cookieWallet === null) {
-      selectedWallet.value = null;
-    } else if(enabledWallets.value.includes(cookieWallet) &&
-      walletsRegistry.value[cookieWallet]?.supportedProtocols?.[
-        selectedProtocol.value]) {
-      selectedWallet.value = cookieWallet;
-    } else {
-      // Cookie wallet is not enabled or doesn't support the protocol,
-      // select first available enabled wallet instead
-      if(enabledWallets.value.length > 0) {
-        const firstEnabledWallet = enabledWallets.value[0];
-        selectedWallet.value = firstEnabledWallet;
-
-        // Update protocol to one supported by the selected wallet
-        const wallet = walletsRegistry.value[firstEnabledWallet];
-        if(wallet?.getDefaultProtocol) {
-          const walletProtocol = wallet.getDefaultProtocol({
-            workflow: context.value?.workflow,
-            availableProtocols: availableProtocols.value
-          });
-          if(walletProtocol &&
-            availableProtocols.value.includes(walletProtocol)) {
-            selectedProtocol.value = walletProtocol;
-          }
-        }
-      } else {
-        // Fallback: no wallets enabled (shouldn't happen with defaults)
-        selectedWallet.value = null;
-      }
-    }
-  }
-
-  cookiesLoaded.value = true;
-}, {immediate: true});
-
-// Watch for DC API to QR code transition
-// When user selects "try another way" from DC API, we should override the
-// active state to prevent showing spinner. This handles both cases:
-// 1. Exchange is already active when switching
-// 2. Exchange becomes active later due to race condition (UI hasn't polled yet)
-watch(
-  () => interactionState.dcApiErrorOverride,
-  newValue => {
-    if(newValue) {
-      state.activeOverride = true;
-    }
-  }
-);
-
-onBeforeMount(async () => {
-  if($q.platform.is.mobile) {
-    interactionState.prefersSameDevice = true;
-  }
-
-  // Validate selected wallet is enabled
-  if(selectedWallet.value &&
-    !enabledWallets.value.includes(selectedWallet.value)) {
-    selectedWallet.value = null;
-  }
-
-  // Initialize selected protocol if not set or if default is not available
-  if(availableProtocols.value.length > 0) {
-    const protocols = availableProtocols.value;
-    if(!selectedProtocol.value || !protocols.includes(selectedProtocol.value)) {
-      // Use wallet's getDefaultProtocol function if available
-      // and wallet is enabled
-      const wallet = selectedWallet.value &&
-        enabledWallets.value.includes(selectedWallet.value) ?
-        walletsRegistry.value[selectedWallet.value] : null;
-      if(wallet?.getDefaultProtocol) {
-        const defaultProtocol = wallet.getDefaultProtocol({
-          workflow: context.value?.workflow,
-          availableProtocols: protocols
-        });
-        if(defaultProtocol && protocols.includes(defaultProtocol)) {
-          selectedProtocol.value = defaultProtocol;
-        } else {
-          selectedProtocol.value = protocols[0];
-        }
-      } else {
-        // Try to find a protocol supported by at least one enabled wallet
-        let preferredProtocol = null;
-        for(const walletId of enabledWallets.value) {
-          const enabledWallet = walletsRegistry.value[walletId];
-          if(enabledWallet?.getDefaultProtocol) {
-            const walletProtocol = enabledWallet.getDefaultProtocol({
-              workflow: context.value?.workflow,
-              availableProtocols: protocols
-            });
-            if(walletProtocol && protocols.includes(walletProtocol)) {
-              preferredProtocol = walletProtocol;
-              break;
-            }
-          }
-        }
-        // Default: prefer OID4VP-draft18, or use preferred protocol
-        // from enabled wallet
-        if(preferredProtocol) {
-          selectedProtocol.value = preferredProtocol;
-        } else {
-          selectedProtocol.value = protocols.includes('OID4VP-draft18') ?
-            'OID4VP-draft18' : protocols[0];
-        }
-      }
-    }
-  }
-});
 
 const checkStatus = async () => {
   if(!context.value || !context.value.workflow?.clientId ||
@@ -497,8 +237,6 @@ const checkStatus = async () => {
     new Date(context.value.exchangeData.createdAt).getTime() +
       context.value.exchangeData.ttl * 1000);
   if(ttlDate < new Date()) {
-    $cookies.remove('accessToken');
-    $cookies.remove('exchangeId');
     handleError({
       title: translate('exchangeErrorTitle'),
       subtitle: translate('exchangeErrorSubtitle'),
@@ -547,10 +285,7 @@ const checkStatus = async () => {
     if(exchange.state === 'complete') {
       state.intervalId = clearInterval(state.intervalId);
       state.active = false;
-      state.activeOverride = false;
-      $cookies.remove('accessToken');
-      $cookies.remove('exchangeId');
-    } else if(exchange.state === 'active' && !state.activeOverride) {
+    } else if(exchange.state === 'active') {
       state.active = true;
     } else if(exchange.state === 'invalid') {
       handleError({
@@ -588,7 +323,6 @@ const startStatusCheck = (hurry = false) => {
 
 const handleResetExchange = async () => {
   state.active = true;
-  state.activeOverride = false;
 
   try {
     const resetResult = await httpClient.post(
@@ -619,7 +353,6 @@ const handleResetExchange = async () => {
   }
 
   state.active = false;
-  state.activeOverride = false;
 };
 
 const handleStatusDialogAction = action => {
@@ -631,17 +364,11 @@ const handleStatusDialogAction = action => {
 };
 
 onMounted(async () => {
-  if(registerOpenWalletSelection) {
-    registerOpenWalletSelection(() => walletSelectionRef.value?.open?.());
-  }
   setTimeout(checkStatus, 500);
   startStatusCheck();
 });
 
 onUnmounted(() => {
-  if(registerOpenWalletSelection) {
-    registerOpenWalletSelection(null);
-  }
   if(state.intervalId) {
     state.intervalId = clearInterval(state.intervalId);
   }

@@ -10,9 +10,13 @@ SPDX-License-Identifier: BSD-3-Clause
     variant="primary"
     :loading="loading"
     :disabled="disabled"
-    class="w-full justify-start mx-auto"
-    @click="handleLaunch">
-    <div class="flex items-center gap-3 flex-grow min-w-0">
+    :class="[
+      noFullWidth ? '' : 'w-full',
+      'justify-start',
+      noFullWidth ? '' : 'mx-auto'
+    ]"
+    @click="handleClick">
+    <div class="flex items-center gap-3 flex-grow min-w-0 overflow-hidden">
       <img
         v-if="wallet?.icon"
         :src="wallet.icon"
@@ -23,9 +27,14 @@ SPDX-License-Identifier: BSD-3-Clause
         name="account_balance_wallet"
         size="32px"
         class="flex-shrink-0 text-gray-600" />
-      <span class="font-medium text-left truncate">
+      <span class="font-medium text-left truncate min-w-0">
         {{wallet?.name || walletId}}
       </span>
+      <q-icon
+        v-if="copyOnly"
+        name="content_copy"
+        size="24px"
+        class="flex-shrink-0 ml-auto text-gray-600" />
     </div>
   </cadmv-button>
 </template>
@@ -53,15 +62,28 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  copyOnly: {
+    type: Boolean,
+    default: false
+  },
+  noFullWidth: {
+    type: Boolean,
+    default: false
   }
 });
 
-const emit = defineEmits(['launch']);
+const emit = defineEmits(['launch', 'copy']);
 
-const handleLaunch = () => {
-  emit('launch', {
+const handleClick = () => {
+  const payload = {
     walletId: props.walletId,
     protocolId: props.protocolId
-  });
+  };
+  if(props.copyOnly) {
+    emit('copy', payload);
+  } else {
+    emit('launch', payload);
+  }
 };
 </script>
