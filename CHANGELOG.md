@@ -1,13 +1,13 @@
 # opencred-platform Changelog
 
-## 10.0.0 - 2026-01-XX
+## 10.0.0 - 2026-02-27
 
 ### Added
 - Add optional public workflow listing feature with "enable".
 - Add support for `mso_mdoc` format credentials such as mDL Driver's Licenses
 - Add support for experimental W3C Digital Credentials API
 - Add support for `x509_san_dns` client_id_scheme in OID4VP exchanges.
-- Add wallet selection feature in UI.
+- Add wallet selection feature in UI for QR code or same device link interactions.
 - Add multiple OID4VP protocol versions to support different wallets and enable
   developer testing.
 - Improve VCALM / VC-API exchanges support for additional wallets.
