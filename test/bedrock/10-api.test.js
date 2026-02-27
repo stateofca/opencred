@@ -274,6 +274,9 @@ describe('OpenCred API - Native Workflow', function() {
     result.data.OID4VP.should.be.a('string');
     result.data.accessToken.should.be.a('string');
     result.data.workflowId.should.be.a('string');
+    result.data.continuationUrl.should.be.a('string');
+    result.data.continuationUrl.should.contain('exchange_token=');
+    result.data.continuationUrl.should.contain('/verification');
     insertStub.called.should.equal(true);
     insertStub.restore();
   });
@@ -360,6 +363,8 @@ describe('OpenCred API - Native Workflow', function() {
     should.not.exist(err);
     result.status.should.be.equal(200);
     result.data.exchange.id.should.be.equal(exchange.id);
+    should.not.exist(result.data.exchange.accessToken);
+    should.not.exist(result.data.exchange.continuationUrl);
     findStub.restore();
   });
 

@@ -725,6 +725,25 @@ The HTTP API workflow follows this process:
 * The response will contain an `exchange` object with a `state` that is either
   `pending`, `active`, `complete`, or `invalid` with additional results.
 
+#### Redirecting users to the verification UI
+
+For native workflows, the create exchange response includes a `continuationUrl`
+that you can use to redirect users to OpenCred's verification UI in a new
+window. This enables HTTP clients to avoid building their own verification
+interface.
+
+To use this flow:
+
+1. Create an exchange with `POST /workflows/{workflowId}/exchanges`.
+2. Open the `continuationUrl` in a new window or tab (e.g.
+   `window.open(continuationUrl)`). The user completes the verification in
+   that window.
+3. Poll the exchange status with `GET
+   /workflows/{workflowId}/exchanges/{exchangeId}` until the `state` is
+   `complete` or `invalid`.
+4. The user closes the verification window when done and returns to your
+   application.
+
 ## Testing
 
 ### Load Testing

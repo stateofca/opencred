@@ -27,6 +27,8 @@
 - Add theme defaults and favicon support.
 - Add test command to package.json and CI.
 - Add GitHub Actions test workflow.
+- Add `continuationUrl` to native workflow create exchange response for HTTP
+  API clients to redirect users to OpenCred's verification UI in a new window.
 
 ### Changed
 - **BREAKING**: Simplified config schema with workflows and presets. Removed
