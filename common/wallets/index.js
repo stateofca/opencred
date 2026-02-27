@@ -155,7 +155,8 @@ export function getProtocolInteractionMethods({
 
       if(interactionMethod === 'qr' || interactionMethod === 'link' ||
         interactionMethod === 'copy') {
-        // For qr, link, and copy, use getUrl if available, otherwise use default
+        // For qr, link, and copy, use getUrl if available,
+        // otherwise use default
         if(typeof methodConfig.getUrl === 'function') {
           request = methodConfig.getUrl({exchange, protocol: protocolId});
         } else {

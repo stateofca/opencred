@@ -7,8 +7,12 @@
 
 import expect from 'expect.js';
 import {getProtocolInteractionMethods} from '../../../common/wallets/index.js';
-import {vcalmInteractionWallet} from '../../../common/wallets/vcalm-interaction.js';
+import {
+  vcalmInteractionWallet} from '../../../common/wallets/vcalm-interaction.js';
 
+/** Very basic tests of structural composition, similar to what we would
+ * get from a TypeScript interface.
+*/
 describe('VCALM Interaction Wallet Configuration', () => {
   describe('wallet structure', () => {
     it('should have required fields', () => {
@@ -63,7 +67,8 @@ describe('VCALM Interaction Wallet Configuration', () => {
   });
 
   describe('getProtocolInteractionMethods', () => {
-    it('should return copy and qr for ldp_vc when interact URL available', () => {
+    it('should return copy and qr for ldp_vc when interact URL available ' +
+      'and wallet supports both copy and qr', () => {
       const exchange = {
         protocols: {
           interact: 'https://example.com/interact/123'

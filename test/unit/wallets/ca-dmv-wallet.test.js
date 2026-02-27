@@ -9,6 +9,9 @@ import expect from 'expect.js';
 
 import {caDmvWallet} from '../../../common/wallets/ca-dmv-wallet.js';
 
+/** Very basic tests of structural composition, similar to what we would
+ * get from a TypeScript interface.
+*/
 describe('CA DMV Wallet Configuration', () => {
   describe('wallet structure', () => {
     it('should have required fields', () => {
@@ -86,8 +89,12 @@ describe('CA DMV Wallet Configuration', () => {
 
     it('should have correct formats arrays for OID4VP-draft18', () => {
       const protocol = caDmvWallet.supportedProtocols['OID4VP-draft18'];
-      expect(protocol.qr.formats).to.eql(['ldp_vc', 'jwt_vc_json']);
-      expect(protocol.link.formats).to.eql(['ldp_vc', 'jwt_vc_json']);
+      expect(protocol.qr.formats).to.contain('ldp_vc');
+      expect(protocol.qr.formats).to.contain('jwt_vc_json');
+      expect(protocol.qr.formats.length).to.be(2);
+      expect(protocol.link.formats).to.contain('ldp_vc');
+      expect(protocol.link.formats).to.contain('jwt_vc_json');
+      expect(protocol.link.formats.length).to.be(2);
     });
   });
 

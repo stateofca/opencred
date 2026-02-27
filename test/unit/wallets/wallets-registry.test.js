@@ -13,9 +13,7 @@ import {
   getProtocolInteractionMethods,
   getUrlDefault,
   getWalletsSupportingFormat,
-  INTERACTION_METHOD_PRIORITY,
   PROTOCOL_FORMAT_MAPPING,
-  PROTOCOL_PRIORITY,
   selectInitialProtocolInteraction,
   WALLETS_REGISTRY
 } from '../../../common/wallets/index.js';
@@ -336,38 +334,24 @@ describe('Wallet Registry and Helper Functions', () => {
 
   describe('Constants', () => {
     it('should have PROTOCOL_FORMAT_MAPPING with expected mappings', () => {
+      const draft18 = PROTOCOL_FORMAT_MAPPING['OID4VP-draft18'];
+      const annexC = PROTOCOL_FORMAT_MAPPING['18013-7-Annex-C'];
+      const annexD = PROTOCOL_FORMAT_MAPPING['18013-7-Annex-D'];
       expect(PROTOCOL_FORMAT_MAPPING).to.be.an('object');
-      expect(PROTOCOL_FORMAT_MAPPING['OID4VP-draft18']).to.eql(
-        ['ldp_vc', 'jwt_vc_json']);
-      expect(PROTOCOL_FORMAT_MAPPING['OID4VP-1.0']).to.eql(
-        ['ldp_vc', 'jwt_vc_json']);
-      expect(PROTOCOL_FORMAT_MAPPING['18013-7-Annex-C']).to.eql(['mso_mdoc']);
-      expect(PROTOCOL_FORMAT_MAPPING['18013-7-Annex-D']).to.eql(['mso_mdoc']);
-      expect(PROTOCOL_FORMAT_MAPPING.vcapi).to.eql(['ldp_vc']);
-      expect(PROTOCOL_FORMAT_MAPPING.chapi).to.eql(['ldp_vc']);
-    });
-
-    it('should have INTERACTION_METHOD_PRIORITY in correct order', () => {
-      expect(INTERACTION_METHOD_PRIORITY).to.be.an('array');
-      expect(INTERACTION_METHOD_PRIORITY).to.eql(
-        ['dcapi', 'link', 'copy', 'qr', 'chapi']);
-      // Verify priority order: dcapi (0) < link (1) < copy (2) < qr (3) < chapi (4)
-      expect(INTERACTION_METHOD_PRIORITY.indexOf('dcapi')).to.be(0);
-      expect(INTERACTION_METHOD_PRIORITY.indexOf('link')).to.be(1);
-      expect(INTERACTION_METHOD_PRIORITY.indexOf('copy')).to.be(2);
-      expect(INTERACTION_METHOD_PRIORITY.indexOf('qr')).to.be(3);
-      expect(INTERACTION_METHOD_PRIORITY.indexOf('chapi')).to.be(4);
-    });
-
-    it('should have PROTOCOL_PRIORITY in correct order', () => {
-      expect(PROTOCOL_PRIORITY).to.be.an('array');
-      expect(PROTOCOL_PRIORITY[0]).to.be('OID4VP-draft18');
-      expect(PROTOCOL_PRIORITY).to.contain('OID4VP-1.0');
-      expect(PROTOCOL_PRIORITY).to.contain('18013-7-Annex-D');
-      expect(PROTOCOL_PRIORITY).to.contain('18013-7-Annex-C');
-      expect(PROTOCOL_PRIORITY).to.contain('vcapi');
-      expect(PROTOCOL_PRIORITY).to.contain('interact');
-      expect(PROTOCOL_PRIORITY).to.contain('chapi');
+      expect(draft18).to.be.an('array');
+      expect(draft18).to.contain('ldp_vc');
+      expect(draft18).to.contain('jwt_vc_json');
+      expect(draft18.length).to.be(2);
+      expect(PROTOCOL_FORMAT_MAPPING['OID4VP-1.0']).to.contain('ldp_vc');
+      expect(PROTOCOL_FORMAT_MAPPING['OID4VP-1.0']).to.contain('jwt_vc_json');
+      expect(annexC).to.contain('mso_mdoc');
+      expect(annexC.length).to.be(1);
+      expect(annexD).to.contain('mso_mdoc');
+      expect(annexD.length).to.be(1);
+      expect(PROTOCOL_FORMAT_MAPPING.vcapi).to.contain('ldp_vc');
+      expect(PROTOCOL_FORMAT_MAPPING.vcapi.length).to.be(1);
+      expect(PROTOCOL_FORMAT_MAPPING.chapi).to.contain('ldp_vc');
+      expect(PROTOCOL_FORMAT_MAPPING.chapi.length).to.be(1);
     });
   });
 

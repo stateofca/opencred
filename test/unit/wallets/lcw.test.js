@@ -8,6 +8,9 @@
 import expect from 'expect.js';
 import {lcwWallet} from '../../../common/wallets/lcw.js';
 
+/** Very basic tests of structural composition, similar to what we would
+ * get from a TypeScript interface.
+*/
 describe('LCW Wallet Configuration', () => {
   describe('wallet structure', () => {
     it('should have required fields', () => {
