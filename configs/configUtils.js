@@ -364,8 +364,14 @@ export const ReCaptchaSchema = z.object({
 export const DidWebSchema = z.object({
   mainEnabled: z.boolean().default(false),
   linkageEnabled: z.boolean().default(false),
-  mainDocument: z.record(z.any()).optional(),
-  linkageDocument: z.record(z.any()).optional()
+  mainDocument: z.preprocess(
+    val => typeof val === 'string' ? JSON.parse(val) : val,
+    z.record(z.string(), z.unknown())
+  ).optional(),
+  linkageDocument: z.preprocess(
+    val => typeof val === 'string' ? JSON.parse(val) : val,
+    z.record(z.string(), z.unknown())
+  ).optional()
 });
 
 // Signing key schema

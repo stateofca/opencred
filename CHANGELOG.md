@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 10.0.1 - 2026-03-dd
+
+### Added
+- Allow encoded JSON string for mainDocument and linkageDocument.
+
 ## 10.0.0 - 2026-02-27
 
 ### Added
