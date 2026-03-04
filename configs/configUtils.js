@@ -377,6 +377,7 @@ export const DidWebSchema = z.object({
 // Signing key schema
 export const SigningKeySchema = z.object({
   type: z.enum(['ES256', 'RS256']),
+  id: z.string().optional(),
   purpose: z.array(z.string()).refine(val => val.length > 0, {
     message: 'Purpose must be an array of at least one string'
   }),

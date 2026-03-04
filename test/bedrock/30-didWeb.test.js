@@ -149,6 +149,44 @@ describe('OpenCred did:web support', function() {
     didWebStub.restore();
     signingKeyStub.restore();
   });
+
+  it('should use JWK thumbprint when signing key has no id', async function() {
+    const didWebStub = sinon.stub(config.opencred, 'didWeb').value({
+      mainEnabled: true
+    });
+    // Create a key without id field
+    const keyWithoutId = {
+      type: 'ES256',
+      purpose: ['authorization_request'],
+      privateKeyPem: exampleKey2.privateKeyPem,
+      publicKeyPem: exampleKey2.publicKeyPem
+    };
+    const signingKeyStub = sinon.stub(config.opencred, 'signingKeys').value(
+      [keyWithoutId]
+    );
+
+    let result;
+    let err;
+    try {
+      result = await client.get(`${baseUrl}/.well-known/did.json`);
+    } catch(e) {
+      err = e;
+    }
+
+    should.not.exist(err);
+    result.status.should.be.equal(200);
+    result.data.verificationMethod.length.should.be.equal(1);
+    result.data.assertionMethod.length.should.be.equal(1);
+    // Fragment should not contain 'undefined'
+    result.data.verificationMethod[0].id.should.not.include('undefined');
+    result.data.verificationMethod[0].id.should.match(/^did:web:.+#[^#]+$/);
+    result.data.verificationMethod[0].id.should.be.equal(
+      result.data.assertionMethod[0]
+    );
+
+    didWebStub.restore();
+    signingKeyStub.restore();
+  });
 });
 
 describe('DID Linked Domain credential endpoint', () => {

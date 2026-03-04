@@ -5,6 +5,10 @@
 ### Added
 - Allow encoded JSON string for mainDocument and linkageDocument.
 
+### Fixed
+- Fix issue with didWeb document signing key ID, allow customization or use
+  automatically calculated thumbprint.
+
 ## 10.0.0 - 2026-02-27
 
 ### Added
