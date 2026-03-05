@@ -79,6 +79,10 @@ SPDX-License-Identifier: BSD-3-Clause
           </label>
         </div>
       </div>
+
+      <p class="text-xs text-gray-600 mt-4">
+        {{$t('appSettings_refreshNote')}}
+      </p>
     </q-card-section>
     <q-card-actions
       align="right">

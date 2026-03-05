@@ -104,6 +104,7 @@
   "appSettings_protocolsExplain": "Enable additional protocols for testing and development.",
   "appSettings_notAvailableForExchange": "Not available for this exchange",
   "appSettings_reset": "Reset",
+  "appSettings_refreshNote": "Changes require a refresh to take effect.",
   "interactionPicker_chooseHowToConnect": "Choose how to connect",
   "interactionPicker_current": "Current",
   "close": "Close",
