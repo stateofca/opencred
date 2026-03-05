@@ -9,7 +9,7 @@ on: [push]
 
 jobs:
   lint:
-    if: vars.WORKFLOW_LINT_ENABLED == 'true'
+    if: ${{ vars.WORKFLOW_LINT_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:

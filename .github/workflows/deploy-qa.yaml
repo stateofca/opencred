@@ -8,7 +8,7 @@ on:
 
 jobs:
   deploy:
-    if: vars.WORKFLOW_DEPLOY_QA_ENABLED == 'true'
+    if: ${{ vars.WORKFLOW_DEPLOY_QA_ENABLED == 'true' }}
     uses: digitalbazaar/cadmv-qa-environment-tf/.github/workflows/deploy-app-reusable.yml@main
     with:
       # CUSTOMIZE THESE FOR YOUR APP:
