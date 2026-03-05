@@ -38,7 +38,7 @@ OpenCred supports the following list of features:
 
 ### Configuration
 
-The app is configured via a YAML file compatible with 
+The app is configured via a YAML file compatible with
 [@bedrock/config-yaml](https://www.npmjs.com/package/@bedrock/config-yaml). See
 [configs/combined.example.yaml](configs/combined.example.yaml) for an example.
 
@@ -795,6 +795,13 @@ With:
 ```
 npm run test:load:qa
 ```
+
+## Commercial Support
+
+General commercial support for OpenCred is available through
+[Digital Bazaar](https://www.digitalbazaar.com/). Commercial support for the
+`@spruceid/opencred-dc-api` package is available through
+[Spruce ID](https://spruceid.com/).
 
 ## License
 
