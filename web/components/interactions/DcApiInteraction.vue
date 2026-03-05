@@ -36,19 +36,31 @@ SPDX-License-Identifier: BSD-3-Clause
         </cadmv-button>
       </div>
     </div>
-    <!-- Normal State: wallet launch buttons -->
+    <!-- Normal State: generic platform-based launch buttons -->
     <div
       v-else
-      class="flex flex-col gap-3 w-full max-w-md mx-auto">
-      <WalletLaunchButton
-        v-for="{walletId, protocolId} in compatibleWallets"
-        :key="walletId"
-        :wallet="walletsRegistry?.[walletId]"
-        :wallet-id="walletId"
-        :protocol-id="protocolId"
+      class="flex flex-col gap-3 max-w-md mx-auto">
+      <cadmv-button
+        v-for="button in availableButtons"
+        :key="button.protocolId"
+        variant="primary"
         :loading="active"
         :disabled="active"
-        @launch="handleLaunch" />
+        :class="['w-full', 'justify-start']"
+        @click="handleLaunch(button.protocolId)">
+        <div class="flex items-center gap-3 flex-grow min-w-0 overflow-hidden">
+          <q-icon
+            :name="button.icon"
+            size="32px"
+            class="flex-shrink-0 text-gray-600" />
+          <span class="font-medium text-left truncate min-w-0">
+            {{button.label}}
+          </span>
+        </div>
+      </cadmv-button>
+      <p v-if="availableButtons.length === 0">
+        No compatible wallet found.
+      </p>
     </div>
     <!-- Countdown Display -->
     <p
@@ -63,15 +75,11 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
-import {
-  extractCredentialFormats,
-  filterWalletsByFormatSupport,
-  getProtocolInteractionMethods
-} from '../../../common/wallets/index.js';
+import {QIcon, useQuasar} from 'quasar';
 import {CadmvButton} from '@digitalbazaar/cadmv-ui';
 import {computed} from 'vue';
 import CountdownDisplay from '../CountdownDisplay.vue';
-import WalletLaunchButton from '../WalletLaunchButton.vue';
+import {useI18n} from 'vue-i18n';
 
 const props = defineProps({
   exchangeData: {
@@ -86,92 +94,91 @@ const props = defineProps({
     type: [Object, String],
     default: null
   },
-  walletsRegistry: {
-    type: Object,
-    default: () => ({})
-  },
-  availableProtocols: {
-    type: Array,
-    default: () => []
-  },
-  workflow: {
-    type: Object,
-    default: null
-  },
-  enabledWallets: {
-    type: Array,
-    default: null
+  hasMultipleInteractionOptions: {
+    type: Boolean,
+    default: false
   }
 });
 
-const emit = defineEmits(['activate', 'errorOverride', 'launch', 'retry']);
+const emit = defineEmits([
+  'errorOverride',
+  'launch',
+  'retry',
+  'switchInteractionMethod'
+]);
 
-const compatibleWallets = computed(() => {
-  // Extract credential formats from workflow
-  const formats = extractCredentialFormats(props.workflow);
-  if(formats.length === 0) {
-    return [];
-  }
+const $q = useQuasar();
+const {t} = useI18n({useScope: 'global'});
 
-  // Filter wallets by format support
-  const compatibleWallets = filterWalletsByFormatSupport({
-    walletIds: props.enabledWallets || [],
-    formats,
-    registry: props.walletsRegistry
-  });
+const isIOS = computed(() => $q.platform?.is?.ios ?? false);
+const isAndroid = computed(() => $q.platform?.is?.android ?? false);
 
-  // Filter for wallets that support DC API for available protocols
-  const dcApiCompatible = [];
-  for(const walletId of compatibleWallets) {
-    // Check if wallet supports DC API for any available protocol
-    for(const protocolId of props.availableProtocols) {
-      // Skip protocols that don't support DC API
-      if(['chapi', 'vcapi', 'interact'].includes(protocolId)) {
-        continue;
-      }
+const showAnnexC = computed(() => {
+  return !!props.exchangeData?.protocols?.['18013-7-Annex-C'];
+});
 
-      // Check if wallet supports DC API for this protocol with mso_mdoc format
-      // (DC API typically requires mso_mdoc)
-      const combinations = getProtocolInteractionMethods({
-        walletId,
-        format: 'mso_mdoc',
-        exchange: props.exchangeData,
-        registry: props.walletsRegistry
+const showAnnexD = computed(() => {
+  return !!props.exchangeData?.protocols?.['18013-7-Annex-D'];
+});
+
+const availableButtons = computed(() => {
+  const buttons = [];
+
+  if(isIOS.value) {
+    // iOS: Show one button for Annex-C
+    if(showAnnexC.value) {
+      buttons.push({
+        protocolId: '18013-7-Annex-C',
+        label: t('launchWalletAppIOS'),
+        icon: 'account_balance_wallet'
       });
-
-      const hasDcApi = combinations.some(c =>
-        c.protocolId === protocolId && c.interactionMethod === 'dcapi'
-      );
-
-      if(hasDcApi) {
-        dcApiCompatible.push({walletId, protocolId});
-        break; // Found one protocol, move to next wallet
-      }
+    }
+  } else if(isAndroid.value) {
+    // Android: Show one button for Annex-D
+    if(showAnnexD.value) {
+      buttons.push({
+        protocolId: '18013-7-Annex-D',
+        label: t('launchWalletAppAndroid'),
+        icon: 'account_balance_wallet'
+      });
+    }
+  } else {
+    // Desktop/Other: Show both buttons
+    if(showAnnexC.value) {
+      buttons.push({
+        protocolId: '18013-7-Annex-C',
+        label: t('launchWalletAppIOS'),
+        icon: 'phone_iphone'
+      });
+    }
+    if(showAnnexD.value) {
+      buttons.push({
+        protocolId: '18013-7-Annex-D',
+        label: t('launchWalletAppAndroid'),
+        icon: 'phone_android'
+      });
     }
   }
 
-  return dcApiCompatible;
+  return buttons;
 });
 
 // Determine if "Try Another Way" button should be shown
-// Only show if workflow supports multiple credential formats
+// Show only when there's an error AND there are multiple interaction
+// options available (matching picker logic)
 const shouldShowTryAnotherWay = computed(() => {
-  const formats = extractCredentialFormats(props.workflow);
-  // Show button if multiple formats are available (allowing fallback from
-  // mso_mdoc to other formats like ldp_vc)
-  return formats.length > 1;
+  return !!props.error && props.hasMultipleInteractionOptions;
 });
 
-const handleLaunch = ({walletId, protocolId}) => {
-  emit('launch', {walletId, protocolId});
+const handleLaunch = protocolId => {
+  emit('launch', {protocolId});
 };
 
 const handleTryAnotherWay = () => {
-  emit('errorOverride');
+  emit('switchInteractionMethod', null);
 };
 
 const handleRetry = () => {
   emit('retry');
 };
 </script>
-

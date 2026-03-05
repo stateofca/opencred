@@ -6,7 +6,50 @@ SPDX-License-Identifier: BSD-3-Clause
 -->
 
 <template>
+  <!-- Render as link when href is provided -->
+  <a
+    v-if="href"
+    :href="href"
+    target="_blank"
+    rel="noopener noreferrer"
+    :class="[
+      noFullWidth ? '' : 'w-full',
+      disabled ?
+        'opacity-50 cursor-not-allowed pointer-events-none'
+        : 'cursor-pointer'
+    ]">
+    <cadmv-button
+      variant="primary"
+      :disabled="disabled"
+      :class="[
+        noFullWidth ? '' : 'w-full',
+        'justify-start'
+      ]">
+      <div class="flex items-center gap-3 flex-grow min-w-0 overflow-hidden">
+        <img
+          v-if="wallet?.icon"
+          :src="wallet.icon"
+          :alt="wallet?.nameKey ? $t(wallet.nameKey) : (wallet?.name || '')"
+          class="w-8 h-8 rounded-sm flex-shrink-0">
+        <q-icon
+          v-else
+          name="account_balance_wallet"
+          size="32px"
+          class="flex-shrink-0 text-gray-600" />
+        <span class="font-medium text-left truncate min-w-0">
+          {{wallet?.nameKey ? $t(wallet.nameKey) : (wallet?.name || walletId)}}
+        </span>
+        <q-icon
+          v-if="copyOnly"
+          name="content_copy"
+          size="24px"
+          class="flex-shrink-0 ml-auto text-gray-600" />
+      </div>
+    </cadmv-button>
+  </a>
+  <!-- Render as button when href is not provided (DC API mode) -->
   <cadmv-button
+    v-else
     variant="primary"
     :loading="loading"
     :disabled="disabled"
@@ -20,7 +63,7 @@ SPDX-License-Identifier: BSD-3-Clause
       <img
         v-if="wallet?.icon"
         :src="wallet.icon"
-        :alt="wallet.name"
+        :alt="wallet?.nameKey ? $t(wallet.nameKey) : (wallet?.name || '')"
         class="w-8 h-8 rounded-sm flex-shrink-0">
       <q-icon
         v-else
@@ -28,7 +71,7 @@ SPDX-License-Identifier: BSD-3-Clause
         size="32px"
         class="flex-shrink-0 text-gray-600" />
       <span class="font-medium text-left truncate min-w-0">
-        {{wallet?.name || walletId}}
+        {{wallet?.nameKey ? $t(wallet.nameKey) : (wallet?.name || walletId)}}
       </span>
       <q-icon
         v-if="copyOnly"
@@ -54,6 +97,10 @@ const props = defineProps({
   protocolId: {
     type: String,
     required: true
+  },
+  href: {
+    type: String,
+    default: null
   },
   loading: {
     type: Boolean,

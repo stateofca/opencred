@@ -8,10 +8,16 @@
   better working with forks.
 - Add configuration script to generate a complete configuration with signing keys,
   a self-signed certificate (with SAN DNS for your domain), and starter workflows.
+- Add workflow option picker. When initially selected workflow is unavailable,
+  enable connection of different wallets over several supported protocols to
+  complete an exchange.
+- Add advanced settings menu for selecting additional protocols to try (e.g.,
+  OID4VP-1.0 with dcql_query for Spruce pre-release wallet testing).
 
 ### Fixed
 - Fix issue with didWeb document signing key ID, allow customization or use
   automatically calculated thumbprint.
+- Improve automatic protocol selection and descriptive text.
 
 ## 10.0.0 - 2026-02-27
 
@@ -25,7 +31,8 @@
   developer testing.
 - Improve VCALM / VC-API exchanges support for additional wallets.
 - Add `@spruceid/opencred-dc-api` to support DC API interaction method
-  exchanges requesting mDoc credentials only.
+  exchanges requesting mDoc credentials only. Co-authored by
+  [Ryanmtate](https://github.com/Ryanmtate).
 - Add new simplified "query" format for workflows enabling simpler query
   construction for requested credential types.
 - Add workflow "presets" for common use cases, starting with ISO 18013

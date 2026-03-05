@@ -160,8 +160,16 @@ export async function startDCApiFlow({
       `/exchanges/${exchangeData.id}` +
       `/openid/client/authorization/response`;
 
+    // Format response based on protocol
+    // Annex C: Send full DigitalCredential object (server extracts
+    //   data.Response)
+    // Annex D: Send just the data object (server expects {state, vp_token})
+    const responseBody = isAnnexC ?
+      credentialResponse :
+      credentialResponse.data;
+
     const {data: result} = await httpClient.post(responseUrl, {
-      json: credentialResponse,
+      json: responseBody,
       headers: {
         Authorization: `Bearer ${exchangeData.accessToken}`
       }

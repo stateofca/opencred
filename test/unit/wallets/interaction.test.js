@@ -7,62 +7,61 @@
 
 import expect from 'expect.js';
 import {getProtocolInteractionMethods} from '../../../common/wallets/index.js';
-import {
-  vcalmInteractionWallet} from '../../../common/wallets/vcalm-interaction.js';
+import {interactionWallet} from '../../../common/wallets/protocols/index.js';
 
 /** Very basic tests of structural composition, similar to what we would
  * get from a TypeScript interface.
 */
-describe('VCALM Interaction Wallet Configuration', () => {
+describe('Interaction Wallet Configuration', () => {
   describe('wallet structure', () => {
     it('should have required fields', () => {
-      expect(vcalmInteractionWallet).to.have.property('id');
-      expect(vcalmInteractionWallet).to.have.property('name');
-      expect(vcalmInteractionWallet).to.have.property('description');
-      expect(vcalmInteractionWallet).to.have.property('supportedFormats');
-      expect(vcalmInteractionWallet).to.have.property('supportedProtocols');
+      expect(interactionWallet).to.have.property('id');
+      expect(interactionWallet).to.have.property('name');
+      expect(interactionWallet).to.have.property('descriptionKey');
+      expect(interactionWallet).to.have.property('supportedFormats');
+      expect(interactionWallet).to.have.property('supportedProtocols');
     });
 
     it('should have correct id and name', () => {
-      expect(vcalmInteractionWallet.id).to.be('vcalm-interaction');
-      expect(vcalmInteractionWallet.name).to.be('VCALM Interaction');
+      expect(interactionWallet.id).to.be('interaction');
+      expect(interactionWallet.name).to.be('Interaction');
     });
 
-    it('should have description', () => {
-      expect(vcalmInteractionWallet.description).to.be.a('string');
-      expect(vcalmInteractionWallet.description.length).to.be.greaterThan(0);
+    it('should have descriptionKey for i18n', () => {
+      expect(interactionWallet.descriptionKey).to.be.a('string');
+      expect(interactionWallet.descriptionKey.length).to.be.greaterThan(0);
     });
 
     it('should not have custom icon (uses generic)', () => {
-      expect(vcalmInteractionWallet).to.not.have.property('icon');
+      expect(interactionWallet).to.not.have.property('icon');
     });
   });
 
   describe('supportedFormats', () => {
     it('should contain expected formats', () => {
-      expect(vcalmInteractionWallet.supportedFormats).to.be.an('array');
-      expect(vcalmInteractionWallet.supportedFormats).to.contain('ldp_vc');
-      expect(vcalmInteractionWallet.supportedFormats.length).to.be(1);
+      expect(interactionWallet.supportedFormats).to.be.an('array');
+      expect(interactionWallet.supportedFormats).to.contain('ldp_vc');
+      expect(interactionWallet.supportedFormats.length).to.be(1);
     });
   });
 
   describe('protocol/interaction method combinations', () => {
     it('should support ldp_vc + interact + copy', () => {
-      const protocol = vcalmInteractionWallet.supportedProtocols.interact;
+      const protocol = interactionWallet.supportedProtocols.interact;
       expect(protocol).to.be.an('object');
       expect(protocol.copy).to.be.an('object');
       expect(protocol.copy.formats).to.be.an('array');
       expect(protocol.copy.formats).to.contain('ldp_vc');
-      expect(protocol.copy.description).to.be.a('string');
+      expect(protocol.copy.descriptionKey).to.be.a('string');
     });
 
     it('should support ldp_vc + interact + qr', () => {
-      const protocol = vcalmInteractionWallet.supportedProtocols.interact;
+      const protocol = interactionWallet.supportedProtocols.interact;
       expect(protocol).to.be.an('object');
       expect(protocol.qr).to.be.an('object');
       expect(protocol.qr.formats).to.be.an('array');
       expect(protocol.qr.formats).to.contain('ldp_vc');
-      expect(protocol.qr.description).to.be.a('string');
+      expect(protocol.qr.descriptionKey).to.be.a('string');
     });
   });
 
@@ -75,7 +74,7 @@ describe('VCALM Interaction Wallet Configuration', () => {
         }
       };
       const combinations = getProtocolInteractionMethods({
-        walletId: 'vcalm-interaction',
+        walletId: 'interaction',
         format: 'ldp_vc',
         exchange
       });
@@ -94,7 +93,7 @@ describe('VCALM Interaction Wallet Configuration', () => {
     it('should return empty array when interact URL not available', () => {
       const exchange = {protocols: {}};
       const combinations = getProtocolInteractionMethods({
-        walletId: 'vcalm-interaction',
+        walletId: 'interaction',
         format: 'ldp_vc',
         exchange
       });

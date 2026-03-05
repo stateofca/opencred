@@ -25,7 +25,7 @@ describe('Wallet Registry and Helper Functions', () => {
       expect(WALLETS_REGISTRY).to.have.property('lcw');
       expect(WALLETS_REGISTRY).to.have.property('google-wallet');
       expect(WALLETS_REGISTRY).to.have.property('apple-wallet');
-      expect(WALLETS_REGISTRY).to.have.property('vcalm-interaction');
+      expect(WALLETS_REGISTRY).to.have.property('interaction');
     });
 
     it('should have wallet objects with required structure', () => {

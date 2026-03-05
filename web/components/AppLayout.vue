@@ -11,11 +11,11 @@ SPDX-License-Identifier: BSD-3-Clause
       :ca-gov-url="brand?.primaryLogo?.href ?? brand?.primaryLink"
       :ca-gov-logo="typeof brand?.primaryLogo === 'string' ?
         brand?.primaryLogo : brand?.primaryLogo?.id"
-      :ca-gov-alt="brand?.primaryLogo?.alt || 'logo-image'"
+      :ca-gov-alt="brand?.primaryLogo?.alt || $t('logo_alt')"
       :dmv-url="brand?.secondaryLogo?.href ?? brand?.secondaryLink"
       :dmv-logo="typeof brand?.secondaryLogo === 'string' ?
         brand?.secondaryLogo : brand?.secondaryLogo?.id"
-      :dmv-alt="brand?.secondaryLogo?.alt || 'logo-image'">
+      :dmv-alt="brand?.secondaryLogo?.alt || $t('logo_alt')">
       <div
         id="translations-btn"
         class="flex-grow flex justify-end items-center gap-3">
@@ -41,7 +41,7 @@ SPDX-License-Identifier: BSD-3-Clause
               @click="handleLanguageChange(item)">
               <q-item-section>
                 <q-item-label>
-                  {{$t(`languages.${item}`)}}
+                  {{$t(`languages_${item}`)}}
                 </q-item-label>
               </q-item-section>
             </q-item>
@@ -91,16 +91,35 @@ SPDX-License-Identifier: BSD-3-Clause
       <div
         class="text-left"
         v-html="$t('copyright')" />
+      <q-btn
+        flat
+        round
+        dense
+        size="sm"
+        icon="settings"
+        :aria-label="$t('settings_ariaLabel')"
+        class="text-gray-600"
+        @click="showSettingsModal = true" />
     </footer>
+    <AppSettingsModal
+      v-model="showSettingsModal"
+      :user-settings="userSettings"
+      :workflow="context.workflow"
+      :available-protocols="availableProtocols"
+      :exchange="context.exchangeData"
+      :platform="platform"
+      :dc-api-system-available="dcApiSystemAvailable"
+      @update:user-settings="v => userSettings.value = v" />
   </div>
 </template>
 
 <script setup>
 import {computed, onBeforeMount, onMounted, provide, ref, watch} from 'vue';
+import {setCssVar, useQuasar} from 'quasar';
+import AppSettingsModal from './AppSettingsModal.vue';
 import {CadmvHeader} from '@digitalbazaar/cadmv-ui';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
-import {setCssVar} from 'quasar';
 import {useHead} from 'unhead';
 import {useI18n} from 'vue-i18n';
 import {useRoute} from 'vue-router';
@@ -122,6 +141,7 @@ const useNativeTranslations = ref(true);
 const {locale, availableLocales, t} = useI18n({useScope: 'global'});
 
 const route = useRoute();
+const $q = useQuasar();
 
 // Context for current workflow - will be fetched or use config default
 const context = ref({
@@ -131,11 +151,47 @@ const context = ref({
   initError: null
 });
 
-const brand = computed(() => context.value.workflow.brand);
+const brand = computed(() => context.value.workflow?.brand);
 const workflow = computed(() => context.value.workflow);
+
+const availableProtocols = computed(() => {
+  const ctx = context.value;
+  if(ctx?.exchangeData?.protocols) {
+    return Object.keys(ctx.exchangeData.protocols);
+  }
+  if(!ctx?.options?.exchangeProtocols) {
+    return [];
+  }
+  return ctx.options.exchangeProtocols.map(p => {
+    if(p === 'openid4vp') {
+      return ctx.options.OID4VPdefault || 'OID4VP-combined';
+    }
+    return p;
+  });
+});
+
+const platform = computed(() => ({
+  isIOS: $q.platform?.is?.ios ?? false,
+  isAndroid: $q.platform?.is?.android ?? false,
+  isMobile: ($q.platform?.is?.ios ?? false) ||
+    ($q.platform?.is?.android ?? false)
+}));
+
+const dcApiSystemAvailable = ref(false);
+
+const showSettingsModal = ref(false);
+const userSettings = ref({
+  enabledWallets: [],
+  enabledProtocols: []
+});
 
 // Fetch context if needed (for initial render)
 onBeforeMount(async () => {
+  const {loadUserSettings} = await import(
+    '../../common/wallets/canShowOption.js'
+  );
+  userSettings.value = loadUserSettings();
+
   const exchangeType = route.name;
   // Skip context fetching for audit route (no context endpoint exists)
   if(exchangeType && exchangeType !== 'Audit Presentation') {
@@ -172,8 +228,9 @@ onBeforeMount(async () => {
   }
 });
 
-// Provide context to child components
+// Provide context and userSettings to child components
 provide('exchangeContext', context);
+provide('userSettings', userSettings);
 
 const handleLanguageChange = lang => {
   locale.value = lang;
@@ -202,6 +259,9 @@ watch(
 );
 
 onMounted(() => {
+  dcApiSystemAvailable.value = !!(
+    navigator.credentials && window.DigitalCredential !== undefined
+  );
   if(config.customTranslateScript) {
     const transEl = document.createElement('google-translate');
     if(config.customTranslateScript.indexOf('translate.google.com') >= 0) {

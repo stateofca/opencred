@@ -10,59 +10,76 @@ SPDX-License-Identifier: BSD-3-Clause
     <!-- Priority-based interaction display -->
     <DcApiInteraction
       v-if="activeInteractionType === 'dcapi'"
+      :key="'dcapi'"
       :exchange-data="exchangeData"
       :error="interactionState.dcApiError"
       :active="isActive"
-      :wallets-registry="walletsRegistry"
-      :available-protocols="availableProtocols"
-      :workflow="workflow"
-      :enabled-wallets="enabledWallets"
-      @activate="handleDcApiActivate"
+      :has-multiple-interaction-options="hasMultipleInteractionOptions"
       @launch="handleDcApiLaunch"
-      @error-override="handleDcApiErrorOverride"
+      @switch-interaction-method="handleSwitchInteractionMethod"
       @retry="handleDcApiRetry" />
-    <QrCodeInteraction
-      v-else-if="activeInteractionType === 'qr'"
+    <QrAndLinkInteraction
+      v-else-if="activeInteractionType === 'qr-and-link'"
       :exchange-data="exchangeData"
       :active="isActive"
-      :wallets-registry="walletsRegistry"
-      :compatible-wallets="qrCompatibleWallets"
-      :workflow="workflow"
-      @toggle-same-device="setPreferSameDevice"
-      @go-back="qrDisplayOverrideOff" />
-    <SameDeviceLinkInteraction
-      v-else-if="activeInteractionType === 'link' &&
-        interactionState.prefersSameDevice"
       :deep-link-url="protocolUrl"
-      :exchange-data="exchangeData"
       :protocol-type="protocolType"
+      :wallets-registry="walletsRegistry"
+      :compatible-wallets="compatibleWalletsForActiveOption"
+      :workflow="workflow"
+      @launch="handleSameDeviceLaunch"
+      @go-back="handleQrAndLinkGoBack" />
+    <QrAndCopyInteraction
+      v-else-if="activeInteractionType === 'qr-and-copy'"
+      :exchange-data="exchangeData"
       :active="isActive"
       :wallets-registry="walletsRegistry"
-      :compatible-wallets="sameDeviceCompatibleWallets"
+      :compatible-wallets="compatibleWalletsForActiveOption"
       :workflow="workflow"
-      @toggle-qr="setPreferQr"
-      @launch="handleSameDeviceLaunch" />
+      @launch="handleSameDeviceLaunch"
+      @go-back="handleQrAndCopyGoBack" />
     <ChapiInteraction
       v-else-if="activeInteractionType === 'chapi'"
       :exchange-data="exchangeData"
       :active="isActive"
       @activate="handleChapiActivate"
-      @error="handleChapiError" />
+      @error="handleChapiError"
+      @switch-interaction-method="handleSwitchInteractionMethod" />
     <div v-else>
       <p class="text-left text-sm mb-2 text-gray-900">
-        No wallet interaction available.
+        No wallet interaction available. This may be a configuration error, or
+        your current device may not support a connection method that supports
+        any of the requested credential types.
       </p>
+    </div>
+    <div
+      v-if="pickerAvailableOptions.length > 1">
+      <div
+        class="mt-4 mx-auto text-center">
+        <cadmv-button
+          no-caps
+          variant="flat"
+          :label="$t('otherOptions')"
+          @click="showInteractionPicker = true" />
+      </div>
+      <InteractionPickerModal
+        v-model="showInteractionPicker"
+        :available-options="pickerAvailableOptions"
+        :current-option="currentPickerOption"
+        :current-interaction-type="activeInteractionType"
+        :wallets-registry="walletsRegistry"
+        @select="handlePickerSelect" />
     </div>
     <pre
       v-if="isDebugMode"
       class="text-left text-xs mb-2 text-gray-600">
 active interaction type: {{activeInteractionType ?? 'null'}}
+active picker option: {{activePickerOption}}
 state: {{exchangeState}}
 available protocols: {{availableProtocols}}
 active: {{isActive}}
 workflow: {{workflow}}
 interaction state:
-prefersSameDevice={{interactionState.prefersSameDevice}}
 dcApiErrorOverride={{interactionState.dcApiErrorOverride}}
 dcApiError={{interactionState.dcApiError}}
 dcapi system available: {{dcApiSystemAvailable}}
@@ -84,28 +101,33 @@ workflow:
 
 <script setup>
 import {
-  computed, inject, onBeforeMount, onMounted, reactive, ref, watch
-} from 'vue';
-import {
+  buildExtendedRegistryForPicker,
   extractCredentialFormats,
   filterWalletsByFormatSupport,
+  getPickerOptions,
   getProtocolInteractionMethods,
-  INTERACTION_METHOD_PRIORITY,
   WALLETS_REGISTRY
 } from '../../common/wallets/index.js';
+import {
+  computed, inject, onMounted, reactive, ref, watch
+} from 'vue';
+import {CadmvButton} from '@digitalbazaar/cadmv-ui';
 import ChapiInteraction from './interactions/ChapiInteraction.vue';
 import DcApiInteraction from './interactions/DcApiInteraction.vue';
 import {httpClient} from '@digitalbazaar/http-client';
-import QrCodeInteraction from './interactions/QrCodeInteraction.vue';
-import SameDeviceLinkInteraction from
-  './interactions/SameDeviceLinkInteraction.vue';
+import InteractionPickerModal from './InteractionPickerModal.vue';
+import QrAndCopyInteraction from './interactions/QrAndCopyInteraction.vue';
+import QrAndLinkInteraction from './interactions/QrAndLinkInteraction.vue';
 import {startDCApiFlow as startDCApiFlowUtil} from '../utils/dcapi.js';
-import {useQuasar} from 'quasar';
 
 const props = defineProps({
   availableProtocols: {
     type: Array,
     default: () => []
+  },
+  userSettings: {
+    type: Object,
+    default: () => ({enabledWallets: [], enabledProtocols: []})
   },
   workflow: {
     type: Object,
@@ -119,14 +141,13 @@ const emit = defineEmits([
   'update:activeInteractionType'
 ]);
 
-const $q = useQuasar();
-
 // Local interaction state management
 const interactionState = reactive({
-  prefersSameDevice: false,
   dcApiErrorOverride: false,
   dcApiError: null,
-  activeOverride: false
+  activeOverride: false,
+  // When set, takes precedence over computed default (option object)
+  activePickerOptionOverride: null
 });
 
 // Get verification context (exchangeContext) to check debug mode
@@ -160,15 +181,20 @@ const isActive = computed(() => {
   return exchangeState.value === 'active' && !interactionState.activeOverride;
 });
 
-// Compute wallets registry and enabled wallets from context
-const walletsRegistry = computed(() => {
+// Compute base wallets registry and enabled wallets from context and
+// userSettings
+const baseWalletsRegistry = computed(() => {
   const ctx = context?.value || context;
-  // Get enabled wallets from options, defaulting to all available wallets
   const wallets = ctx?.options?.wallets;
-  const enabledWalletIds = wallets && Array.isArray(wallets) &&
+  const workflowWalletIds = wallets && Array.isArray(wallets) &&
     wallets.length > 0 ? wallets : Object.keys(WALLETS_REGISTRY);
 
-  // Filter wallets registry to only include enabled wallets
+  const settings = props.userSettings || {};
+  const userEnabledIds = settings.enabledWallets;
+  const enabledWalletIds = userEnabledIds && userEnabledIds.length > 0 ?
+    workflowWalletIds.filter(id => userEnabledIds.includes(id)) :
+    workflowWalletIds;
+
   const availableWallets = {};
   for(const walletId of enabledWalletIds) {
     if(WALLETS_REGISTRY[walletId]) {
@@ -179,12 +205,37 @@ const walletsRegistry = computed(() => {
   return availableWallets;
 });
 
+const baseEnabledWallets = computed(() => {
+  return Object.keys(baseWalletsRegistry.value);
+});
+
+// Build extended registry with protocol wallets
+const extendedRegistryData = computed(() => {
+  const ctx = context?.value || context;
+  const formats = extractCredentialFormats(props.workflow);
+  return buildExtendedRegistryForPicker({
+    enabledWallets: baseEnabledWallets.value,
+    enabledProtocols: props.userSettings?.enabledProtocols || [],
+    availableProtocols: props.availableProtocols,
+    formats,
+    registry: baseWalletsRegistry.value,
+    OID4VPdefault: ctx?.options?.OID4VPdefault
+  });
+});
+
+// Extended registry for child components
+const walletsRegistry = computed(() => {
+  return extendedRegistryData.value.extendedRegistry;
+});
+
+// Extended wallet IDs for getPickerOptions
 const enabledWallets = computed(() => {
-  return Object.keys(walletsRegistry.value);
+  return extendedRegistryData.value.extendedWalletIds;
 });
 
 // Check if DC API is available at system level
 const dcApiSystemAvailable = ref(false);
+const showInteractionPicker = ref(false);
 
 // Check if DC API is available
 const checkDCApiAvailability = () => {
@@ -195,87 +246,57 @@ const checkDCApiAvailability = () => {
   }
 };
 
-// Determine which interaction type to show based on priority
-const activeInteractionType = computed(() => {
-  // Extract credential formats from workflow
+// Options for interaction picker modal (from getPickerOptions)
+const pickerAvailableOptions = computed(() => {
   const formats = extractCredentialFormats(props.workflow);
-  if(formats.length === 0) {
-    return null;
-  }
-
-  // Filter wallets by format support
-  const compatibleWallets = filterWalletsByFormatSupport({
-    walletIds: enabledWallets.value,
+  return getPickerOptions({
     formats,
+    exchange: exchangeData.value,
+    availableProtocols: props.availableProtocols,
+    enabledWallets: enabledWallets.value,
+    dcApiSystemAvailable: dcApiSystemAvailable.value,
+    dcApiErrorOverride: interactionState.dcApiErrorOverride,
+    workflow: props.workflow,
     registry: walletsRegistry.value
   });
+});
 
-  if(compatibleWallets.length === 0) {
+// Compute next option after current in picker list
+const computeNextOption = currentOption => {
+  const options = pickerAvailableOptions.value;
+  if(!currentOption || options.length <= 1) {
     return null;
   }
-
-  const prefersSameDevice = interactionState.prefersSameDevice;
-  const availableMethods = new Set();
-
-  // Check all compatible wallets for available interaction methods
-  for(const walletId of compatibleWallets) {
-    for(const format of formats) {
-      const combinations = getProtocolInteractionMethods({
-        walletId,
-        format,
-        exchange: exchangeData.value,
-        registry: walletsRegistry.value
-      });
-
-      for(const combo of combinations) {
-        const method = combo.interactionMethod;
-
-        // 1. DC API (highest priority) - check conditions
-        if(method === 'dcapi') {
-          if(dcApiSystemAvailable.value &&
-            props.workflow?.dcApiEnabled !== false &&
-            !['chapi', 'vcapi', 'interact'].includes(combo.protocolId) &&
-            (format === 'mso_mdoc' ||
-              combo.protocolId === '18013-7-Annex-D' ||
-              combo.protocolId === 'OID4VP-HAIP-1.0') &&
-            !interactionState.dcApiErrorOverride) {
-            availableMethods.add('dcapi');
-          }
-        }
-
-        // 2. QR (if not prefersSameDevice)
-        if(method === 'qr' && !prefersSameDevice) {
-          availableMethods.add('qr');
-        }
-
-        // 3. Link (if prefersSameDevice) - includes copy-only wallets
-        if((method === 'link' || method === 'copy') && prefersSameDevice) {
-          availableMethods.add('link');
-        }
-
-        // 4. CHAPI
-        if(method === 'chapi' || combo.protocolId === 'chapi') {
-          availableMethods.add('chapi');
-        }
-      }
-    }
+  const idx = options.findIndex(o =>
+    o.method === currentOption.method &&
+    (o.protocolId || '') === (currentOption.protocolId || '') &&
+    (o.walletId || '') === (currentOption.walletId || '')
+  );
+  if(idx === -1 || idx >= options.length - 1) {
+    return options[0] ?? null;
   }
+  return options[idx + 1] ?? null;
+};
 
-  // Sort by priority and return first
-  const methods = Array.from(availableMethods);
-  if(methods.length === 0) {
-    return null;
+// Active picker option (override or first available)
+const activePickerOption = computed(() => {
+  if(interactionState.activePickerOptionOverride) {
+    return interactionState.activePickerOptionOverride;
   }
+  const options = pickerAvailableOptions.value;
+  return options.length > 0 ? options[0] : null;
+});
 
-  methods.sort((a, b) => {
-    const aPriority = INTERACTION_METHOD_PRIORITY.indexOf(a);
-    const bPriority = INTERACTION_METHOD_PRIORITY.indexOf(b);
-    const aPrio = aPriority === -1 ? Infinity : aPriority;
-    const bPrio = bPriority === -1 ? Infinity : bPriority;
-    return aPrio - bPrio;
-  });
+// Derived method for v-if routing (dcapi, qr-and-link, qr-and-copy, chapi)
+const activeInteractionType = computed(() =>
+  activePickerOption.value?.method ?? null);
 
-  return methods[0];
+// Current option for picker "Current" indicator
+const currentPickerOption = computed(() => activePickerOption.value);
+
+// Check if there are multiple interaction methods available
+const hasMultipleInteractionOptions = computed(() => {
+  return pickerAvailableOptions.value.length > 1;
 });
 
 // Debug computed properties
@@ -307,7 +328,10 @@ const availableMethodsDebug = computed(() => {
     return [];
   }
 
-  const prefersSameDevice = interactionState.prefersSameDevice;
+  const oid4vpProtocols = [
+    'OID4VP-draft18', 'OID4VP-1.0', 'OID4VP-combined',
+    'OID4VP', 'OID4VP-haip-1.0', '18013-7-Annex-B'
+  ];
   const availableMethods = new Set();
 
   for(const walletId of compatibleWallets) {
@@ -321,28 +345,31 @@ const availableMethodsDebug = computed(() => {
 
       for(const combo of combinations) {
         const method = combo.interactionMethod;
+        const protocolId = combo.protocolId;
 
         if(method === 'dcapi') {
           if(dcApiSystemAvailable.value &&
             props.workflow?.dcApiEnabled !== false &&
-            !['chapi', 'vcapi', 'interact'].includes(combo.protocolId) &&
+            !['chapi', 'vcapi', 'interact'].includes(protocolId) &&
             (format === 'mso_mdoc' ||
-              combo.protocolId === '18013-7-Annex-D' ||
-              combo.protocolId === 'OID4VP-HAIP-1.0') &&
+              protocolId === '18013-7-Annex-D' ||
+              protocolId === 'OID4VP-HAIP-1.0') &&
             !interactionState.dcApiErrorOverride) {
             availableMethods.add('dcapi');
           }
         }
 
-        if(method === 'qr' && !prefersSameDevice) {
-          availableMethods.add('qr');
+        if(oid4vpProtocols.includes(protocolId) &&
+          (method === 'qr' || method === 'link')) {
+          availableMethods.add('qr-and-link');
         }
 
-        if((method === 'link' || method === 'copy') && prefersSameDevice) {
-          availableMethods.add('link');
+        if(protocolId === 'interact' &&
+          (method === 'qr' || method === 'copy')) {
+          availableMethods.add('qr-and-copy');
         }
 
-        if(method === 'chapi' || combo.protocolId === 'chapi') {
+        if(method === 'chapi' || protocolId === 'chapi') {
           availableMethods.add('chapi');
         }
       }
@@ -352,14 +379,16 @@ const availableMethodsDebug = computed(() => {
   return Array.from(availableMethods);
 });
 
-// Get the protocol URL as fallback (SameDeviceLinkInteraction computes
+// Protocol URL fallback (QrAndLinkInteraction computes
 // wallet-specific URLs)
 const protocolUrl = computed(() => {
-  // Fallback to default protocol URL
+  const option = activePickerOption.value;
+  if(option?.protocolId && exchangeData.value?.protocols?.[option.protocolId]) {
+    return exchangeData.value.protocols[option.protocolId];
+  }
   if(!exchangeData.value?.protocols) {
     return exchangeData.value?.OID4VP || '';
   }
-  // Return first available protocol URL as fallback
   const protocolKeys = Object.keys(exchangeData.value.protocols);
   if(protocolKeys.length > 0) {
     return exchangeData.value.protocols[protocolKeys[0]] ||
@@ -386,37 +415,21 @@ const protocolType = computed(() => {
   return null;
 });
 
-// Compute QR-compatible wallets for QR interaction
-const qrCompatibleWallets = computed(() => {
-  // Only compute if QR interaction is active
-  if(activeInteractionType.value !== 'qr') {
-    return [];
-  }
-
-  // Extract credential formats from workflow
+// Base compatible wallets for qr-and-link (OID4VP + vcapi)
+const qrAndLinkCompatibleWalletsBase = computed(() => {
   const formats = extractCredentialFormats(props.workflow);
-  if(formats.length === 0) {
-    return [];
-  }
-
-  // Filter wallets by format support
   const compatibleWallets = filterWalletsByFormatSupport({
     walletIds: enabledWallets.value,
     formats,
     registry: walletsRegistry.value
   });
-
-  // Find all wallets that support QR for ANY protocol
-  const qrCompatible = [];
-  const seenWallets = new Set();
-
+  const oid4vpProtocols = [
+    'OID4VP-draft18', 'OID4VP-1.0', 'OID4VP-combined',
+    'OID4VP', 'OID4VP-haip-1.0', '18013-7-Annex-B'
+  ];
+  const result = [];
+  const seen = new Set();
   for(const walletId of compatibleWallets) {
-    // Skip if we've already added this wallet
-    if(seenWallets.has(walletId)) {
-      continue;
-    }
-
-    // Check if wallet supports QR for any protocol
     for(const format of formats) {
       const combinations = getProtocolInteractionMethods({
         walletId,
@@ -424,58 +437,32 @@ const qrCompatibleWallets = computed(() => {
         exchange: exchangeData.value,
         registry: walletsRegistry.value
       });
-
-      // Find first QR combination for this wallet
-      const qrCombo = combinations.find(c => c.interactionMethod === 'qr');
-
-      if(qrCombo) {
-        qrCompatible.push({
-          walletId,
-          protocolId: qrCombo.protocolId
-        });
-        seenWallets.add(walletId);
-        break; // Found one, move to next wallet
+      const match = combinations.find(c =>
+        (oid4vpProtocols.includes(c.protocolId) || c.protocolId === 'vcapi') &&
+        (c.interactionMethod === 'qr' || c.interactionMethod === 'link' ||
+          c.interactionMethod === 'copy')
+      );
+      if(match && !seen.has(walletId)) {
+        result.push({walletId, protocolId: match.protocolId});
+        seen.add(walletId);
+        break;
       }
     }
   }
-
-  return qrCompatible;
+  return result;
 });
 
-// Compute same-device link compatible wallets
-const sameDeviceCompatibleWallets = computed(() => {
-  // Only compute if same-device interaction is active
-  if(activeInteractionType.value !== 'link' ||
-    !interactionState.prefersSameDevice) {
-    return [];
-  }
-
-  // Extract credential formats from workflow
+// Base compatible wallets for qr-and-copy (interact)
+const qrAndCopyCompatibleWalletsBase = computed(() => {
   const formats = extractCredentialFormats(props.workflow);
-  if(formats.length === 0) {
-    return [];
-  }
-
-  // Filter wallets by format support
   const compatibleWallets = filterWalletsByFormatSupport({
     walletIds: enabledWallets.value,
     formats,
     registry: walletsRegistry.value
   });
-
-  // Find all wallets that support link or copy for same-device
-  const sameDeviceWallets = [];
-  const seenWallets = new Set();
-
+  const result = [];
+  const seen = new Set();
   for(const walletId of compatibleWallets) {
-    if(seenWallets.has(walletId)) {
-      continue;
-    }
-
-    let supportsLink = false;
-    let supportsCopy = false;
-    let protocolId = null;
-
     for(const format of formats) {
       const combinations = getProtocolInteractionMethods({
         walletId,
@@ -483,36 +470,49 @@ const sameDeviceCompatibleWallets = computed(() => {
         exchange: exchangeData.value,
         registry: walletsRegistry.value
       });
-
-      const linkCombo = combinations.find(c => c.interactionMethod === 'link');
-      const copyCombo = combinations.find(c => c.interactionMethod === 'copy');
-
-      if(linkCombo) {
-        supportsLink = true;
-        protocolId = protocolId || linkCombo.protocolId;
+      const match = combinations.find(c =>
+        c.protocolId === 'interact' &&
+        (c.interactionMethod === 'qr' || c.interactionMethod === 'copy')
+      );
+      if(match && !seen.has(walletId)) {
+        result.push({walletId, protocolId: match.protocolId});
+        seen.add(walletId);
+        break;
       }
-      if(copyCombo) {
-        supportsCopy = true;
-        protocolId = protocolId || copyCombo.protocolId;
-      }
-    }
-
-    if(supportsLink || supportsCopy) {
-      sameDeviceWallets.push({
-        walletId,
-        protocolId,
-        supportsLink,
-        supportsCopy
-      });
-      seenWallets.add(walletId);
     }
   }
-
-  return sameDeviceWallets;
+  return result;
 });
 
-// Handle DC API activation
-const handleDcApiActivate = async (protocolId = null) => {
+// Filtered compatible wallets for the active picker option
+const compatibleWalletsForActiveOption = computed(() => {
+  const option = activePickerOption.value;
+  if(!option) {
+    return [];
+  }
+  if(option.method === 'qr-and-link') {
+    const base = qrAndLinkCompatibleWalletsBase.value;
+    return base.filter(({walletId, protocolId}) => {
+      if(option.protocolId && protocolId !== option.protocolId) {
+        return false;
+      }
+      if(option.walletId && walletId !== option.walletId) {
+        return false;
+      }
+      return true;
+    });
+  }
+  if(option.method === 'qr-and-copy') {
+    return qrAndCopyCompatibleWalletsBase.value;
+  }
+  return [];
+});
+
+// Handle DC API launch
+const handleDcApiLaunch = async ({protocolId}) => {
+  if(!protocolId) {
+    throw new Error('Protocol ID is required');
+  }
   try {
     await startDCApiFlowUtil({
       exchangeData: exchangeData.value,
@@ -532,90 +532,62 @@ const handleDcApiActivate = async (protocolId = null) => {
   }
 };
 
-// Handle DC API error override
-const handleDcApiErrorOverride = () => {
-  // Clear error state so wallet selection screen is shown
-  interactionState.dcApiErrorOverride = true;
-  interactionState.dcApiError = null;
-  // Set activeOverride to prevent spinner when switching from DC API to QR
+// Handle switchInteractionMethod from child components
+// method: explicit method to switch to, or null to compute next option
+const handleSwitchInteractionMethod = (method = null) => {
+  let nextOption = null;
+  if(method) {
+    nextOption = pickerAvailableOptions.value.find(o => o.method === method) ||
+      null;
+  } else {
+    nextOption = computeNextOption(activePickerOption.value);
+  }
+  if(nextOption) {
+    interactionState.activePickerOptionOverride = nextOption;
+  }
+  if(activeInteractionType.value === 'dcapi') {
+    interactionState.dcApiErrorOverride = true;
+    interactionState.dcApiError = null;
+  }
   interactionState.activeOverride = true;
+};
+
+// Handle picker selection
+const handlePickerSelect = option => {
+  if(typeof option === 'object' && option) {
+    interactionState.activePickerOptionOverride = option;
+  } else if(typeof option === 'string') {
+    const match = pickerAvailableOptions.value.find(o => o.method === option);
+    if(match) {
+      interactionState.activePickerOptionOverride = match;
+    }
+  }
+  // Protocol switch: treat as pending so target interaction shows enabled UI
+  interactionState.activeOverride = true;
+  if(activeInteractionType.value === 'dcapi') {
+    interactionState.dcApiErrorOverride = true;
+    interactionState.dcApiError = null;
+  }
+  showInteractionPicker.value = false;
 };
 
 // Handle DC API retry
 const handleDcApiRetry = () => {
-  // Extract credential formats from workflow
-  const formats = extractCredentialFormats(props.workflow);
-
-  // Filter wallets by format support
-  const compatibleWallets = filterWalletsByFormatSupport({
-    walletIds: enabledWallets.value,
-    formats,
-    registry: walletsRegistry.value
-  });
-
-  // Filter for wallets that support DC API for available protocols
-  const dcApiCompatibleWallets = [];
-  for(const walletId of compatibleWallets) {
-    // Check if wallet supports DC API for any available protocol
-    for(const protocolId of props.availableProtocols) {
-      // Skip protocols that don't support DC API
-      if(['chapi', 'vcapi', 'interact'].includes(protocolId)) {
-        continue;
-      }
-
-      // Check if wallet supports DC API for this protocol with mso_mdoc format
-      const combinations = getProtocolInteractionMethods({
-        walletId,
-        format: 'mso_mdoc',
-        exchange: exchangeData.value,
-        registry: walletsRegistry.value
-      });
-
-      const hasDcApi = combinations.some(c =>
-        c.protocolId === protocolId && c.interactionMethod === 'dcapi'
-      );
-
-      if(hasDcApi) {
-        dcApiCompatibleWallets.push({walletId, protocolId});
-        break; // Found one protocol, move to next wallet
-      }
-    }
-  }
-
-  // Clear error
+  // Clear error and enable buttons for retry
+  // Setting activeOverride to true makes isActive false, enabling the buttons
   interactionState.dcApiError = null;
-
-  // If only one wallet, retry immediately with its protocol
-  if(dcApiCompatibleWallets.length === 1) {
-    handleDcApiActivate(dcApiCompatibleWallets[0].protocolId);
-  }
-  // Multiple wallets: user can choose again from wallet buttons
+  interactionState.activeOverride = true;
 };
 
-// Handle DC API launch (from wallet button) - launch directly
-const handleDcApiLaunch = ({protocolId}) => {
-  // Launch DC API with the selected protocol
-  handleDcApiActivate(protocolId);
-};
-
-// Handle same device wallet launch
 const handleSameDeviceLaunch = ({walletId, protocolId}) => {
   emit('launch', {walletId, protocolId});
 };
 
-// Set preference for same device interaction (from QR)
-const setPreferSameDevice = () => {
-  interactionState.prefersSameDevice = true;
+const handleQrAndLinkGoBack = () => {
+  interactionState.activeOverride = true;
 };
 
-// Set preference for QR code interaction (from same device)
-const setPreferQr = () => {
-  interactionState.prefersSameDevice = false;
-};
-
-// Handle go back (from QR when active)
-const qrDisplayOverrideOff = () => {
-  interactionState.prefersSameDevice = false;
+const handleQrAndCopyGoBack = () => {
   interactionState.activeOverride = true;
 };
 
@@ -635,18 +607,11 @@ watch(activeInteractionType, value => {
   emit('update:activeInteractionType', value);
 }, {immediate: true});
 
-onBeforeMount(() => {
-  // Initialize prefersSameDevice based on mobile detection
-  if($q.platform.is.mobile) {
-    interactionState.prefersSameDevice = true;
-  }
-});
-
 onMounted(() => {
   checkDCApiAvailability();
 });
 
 defineExpose({
-  launchDcApi: handleDcApiActivate
+  launchDcApi: handleDcApiLaunch
 });
 </script>

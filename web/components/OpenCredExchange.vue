@@ -59,8 +59,9 @@ SPDX-License-Identifier: BSD-3-Clause
       <WalletInteraction
         ref="walletInteractionRef"
         :available-protocols="availableProtocols"
-        :active="state.active"
+        :user-settings="userSettings"
         :workflow="context.workflow"
+        :active="state.active"
         @replace-exchange="handleReplaceExchange"
         @launch="handleDcApiLaunch"
         @update:active-interaction-type="activeInteractionType = $event" />
@@ -95,7 +96,7 @@ SPDX-License-Identifier: BSD-3-Clause
             <q-btn
               v-close-popup
               flat
-              label="Close" />
+              :label="$t('close')" />
           </q-card-actions>
         </q-card>
       </q-dialog>
@@ -109,8 +110,9 @@ SPDX-License-Identifier: BSD-3-Clause
       @action="handleStatusDialogAction">
       <template #body>
         <p class="text-sm text-center">
-          <span class="text-bold">Are you still there? </span>
-          Status checking is paused.
+          <span class="text-bold">
+            {{$t('statusDialog_areYouStillThere')}} </span>
+          {{$t('statusDialog_statusPaused')}}
         </p>
       </template>
     </CadmvDialog>
@@ -136,8 +138,9 @@ defineProps({
   }
 });
 
-// Get context from parent component (LoginView or VerificationView)
-// Context must be provided by parent - this component does not fetch it
+const {t: translate} = useI18n({useScope: 'global'});
+
+// Get context and userSettings from parent
 const parentContext = inject('exchangeContext', null);
 if(!parentContext) {
   throw new Error(
@@ -146,6 +149,8 @@ if(!parentContext) {
   );
 }
 const context = parentContext;
+const userSettings = inject('userSettings', ref(
+  {enabledWallets: [], enabledProtocols: []}));
 
 const state = reactive({
   active: false,
@@ -163,12 +168,12 @@ const statusDialogActions = [
   {
     actionId: 'resume',
     variant: 'primary',
-    label: 'Resume checking'
+    label: translate('statusDialog_resumeChecking')
   },
   {
     actionId: 'reset',
     variant: 'flat',
-    label: 'Reset Session'
+    label: translate('statusDialog_resetSession')
   }
 ];
 
@@ -201,16 +206,14 @@ const availableProtocols = computed(() => {
 const handleError = error => {
   state.intervalId = clearInterval(state.intervalId);
   state.error = {
-    title: error?.title || 'Error',
-    subtitle: error?.subtitle || 'The following error was encountered:',
-    message: error?.message || 'An unexpected error occurred.',
+    title: error?.title || translate('error_defaultTitle'),
+    subtitle: error?.subtitle || translate('error_defaultSubtitle'),
+    message: error?.message || translate('error_unexpectedMessage'),
     resettable: !!error?.resettable || false
   };
   state.active = false;
   state.statusCheckCount = 0;
 };
-
-const {t: translate} = useI18n({useScope: 'global'});
 
 const handleDcApiLaunch = ({protocolId}) => {
   // Launch DC API directly with wallet/protocol
@@ -271,7 +274,7 @@ const checkStatus = async () => {
       handleError({
         title: translate('exchangeErrorTitle'),
         subtitle: translate('exchangeErrorSubtitle'),
-        message: 'An error occurred while checking exchange status.'
+        message: translate('exchangeStatus_checkError')
       });
       return;
     }
@@ -294,7 +297,7 @@ const checkStatus = async () => {
         message: Object.values(exchange.variables.results ?? {})
           .filter(v => !!v.errors?.length)?.map(r => r.errors)
           .flat()
-          .join(', ') ?? 'An error occurred while processing the exchange.',
+          .join(', ') ?? translate('exchangeStatus_processError'),
         resettable: true
       });
     }
@@ -302,8 +305,8 @@ const checkStatus = async () => {
   } catch(e) {
     console.error('An error occurred while polling the endpoint:', e);
     handleError({
-      title: 'Error',
-      message: 'An error occurred while checking exchange status.'
+      title: translate('error_defaultTitle'),
+      message: translate('exchangeStatus_checkError')
     });
   }
 
@@ -346,8 +349,8 @@ const handleResetExchange = async () => {
     startStatusCheck();
   } catch {
     handleError({
-      title: 'Error',
-      message: 'An error occurred while resetting the exchange.'
+      title: translate('error_defaultTitle'),
+      message: translate('exchangeStatus_resetError')
     });
     // Fall through to clear the active state after causing the error to display
   }

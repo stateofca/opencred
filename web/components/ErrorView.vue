@@ -8,15 +8,15 @@ SPDX-License-Identifier: BSD-3-Clause
 <template>
   <div class="p-4 md:p-5 space-y-4 bg-white rounded-md">
     <h2 class="text-2xl md:text-3xl font-bold text-gray-900">
-      {{title}}
+      {{title || $t('error_defaultTitle')}}
     </h2>
 
     <h3 class="text-lg md:text-xl font-medium text-gray-700">
-      {{subtitle}}
+      {{subtitle || $t('error_defaultSubtitle')}}
     </h3>
 
     <p class="text-base text-gray-600">
-      {{message}}
+      {{message || $t('error_defaultMessage')}}
     </p>
 
     <div
@@ -40,15 +40,15 @@ import {CadmvButton} from '@digitalbazaar/cadmv-ui';
 defineProps({
   title: {
     type: String,
-    default: () => 'Error'
+    default: undefined
   },
   subtitle: {
     type: String,
-    default: () => 'The following error was encountered:'
+    default: undefined
   },
   message: {
     type: String,
-    default: () => 'An error occurred.'
+    default: undefined
   },
   resettable: {
     type: Boolean,
