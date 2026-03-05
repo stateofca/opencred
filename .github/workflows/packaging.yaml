@@ -14,6 +14,7 @@ on:
 
 jobs:
   package:
+    if: vars.WORKFLOW_PACKAGING_ENABLED == 'true'
     runs-on: ubuntu-latest
     env:
       CONTAINER_OWNER: veres-containers

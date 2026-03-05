@@ -4,6 +4,8 @@
 
 ### Added
 - Allow encoded JSON string for mainDocument and linkageDocument.
+- Enable GitHub Actions to run conditionally based on environment variables for
+  better working with forks.
 
 ### Fixed
 - Fix issue with didWeb document signing key ID, allow customization or use

@@ -9,6 +9,7 @@ on: [push]
 
 jobs:
   test:
+    if: vars.WORKFLOW_TEST_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
