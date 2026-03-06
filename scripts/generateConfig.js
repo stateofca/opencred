@@ -10,11 +10,10 @@ import {
   generateP256SigningKey
 } from './generatePrime256v1Key.js';
 import crypto from 'node:crypto';
-import {fileURLToPath} from 'node:url';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dirname;
 const CONFIGS_DIR = path.join(__dirname, '..', 'configs');
 const COMBINED_PATH = path.join(CONFIGS_DIR, 'combined.yaml');
 const GENERATED_PATH = path.join(CONFIGS_DIR, 'combined.generated.yaml');
