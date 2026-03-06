@@ -37,8 +37,11 @@ Authorization: Basic base64(clientId:clientSecret)
 ```
 
 **Response**:
-The response will include details of the exchange, including a QR code 
-(as a base64 data URL image) and an OID4VP URI.
+The response will include details of the exchange, including a QR code (as a
+base64 data URL image) and an OID4VP URI. For performance reasons or if a QR
+code for the default OID4VP protocol is not needed, you may omit the `QR`
+property by requesting `?qr=false` in the query string of your create exchange
+request.
 
 **Example Response**:
 
@@ -59,9 +62,28 @@ The response will include details of the exchange, including a QR code
 
 ### 2. Provide the QR Code or OID4VP Link to the Wallet
 
-From the response in step 1, extract the QR code or OID4VP URI and provide 
-it to the wallet. The user will use their wallet app to scan the QR code or 
-follow the OID4VP URI to present the requested credential.
+If you know the user's wallet app supports the default OID4VP protocol version
+used on the server, you can use the `OID4VP` URI and `QR` property to present
+the exchange to the wallet. Otherwise, there might be some more involved wallet
+interaction code needed to present the exchange to the wallet. 
+
+**For wallets that support the default OID4VP protocol version used on the
+server:** From the response in step 1, extract the QR code or OID4VP URI and
+provide it to the wallet. The user will use their wallet app to scan the QR code
+or follow the OID4VP URI to present the requested credential.
+
+**For all wallets:** If you are supporting more than just the base OID4VP
+protocol version used on the server, you can use the `protocols.interact`
+property to present the exchange to the wallet. Present either a QR code or a
+link (new window) to the interaction URL. The user can load it on the same
+device they started from or through scanning a QR code, they can load it on a
+different device, like the phone where they keep their wallet app. Wherever they
+complete the exchange, you will be able to view the results in the exchange
+status endpoint.
+
+To redirect users to OpenCred's verification UI in a browser, use
+`protocols.interact` from the create exchange response. When opened in a
+browser, the interaction URL redirects to the verification UI.
 
 **Example QR Code (base64 data URL)**:
 ```json

@@ -25,6 +25,7 @@ import {
 import {auditUtils} from '../../common/audit.js';
 import {baseUrl} from '../mock-data.js';
 import {BaseWorkflowService} from '../../lib/workflows/base.js';
+import {buildExchangeResultToken} from '../../lib/workflows/common.js';
 import {config} from '@bedrock/core';
 import {createExchangeWithAuthRequest} from '../utils/exchanges.js';
 import {database} from '../../lib/database.js';
@@ -274,9 +275,8 @@ describe('OpenCred API - Native Workflow', function() {
     result.data.OID4VP.should.be.a('string');
     result.data.accessToken.should.be.a('string');
     result.data.workflowId.should.be.a('string');
-    result.data.continuationUrl.should.be.a('string');
-    result.data.continuationUrl.should.contain('exchange_token=');
-    result.data.continuationUrl.should.contain('/verification');
+    result.data.protocols.should.have.property('interact');
+    result.data.protocols.interact.should.contain('/interactions/');
     insertStub.called.should.equal(true);
     insertStub.restore();
   });
@@ -364,8 +364,94 @@ describe('OpenCred API - Native Workflow', function() {
     result.status.should.be.equal(200);
     result.data.exchange.id.should.be.equal(exchange.id);
     should.not.exist(result.data.exchange.accessToken);
-    should.not.exist(result.data.exchange.continuationUrl);
     findStub.restore();
+  });
+
+  it('should return status on exchange with Bearer exchange_result token',
+    async function() {
+      const signingKeysStub = sinon.stub(config.opencred, 'signingKeys')
+        .value([{...exampleKey, purpose: ['id_token']}]);
+      const exchange = await createExchangeWithAuthRequest({
+        workflow: testWorkflow});
+      const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+        .resolves(exchange);
+      const token = await buildExchangeResultToken({
+        exchangeId: exchange.id,
+        workflowId: testWorkflow.clientId,
+        procedurePath: 'verification'
+      });
+      let result;
+      let err;
+      try {
+        result = await client
+          .get(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges/` +
+            `${exchange.id}`, {
+            headers: {Authorization: `Bearer ${token}`}
+          });
+      } catch(e) {
+        err = e;
+      }
+
+      should.not.exist(err);
+      result.status.should.be.equal(200);
+      result.data.exchange.id.should.be.equal(exchange.id);
+      findStub.restore();
+      signingKeysStub.restore();
+    });
+
+  it('should scrub credential data when Bearer exchange_result token has ' +
+    'exchange:partial scope', async function() {
+    const signingKeysStub = sinon.stub(config.opencred, 'signingKeys')
+      .value([{...exampleKey, purpose: ['id_token']}]);
+    const exchange = await createExchangeWithAuthRequest({
+      workflow: testWorkflow});
+    exchange.variables = {
+      ...exchange.variables,
+      results: {
+        default: {
+          verifiablePresentation: {type: ['VerifiablePresentation']},
+          vpToken: 'eyJhbGciOiJFUzI1NiJ9.test.sig',
+          errors: ['Some error']
+        }
+      }
+    };
+    const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
+      .callsFake(query => Promise.resolve(
+        query.accessToken && query.accessToken.includes('.') ?
+          null : exchange
+      ));
+    try {
+      const token = await buildExchangeResultToken({
+        exchangeId: exchange.id,
+        workflowId: testWorkflow.clientId,
+        procedurePath: 'verification',
+        scope: 'exchange:partial'
+      });
+      let result;
+      let err;
+      try {
+        result = await client
+          .get(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges/` +
+            `${exchange.id}`, {
+            headers: {Authorization: `Bearer ${token}`}
+          });
+      } catch(e) {
+        err = e;
+      }
+
+      should.not.exist(err);
+      result.status.should.be.equal(200);
+      result.data.exchange.id.should.be.equal(exchange.id);
+      should.not.exist(result.data.exchange.variables?.results?.default
+        ?.verifiablePresentation);
+      should.not.exist(result.data.exchange.variables?.results?.default
+        ?.vpToken);
+      result.data.exchange.variables.results.default.errors
+        .should.eql(['Some error']);
+    } finally {
+      findStub.restore();
+      signingKeysStub.restore();
+    }
   });
 
   it('should allow POST to exchange endpoint', async function() {

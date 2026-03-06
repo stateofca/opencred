@@ -134,4 +134,52 @@ describe('continuationContext', () => {
 
       await database.collections.Exchanges.deleteOne({id: exchangeId});
     });
+
+  it('should scrub credential data when token has exchange:partial scope',
+    async () => {
+      const exchangeId = 'ex-partial-scope-test';
+      await database.collections.Exchanges.insertOne({
+        id: exchangeId,
+        workflowId: 'test',
+        state: 'invalid',
+        step: 'default',
+        sequence: 1,
+        ttl: 3600,
+        createdAt: new Date(),
+        variables: {
+          procedurePath: 'verification',
+          results: {
+            default: {
+              verifiablePresentation: {type: ['VerifiablePresentation']},
+              vpToken: 'eyJhbGciOiJFUzI1NiJ9.test.sig',
+              errors: ['Verification failed']
+            }
+          }
+        },
+        oidc: {code: 'code', state: 'state'}
+      });
+
+      const token = await buildExchangeResultToken({
+        exchangeId,
+        workflowId: 'test',
+        procedurePath: 'verification',
+        scope: 'exchange:partial'
+      });
+
+      const res = await client.get(
+        `${baseUrl}/context/continue?exchange_token=${
+          encodeURIComponent(token)}`
+      );
+
+      expect(res.status).to.equal(200);
+      expect(res.data.exchangeData).to.have.property('variables');
+      expect(res.data.exchangeData.variables.results.default)
+        .to.not.have.property('verifiablePresentation');
+      expect(res.data.exchangeData.variables.results.default)
+        .to.not.have.property('vpToken');
+      expect(res.data.exchangeData.variables.results.default.errors)
+        .to.eql(['Verification failed']);
+
+      await database.collections.Exchanges.deleteOne({id: exchangeId});
+    });
 });

@@ -37,6 +37,17 @@ describe('Exchange Result Token', () => {
       expect(token).to.be.a('string');
       expect(token.split('.')).to.have.length(3);
     });
+
+    it('should include scope in payload when provided', async () => {
+      const token = await buildExchangeResultToken({
+        exchangeId: 'ex-123',
+        workflowId: 'wf-456',
+        procedurePath: 'verification',
+        scope: 'exchange:partial'
+      });
+      const payload = await verifyExchangeResultToken(token);
+      expect(payload.scope).to.equal('exchange:partial');
+    });
   });
 
   describe('verifyExchangeResultToken', () => {

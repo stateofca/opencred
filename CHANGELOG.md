@@ -3,6 +3,12 @@
 ## 10.0.1 - 2026-03-dd
 
 ### Added
+- Add content negotiation to interaction URL: redirect browser requests
+  (Accept: text/html) to verification UI with exchange_token; return JSON
+  protocols for wallets/APIs (Accept: application/json or no Accept header).
+- Add exchange_result JWT as Bearer token auth for getExchangeStatus and
+  continuation context, with `exchange:partial` scope that scrubs credential
+  data from responses.
 - Allow encoded JSON string for mainDocument and linkageDocument.
 - Enable GitHub Actions to run conditionally based on environment variables for
   better working with forks.
@@ -13,6 +19,12 @@
   complete an exchange.
 - Add advanced settings menu for selecting additional protocols to try (e.g.,
   OID4VP-1.0 with dcql_query for Spruce pre-release wallet testing).
+
+### Changed
+- Use `protocols.interact` from `GET /interactions/:exchangeId` (or the
+  protocols endpoint) for QR codes and links. When opened in a browser, the
+  interaction URL redirects to the verification UI with continuation context.
+  The draft `continuationUrl` variable is no longer used.
 
 ### Fixed
 - Fix issue with didWeb document signing key ID, allow customization or use

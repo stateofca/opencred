@@ -11,11 +11,38 @@ import {config} from '@bedrock/core';
 import {createId} from '../../common/utils.js';
 import {database} from '../../lib/database.js';
 import expect from 'expect.js';
+import http from 'node:http';
 import {httpClient} from '@digitalbazaar/http-client';
 import https from 'node:https';
 
+import {exampleKey} from '../fixtures/signingKeys.js';
+import {verifyExchangeResultToken} from '../../lib/workflows/common.js';
+
 const agent = new https.Agent({rejectUnauthorized: false});
 const client = httpClient.extend({agent});
+
+function getWithAcceptOnly(url, acceptHeader) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(url);
+    const options = {
+      hostname: u.hostname,
+      port: u.port,
+      path: u.pathname + u.search,
+      method: 'GET',
+      headers: {Accept: acceptHeader}
+    };
+    const protocol = u.protocol === 'https:' ? https : http;
+    const req = protocol.request(options, res => {
+      res.resume();
+      res.on('end', () => resolve({
+        status: res.statusCode,
+        headers: res.headers
+      }));
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
 
 const testRP = {
   type: 'native',
@@ -242,6 +269,110 @@ describe('Interactions URL Endpoint', () => {
         findOneStub.restore();
         workflowsStub.restore();
       }
+    });
+
+    describe('content negotiation', () => {
+      it('should return JSON when Accept: application/json', async () => {
+        const exchange = {
+          id: await createId(),
+          workflowId: testRP.clientId,
+          challenge: await createId(),
+          state: 'pending',
+          createdAt: new Date(),
+          ttl: 900
+        };
+
+        const findOneStub = sinon.stub(
+          database.collections.Exchanges, 'findOne')
+          .resolves(exchange);
+        const workflowsStub = sinon.stub(config.opencred, 'workflows')
+          .value([testRP]);
+
+        try {
+          const result = await client.get(
+            `${baseUrl}/interactions/${exchange.id}`,
+            {headers: {Accept: 'application/json'}}
+          );
+          expect(result.status).to.equal(200);
+          expect(result.data).to.have.property('protocols');
+          expect(result.data.protocols).to.have.property('interact');
+        } finally {
+          findOneStub.restore();
+          workflowsStub.restore();
+        }
+      });
+
+      it('should return JSON when no Accept header', async () => {
+        const exchange = {
+          id: await createId(),
+          workflowId: testRP.clientId,
+          challenge: await createId(),
+          state: 'pending',
+          createdAt: new Date(),
+          ttl: 900
+        };
+
+        const findOneStub = sinon.stub(
+          database.collections.Exchanges, 'findOne')
+          .resolves(exchange);
+        const workflowsStub = sinon.stub(config.opencred, 'workflows')
+          .value([testRP]);
+
+        try {
+          const result = await client.get(
+            `${baseUrl}/interactions/${exchange.id}`,
+            {headers: {Accept: undefined}}
+          );
+          expect(result.status).to.equal(200);
+          expect(result.data).to.have.property('protocols');
+        } finally {
+          findOneStub.restore();
+          workflowsStub.restore();
+        }
+      });
+
+      it('should redirect to verification when Accept: text/html', async () => {
+        const exchange = {
+          id: await createId(),
+          workflowId: testRP.clientId,
+          challenge: await createId(),
+          state: 'pending',
+          createdAt: new Date(),
+          ttl: 900
+        };
+
+        const findOneStub = sinon.stub(
+          database.collections.Exchanges, 'findOne')
+          .resolves(exchange);
+        const workflowsStub = sinon.stub(config.opencred, 'workflows')
+          .value([testRP]);
+        const signingKeysStub = sinon.stub(config.opencred, 'signingKeys')
+          .value([{...exampleKey, purpose: ['id_token']}]);
+
+        try {
+          const result = await getWithAcceptOnly(
+            `${baseUrl}/interactions/${exchange.id}`,
+            'text/html'
+          );
+          expect(result.status).to.equal(302);
+          const location = result.headers?.location ||
+            result.headers?.Location;
+          expect(location).to.be.a('string');
+          expect(location).to.match(/\/verification\?exchange_token=/);
+          const match = location.match(/exchange_token=([^&]+)/);
+          expect(match).to.not.be(undefined);
+          const token = decodeURIComponent(match[1]);
+          const payload = await verifyExchangeResultToken(token);
+          expect(payload.exchangeId).to.equal(exchange.id);
+          expect(payload.workflowId).to.equal(exchange.workflowId);
+          expect(payload.procedurePath).to.equal('verification');
+          expect(payload.scope).to.equal('exchange:partial');
+        } finally {
+          findOneStub.restore();
+          workflowsStub.restore();
+          signingKeysStub.restore();
+        }
+      });
     });
   });
 
