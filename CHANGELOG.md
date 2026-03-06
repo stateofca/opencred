@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.0.1 - 2026-03-dd
+## 10.0.1 - 2026-03-06
 
 ### Added
 - Add content negotiation to interaction URL: redirect browser requests
