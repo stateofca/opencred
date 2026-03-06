@@ -281,6 +281,142 @@ describe('OpenCred API - Native Workflow', function() {
     insertStub.restore();
   });
 
+  describe('QR code qr parameter', () => {
+    it('should generate QR for qr=interact', async function() {
+      const exchange = await createExchangeWithAuthRequest({
+        workflow: testWorkflow});
+      const insertStub = sinon.stub(
+        database.collections.Exchanges, 'insertOne')
+        .resolves(exchange);
+      const signingKeysStub = sinon.stub(config.opencred, 'signingKeys')
+        .value([{...exampleKey, purpose: ['id_token']}]);
+      const basic = Buffer.from('test:shhh').toString('base64');
+      let result;
+      let err;
+      try {
+        result = await client
+          .post(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges` +
+            '?qr=interact', {
+            headers: {Authorization: `Basic ${basic}`}
+          });
+      } catch(e) {
+        err = e;
+      }
+
+      should.not.exist(err);
+      result.status.should.equal(200);
+      result.data.should.have.property('QR');
+      result.data.QR.should.match(/^data:image\/png;base64,/);
+      insertStub.restore();
+      signingKeysStub.restore();
+    });
+
+    it('should generate QR for qr=OID4VP', async function() {
+      const exchange = await createExchangeWithAuthRequest({
+        workflow: testWorkflow});
+      const insertStub = sinon.stub(
+        database.collections.Exchanges, 'insertOne')
+        .resolves(exchange);
+      const basic = Buffer.from('test:shhh').toString('base64');
+      let result;
+      let err;
+      try {
+        result = await client
+          .post(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges` +
+            '?qr=OID4VP', {
+            headers: {Authorization: `Basic ${basic}`}
+          });
+      } catch(e) {
+        err = e;
+      }
+
+      should.not.exist(err);
+      result.status.should.equal(200);
+      result.data.should.have.property('QR');
+      result.data.QR.should.match(/^data:image\/png;base64,/);
+      insertStub.restore();
+    });
+
+    it('should generate QR for qr=vcapi', async function() {
+      const exchange = await createExchangeWithAuthRequest({
+        workflow: testWorkflow});
+      const insertStub = sinon.stub(
+        database.collections.Exchanges, 'insertOne')
+        .resolves(exchange);
+      const basic = Buffer.from('test:shhh').toString('base64');
+      let result;
+      let err;
+      try {
+        result = await client
+          .post(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges` +
+            '?qr=vcapi', {
+            headers: {Authorization: `Basic ${basic}`}
+          });
+      } catch(e) {
+        err = e;
+      }
+
+      should.not.exist(err);
+      result.status.should.equal(200);
+      result.data.should.have.property('QR');
+      result.data.QR.should.match(/^data:image\/png;base64,/);
+      insertStub.restore();
+    });
+
+    it('should not generate QR for invalid protocol', async function() {
+      const exchange = await createExchangeWithAuthRequest({
+        workflow: testWorkflow});
+      const insertStub = sinon.stub(
+        database.collections.Exchanges, 'insertOne')
+        .resolves(exchange);
+      const basic = Buffer.from('test:shhh').toString('base64');
+      let result;
+      let err;
+      try {
+        result = await client
+          .post(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges` +
+            '?qr=invalid-protocol', {
+            headers: {Authorization: `Basic ${basic}`}
+          });
+      } catch(e) {
+        err = e;
+      }
+
+      should.not.exist(err);
+      result.status.should.equal(200);
+      result.data.should.not.have.property('QR');
+      result.data.should.not.have.property('protocol');
+      insertStub.restore();
+    });
+
+    it('should respect qr=false to disable QR',
+      async function() {
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: testWorkflow});
+        const insertStub = sinon.stub(
+          database.collections.Exchanges, 'insertOne')
+          .resolves(exchange);
+        const basic = Buffer.from('test:shhh').toString('base64');
+        let result;
+        let err;
+        try {
+          result = await client
+            .post(`${baseUrl}/workflows/${testWorkflow.clientId}/exchanges` +
+              '?qr=false', {
+              headers: {Authorization: `Basic ${basic}`}
+            });
+        } catch(e) {
+          err = e;
+        }
+
+        should.not.exist(err);
+        result.status.should.equal(200);
+        result.data.should.not.have.property('QR');
+        result.data.should.not.have.property('protocol');
+        insertStub.restore();
+      });
+  });
+
   it('should return 404 if invalid workflowId', async function() {
     const exchange = await createExchangeWithAuthRequest({
       workflow: testWorkflow});

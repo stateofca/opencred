@@ -19,6 +19,9 @@
   complete an exchange.
 - Add advanced settings menu for selecting additional protocols to try (e.g.,
   OID4VP-1.0 with dcql_query for Spruce pre-release wallet testing).
+- Add additional options for `qr` parameter on exchange creation to generate QR
+  for specific protocols other than the default OID4VP protocol, which is
+  included either with `?qr=true` or when `includeQRByDefault` is true.
 
 ### Changed
 - Use `protocols.interact` from `GET /interactions/:exchangeId` (or the

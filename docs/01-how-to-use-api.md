@@ -38,10 +38,22 @@ Authorization: Basic base64(clientId:clientSecret)
 
 **Response**:
 The response will include details of the exchange, including a QR code (as a
-base64 data URL image) and an OID4VP URI. For performance reasons or if a QR
-code for the default OID4VP protocol is not needed, you may omit the `QR`
-property by requesting `?qr=false` in the query string of your create exchange
-request.
+base64 data URL image) and an OID4VP URI. 
+
+**QR Code Options**:
+- By default, a QR code for the OID4VP protocol is included (when
+  `includeQRByDefault` is true). To disable QR codes, use `?qr=false`.
+- To request a QR code for a specific protocol, use the `qr` query parameter
+  with a protocol name. For example:
+  - `?qr=interact` - QR code for the interaction URL
+  - `?qr=OID4VP` - QR code for OID4VP (default)
+  - `?qr=OID4VP-draft18` - QR code for OID4VP draft 18
+  - `?qr=vcapi` - QR code for VC-API endpoint
+  - Other protocol keys may be available depending on workflow configuration
+- The `qr` parameter accepts `"true"` (include QR for OID4VP), `"false"`
+  (disable QR), or a protocol name string (generate QR for that protocol).
+- When a QR code is generated via the `qr` parameter with a protocol name, the
+  response includes a `protocol` field indicating which protocol the QR encodes.
 
 **Example Response**:
 
@@ -125,7 +137,7 @@ Authorization: Bearer example-access-token
 
 **Response**:
 The response will include the state of the exchange, which can be `pending`, 
-`active`, `complete`, or `invalid`. The verified VeriablePresentation will be
+`active`, `complete`, or `invalid`. The verified VerifiablePresentation will be
 found in the `exchange.variables.results.default.verifiablePresentation` where
 `default` is the name of the step being completed.
 
