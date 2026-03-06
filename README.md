@@ -46,8 +46,53 @@ Copy the example to the default config location `cp configs/combined.example.yam
 configs/combined.yaml` and edit the file. Configure the details for your relying
 party and any of the OpenCred features below.
 
-> 💡 **Tip:** When using VS Code with the YAML extension, you'll get type hints
-> as you edit your `configs/combined.yaml` file.
+#### Setup with configuration scripts
+
+For a quick start, use the all-in-one config generator to create a runnable
+configuration with signing keys, a self-signed certificate (with SAN DNS for
+your domain), and starter workflows:
+
+```bash
+npm run generate:config -- --domain=opencred.example.com
+```
+
+This generates keys, a self-signed certificate with Subject Alternative Name
+(SAN) for your domain, and writes `configs/combined.yaml` (or
+`configs/combined.generated.yaml` if `combined.yaml` already exists). The config
+includes five starter workflows: DL VC preset, mDL mDoc query, mDL SpruceID,
+mDL/VC DL hybrid, and Open Badge.
+
+**Requirements:** OpenSSL must be installed (used for certificate generation
+with SAN DNS, required for DC API and `x509_san_dns` client_id_scheme).
+
+To generate only signing keys and certificate (e.g., to add to an existing
+config):
+
+```bash
+npm run generate:prime256v1 authorization_request -- --domain=opencred.example.com
+```
+
+Copy the output into your config's `signingKeys` section. Without `--domain`,
+only keys are generated (no certificate).
+
+Configuration notes: 
+
+* In development environments, you likely need to run a local tunnel to access the
+  server from a wallet app. Services "localtunnel" and "ngrok" are popular
+  options. Set the `app.server.baseUri` in your config to the URL of the tunnel.
+  OpenCred requires a secure connection, so you will need to use a HTTPS URL.
+* In production environments and when using production wallets, a self-signed
+  certificate may not be acceptable. The generated certificate serves as an
+  example of how X509 certificates are configured for OID4VP verification
+  exchanges that use the `x509_san_dns` `client_id_scheme`.
+* The generated configuration includes a verification certificate in a `caStore`
+  for self-signed mDoc credentials issued by the same key that signs
+  authorization requests. This is mainly an example of how to configure the
+  `caStore` for mDoc credentials. In production environments, you will likely
+  want to use a trusted certificate authority for mDoc credentials. The
+  `caStore` is also used to verify `x5c` headers in VCDM 1.1 credentials in the
+  `jwt_vc_json` format.
+
 
 If a `BEDROCK_CONFIG` environment variable is set, the config specified in
 the environment variable will supersede any file based configuration. The
@@ -55,31 +100,6 @@ environment variable must be a Base64 encoded string based on a YAML config
 file. The environment variable may be set with the following command:
 ```
 export BEDROCK_CONFIG=$(cat combined.yaml | base64)
-```
-
-#### Optional Config File Validation in VS Code
-
-If you're using VS Code as your editing environment, you can install an
-extension and configure automatic schema validation for your `combined.yaml`
-file. This will provide you with real-time feedback as you type in your
-configuration file. Errors on missing required properties, descriptions and
-example values for configuration fields, auto-complete of fields are supported. 
-
-To configure your VS Code workspace to use auto-completion, install the plugin
-[redhat.vscode-yaml](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)
-and add settings to a `.vscode/settings.json` file at the root of this repo. If
-the file does not exist, create it. Add the following content to the file:
-```json
-{
-  "yaml.schemas": {
-    "./configs/combined.schema.json": "combined.yaml"
-  },
-  "yaml.format.enable": true,
-  "yaml.completion": true,
-  "yaml.validate": true,
-  "yaml.format.proseWrap": "preserve",
-  "yaml.format.printWidth": 80
-}
 ```
 
 #### Configuring a Native workflow

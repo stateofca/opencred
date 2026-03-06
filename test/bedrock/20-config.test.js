@@ -7,7 +7,10 @@
 
 import expect from 'expect.js';
 
-import {applyWorkflowDefaults} from '../../configs/configUtils.js';
+import {
+  applyWorkflowDefaults,
+  OpenCredConfigSchema
+} from '../../configs/configUtils.js';
 
 const app1 = {
   clientId: 'test1',
@@ -85,4 +88,70 @@ describe('Config - setting defaults with configFrom', function() {
     })).to.throwError();
   });
 
+});
+
+describe('Config - reCaptcha optional', function() {
+  it('should parse config without reCaptcha section', function() {
+    const configWithoutReCaptcha = {
+      workflows: [{
+        clientId: 'test',
+        clientSecret: 'secret',
+        type: 'native',
+        query: [{
+          type: ['VerifiableCredential']
+        }],
+        oidc: {
+          redirectUri: 'https://example.com'
+        }
+      }],
+      defaultBrand: {
+        cta: '#006847',
+        primary: '#008f5a',
+        header: '#004225'
+      }
+    };
+
+    const result = OpenCredConfigSchema.parse(configWithoutReCaptcha);
+
+    expect(result.reCaptcha).to.be.an('object');
+    expect(result.reCaptcha.enable).to.equal(false);
+    expect(result.reCaptcha.pages).to.be.an('array');
+    expect(result.reCaptcha.pages.length).to.equal(0);
+  });
+
+  it('should parse config with reCaptcha section', function() {
+    const configWithReCaptcha = {
+      workflows: [{
+        clientId: 'test',
+        clientSecret: 'secret',
+        type: 'native',
+        query: [{
+          type: ['VerifiableCredential']
+        }],
+        oidc: {
+          redirectUri: 'https://example.com'
+        }
+      }],
+      defaultBrand: {
+        cta: '#006847',
+        primary: '#008f5a',
+        header: '#004225'
+      },
+      reCaptcha: {
+        enable: true,
+        version: 2,
+        siteKey: 'test-site-key',
+        secretKey: 'test-secret-key',
+        pages: ['audit']
+      }
+    };
+
+    const result = OpenCredConfigSchema.parse(configWithReCaptcha);
+
+    expect(result.reCaptcha).to.be.an('object');
+    expect(result.reCaptcha.enable).to.equal(true);
+    expect(result.reCaptcha.version).to.equal(2);
+    expect(result.reCaptcha.siteKey).to.equal('test-site-key');
+    expect(result.reCaptcha.pages).to.eql(['audit']);
+  });
 });

@@ -399,7 +399,10 @@ export const OpenCredConfigSchema = z.object({
   trustedCredentialIssuers: z.array(z.string()).optional(),
   caStore: z.array(z.object({pem: z.string()})).default([])
     .transform(arr => arr.map(item => item.pem)),
-  reCaptcha: ReCaptchaSchema.optional(),
+  reCaptcha: ReCaptchaSchema.default({
+    enable: false,
+    pages: []
+  }),
   audit: AuditSchema.default({enable: false})
 }).transform(data => {
   // Ensure options is populated with field-level defaults from OptionsSchema

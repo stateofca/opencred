@@ -6,6 +6,8 @@
 - Allow encoded JSON string for mainDocument and linkageDocument.
 - Enable GitHub Actions to run conditionally based on environment variables for
   better working with forks.
+- Add configuration script to generate a complete configuration with signing keys,
+  a self-signed certificate (with SAN DNS for your domain), and starter workflows.
 
 ### Fixed
 - Fix issue with didWeb document signing key ID, allow customization or use

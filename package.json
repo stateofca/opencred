@@ -12,6 +12,7 @@
   },
   "scripts": {
     "check": "npm run lint && npm run test:unit && npm run test:bedrock",
+    "generate:config": "node ./scripts/generateConfig.js",
     "generate:prime256v1": "node ./scripts/generatePrime256v1Key.js",
     "generate:rsa256": "node ./scripts/generateRSA256Key.js",
     "tunnel": "lt -p 22080",
