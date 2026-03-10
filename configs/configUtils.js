@@ -42,9 +42,12 @@ const DEFAULT_BRAND = {
   header: '#004225'
 };
 export const BrandSchema = z.object({
-  cta: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
-  primary: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
-  header: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  cta: z.string().regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional().default(DEFAULT_BRAND.cta),
+  primary: z.string().regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional().default(DEFAULT_BRAND.primary),
+  header: z.string().regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional().default(DEFAULT_BRAND.header),
   primaryLogo: z.union([z.string(), ImgSchema]).optional(),
   secondaryLogo: z.union([z.string(), ImgSchema]).optional(),
   primaryLink: z.string().optional(),
@@ -428,7 +431,9 @@ export const OpenCredConfigSchema = z.object({
 export const applyWorkflowDefaults = (
   {opencred, workflows, workflow, refs = []}
 ) => {
-  const defaultBrand = {brand: opencred.defaultBrand ?? DEFAULT_BRAND};
+  // Compute base brand: DEFAULT_BRAND merged with opencred.defaultBrand
+  const baseBrand = {...DEFAULT_BRAND, ...(opencred.defaultBrand ?? {})};
+
   if(workflow.configFrom) {
     if(typeof workflow.configFrom !== 'string') {
       const error = new Error(
@@ -457,25 +462,37 @@ export const applyWorkflowDefaults = (
       throw error;
     }
     if(configFrom.configFrom) {
+      const configFromResult = applyWorkflowDefaults({
+        opencred,
+        workflows,
+        workflow: configFrom,
+        refs: refs.concat(workflow.clientId)
+      });
+      // Merge brand: configFrom's brand (which already includes base +
+      // its overrides) with this workflow's brand overrides
+      const inheritedBrand = configFromResult.brand ?? baseBrand;
+      const mergedBrand = {...inheritedBrand, ...(workflow.brand ?? {})};
       return {
-        ...defaultBrand,
-        ...applyWorkflowDefaults({
-          opencred,
-          workflows,
-          workflow: configFrom,
-          refs: refs.concat(workflow.clientId)
-        }),
-        ...workflow
+        ...configFromResult,
+        ...workflow,
+        brand: mergedBrand
       };
     }
+    // Merge brand: configFrom's brand (merged with base) with this workflow's
+    // brand overrides
+    const configFromBrand = configFrom.brand ?
+      {...baseBrand, ...configFrom.brand} : baseBrand;
+    const mergedBrand = {...configFromBrand, ...(workflow.brand ?? {})};
     return {
-      ...defaultBrand,
       ...configFrom,
-      ...workflow
+      ...workflow,
+      brand: mergedBrand
     };
   }
+  // No configFrom: merge base brand with workflow's brand overrides
+  const mergedBrand = {...baseBrand, ...(workflow.brand ?? {})};
   return {
-    ...defaultBrand,
-    ...workflow
+    ...workflow,
+    brand: mergedBrand
   };
 };

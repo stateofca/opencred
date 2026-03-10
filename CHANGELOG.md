@@ -1,5 +1,12 @@
 # opencred-platform Changelog
 
+## 10.0.2 - 2026-03-dd
+
+### Fixed
+- Fix default brand color/logo population from defaultBrand when partial brand
+  is provided in a workflow.
+- Fix CSS variable population for brand colors to skip non-supported properties.
+
 ## 10.0.1 - 2026-03-06
 
 ### Added

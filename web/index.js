@@ -96,7 +96,14 @@ brVue.initialize({
       }
     }});
     applyTheme(); // set baseline defaults.
-    await brQuasar.theme({brand: appConfig.brand});
+
+    // Filter brand object to only string properties to set as CSS variables
+    const brandColors = Object.fromEntries(
+      // eslint-disable-next-line no-unused-vars
+      Object.entries(appConfig.brand).filter(([_, v]) =>
+        typeof v == 'string'));
+    await brQuasar.theme({brand: brandColors});
+
     createHead();
     // create root Vue component
     return App;
