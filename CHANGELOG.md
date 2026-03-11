@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.0.2 - 2026-03-dd
+## 10.0.2 - 2026-03-11
 
 ### Fixed
 - Fix OID4VP authorization request JWT typ header: use `oauth-authz-req+jwt` per
