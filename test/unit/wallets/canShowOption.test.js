@@ -67,6 +67,16 @@ describe('canShowOption', () => {
       });
       expect(result).to.eql({available: false});
     });
+
+    it('should return available for Interaction wallet in jwt_vc_json workflow',
+      () => {
+        const result = canShowOption({
+          ...baseOptions,
+          workflow: {query: [{format: ['jwt_vc_json']}]},
+          walletId: 'interaction'
+        });
+        expect(result).to.eql({available: true});
+      });
   });
 
   describe('protocolId', () => {
@@ -103,6 +113,20 @@ describe('canShowOption', () => {
       });
       expect(result).to.eql({available: false});
     });
+
+    it('should return available for interact protocol in jwt_vc_json workflow',
+      () => {
+        const result = canShowOption({
+          ...baseOptions,
+          workflow: {query: [{format: ['jwt_vc_json']}]},
+          userSettings: {
+            ...baseOptions.userSettings,
+            enabledProtocols: ['interact']
+          },
+          protocolId: 'interact'
+        });
+        expect(result).to.eql({available: true});
+      });
   });
 
   describe('empty workflow', () => {

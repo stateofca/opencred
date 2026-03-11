@@ -38,29 +38,35 @@ describe('Interaction Wallet Configuration', () => {
   });
 
   describe('supportedFormats', () => {
-    it('should contain expected formats', () => {
+    it('should contain all credential formats (format-agnostic URL)', () => {
       expect(interactionWallet.supportedFormats).to.be.an('array');
       expect(interactionWallet.supportedFormats).to.contain('ldp_vc');
-      expect(interactionWallet.supportedFormats.length).to.be(1);
+      expect(interactionWallet.supportedFormats).to.contain('jwt_vc_json');
+      expect(interactionWallet.supportedFormats).to.contain('mso_mdoc');
+      expect(interactionWallet.supportedFormats.length).to.be(3);
     });
   });
 
   describe('protocol/interaction method combinations', () => {
-    it('should support ldp_vc + interact + copy', () => {
+    it('should support all formats + interact + copy', () => {
       const protocol = interactionWallet.supportedProtocols.interact;
       expect(protocol).to.be.an('object');
       expect(protocol.copy).to.be.an('object');
       expect(protocol.copy.formats).to.be.an('array');
       expect(protocol.copy.formats).to.contain('ldp_vc');
+      expect(protocol.copy.formats).to.contain('jwt_vc_json');
+      expect(protocol.copy.formats).to.contain('mso_mdoc');
       expect(protocol.copy.descriptionKey).to.be.a('string');
     });
 
-    it('should support ldp_vc + interact + qr', () => {
+    it('should support all formats + interact + qr', () => {
       const protocol = interactionWallet.supportedProtocols.interact;
       expect(protocol).to.be.an('object');
       expect(protocol.qr).to.be.an('object');
       expect(protocol.qr.formats).to.be.an('array');
       expect(protocol.qr.formats).to.contain('ldp_vc');
+      expect(protocol.qr.formats).to.contain('jwt_vc_json');
+      expect(protocol.qr.formats).to.contain('mso_mdoc');
       expect(protocol.qr.descriptionKey).to.be.a('string');
     });
   });
@@ -89,6 +95,30 @@ describe('Interaction Wallet Configuration', () => {
       expect(copyCombo.request).to.be('https://example.com/interact/123');
       expect(qrCombo.request).to.be('https://example.com/interact/123');
     });
+
+    it('should return copy and qr for jwt_vc_json when interact URL available',
+      () => {
+        const exchange = {
+          protocols: {
+            interact: 'https://example.com/interact/456'
+          }
+        };
+        const combinations = getProtocolInteractionMethods({
+          walletId: 'interaction',
+          format: 'jwt_vc_json',
+          exchange
+        });
+        expect(combinations).to.be.an('array');
+        expect(combinations.length).to.be.greaterThan(0);
+        const copyCombo = combinations.find(c =>
+          c.protocolId === 'interact' && c.interactionMethod === 'copy');
+        const qrCombo = combinations.find(c =>
+          c.protocolId === 'interact' && c.interactionMethod === 'qr');
+        expect(copyCombo).to.be.an('object');
+        expect(qrCombo).to.be.an('object');
+        expect(copyCombo.request).to.be('https://example.com/interact/456');
+        expect(qrCombo.request).to.be('https://example.com/interact/456');
+      });
 
     it('should return empty array when interact URL not available', () => {
       const exchange = {protocols: {}};

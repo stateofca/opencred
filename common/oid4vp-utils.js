@@ -42,3 +42,14 @@ export const clientIdSchemeForProfile = ({profile, clientIdScheme}) => {
   }
   return {client_id_scheme: clientIdScheme};
 };
+
+/**
+ * Returns true if the profile supports request_uri_method=post (OID4VP 1.0
+ * Section 5.10). OID4VP-draft18 predates this and does not use it.
+ *
+ * @param {string} profile - OID4VP profile identifier.
+ * @returns {boolean} True if the profile should include
+ *   request_uri_method=post.
+ */
+export const profileSupportsRequestUriMethodPost = profile =>
+  profile !== 'OID4VP-draft18';

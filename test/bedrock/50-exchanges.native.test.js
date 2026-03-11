@@ -115,6 +115,7 @@ describe('Exchanges (Native)', async () => {
         trustedVariables, untrustedVariables);
       expect(exchange).to.have.property('vcapi');
       expect(exchange).to.have.property('OID4VP');
+      expect(exchange.OID4VP).to.contain('request_uri_method=post');
       expect(exchange).to.have.property('id');
       expect(dbStub.called).to.be(true);
     });

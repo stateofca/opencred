@@ -763,11 +763,15 @@ const getPresentationEvent = (eventType, clientId, exchangeId, error) => {
  *
  * @param {string | undefined} clientId - The workflow identifier.
  * @param {string} exchangeId - The exchange identifier.
+ * @param {string} [profile] - Optional OID4VP profile identifier.
  * @returns {object} Presentation start event object.
  */
-const presentationStart = (clientId, exchangeId) => {
-  const startEvent = getPresentationEvent(
-    PresentationEvent.PresentationStart, clientId, exchangeId);
+const presentationStart = (clientId, exchangeId, profile) => {
+  const startEvent = {
+    ...getPresentationEvent(
+      PresentationEvent.PresentationStart, clientId, exchangeId),
+    ...(profile && {profile})
+  };
   logger.info(PRESENTATION_EVENT_LOG_NAME, startEvent);
 };
 

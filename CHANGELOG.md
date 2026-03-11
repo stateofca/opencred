@@ -14,7 +14,11 @@
 - Fix CSS variable population for brand colors to skip non-supported properties.
 - Fix npm audit-flagged `jsonpath` with `jsonpath-plus`.
 - Fix incorrect error serialization for some nested LDP verification errors.
-- Fix support for authorization request POST with `wallet_nonce`.
+- Fix support for authorization request POST with `wallet_nonce`, advertised via
+  `request_uri_method: "post"` in OID4VP protocol URLs, except the
+  OID4VP-draft18 profile that does not support it.
+- Fix missing interaction URL protocol for jwt_vc_json and mso_mdoc workflows if
+  user enables it in advanced settings.
 
 ## 10.0.1 - 2026-03-06
 
