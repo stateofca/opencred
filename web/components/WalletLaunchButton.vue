@@ -35,7 +35,7 @@ SPDX-License-Identifier: BSD-3-Clause
           v-else
           name="account_balance_wallet"
           size="32px"
-          class="flex-shrink-0 text-gray-600" />
+          class="flex-shrink-0 text-current" />
         <span class="font-medium text-left truncate min-w-0">
           {{wallet?.nameKey ? $t(wallet.nameKey) : (wallet?.name || walletId)}}
         </span>
@@ -43,7 +43,7 @@ SPDX-License-Identifier: BSD-3-Clause
           v-if="copyOnly"
           name="content_copy"
           size="24px"
-          class="flex-shrink-0 ml-auto text-gray-600" />
+          class="flex-shrink-0 ml-auto text-current" />
       </div>
     </cadmv-button>
   </a>
@@ -69,7 +69,7 @@ SPDX-License-Identifier: BSD-3-Clause
         v-else
         name="account_balance_wallet"
         size="32px"
-        class="flex-shrink-0 text-gray-600" />
+        class="flex-shrink-0 text-current" />
       <span class="font-medium text-left truncate min-w-0">
         {{wallet?.nameKey ? $t(wallet.nameKey) : (wallet?.name || walletId)}}
       </span>
@@ -77,7 +77,7 @@ SPDX-License-Identifier: BSD-3-Clause
         v-if="copyOnly"
         name="content_copy"
         size="24px"
-        class="flex-shrink-0 ml-auto text-gray-600" />
+        class="flex-shrink-0 ml-auto text-current" />
     </div>
   </cadmv-button>
 </template>

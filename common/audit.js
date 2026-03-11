@@ -6,7 +6,7 @@
  */
 
 import {canonicalize} from 'json-canonicalize';
-import jp from 'jsonpath';
+import {JSONPath} from 'jsonpath-plus';
 
 import {
   didRequiresHistoricalTracking,
@@ -243,7 +243,7 @@ const getFieldMatchesDiVp = (vpToken, fields) => {
       Object.entries(fields)
         .map(([path, value]) => {
           const credentialMatches = credentials.some(c => {
-            const credentialQueryResult = jp.query(c, path);
+            const credentialQueryResult = JSONPath({path, json: c});
             const [credentialValue] = credentialQueryResult.length > 0 ?
               credentialQueryResult :
               [null];

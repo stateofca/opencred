@@ -12,6 +12,7 @@
 - Fix default brand color/logo population from defaultBrand when partial brand
   is provided in a workflow.
 - Fix CSS variable population for brand colors to skip non-supported properties.
+- Fix npm audit-flagged `jsonpath` with `jsonpath-plus`.
 
 ## 10.0.1 - 2026-03-06
 

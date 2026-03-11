@@ -52,7 +52,7 @@ SPDX-License-Identifier: BSD-3-Clause
           <q-icon
             :name="button.icon"
             size="32px"
-            class="flex-shrink-0 text-gray-600" />
+            class="flex-shrink-0 text-current" />
           <span class="font-medium text-left truncate min-w-0">
             {{button.label}}
           </span>

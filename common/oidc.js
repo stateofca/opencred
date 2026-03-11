@@ -8,7 +8,7 @@
 import * as JWT from '@digitalbazaar/minimal-jwt';
 import {config} from '@bedrock/core';
 import crypto from 'node:crypto';
-import jp from 'jsonpath';
+import {JSONPath} from 'jsonpath-plus';
 
 /**
  * Generates a JWT id_token from a VP exchange if the exchange is complete.
@@ -112,7 +112,7 @@ export function extractClaimsForIdToken(credentials, claimsConfig) {
 
     const subject = credential.credentialSubject ?? {};
     const jsonPath = _normalizePathForFormat(path, format);
-    const values = jp.query(subject, jsonPath);
+    const values = JSONPath({path: jsonPath, json: subject});
     if(values && values.length > 0 && values[0] !== undefined) {
       result[name] = values[0];
     }

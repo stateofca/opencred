@@ -24,7 +24,7 @@ import {decodeJwt} from 'jose';
 import {didResolver} from './documentLoader.js';
 import {generateId} from 'bnid';
 import {httpClient} from '@digitalbazaar/http-client';
-import jp from 'jsonpath';
+import {JSONPath} from 'jsonpath-plus';
 import {logger} from '../lib/logger.js';
 import {verifyChain} from './x509.js';
 
@@ -518,17 +518,16 @@ function checkVcForPresentationDefinition(vc, presentation_definition) {
       }
 
       try {
-        const parsedPath = jp.parse(path);
-        if(!parsedPath || parsedPath.length === 0) {
+        const pathArray = JSONPath.toPathArray(path);
+        if(!pathArray || pathArray.length === 0) {
           continue;
         }
 
-        // Extract the field name from the parsed path
-        // For paths like $['@context'] or $['type'], we want the identifier
-        const lastExpression = parsedPath[parsedPath.length - 1];
-        if(lastExpression && lastExpression.expression &&
-           lastExpression.expression.type === 'string_literal') {
-          fieldName = lastExpression.expression.value;
+        // Extract the field name from the last path segment (when it's a
+        // property name)
+        const lastSegment = pathArray[pathArray.length - 1];
+        if(typeof lastSegment === 'string' && lastSegment !== '$') {
+          fieldName = lastSegment;
           break;
         }
       } catch {
