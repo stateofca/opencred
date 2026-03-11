@@ -1305,7 +1305,8 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
     describe('Integration test', function() {
       it('should handle full wallet response flow with raw wallet format',
         async function() {
-          // Simulates real wallet: credentialResponse.data (no protocol wrapper)
+          // Simulates real CA DMV wallet: credentialResponse.data
+          // (no protocol wrapper)
           const responseBody = {
             state: authorizationRequest.state,
             vp_token: {
