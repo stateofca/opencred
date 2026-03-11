@@ -17,7 +17,7 @@ import {verifyUtils} from './utils.js';
  * @returns {string|undefined} - Error message string or undefined.
  */
 export function toErrorMessage(err) {
-  if(err == null) {
+  if(!err) {
     return undefined;
   }
   if(typeof err === 'string') {

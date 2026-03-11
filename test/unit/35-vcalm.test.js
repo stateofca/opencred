@@ -20,7 +20,7 @@ describe('toErrorMessage', () => {
 
   it('should return the string for string input', () => {
     expect(toErrorMessage('test error message')).to.equal('test error message');
-    expect(toErrorMessage('')).to.equal('');
+    expect(toErrorMessage('')).to.equal(undefined);
   });
 
   it('should return message for Error instance', () => {
