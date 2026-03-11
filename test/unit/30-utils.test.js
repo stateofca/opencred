@@ -208,3 +208,230 @@ describe('checkVcQueryMatch presentation_definition (path parsing)', () => {
     expect(result).to.be(true);
   });
 });
+
+describe('getVerifyPresentationDataIntegrityErrors', () => {
+  it('should return empty array when all verified', () => {
+    const vpResult = {
+      presentationResult: {
+        results: [{verified: true}]
+      },
+      credentialResults: [{
+        verified: true,
+        results: [{verified: true}]
+      }]
+    };
+    const errors =
+      verifyUtils.getVerifyPresentationDataIntegrityErrors(vpResult);
+    expect(errors).to.eql([]);
+  });
+
+  it('should extract presentation-level error', () => {
+    const vpResult = {
+      presentationResult: {
+        results: [{
+          verified: false,
+          error: {message: 'Proof verification failed'}
+        }]
+      },
+      credentialResults: [{
+        verified: true,
+        results: [{verified: true}]
+      }]
+    };
+    const errors =
+      verifyUtils.getVerifyPresentationDataIntegrityErrors(vpResult);
+    expect(errors).to.have.length(1);
+    expect(errors[0]).to.contain('Proof verification failed');
+    expect(errors[0]).to.contain('(Presentation)');
+  });
+
+  it('should extract credential-level error with message', () => {
+    const vpResult = {
+      presentationResult: {
+        results: [{verified: true}]
+      },
+      credentialResults: [{
+        verified: false,
+        results: [{
+          verified: false,
+          error: {message: 'Proof verification failed'}
+        }]
+      }]
+    };
+    const errors =
+      verifyUtils.getVerifyPresentationDataIntegrityErrors(vpResult);
+    expect(errors).to.have.length(1);
+    expect(errors[0]).to.contain('Proof verification failed');
+  });
+
+  it('should handle credential error with empty object', () => {
+    const vpResult = {
+      presentationResult: {
+        results: [{verified: true}]
+      },
+      credentialResults: [{
+        verified: false,
+        results: [{
+          verified: false,
+          error: {}
+        }]
+      }]
+    };
+    const errors =
+      verifyUtils.getVerifyPresentationDataIntegrityErrors(vpResult);
+    // Empty error object should be filtered out, resulting in empty string
+    // which gets filtered out of the final array
+    expect(errors).to.eql([]);
+  });
+
+  it('should handle credential error with undefined error', () => {
+    const vpResult = {
+      presentationResult: {
+        results: [{verified: true}]
+      },
+      credentialResults: [{
+        verified: false,
+        results: [{
+          verified: false,
+          error: undefined
+        }]
+      }]
+    };
+    const errors =
+      verifyUtils.getVerifyPresentationDataIntegrityErrors(vpResult);
+    // Undefined error.message should be filtered out
+    expect(errors).to.eql([]);
+  });
+
+  it('should extract status error for revoked credential', () => {
+    const vpResult = {
+      presentationResult: {
+        results: [{verified: true}]
+      },
+      credentialResults: [{
+        verified: true,
+        results: [{verified: true}],
+        statusResult: {
+          verified: true,
+          results: [{
+            verified: true,
+            credentialStatus: {
+              id: 'https://example.com/status#123',
+              statusPurpose: 'revocation'
+            },
+            status: true
+          }]
+        }
+      }]
+    };
+    const errors =
+      verifyUtils.getVerifyPresentationDataIntegrityErrors(vpResult);
+    expect(errors).to.have.length(1);
+    expect(errors[0]).to.contain('revoked');
+  });
+
+  it('should extract status error for unverified status', () => {
+    const vpResult = {
+      presentationResult: {
+        results: [{verified: true}]
+      },
+      credentialResults: [{
+        verified: true,
+        results: [{verified: true}],
+        statusResult: {
+          verified: false
+        }
+      }]
+    };
+    const errors =
+      verifyUtils.getVerifyPresentationDataIntegrityErrors(vpResult);
+    expect(errors).to.have.length(1);
+    expect(errors[0]).to.contain('status credential could not be verified');
+  });
+
+  it('should extract status errors array', () => {
+    const vpResult = {
+      presentationResult: {
+        results: [{verified: true}]
+      },
+      credentialResults: [{
+        verified: true,
+        results: [{verified: true}],
+        statusResult: {
+          errors: ['Status check failed', 'Network error']
+        }
+      }]
+    };
+    const errors =
+      verifyUtils.getVerifyPresentationDataIntegrityErrors(vpResult);
+    expect(errors).to.have.length(1);
+    expect(errors[0]).to.contain('Status check failed');
+    expect(errors[0]).to.contain('Network error');
+  });
+
+  it('should combine multiple error types', () => {
+    const vpResult = {
+      presentationResult: {
+        results: [{
+          verified: false,
+          error: {message: 'Presentation proof failed'}
+        }]
+      },
+      credentialResults: [{
+        verified: false,
+        results: [{
+          verified: false,
+          error: {message: 'Credential proof failed'}
+        }],
+        statusResult: {
+          verified: false
+        }
+      }]
+    };
+    const errors =
+      verifyUtils.getVerifyPresentationDataIntegrityErrors(vpResult);
+    expect(errors.length).to.be.greaterThan(0);
+    expect(errors.some(e =>
+      e.includes('Presentation proof failed'))).to.be(true);
+    expect(errors.some(e => e.includes('Credential proof failed'))).to.be(true);
+    expect(errors.some(e => e.includes('status credential'))).to.be(true);
+  });
+
+  it('should throw when presentationResult is missing', () => {
+    const vpResult = {
+      credentialResults: []
+    };
+    expect(() => {
+      verifyUtils.getVerifyPresentationDataIntegrityErrors(vpResult);
+    }).to.throwError();
+  });
+
+  it('should handle multiple unverified credentials', () => {
+    const vpResult = {
+      presentationResult: {
+        results: [{verified: true}]
+      },
+      credentialResults: [
+        {
+          verified: false,
+          results: [{
+            verified: false,
+            error: {message: 'First credential failed'}
+          }]
+        },
+        {
+          verified: false,
+          results: [{
+            verified: false,
+            error: {message: 'Second credential failed'}
+          }]
+        }
+      ]
+    };
+    const errors =
+      verifyUtils.getVerifyPresentationDataIntegrityErrors(vpResult);
+    expect(errors).to.have.length(1);
+    expect(errors[0]).to.contain('First credential failed');
+    expect(errors[0]).to.contain('Second credential failed');
+  });
+});

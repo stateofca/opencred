@@ -13,6 +13,7 @@
   is provided in a workflow.
 - Fix CSS variable population for brand colors to skip non-supported properties.
 - Fix npm audit-flagged `jsonpath` with `jsonpath-plus`.
+- Fix incorrect error serialization for some nested LDP verification errors.
 
 ## 10.0.1 - 2026-03-06
 

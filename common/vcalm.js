@@ -11,6 +11,28 @@ import {SUITES} from './suites.js';
 import {verifyUtils} from './utils.js';
 
 /**
+ * Safely extract an error message from various error-like values.
+ *
+ * @param {*} err - Error value (Error, object with message, string, etc.).
+ * @returns {string|undefined} - Error message string or undefined.
+ */
+export function toErrorMessage(err) {
+  if(err == null) {
+    return undefined;
+  }
+  if(typeof err === 'string') {
+    return err;
+  }
+  if(err instanceof Error) {
+    return err.message;
+  }
+  if(typeof err?.message === 'string') {
+    return err.message;
+  }
+  return undefined;
+}
+
+/**
  * Verify an LDP VerifiablePresentation and its contained credential.
  *
  * @param {object} options - Options for LDP VP verification.
@@ -40,8 +62,21 @@ export async function verifyLdpPresentation({
   });
   verified = vpResult.verified;
   if(!vpResult.verified) {
-    const errorMsg = vpResult.error?.errors?.map(e => e.message).join(', ');
-    errors.push(Array.isArray(errorMsg) ? errorMsg.join(', ') : errorMsg);
+    let errorMsg;
+    try {
+      const vpErrors =
+        verifyUtils.getVerifyPresentationDataIntegrityErrors(vpResult);
+      errorMsg = vpErrors.filter(Boolean).join(', ');
+    } catch {
+      errorMsg = null;
+    }
+    errorMsg = errorMsg || vpResult.error?.errors?.map(e => toErrorMessage(e))
+      .filter(Boolean).join(', ');
+    if(typeof errorMsg === 'string' && errorMsg) {
+      errors.push(errorMsg);
+    } else {
+      errors.push('Presentation verification failed');
+    }
   }
 
   // The credential we are looking for is either the one that matches the query.
@@ -54,15 +89,9 @@ export async function verifyLdpPresentation({
     return {errors, verified, verifiablePresentation: presentation, vc: null};
   }
 
-  const result = vc.id ? vpResult.credentialResults?.find(
-    cr => cr.credentialId === vc.id
-  ) : vpResult.credentialResults?.[0];
-  if(!result || !result.verified) {
-    const errorMsg = result?.error;
-    errors.push(Array.isArray(errorMsg) ? errorMsg.join(', ') : errorMsg ||
-      'Credential verification failed');
-    verified = false;
-  }
+  // Credential verification errors are already captured above via
+  // getVerifyPresentationDataIntegrityErrors when vpResult.verified is false.
+  // If vpResult.verified is true, all credentials passed verification.
 
   return {errors, verified, verifiablePresentation: presentation, vc};
 }

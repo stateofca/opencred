@@ -601,10 +601,11 @@ const getVerifyPresentationDataIntegrityErrors = vpResult => {
     .map(result => {
       return result.results
         .filter(result => !result.verified)
-        .map(result => result.error.message);
+        .map(result => result.error?.message);
     })
     .reduce((accumulatedMessages, currentMessages) =>
       accumulatedMessages.concat(currentMessages), [])
+    .filter(Boolean)
     .join(', ');
 
   const statusErrorMessage = vpResult.credentialResults.filter(

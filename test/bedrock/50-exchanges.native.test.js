@@ -342,7 +342,19 @@ describe('Exchanges (Native)', async () => {
         verifyStub.restore();
         const newVerifyStub = sinon.stub(
           verifyUtils, 'verifyPresentationDataIntegrity')
-          .resolves({verified: false, error: 'invalid vp'});
+          .resolves({
+            verified: false,
+            presentationResult: {
+              results: [{verified: true}]
+            },
+            credentialResults: [{
+              verified: false,
+              results: [{
+                verified: false,
+                error: {message: 'Proof verification failed'}
+              }]
+            }]
+          });
         return [workflowStub, newVerifyStub];
       },
       async () => {
