@@ -3,6 +3,9 @@
 ## 10.0.2 - 2026-03-dd
 
 ### Fixed
+- Fix OID4VP 1.0 spec compliance for client_id: OID4VP-1.0 and OID4VP-combined
+  now use the `decentralized_identifier:` prefix in client_id and omit
+  client_id_scheme per OID4VP 1.0 (Annex C, Annex D). OID4VP-draft18 unchanged.
 - Fix default brand color/logo population from defaultBrand when partial brand
   is provided in a workflow.
 - Fix CSS variable population for brand colors to skip non-supported properties.

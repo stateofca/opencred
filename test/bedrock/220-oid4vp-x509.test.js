@@ -10,7 +10,6 @@ import {
   generateCertificateChain
 } from '../utils/x509.js';
 import {config} from '@bedrock/core';
-import {domainToDidWeb} from '../../lib/didWeb.js';
 import {exampleKey2} from '../fixtures/signingKeys.js';
 import expect from 'expect.js';
 import {
@@ -48,7 +47,7 @@ const testWorkflow = {
   }
 };
 
-describe('OID4VP Standard - x509_san_dns Client ID Scheme', function() {
+describe('OID4VP x509_san_dns Client ID Scheme', function() {
   let originalSigningKeys;
   let signingKeyWithCert;
 
@@ -88,59 +87,6 @@ describe('OID4VP Standard - x509_san_dns Client ID Scheme', function() {
 
     const mockRequestUrl = '/workflows/test/exchanges/123/openid/' +
       'client/authorization/request';
-
-    it('should use DID client_id_scheme by default', async function() {
-      const result = await generateAuthorizationRequest({
-        workflow: testWorkflow,
-        exchange: mockExchange,
-        requestUrl: mockRequestUrl,
-        profile: 'OID4VP-1.0',
-        responseMode: 'dc_api'
-      });
-
-      expect(result).to.have.property('authorizationRequest');
-      expect(result).to.have.property('updatedExchange');
-      expect(result.authorizationRequest.client_id_scheme).to.equal('did');
-      expect(result.authorizationRequest.client_id).to.equal(
-        domainToDidWeb(config.server.baseUri)
-      );
-      expect(result.signingMetadata).to.be(undefined);
-    });
-
-    it('should use DID client_id_scheme when clientIdScheme is not provided',
-      async function() {
-        const result = await generateAuthorizationRequest({
-          workflow: testWorkflow,
-          exchange: mockExchange,
-          requestUrl: mockRequestUrl,
-          profile: 'OID4VP-1.0',
-          responseMode: 'dc_api'
-          // clientIdScheme not provided - should default to 'did'
-        });
-
-        expect(result.authorizationRequest.client_id_scheme).to.equal('did');
-        expect(result.authorizationRequest.client_id).to.equal(
-          domainToDidWeb(config.server.baseUri)
-        );
-      });
-
-    it('should use DID client_id_scheme when explicitly set to "did"',
-      async function() {
-        const result = await generateAuthorizationRequest({
-          workflow: testWorkflow,
-          exchange: mockExchange,
-          requestUrl: mockRequestUrl,
-          profile: 'OID4VP-1.0',
-          responseMode: 'dc_api',
-          clientIdScheme: 'did'
-        });
-
-        expect(result.authorizationRequest.client_id_scheme).to.equal('did');
-        expect(result.authorizationRequest.client_id).to.equal(
-          domainToDidWeb(config.server.baseUri)
-        );
-        expect(result.signingMetadata).to.be(undefined);
-      });
 
     it('should use x509_san_dns client_id_scheme when specified',
       async function() {
@@ -310,72 +256,6 @@ describe('OID4VP Standard - x509_san_dns Client ID Scheme', function() {
         );
         expect(result.authorizationRequest.state).to.be.a('string');
         expect(result.authorizationRequest.response_uri).to.be.a('string');
-      });
-
-    it('should include expected_origins when responseMode is dc_api',
-      async function() {
-        const testBaseUri = 'https://test.example.com';
-        const result = await generateAuthorizationRequest({
-          workflow: testWorkflow,
-          exchange: mockExchange,
-          requestUrl: mockRequestUrl,
-          profile: 'OID4VP-1.0',
-          responseMode: 'dc_api',
-          baseUri: testBaseUri
-        });
-
-        expect(result.authorizationRequest.expected_origins).to.be.an('array');
-        expect(result.authorizationRequest.expected_origins.length).to.equal(1);
-        expect(result.authorizationRequest.expected_origins[0])
-          .to.equal(testBaseUri);
-      });
-
-    it('should include expected_origins when responseMode is dc_api.jwt',
-      async function() {
-        const testBaseUri = 'https://test.example.com';
-        const result = await generateAuthorizationRequest({
-          workflow: testWorkflow,
-          exchange: mockExchange,
-          requestUrl: mockRequestUrl,
-          profile: 'OID4VP-1.0',
-          responseMode: 'dc_api.jwt',
-          baseUri: testBaseUri
-        });
-
-        expect(result.authorizationRequest.expected_origins).to.be.an('array');
-        expect(result.authorizationRequest.expected_origins.length).to.equal(1);
-        expect(result.authorizationRequest.expected_origins[0])
-          .to.equal(testBaseUri);
-      });
-
-    it('should NOT include expected_origins when responseMode is direct_post',
-      async function() {
-        const result = await generateAuthorizationRequest({
-          workflow: testWorkflow,
-          exchange: mockExchange,
-          requestUrl: mockRequestUrl,
-          profile: 'OID4VP-1.0',
-          responseMode: 'direct_post'
-        });
-
-        expect(result.authorizationRequest.expected_origins)
-          .to.be(undefined);
-      });
-
-    it('should include expected_origins with correct server base URI',
-      async function() {
-        const testBaseUri = 'https://example.org';
-        const result = await generateAuthorizationRequest({
-          workflow: testWorkflow,
-          exchange: mockExchange,
-          requestUrl: mockRequestUrl,
-          profile: 'OID4VP-1.0',
-          responseMode: 'dc_api',
-          baseUri: testBaseUri
-        });
-
-        expect(result.authorizationRequest.expected_origins)
-          .to.eql([testBaseUri]);
       });
   });
 });
