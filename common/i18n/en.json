@@ -51,7 +51,7 @@
   "interactionMethod_qr-and-link_lcw": "Launch Learner Credential Wallet",
   "launchWalletApp": "Open wallet",
   "launchWalletAppIOS": "Open wallet on iPhone",
-  "launchWalletAppAndroid": "Open wallet on Android device",
+  "launchWalletAppAndroid": "Open wallet on Android",
   "worksWithWallets": "Works with: {names}",
   "verificationCta": "Verify a credential",
   "creds.Iso18013DriversLicenseCredential": "Verifiable Driver's License",
