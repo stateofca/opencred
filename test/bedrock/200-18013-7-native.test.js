@@ -17,6 +17,7 @@ import {
   convertDerCertificateToPem,
   generateCertificateChain
 } from '../utils/x509.js';
+import {decodeJwt, decodeProtectedHeader} from 'jose';
 import {
   generateAuthorizationRequest,
   handleAuthorizationResponse
@@ -25,11 +26,11 @@ import {baseUrl} from '../mock-data.js';
 import {config} from '@bedrock/core';
 import {createExchangeWithAuthRequest} from '../utils/exchanges.js';
 import {database} from '../../lib/database.js';
-import {decodeJwt} from 'jose';
 import {exampleKey2} from '../fixtures/signingKeys.js';
 import expect from 'expect.js';
 import {httpClient} from '@digitalbazaar/http-client';
 import https from 'node:https';
+import {OID4VP_AUTHZ_REQ_JWT_TYP} from '../../common/oid4vp.js';
 
 const agent = new https.Agent({rejectUnauthorized: false});
 const client = httpClient.extend({agent});
@@ -650,7 +651,10 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         expect(result.headers.get('content-type')).to.equal(
           'application/oauth-authz-req+jwt'
         );
-        const jwt = decodeJwt(await result.text());
+        const jwtText = await result.text();
+        const header = decodeProtectedHeader(jwtText);
+        expect(header.typ).to.equal(OID4VP_AUTHZ_REQ_JWT_TYP);
+        const jwt = decodeJwt(jwtText);
         // 18013-7-Annex-D profile uses x509_san_dns client_id scheme
         expect(jwt.client_id).to.equal('x509_san_dns:example.com');
         expect(jwt.client_id_scheme).to.equal('x509_san_dns');
@@ -685,7 +689,10 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         }
         expect(err).to.be(undefined);
         expect(result.status).to.equal(200);
-        const jwt = decodeJwt(await result.text());
+        const jwtText = await result.text();
+        expect(decodeProtectedHeader(jwtText).typ).to.equal(
+          OID4VP_AUTHZ_REQ_JWT_TYP);
+        const jwt = decodeJwt(jwtText);
         expect(jwt.response_mode).to.equal('dc_api');
         // dc_api mode does not use response_uri
         expect(jwt).to.not.have.property('response_uri');
@@ -715,7 +722,10 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         }
         expect(err).to.be(undefined);
         expect(result.status).to.equal(200);
-        const jwt = decodeJwt(await result.text());
+        const jwtText = await result.text();
+        expect(decodeProtectedHeader(jwtText).typ).to.equal(
+          OID4VP_AUTHZ_REQ_JWT_TYP);
+        const jwt = decodeJwt(jwtText);
         // Annex D defaults to dc_api
         expect(jwt.response_mode).to.equal('dc_api');
       });
@@ -837,6 +847,71 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           );
         }
       });
+
+      it('should extract vp_token when nested in data object',
+        async function() {
+        // Wallet may nest vp_token within data (forward compatibility)
+          const responseBody = {
+            protocol: 'openid4vp',
+            data: {
+              state: authorizationRequest.state,
+              data: {
+                vp_token: {
+                  0: 'dummy-base64url-token'
+                }
+              }
+            }
+          };
+
+          // Should pass credential ID extraction, fail at mdoc verification
+          try {
+            await handleAuthorizationResponse({
+              workflow: mdocTestRP,
+              exchange,
+              responseBody
+            });
+            expect().fail('Should have failed at mdoc verification');
+          } catch(error) {
+            expect(error.message).to.not.contain(
+              'Credential IDs in vp_token'
+            );
+            expect(error.message).to.not.contain(
+              'vp_token not found'
+            );
+            expect(error.message).to.not.contain(
+              'Invalid dcql_query'
+            );
+          }
+        });
+
+      it('should extract vp_token from data when no protocol wrapper',
+        async function() {
+          // Direct format (e.g. dcapi sends credentialResponse.data)
+          const responseBody = {
+            state: authorizationRequest.state,
+            data: {
+              vp_token: {
+                0: 'dummy-base64url-token'
+              }
+            }
+          };
+
+          try {
+            await handleAuthorizationResponse({
+              workflow: mdocTestRP,
+              exchange,
+              responseBody
+            });
+            expect().fail('Should have failed at mdoc verification');
+          } catch(error) {
+            expect(error.message).to.not.contain(
+              'Credential IDs in vp_token'
+            );
+            expect(error.message).to.not.contain(
+              'vp_token not found'
+            );
+          }
+        });
 
       it('should throw error when credential ID not found in vp_token',
         async function() {

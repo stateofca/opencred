@@ -6,7 +6,7 @@
  */
 
 import * as sinon from 'sinon';
-import {decodeJwt} from 'jose';
+import {decodeJwt, decodeProtectedHeader} from 'jose';
 import expect from 'expect.js';
 import fs from 'node:fs';
 import {klona} from 'klona';
@@ -36,6 +36,7 @@ import {generateValidSignedCredential} from '../utils/credentials.js';
 import {httpClient} from '@digitalbazaar/http-client';
 import https from 'node:https';
 import {msalUtils} from '../../common/utils.js';
+import {OID4VP_AUTHZ_REQ_JWT_TYP} from '../../common/oid4vp.js';
 
 const agent = new https.Agent({rejectUnauthorized: false});
 const client = httpClient.extend({agent});
@@ -470,7 +471,10 @@ describe('OpenCred API - Native Workflow', function() {
     result.headers.get('content-type').should.contain(
       'application/oauth-authz-req+jwt'
     );
-    const jwt = decodeJwt(await result.text());
+    const jwtText = await result.text();
+    const header = decodeProtectedHeader(jwtText);
+    header.typ.should.equal(OID4VP_AUTHZ_REQ_JWT_TYP);
+    const jwt = decodeJwt(jwtText);
     jwt.client_id.should.have.string('did:web:example.com');
 
     baseUri.restore();

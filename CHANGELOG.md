@@ -3,6 +3,9 @@
 ## 10.0.2 - 2026-03-dd
 
 ### Fixed
+- Fix OID4VP authorization request JWT typ header: use `oauth-authz-req+jwt` per
+  OID4VP 1.0 (section 5.2) and JAR/RFC9101 for all OID4VP profiles.
+- Support vp_token nested in data for wallet forward compatibility
 - Fix OID4VP 1.0 spec compliance for client_id: OID4VP-1.0 and OID4VP-combined
   now use the `decentralized_identifier:` prefix in client_id and omit
   client_id_scheme per OID4VP 1.0 (Annex C, Annex D). OID4VP-draft18 unchanged.

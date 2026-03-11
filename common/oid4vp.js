@@ -6,6 +6,9 @@ import {defaultDocLoader} from './documentLoader.js';
 import {domainToDidWeb} from './didWeb.js';
 import jsonld from 'jsonld';
 
+/** Typ header value for OID4VP authorization request JWTs (JAR/RFC9101). */
+export const OID4VP_AUTHZ_REQ_JWT_TYP = 'oauth-authz-req+jwt';
+
 const supportedVcFormats = {
   jwt_vc_json: {
     alg: ['ES256']
