@@ -19,6 +19,7 @@
   OID4VP-draft18 profile that does not support it.
 - Fix missing interaction URL protocol for jwt_vc_json and mso_mdoc workflows if
   user enables it in advanced settings.
+- Fix presentation success conflation with callback success log messages.
 
 ## 10.0.1 - 2026-03-06
 

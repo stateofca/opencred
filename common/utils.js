@@ -743,7 +743,8 @@ export const msalUtils = {
 const PresentationEvent = {
   PresentationStart: 'presentation_start',
   PresentationSuccess: 'presentation_success',
-  PresentationError: 'presentation_error'
+  PresentationError: 'presentation_error',
+  CallbackSuccess: 'callback_success'
 };
 
 // Presentation event log name
@@ -802,8 +803,23 @@ const presentationError = (clientId, exchangeId, error) => {
   logger.info(PRESENTATION_EVENT_LOG_NAME, errorEvent);
 };
 
+/**
+ * Gets a consistent callback success event object.
+ * Emitted only when a callback is configured and HTTP delivery succeeded.
+ *
+ * @param {string | undefined} clientId - The workflow identifier.
+ * @param {string} exchangeId - The exchange identifier.
+ * @returns {object} Callback success event object.
+ */
+const callbackSuccess = (clientId, exchangeId) => {
+  const successEvent = getPresentationEvent(
+    PresentationEvent.CallbackSuccess, clientId, exchangeId);
+  logger.info(PRESENTATION_EVENT_LOG_NAME, successEvent);
+};
+
 export const logUtils = {
   presentationStart,
   presentationSuccess,
-  presentationError
+  presentationError,
+  callbackSuccess
 };

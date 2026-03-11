@@ -1020,6 +1020,9 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
     });
 
   describe('handleAuthorizationResponse', function() {
+    // Tests simulate the raw wallet format (credentialResponse.data from
+    // navigator.credentials.get). The handler wraps this with
+    // { protocol: 'openid4vp', data: responseBody } for the DC API.
     let exchange;
     let authorizationRequest;
 
@@ -1043,12 +1046,9 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
       it('should reject response with mismatched state for dc_api mode',
         async function() {
           const responseBody = {
-            protocol: 'openid4vp',
-            data: {
-              state: 'wrong-state-value',
-              vp_token: {
-                0: 'dummy-base64url-token'
-              }
+            state: 'wrong-state-value',
+            vp_token: {
+              0: 'dummy-base64url-token'
             }
           };
 
@@ -1069,12 +1069,9 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
       it('should accept response with matching state for dc_api mode',
         async function() {
           const responseBody = {
-            protocol: 'openid4vp',
-            data: {
-              state: authorizationRequest.state,
-              vp_token: {
-                0: 'dummy-base64url-token'
-              }
+            state: authorizationRequest.state,
+            vp_token: {
+              0: 'dummy-base64url-token'
             }
           };
 
@@ -1107,12 +1104,9 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
 
       it('should extract vp_token using credential ID 0', async function() {
         const responseBody = {
-          protocol: 'openid4vp',
-          data: {
-            state: authorizationRequest.state,
-            vp_token: {
-              0: 'dummy-base64url-token'
-            }
+          state: authorizationRequest.state,
+          vp_token: {
+            0: 'dummy-base64url-token'
           }
         };
 
@@ -1140,13 +1134,10 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         async function() {
         // Wallet may nest vp_token within data (forward compatibility)
           const responseBody = {
-            protocol: 'openid4vp',
+            state: authorizationRequest.state,
             data: {
-              state: authorizationRequest.state,
-              data: {
-                vp_token: {
-                  0: 'dummy-base64url-token'
-                }
+              vp_token: {
+                0: 'dummy-base64url-token'
               }
             }
           };
@@ -1172,9 +1163,9 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           }
         });
 
-      it('should extract vp_token from data when no protocol wrapper',
+      it('should extract vp_token from data in raw wallet format',
         async function() {
-          // Direct format (e.g. dcapi sends credentialResponse.data)
+          // Raw format: credentialResponse.data from navigator.credentials.get
           const responseBody = {
             state: authorizationRequest.state,
             data: {
@@ -1204,12 +1195,9 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
       it('should throw error when credential ID not found in vp_token',
         async function() {
           const responseBody = {
-            protocol: 'openid4vp',
-            data: {
-              state: authorizationRequest.state,
-              vp_token: {
-                1: 'dummy-base64url-token' // Wrong credential ID
-              }
+            state: authorizationRequest.state,
+            vp_token: {
+              1: 'dummy-base64url-token' // Wrong credential ID
             }
           };
 
@@ -1237,12 +1225,9 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         expect(authorizationRequest.response_uri).to.be(undefined);
 
         const responseBody = {
-          protocol: 'openid4vp',
-          data: {
-            state: authorizationRequest.state,
-            vp_token: {
-              0: 'dummy-base64url-token'
-            }
+          state: authorizationRequest.state,
+          vp_token: {
+            0: 'dummy-base64url-token'
           }
         };
 
@@ -1295,12 +1280,9 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           };
 
           const responseBody = {
-            protocol: 'openid4vp',
-            data: {
-              state: authorizationRequest.state,
-              vp_token: {
-                0: 'dummy-base64url-token'
-              }
+            state: authorizationRequest.state,
+            vp_token: {
+              0: 'dummy-base64url-token'
             }
           };
 
@@ -1321,17 +1303,13 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
     });
 
     describe('Integration test', function() {
-      it('should handle full wallet response flow with protocol wrapper',
+      it('should handle full wallet response flow with raw wallet format',
         async function() {
-          // This is a structural test - actual mdoc verification would require
-          // real mdoc data
+          // Simulates real wallet: credentialResponse.data (no protocol wrapper)
           const responseBody = {
-            protocol: 'openid4vp',
-            data: {
-              state: authorizationRequest.state,
-              vp_token: {
-                0: 'dummy-base64url-encoded-device-response'
-              }
+            state: authorizationRequest.state,
+            vp_token: {
+              0: 'dummy-base64url-encoded-device-response'
             }
           };
 
