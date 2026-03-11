@@ -14,6 +14,7 @@
 - Fix CSS variable population for brand colors to skip non-supported properties.
 - Fix npm audit-flagged `jsonpath` with `jsonpath-plus`.
 - Fix incorrect error serialization for some nested LDP verification errors.
+- Fix support for authorization request POST with `wallet_nonce`.
 
 ## 10.0.1 - 2026-03-06
 

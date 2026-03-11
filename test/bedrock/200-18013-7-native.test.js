@@ -731,6 +731,294 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
       });
   });
 
+  describe('POST authorization_request endpoint (OID4VP 1.0 Section 5.10)',
+    function() {
+      let findOneStub;
+      let replaceOneStub;
+      let rpStub;
+      let baseUriStub;
+      let signingKeysStub;
+
+      beforeEach(function() {
+        rpStub = sinon.stub(config.opencred, 'workflows').value([mdocTestRP]);
+        baseUriStub = sinon.stub(config.server, 'baseUri').value(
+          'https://example.com'
+        );
+        signingKeysStub = sinon.stub(config.opencred, 'signingKeys').value(
+          [{...exampleKey2, purpose: ['authorization_request']}]
+        );
+      });
+
+      afterEach(function() {
+        rpStub.restore();
+        baseUriStub.restore();
+        signingKeysStub.restore();
+        if(findOneStub) {
+          findOneStub.restore();
+        }
+        if(replaceOneStub) {
+          replaceOneStub.restore();
+        }
+      });
+
+      it('should handle POST request with wallet_nonce', async function() {
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: mdocTestRP});
+        findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
+          .resolves({...exchange, workflowId: mdocTestRP.clientId});
+        replaceOneStub = sinon.stub(
+          database.collections.Exchanges, 'replaceOne'
+        ).resolves();
+
+        const walletNonce = 'qPmxiNFCR3QTm19POc8u';
+        const walletMetadata = {
+          vp_formats_supported: {
+            'dc+sd-jwt': {
+              'sd-jwt_alg_values': ['ES256'],
+              'kb-jwt_alg_values': ['ES256']
+            }
+          }
+        };
+
+        const searchParams = new URLSearchParams();
+        searchParams.set('wallet_metadata', JSON.stringify(walletMetadata));
+        searchParams.set('wallet_nonce', walletNonce);
+        searchParams.set('profile', '18013-7-Annex-D');
+
+        let result;
+        let err;
+        try {
+          result = await client.post(
+            `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
+            `${exchange.id}/openid/client/authorization/request`, {
+              body: searchParams,
+              headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+                accept: 'application/oauth-authz-req+jwt'
+              }
+            });
+        } catch(e) {
+          err = e;
+        }
+        expect(err).to.be(undefined);
+        expect(result.status).to.equal(200);
+        expect(result.headers.get('content-type')).to.equal(
+          'application/oauth-authz-req+jwt'
+        );
+        const jwtText = await result.text();
+        const header = decodeProtectedHeader(jwtText);
+        expect(header.typ).to.equal(OID4VP_AUTHZ_REQ_JWT_TYP);
+        const jwt = decodeJwt(jwtText);
+        expect(jwt).to.have.property('wallet_nonce');
+        expect(jwt.wallet_nonce).to.equal(walletNonce);
+        expect(jwt.client_id).to.equal('x509_san_dns:example.com');
+        expect(jwt.response_mode).to.equal('dc_api');
+      });
+
+      it('should handle POST request without wallet_nonce', async function() {
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: mdocTestRP});
+        findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
+          .resolves({...exchange, workflowId: mdocTestRP.clientId});
+        replaceOneStub = sinon.stub(
+          database.collections.Exchanges, 'replaceOne'
+        ).resolves();
+
+        const walletMetadata = {
+          vp_formats_supported: {
+            'dc+sd-jwt': {
+              'sd-jwt_alg_values': ['ES256']
+            }
+          }
+        };
+
+        const searchParams = new URLSearchParams();
+        searchParams.set('wallet_metadata', JSON.stringify(walletMetadata));
+        searchParams.set('profile', '18013-7-Annex-D');
+
+        let result;
+        let err;
+        try {
+          result = await client.post(
+            `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
+            `${exchange.id}/openid/client/authorization/request`, {
+              body: searchParams,
+              headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+                accept: 'application/oauth-authz-req+jwt'
+              }
+            });
+        } catch(e) {
+          err = e;
+        }
+        expect(err).to.be(undefined);
+        expect(result.status).to.equal(200);
+        const jwtText = await result.text();
+        const jwt = decodeJwt(jwtText);
+        expect(jwt).to.not.have.property('wallet_nonce');
+        expect(jwt.client_id).to.equal('x509_san_dns:example.com');
+      });
+
+      it('should reject POST request with invalid Content-Type',
+        async function() {
+          const exchange = await createExchangeWithAuthRequest({
+            workflow: mdocTestRP});
+          findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
+            .resolves({...exchange, workflowId: mdocTestRP.clientId});
+
+          // Use valid JSON body so body parser succeeds and request reaches
+          // our middleware (which returns 400 for wrong Content-Type)
+          let err;
+          try {
+            await client.post(
+              `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
+              `${exchange.id}/openid/client/authorization/request`, {
+                body: JSON.stringify({profile: '18013-7-Annex-D'}),
+                headers: {
+                  'content-type': 'application/json',
+                  accept: 'application/oauth-authz-req+jwt'
+                }
+              });
+          } catch(e) {
+            err = e;
+          }
+          expect(err).to.not.be(undefined);
+          expect(err.status).to.equal(400);
+          expect(err.data.message).to.contain(
+            'Content-Type must be application/x-www-form-urlencoded');
+        });
+
+      it('should reject POST request with invalid Accept header',
+        async function() {
+          const exchange = await createExchangeWithAuthRequest({
+            workflow: mdocTestRP});
+          findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
+            .resolves({...exchange, workflowId: mdocTestRP.clientId});
+
+          const searchParams = new URLSearchParams();
+          searchParams.set('profile', '18013-7-Annex-D');
+
+          let err;
+          try {
+            await client.post(
+              `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
+              `${exchange.id}/openid/client/authorization/request`, {
+                body: searchParams,
+                headers: {
+                  'content-type': 'application/x-www-form-urlencoded',
+                  accept: 'application/json'
+                }
+              });
+          } catch(e) {
+            err = e;
+          }
+          expect(err).to.not.be(undefined);
+          expect(err.status).to.equal(406);
+          expect(err.data.message).to.contain(
+            'Accept header must be application/oauth-authz-req+jwt');
+        });
+
+      it('should reject POST request with malformed wallet_metadata',
+        async function() {
+          const exchange = await createExchangeWithAuthRequest({
+            workflow: mdocTestRP});
+          findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
+            .resolves({...exchange, workflowId: mdocTestRP.clientId});
+
+          const searchParams = new URLSearchParams();
+          searchParams.set('wallet_metadata', 'invalid-json{');
+          searchParams.set('profile', '18013-7-Annex-D');
+
+          let err;
+          try {
+            await client.post(
+              `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
+              `${exchange.id}/openid/client/authorization/request`, {
+                body: searchParams,
+                headers: {
+                  'content-type': 'application/x-www-form-urlencoded',
+                  accept: 'application/oauth-authz-req+jwt'
+                }
+              });
+          } catch(e) {
+            err = e;
+          }
+          expect(err).to.not.be(undefined);
+          expect(err.status).to.equal(400);
+          expect(err.data.message).to.contain(
+            'Invalid JSON in wallet_metadata');
+        });
+
+      it('should support GET and POST with equivalent results',
+        async function() {
+          const exchange = await createExchangeWithAuthRequest({
+            workflow: mdocTestRP});
+          findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
+            .resolves({...exchange, workflowId: mdocTestRP.clientId});
+          replaceOneStub = sinon.stub(
+            database.collections.Exchanges, 'replaceOne'
+          ).resolves();
+
+          // GET request
+          let getResult;
+          let getErr;
+          try {
+            getResult = await client.get(
+              `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
+              `${exchange.id}/openid/client/authorization/request` +
+              `?profile=18013-7-Annex-D`
+            );
+          } catch(e) {
+            getErr = e;
+          }
+          expect(getErr).to.be(undefined);
+          expect(getResult.status).to.equal(200);
+          const getJwtText = await getResult.text();
+          const getJwt = decodeJwt(getJwtText);
+
+          // Create new exchange for POST to avoid state conflicts
+          const exchange2 = await createExchangeWithAuthRequest({
+            workflow: mdocTestRP});
+          findOneStub.restore();
+          replaceOneStub.restore();
+          findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
+            .resolves({...exchange2, workflowId: mdocTestRP.clientId});
+          replaceOneStub = sinon.stub(
+            database.collections.Exchanges, 'replaceOne'
+          ).resolves();
+
+          // POST request with same parameters
+          const searchParams = new URLSearchParams();
+          searchParams.set('profile', '18013-7-Annex-D');
+
+          let postResult;
+          let postErr;
+          try {
+            postResult = await client.post(
+              `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
+              `${exchange2.id}/openid/client/authorization/request`, {
+                body: searchParams,
+                headers: {
+                  'content-type': 'application/x-www-form-urlencoded',
+                  accept: 'application/oauth-authz-req+jwt'
+                }
+              });
+          } catch(e) {
+            postErr = e;
+          }
+          expect(postErr).to.be(undefined);
+          expect(postResult.status).to.equal(200);
+          const postJwtText = await postResult.text();
+          const postJwt = decodeJwt(postJwtText);
+
+          // Both should have same structure (except wallet_nonce if provided)
+          expect(getJwt.client_id).to.equal(postJwt.client_id);
+          expect(getJwt.response_mode).to.equal(postJwt.response_mode);
+          expect(getJwt).to.have.property('dcql_query');
+          expect(postJwt).to.have.property('dcql_query');
+        });
+    });
+
   describe('handleAuthorizationResponse', function() {
     let exchange;
     let authorizationRequest;
