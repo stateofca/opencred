@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.0.3 - 2026-03-dd
+## 10.0.3 - 2026-03-17
 
 ### Fixed
 - Fix default OID4VP protocol expression to `opencred.options.OID4VPdefault`.
