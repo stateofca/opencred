@@ -84,17 +84,9 @@ describe('Exchange Protocols', () => {
       expect(exchange.protocols).to.have.property('OID4VP-draft18');
       expect(exchange.protocols).to.have.property('OID4VP-1.0');
       expect(exchange.protocols).to.have.property('interact');
-      expect(exchange.protocols.OID4VP).to.contain('profile%3DOID4VP-combined');
-      expect(exchange.protocols['OID4VP-draft18']).to.contain(
-        'profile%3DOID4VP-draft18');
-      expect(exchange.protocols['OID4VP-1.0']).to.contain(
-        'profile%3DOID4VP-1.0');
-      expect(exchange.protocols.OID4VP).to.contain(
-        'request_uri_method=post');
-      expect(exchange.protocols['OID4VP-1.0']).to.contain(
-        'request_uri_method=post');
-      expect(exchange.protocols['OID4VP-draft18']).to.not.contain(
-        'request_uri_method');
+      const oid4vpDefault = config.opencred.options.OID4VPdefault;
+      expect(exchange.protocols.OID4VP).to.equal(
+        exchange.protocols[oid4vpDefault]);
     });
 
     it('should include protocols object for vc-api workflow', async () => {

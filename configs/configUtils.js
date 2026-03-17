@@ -273,7 +273,7 @@ export const OptionsSchema = z.object({
     ))),
   includeQRByDefault: z.boolean().default(true),
   OID4VPdefault: z.enum([
-    'OID4VP-draft18', 'OID4VP', 'OID4VP-combined', 'OID4VP-1.0'
+    'OID4VP-draft18', 'OID4VP-combined', 'OID4VP-1.0'
   ]).default('OID4VP-combined'),
   workflowListingEnabled: z.boolean().default(false),
   debug: z.boolean().default(false)
