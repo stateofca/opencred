@@ -65,6 +65,7 @@
   "copyUrl": "Copy URL",
   "pasteUrlInWallet": "Paste the URL in your wallet app.",
   "continueToClient": "Continue to {name}",
+  "loginRedirectManualHint": "If you are not redirected automatically, {continue}",
   "verificationSuccess": "Success! Your credential has been shared.",
   "protocolWallet_oid4vp_qr": "Scan QR code to present with OpenID4VP",
   "protocolWallet_oid4vp_link": "Open wallet on this device",

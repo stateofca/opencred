@@ -130,6 +130,7 @@ describe('continuationContext', () => {
       expect(res.data).to.have.property('exchangeData');
       expect(res.data.autoRedirectToClient).to.equal(false);
       expect(res.data.workflow.clientId).to.equal('test');
+      expect(res.data.workflow.oidc.redirectUri).to.equal('https://example.com');
       expect(res.data.exchangeData.id).to.equal(exchangeId);
 
       await database.collections.Exchanges.deleteOne({id: exchangeId});

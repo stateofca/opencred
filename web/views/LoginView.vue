@@ -24,23 +24,30 @@ SPDX-License-Identifier: BSD-3-Clause
             color="green" />
           {{$t('verificationSuccess')}}
         </div>
-        <cadmv-button
-          v-if="context.autoRedirectToClient === false &&
-            context.exchangeData?.oidc?.code &&
-            context.workflow?.redirectUri"
-          variant="primary"
-          @click="continueToClient">
-          {{$t('continueToClient', {
-            name: context.workflow.name || 'client'
-          })}}
-        </cadmv-button>
+        <i18n-t
+          v-if="showLoginContinue"
+          keypath="loginRedirectManualHint"
+          tag="p"
+          class="flex flex-wrap items-center justify-center gap-x-2 gap-y-3
+                 text-center max-w-xl mx-auto">
+          <template #continue>
+            <cadmv-button
+              variant="primary"
+              @click="continueToClient">
+              {{$t('continueToClient', {
+                name: context.workflow.name || 'client'
+              })}}
+            </cadmv-button>
+          </template>
+        </i18n-t>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import {onBeforeMount, provide, ref, watch} from 'vue';
+import {computed, nextTick, onBeforeMount, onBeforeUnmount, provide, ref,
+  watch} from 'vue';
 import {CadmvButton} from '@digitalbazaar/cadmv-ui';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
@@ -56,6 +63,22 @@ const context = ref({
   options: config.opencred?.options || {},
   exchangeData: null
 });
+
+const autoRedirectTimerId = ref(null);
+const schedulingAutoRedirect = ref(false);
+
+function clearAutoRedirectTimer() {
+  if(autoRedirectTimerId.value != null) {
+    clearTimeout(autoRedirectTimerId.value);
+    autoRedirectTimerId.value = null;
+  }
+  schedulingAutoRedirect.value = false;
+}
+
+const showLoginContinue = computed(() =>
+  context.value.exchangeData?.state === 'complete' &&
+  Boolean(context.value.exchangeData?.oidc?.code) &&
+  Boolean(context.value.workflow?.oidc?.redirectUri));
 
 // Fetch context from /context/login or /context/continue when exchange_token
 onBeforeMount(async () => {
@@ -82,34 +105,57 @@ onBeforeMount(async () => {
   }
 });
 
+onBeforeUnmount(clearAutoRedirectTimer);
+
 // Provide context to child components (OpenCredExchange)
 provide('exchangeContext', context);
 
 // Navigate to client redirect URI with code and state
 const continueToClient = () => {
   const {exchangeData, workflow} = context.value;
-  if(!exchangeData?.oidc?.code || !workflow?.redirectUri) {
+  const redirectUri = workflow?.oidc?.redirectUri;
+  if(!exchangeData?.oidc?.code || !redirectUri) {
     return;
   }
   const queryParams = new URLSearchParams({
     state: exchangeData.oidc.state,
     code: exchangeData.oidc.code
   });
-  window.location.href = `${workflow.redirectUri}?${queryParams.toString()}`;
+  window.location.href = `${redirectUri}?${queryParams.toString()}`;
 };
 
-// Watch for exchange completion and auto-redirect
-// (only when autoRedirectToClient)
+// Auto-redirect after a short delay so success + manual-continue UI can render
 watch(
-  () => context.value.exchangeData?.state,
-  newState => {
-    const shouldAutoRedirect = newState === 'complete' &&
-      context.value.autoRedirectToClient !== false;
-    if(shouldAutoRedirect) {
-      continueToClient();
+  () => ({
+    state: context.value.exchangeData?.state,
+    code: context.value.exchangeData?.oidc?.code,
+    redirectUri: context.value.workflow?.oidc?.redirectUri,
+    autoRedirect: context.value.autoRedirectToClient
+  }),
+  current => {
+    if(current.state !== 'complete' || !current.code || !current.redirectUri) {
+      clearAutoRedirectTimer();
+      return;
     }
+    if(current.autoRedirect === false) {
+      clearAutoRedirectTimer();
+      return;
+    }
+    if(schedulingAutoRedirect.value || autoRedirectTimerId.value != null) {
+      return;
+    }
+    schedulingAutoRedirect.value = true;
+    nextTick(() => {
+      requestAnimationFrame(() => {
+        autoRedirectTimerId.value = window.setTimeout(() => {
+          autoRedirectTimerId.value = null;
+          schedulingAutoRedirect.value = false;
+          continueToClient();
+        }, 250);
+      });
+    });
   },
-  {immediate: true}
+  {deep: true, immediate: true}
 );
 
 </script>
