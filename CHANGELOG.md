@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.0.4 - 2026-03-XX
+## 10.0.4 - 2026-04-02
 
 ### Fixed
 - Fix config and frontend mismatch around redirectUri context item. OIDC login
