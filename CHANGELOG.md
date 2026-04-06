@@ -11,6 +11,11 @@
   - `@bedrock/express@8.6.0`
 - Update test dependencies
   - `@bedrock/test@9`
+- Add missing direct dependencies.
+  - `@digitalbazaar/ecdsa-multikeya`
+  - `base64url-universal`
+  - `did-jwt`
+  - `jsonld`
 
 ## 10.0.4 - 2026-04-03
 
