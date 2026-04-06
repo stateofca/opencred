@@ -10,6 +10,8 @@
   - `@bedrock/core@6.3.0`
   - `@bedrock/express@8.6.0`
 - Update dev dependencies.
+- Remove unused dependencies.
+  - `@digitalbazaar/oid4-client`
 - Add missing direct dependencies.
   - `@digitalbazaar/ecdsa-multikey`
   - `base64url-universal`
