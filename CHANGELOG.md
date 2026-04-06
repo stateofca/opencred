@@ -6,13 +6,12 @@
 - Updates to UI to make better use of `@digitalbazaar/cadmv-ui` package.
 - Split out common frontend functionality into reusable composables.
 - Add workflow specific translation override capability.
-- Update dependencies
+- Update dependencies.
   - `@bedrock/core@6.3.0`
   - `@bedrock/express@8.6.0`
-- Update test dependencies
-  - `@bedrock/test@9`
+- Update dev dependencies.
 - Add missing direct dependencies.
-  - `@digitalbazaar/ecdsa-multikeya`
+  - `@digitalbazaar/ecdsa-multikey`
   - `base64url-universal`
   - `did-jwt`
   - `jsonld`

@@ -115,15 +115,15 @@
   "devDependencies": {
     "@bedrock/test": "^9.0.0",
     "@digitalbazaar/eslint-config": "^8.0.1",
-    "@peculiar/webcrypto": "^1.4.5",
+    "@peculiar/webcrypto": "^1.5.0",
     "asn1js": "^3.0.7",
-    "baseline-browser-mapping": "^2.10.0",
-    "cross-env": "^7.0.3",
-    "env-cmd": "^10.1.0",
-    "eslint": "^9.39.2",
+    "baseline-browser-mapping": "^2.10.16",
+    "cross-env": "^10.1.0",
+    "env-cmd": "^11.0.0",
+    "eslint": "^9.39.4",
     "expect.js": "^0.3.1",
     "klona": "^2.0.6",
-    "sinon": "^17.0.1"
+    "sinon": "^21.0.3"
   },
   "mocha": {
     "spec": [
