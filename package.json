@@ -32,8 +32,8 @@
     "@auth0/mdl": "^3.0.1",
     "@azure/msal-node": "^2.16.3",
     "@bedrock/config-yaml": "^4.3.3",
-    "@bedrock/core": "^6.1.2",
-    "@bedrock/express": "^8.5.2",
+    "@bedrock/core": "^6.3.0",
+    "@bedrock/express": "^8.6.0",
     "@bedrock/express-browser-fixes": "^3.1.0",
     "@bedrock/health": "^4.1.0",
     "@bedrock/https-agent": "^4.1.0",
@@ -109,7 +109,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@bedrock/test": "^8.2.0",
+    "@bedrock/test": "^9.0.0",
     "@digitalbazaar/eslint-config": "^8.0.1",
     "@peculiar/webcrypto": "^1.4.5",
     "asn1js": "^3.0.7",
