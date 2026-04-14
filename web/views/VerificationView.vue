@@ -19,31 +19,42 @@ SPDX-License-Identifier: BSD-3-Clause
     <OpenCredExchange
       v-else-if="context.exchangeData?.state !== 'complete'"
       purpose="verification" />
-    <div
+    <CadmvMainCard
       v-else
-      class="bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
-             px-16 lg:px-24 relative">
-      <div class="mx-auto py-24 flex items-center justify-center gap-5 text-xl">
-        <q-icon
-          name="fas fa-circle-check"
-          size="60px"
-          color="green" />
-        {{$t('verificationSuccess')}}
+      :title="t('verificationTitle')">
+      <div class="column items-center q-gutter-y-lg q-pa-md">
+        <div class="col row items-center text-lg text-positive">
+          <q-icon
+            name="fas fa-circle-check"
+            size="md"
+            color="positive" />
+          {{t('verificationSuccess')}}
+        </div>
+        <div>
+          {{t('verificationDetails')}}
+        </div>
+        <CadmvButton
+          variant="primary"
+          :label="t('verificationCloseBtn')"
+          @click="close" />
       </div>
-    </div>
+    </CadmvMainCard>
   </div>
 </template>
 
 <script setup>
-import {inject, provide} from 'vue';
+import {CadmvButton, CadmvMainCard} from '@digitalbazaar/cadmv-ui';
 import ErrorView from '../components/ErrorView.vue';
 import OpenCredExchange from '../components/OpenCredExchange.vue';
 import {QIcon} from 'quasar';
+import {useExchangeContext} from '../composables/useExchangeContext.js';
+import {useReactiveI18n} from '../composables/useReactiveI18n.js';
 
-// Get context from parent component (AppLayout)
-const context = inject('exchangeContext');
+// Get context
+const {context, translations} = useExchangeContext();
 
-// Provide context to child components (OpenCredExchange)
-provide('exchangeContext', context);
+const {t} = useReactiveI18n({messages: translations});
+
+const close = () => window.close();
 
 </script>

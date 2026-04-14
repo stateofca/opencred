@@ -6,7 +6,9 @@ SPDX-License-Identifier: BSD-3-Clause
 -->
 
 <template>
-  <div>
+  <CadmvMainCard
+    :title="t('exchangeCardTitle', context.workflow.name)"
+    :subtitle="t(`${purpose}Cta`)">
     <div
       v-if="context.exchangeData?.state === 'complete'"
       class="bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
@@ -31,7 +33,7 @@ SPDX-License-Identifier: BSD-3-Clause
       <h1
         class="text-3xl mb-4 text-center"
         :style="{color: context.workflow.brand?.primary}">
-        {{context.workflow.name || $t(`${purpose}Cta`)}}
+        {{context.workflow.name || t(`${purpose}Cta`)}}
       </h1>
 
       <!-- Workflow Description -->
@@ -42,7 +44,7 @@ SPDX-License-Identifier: BSD-3-Clause
           v-html="context.workflow.description" />
         <p
           class="text-gray-900"
-          v-html="$t('exchangePageExplain')" />
+          v-html="t('exchangePageExplain')" />
       </div>
 
       <!-- Credential Query Summary -->
@@ -52,7 +54,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
       <!-- Connect Your Wallet Heading -->
       <p class="text-md font-semibold mb-2 text-gray-900">
-        {{$t('connectWalletHeading')}}
+        {{t('connectWalletHeading')}}
       </p>
 
       <!-- Interaction-specific info and exchange status -->
@@ -69,18 +71,18 @@ SPDX-License-Identifier: BSD-3-Clause
       <!-- Explainer Video Link -->
       <div class="mt-2">
         <button
-          v-if="$t('qrExplainerText') !== '' &&
+          v-if="t('qrExplainerText') !== '' &&
             context.workflow.brand?.explainerVideo?.id !== '' &&
             context.workflow.brand?.explainerVideo?.provider"
           :style="{color: context.workflow.brand?.primary}"
           class="underline"
           @click="showVideo = true">
-          {{$t('qrExplainerText')}}
+          {{t('qrExplainerText')}}
         </button>
         <p
-          v-if="$t('qrFooterHelp')"
+          v-if="t('qrFooterHelp')"
           class="mt-2 text-gray-900"
-          v-html="$t('qrFooterHelp')" />
+          v-html="t('qrFooterHelp')" />
       </div>
 
       <!-- Explainer Video Dialog -->
@@ -96,7 +98,7 @@ SPDX-License-Identifier: BSD-3-Clause
             <q-btn
               v-close-popup
               flat
-              :label="$t('close')" />
+              :label="t('close')" />
           </q-card-actions>
         </q-card>
       </q-dialog>
@@ -111,23 +113,26 @@ SPDX-License-Identifier: BSD-3-Clause
       <template #body>
         <p class="text-sm text-center">
           <span class="text-bold">
-            {{$t('statusDialog_areYouStillThere')}} </span>
-          {{$t('statusDialog_statusPaused')}}
+            {{t('statusDialog_areYouStillThere')}} </span>
+          {{t('statusDialog_statusPaused')}}
         </p>
       </template>
     </CadmvDialog>
-  </div>
+  </CadmvMainCard>
 </template>
 
 <script setup>
+import {CadmvDialog, CadmvMainCard} from '@digitalbazaar/cadmv-ui';
 import {computed, inject, nextTick, onMounted, onUnmounted,
   reactive, ref} from 'vue';
-import {CadmvDialog} from '@digitalbazaar/cadmv-ui';
 import CredentialQuerySummary from './CredentialQuerySummary.vue';
 import ErrorView from './ErrorView.vue';
 import {httpClient} from '@digitalbazaar/http-client';
 import QRCode from 'qrcode';
-import {useI18n} from 'vue-i18n';
+import {useExchangeContext} from '../composables/useExchangeContext.js';
+import {useReactiveI18n} from '../composables/useReactiveI18n.js';
+
+// import {useI18n} from 'vue-i18n';
 import WalletInteraction from './WalletInteraction.vue';
 
 defineProps({
@@ -138,19 +143,21 @@ defineProps({
   }
 });
 
-const {t: translate} = useI18n({useScope: 'global'});
+const {context, translations} = useExchangeContext();
 
-// Get context and userSettings from parent
-const parentContext = inject('exchangeContext', null);
-if(!parentContext) {
+// Check context and userSettings
+if(!context) {
   throw new Error(
     'OpenCredExchange requires exchangeContext to be provided by parent ' +
     'component'
   );
 }
-const context = parentContext;
+
 const userSettings = inject('userSettings', ref(
   {enabledWallets: [], enabledProtocols: []}));
+
+// Use workflow translations if available
+const {t} = useReactiveI18n({messages: translations});
 
 const state = reactive({
   active: false,
@@ -168,12 +175,12 @@ const statusDialogActions = [
   {
     actionId: 'resume',
     variant: 'primary',
-    label: translate('statusDialog_resumeChecking')
+    label: t('statusDialog_resumeChecking')
   },
   {
     actionId: 'reset',
     variant: 'flat',
-    label: translate('statusDialog_resetSession')
+    label: t('statusDialog_resetSession')
   }
 ];
 
@@ -206,9 +213,9 @@ const availableProtocols = computed(() => {
 const handleError = error => {
   state.intervalId = clearInterval(state.intervalId);
   state.error = {
-    title: error?.title || translate('error_defaultTitle'),
-    subtitle: error?.subtitle || translate('error_defaultSubtitle'),
-    message: error?.message || translate('error_unexpectedMessage'),
+    title: error?.title || t('error_defaultTitle'),
+    subtitle: error?.subtitle || t('error_defaultSubtitle'),
+    message: error?.message || t('error_unexpectedMessage'),
     resettable: !!error?.resettable || false
   };
   state.active = false;
@@ -241,9 +248,9 @@ const checkStatus = async () => {
       context.value.exchangeData.ttl * 1000);
   if(ttlDate < new Date()) {
     handleError({
-      title: translate('exchangeErrorTitle'),
-      subtitle: translate('exchangeErrorSubtitle'),
-      message: translate('exchangeErrorTtlExpired'),
+      title: t('exchangeErrorTitle'),
+      subtitle: t('exchangeErrorSubtitle'),
+      message: t('exchangeErrorTtlExpired'),
       resettable: true
     });
   }
@@ -272,9 +279,9 @@ const checkStatus = async () => {
     ));
     if(!Object.keys(exchange).length) {
       handleError({
-        title: translate('exchangeErrorTitle'),
-        subtitle: translate('exchangeErrorSubtitle'),
-        message: translate('exchangeStatus_checkError')
+        title: t('exchangeErrorTitle'),
+        subtitle: t('exchangeErrorSubtitle'),
+        message: t('exchangeStatus_checkError')
       });
       return;
     }
@@ -292,12 +299,12 @@ const checkStatus = async () => {
       state.active = true;
     } else if(exchange.state === 'invalid') {
       handleError({
-        title: translate('exchangeErrorTitle'),
-        subtitle: translate('exchangeErrorSubtitle'),
+        title: t('exchangeErrorTitle'),
+        subtitle: t('exchangeErrorSubtitle'),
         message: Object.values(exchange.variables.results ?? {})
           .filter(v => !!v.errors?.length)?.map(r => r.errors)
           .flat()
-          .join(', ') ?? translate('exchangeStatus_processError'),
+          .join(', ') ?? t('exchangeStatus_processError'),
         resettable: true
       });
     }
@@ -305,8 +312,8 @@ const checkStatus = async () => {
   } catch(e) {
     console.error('An error occurred while polling the endpoint:', e);
     handleError({
-      title: translate('error_defaultTitle'),
-      message: translate('exchangeStatus_checkError')
+      title: t('error_defaultTitle'),
+      message: t('exchangeStatus_checkError')
     });
   }
 
@@ -349,8 +356,8 @@ const handleResetExchange = async () => {
     startStatusCheck();
   } catch {
     handleError({
-      title: translate('error_defaultTitle'),
-      message: translate('exchangeStatus_resetError')
+      title: t('error_defaultTitle'),
+      message: t('exchangeStatus_resetError')
     });
     // Fall through to clear the active state after causing the error to display
   }
@@ -377,4 +384,3 @@ onUnmounted(() => {
   }
 });
 </script>
-
