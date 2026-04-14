@@ -6,36 +6,23 @@ SPDX-License-Identifier: BSD-3-Clause
 -->
 
 <template>
-  <div class="p-4 md:p-5 space-y-4 bg-white rounded-md">
-    <h2 class="text-2xl md:text-3xl font-bold text-gray-900">
+  <div class="column items-center q-gutter-y-sm">
+    <span class="text-body1 text-negative">
       {{title || $t('error_defaultTitle')}}
-    </h2>
-
-    <h3 class="text-lg md:text-xl font-medium text-gray-700">
       {{subtitle || $t('error_defaultSubtitle')}}
-    </h3>
+    </span>
 
-    <p class="text-base text-gray-600">
-      {{message || $t('error_defaultMessage')}}
-    </p>
-
-    <div
-      v-if="resettable"
-      class="space-y-4">
-      <p class="text-base text-gray-600">
-        {{$t('exchangeResetTitle')}}
-      </p>
-      <cadmv-button
-        variant="primary"
-        @click="$emit('reset')">
-        {{$t('exchangeReset')}}
-      </cadmv-button>
-    </div>
+    <CadmvBanner
+      variant="error"
+      :dismissible="resettable"
+      :text="message || $t('error_defaultMessage')"
+      :dismiss-label="$t('exchangeReset')"
+      @dismiss="$emit('reset')" />
   </div>
 </template>
 
 <script setup>
-import {CadmvButton} from '@digitalbazaar/cadmv-ui';
+import {CadmvBanner} from '@digitalbazaar/cadmv-ui';
 
 defineProps({
   title: {
