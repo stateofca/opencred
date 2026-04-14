@@ -65,7 +65,7 @@ SPDX-License-Identifier: BSD-3-Clause
     <!-- Countdown Display -->
     <p
       v-if="exchangeData?.createdAt && exchangeData?.ttl"
-      class="text-gray-900 mt-4">
+      class="text-gray-900 mt-4 q-mx-md text-center">
       {{$t('exchangeActiveExpiryMessage')}}
       <CountdownDisplay
         :created-at="exchangeData.createdAt"

@@ -7,18 +7,12 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <template>
   <CadmvMainCard
-    :title="t('exchangeCardTitle', context.workflow.name)"
-    :subtitle="t(`${purpose}Cta`)">
+    :title="t('exchangePageTitle', context.workflow.name)"
+    :subtitle="t('exchangePageExplain', undefined)"
+    class="column items-center q-pb-md">
+    <div v-if="context.exchangeData?.state === 'complete'" />
     <div
-      v-if="context.exchangeData?.state === 'complete'"
-      class="bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
-             md:px-16 lg:px-24 relative text-center">
-      <!-- Completion handled by parent -->
-    </div>
-    <div
-      v-else-if="state.error"
-      class="bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
-             md:px-16 lg:px-24 relative">
+      v-else-if="state.error">
       <ErrorView
         :title="state.error.title"
         :message="state.error.message"
@@ -27,33 +21,15 @@ SPDX-License-Identifier: BSD-3-Clause
     </div>
     <div
       v-else
-      class="bg-white z-10 mx-auto p-10 rounded-md max-w-3xl
-             md:px-16 lg:px-24 relative">
-      <!-- Workflow Title -->
-      <h1
-        class="text-3xl mb-4 text-center"
-        :style="{color: context.workflow.brand?.primary}">
-        {{context.workflow.name || t(`${purpose}Cta`)}}
-      </h1>
-
-      <!-- Workflow Description -->
-      <div class="mb-4 text-gray-900">
-        <p
-          v-if="context.workflow.description"
-          class="text-gray-900"
-          v-html="context.workflow.description" />
-        <p
-          class="text-gray-900"
-          v-html="t('exchangePageExplain')" />
-      </div>
-
+      class="column items-center q-gutter-y-lg">
       <!-- Credential Query Summary -->
       <CredentialQuerySummary
+        v-if="context.workflow.brand?.showQuerySummary ?? true"
         :workflow="context.workflow"
         :exchange-data="context.exchangeData || {}" />
 
       <!-- Connect Your Wallet Heading -->
-      <p class="text-md font-semibold mb-2 text-gray-900">
+      <p class="text-body1 text-weight-bold text-heading">
         {{t('connectWalletHeading')}}
       </p>
 

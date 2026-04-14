@@ -8,7 +8,7 @@ SPDX-License-Identifier: BSD-3-Clause
 <template>
   <div
     v-if="credentialTypes.length > 0"
-    class="border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50"
+    class="border border-gray-200 rounded-lg p-4 bg-gray-50"
     style="max-height: 200px; overflow-y: auto;">
     <div class="text-sm text-gray-700">
       <p class="font-semibold mb-2 text-gray-900">
@@ -117,4 +117,3 @@ const credentialTypes = computed(() => {
   return uniqueTypes.map(type => getHumanReadableName(type));
 });
 </script>
-

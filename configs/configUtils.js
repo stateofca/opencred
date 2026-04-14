@@ -53,7 +53,8 @@ export const BrandSchema = z.object({
   primaryLink: z.string().optional(),
   secondaryLink: z.string().optional(),
   homeLink: z.string().optional(),
-  backgroundImage: z.url().optional()
+  backgroundImage: z.url().optional(),
+  showQuerySummary: z.boolean().default(true)
 });
 
 const OpenIdConnectSchema = z.object({
