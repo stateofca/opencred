@@ -33,6 +33,11 @@ const exampleWorkflow = {
     idTokenExpirySeconds: 3600,
     claims: [{name: 'name', path: 'name'}]
   },
+  translations: {
+    en: {
+      test: 'test_translation'
+    }
+  },
   brand: {cta: '#8A2BE2', primary: '#6A5ACD', header: '#9370DB'}
 };
 
@@ -97,6 +102,52 @@ describe('continuationContext', () => {
     expect(err).to.be.an(Error);
     expect(err.status).to.equal(404);
   });
+
+  it('should return context when token valid',
+    async () => {
+      const exchangeId = 'ex-context-test';
+      await database.collections.Exchanges.insertOne({
+        id: exchangeId,
+        workflowId: 'test',
+        state: 'complete',
+        step: 'default',
+        sequence: 1,
+        ttl: 3600,
+        createdAt: new Date(),
+        variables: {procedurePath: 'verification'},
+        oidc: {code: 'code', state: 'state'}
+      });
+
+      const token = await buildExchangeResultToken({
+        exchangeId,
+        workflowId: 'test',
+        procedurePath: 'verification'
+      });
+
+      const res = await client.get(
+        `${baseUrl}/context/continue?exchange_token=${
+          encodeURIComponent(token)}`
+      );
+
+      expect(res.status).to.equal(200);
+      expect(res.data).to.have.property('workflow');
+      expect(res.data).to.have.property('options');
+      expect(res.data).to.have.property('exchangeData');
+
+      const {workflow, exchangeData} = res.data;
+      expect(exchangeData.id).to.equal(exchangeId);
+
+      expect(workflow).to.have.property('translations');
+      expect(workflow).to.have.property('clientId');
+      expect(workflow).to.have.property('oidc');
+
+      const {clientId, oidc, translations} = workflow;
+      expect(clientId).to.equal('test');
+      expect(oidc.redirectUri).to.equal('https://example.com');
+      expect(translations.en.test).to.equal('test_translation');
+
+      await database.collections.Exchanges.deleteOne({id: exchangeId});
+    });
 
   it('should return context with autoRedirectToClient false when token valid',
     async () => {
