@@ -120,6 +120,7 @@ import AppSettingsModal from './AppSettingsModal.vue';
 import {CadmvHeader} from '@digitalbazaar/cadmv-ui';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
+import {useExchangeContext} from './../composables/useExchangeContext.js';
 import {useHead} from 'unhead';
 import {useI18n} from 'vue-i18n';
 import {useRoute} from 'vue-router';
@@ -142,6 +143,7 @@ const {locale, availableLocales, t} = useI18n({useScope: 'global'});
 
 const route = useRoute();
 const $q = useQuasar();
+const {provideContext} = useExchangeContext();
 
 // Context for current workflow - will be fetched or use config default
 const context = ref({
@@ -229,7 +231,7 @@ onBeforeMount(async () => {
 });
 
 // Provide context and userSettings to child components
-provide('exchangeContext', context);
+provideContext({context});
 provide('userSettings', userSettings);
 
 const handleLanguageChange = lang => {
@@ -315,4 +317,3 @@ google-translate:not(.not-white) a {
   padding-bottom: 10px;
 }
 </style>
-
