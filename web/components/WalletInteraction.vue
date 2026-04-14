@@ -55,11 +55,15 @@ SPDX-License-Identifier: BSD-3-Clause
     <div
       v-if="pickerAvailableOptions.length > 1">
       <div
-        class="mt-4 mx-auto text-center">
-        <cadmv-button
-          no-caps
-          variant="flat"
-          :label="$t('otherOptions')"
+        class="column items-center mt-4 mx-auto text-center">
+        Powered by OpenCred
+        <q-btn
+          icon="settings"
+          round
+          flat
+          dense
+          size="sm"
+          :aria-label="$t('otherOptions')"
           @click="showInteractionPicker = true" />
       </div>
       <InteractionPickerModal
@@ -111,7 +115,6 @@ import {
 import {
   computed, inject, onMounted, reactive, ref, watch
 } from 'vue';
-import {CadmvButton} from '@digitalbazaar/cadmv-ui';
 import ChapiInteraction from './interactions/ChapiInteraction.vue';
 import DcApiInteraction from './interactions/DcApiInteraction.vue';
 import {httpClient} from '@digitalbazaar/http-client';
