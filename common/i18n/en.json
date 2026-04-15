@@ -69,7 +69,7 @@
   "verificationTitle": "Verification Details",
   "verificationSuccess": "Success! Your credential has been shared.",
   "verificationDetails": "Press the button below to close this tab.",
-  "verificationCloseBtn": "Close this tab.",
+  "verificationCloseBtn": "Close this tab",
   "protocolWallet_oid4vp_qr": "Scan QR code to present with OpenID4VP",
   "protocolWallet_oid4vp_link": "Open wallet on this device",
   "protocolWallet_oid4vp_description": "OpenID4VP presentation protocol",

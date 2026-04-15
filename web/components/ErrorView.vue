@@ -7,7 +7,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <template>
   <div class="column items-center q-gutter-y-sm">
-    <span class="text-body1 text-negative">
+    <span class="text-body1 text-negative q-px-md">
       {{title || $t('error_defaultTitle')}}
       {{subtitle || $t('error_defaultSubtitle')}}
     </span>
