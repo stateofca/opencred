@@ -1,5 +1,12 @@
 # opencred-platform Changelog
 
+## 10.0.5 - 2026-04-dd
+
+### Changed
+- Updates to UI to make better use of `@digitalbazaar/cadmv-ui` package.
+- Split out common frontend functionality into reusable composables.
+- Add workflow specific translation override capability.
+
 ## 10.0.4 - 2026-04-03
 
 ### Fixed
