@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+import {decodeJwt} from 'jose';
+
 /**
  * Starts the DC API flow by requesting authorization and using
  *   navigator.credentials.get.
@@ -130,12 +132,22 @@ export async function startDCApiFlow({
         }
       };
     } else {
-      // Annex D uses protocol "openid4vp" with JWT request
+      function buildUnsignedRequestFromJwt({jwt}) {
+        const decodedJwt = decodeJwt(jwt);
+
+        return {
+          response_type: decodedJwt.response_type,
+          response_mode: decodedJwt.response_mode, // force unsigned-compatible
+          nonce: decodedJwt.nonce,
+          dcql_query: decodedJwt.dcql_query,
+          client_metadata: decodedJwt.client_metadata
+        };
+      }
+      // OID4VP 1.0 - Annex D uses protocol "openid4vp-v1-unsigned"
+      // and `openid4vp-v1-signed` for JWT requests.
       credentialRequest = {
-        protocol: 'openid4vp',
-        data: {
-          request: jwt
-        }
+        protocol: 'openid4vp-v1-unsigned',
+        data: buildUnsignedRequestFromJwt({jwt})
       };
     }
 
