@@ -1,11 +1,8 @@
 {
   "name": "opencred-platform",
   "version": "10.0.4",
-  "type": "module",
   "license": "BSD-3-Clause",
-  "engines": {
-    "node": ">=20"
-  },
+  "type": "module",
   "main": "./lib/index.js",
   "browser": {
     ".": "./web/index.js"
@@ -33,7 +30,7 @@
     "@azure/msal-node": "^2.16.3",
     "@bedrock/config-yaml": "^4.3.3",
     "@bedrock/core": "^6.3.0",
-    "@bedrock/express": "^8.6.0",
+    "@bedrock/express": "^8.6.2",
     "@bedrock/express-browser-fixes": "^3.1.0",
     "@bedrock/health": "^4.1.0",
     "@bedrock/https-agent": "^4.1.0",
@@ -125,10 +122,13 @@
     "sinon": "^21.0.3"
   },
   "mocha": {
+    "recursive": true,
     "spec": [
       "test/unit/**/*.test.js"
     ],
-    "recursive": true,
     "timeout": 10000
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

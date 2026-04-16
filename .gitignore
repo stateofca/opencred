@@ -14,7 +14,6 @@ TAGS
 coverage
 dist
 node_modules
-package-lock.json
 configs/config.yaml
 configs/combined.yaml
 configs/combined.generated.yaml
