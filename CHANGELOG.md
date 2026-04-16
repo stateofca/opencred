@@ -8,8 +8,8 @@
 - Add workflow specific translation override capability.
 - Add lockfile, update dockerfile to use it during install.
 - Update dependencies.
-  - `@bedrock/core@6.3.0`
-  - `@bedrock/express@8.6.2`
+  - `@bedrock/core@6.3.0`.
+  - `@bedrock/express@8.6.2`.
 - Update dev dependencies.
 - Remove unused dependencies.
   - `@digitalbazaar/oid4-client`
