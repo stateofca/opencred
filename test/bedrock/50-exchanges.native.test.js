@@ -988,3 +988,141 @@ describe('NativeWorkflowService getExchange', async () => {
     expect(result.variables.results).to.be(undefined);
   });
 });
+
+describe('OID4VP 1.0 trustedCredentialIssuers', () => {
+  it('should reject OID4VP 1.0 JWT VC when issuer is not in ' +
+    'trustedCredentialIssuers', async () => {
+    // Generate real tokens first (before stubs are set)
+    const {vpToken: vp_token_jwt, vcToken: realVcToken} =
+      await generateValidJwtVpToken({
+        aud: domainToDidWeb(config.server.baseUri),
+        challenge: 'test-challenge'
+      });
+
+    await withStubs(
+      () => {
+        const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
+        const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
+          .resolves({
+            verified: true,
+            verifiablePresentation: {
+              verifiableCredential: [{proof: {jwt: realVcToken}}]
+            }
+          });
+        const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
+          .resolves({verified: true, signer: {}});
+        const updateStub = sinon.stub(
+          database.collections.Exchanges, 'updateOne')
+          .resolves();
+        return [caStoreStub, verifyUtilsStub, verifyUtilsStub2, updateStub];
+      },
+      async () => {
+        // Workflow with dcql_query to trigger OID4VP 1.0 path
+        const workflowWithDcql = {
+          ...workflow,
+          dcql_query: {
+            credentials: [{
+              id: 'test-cred',
+              format: 'jwt_vc_json',
+              meta: {type_values: [['VerifiableCredential']]}
+            }]
+          },
+          trustedCredentialIssuers: ['did:web:not-a-valid-issuer.org']
+        };
+
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: workflowWithDcql,
+          profile: 'OID4VP-1.0'
+        });
+
+        // Ensure dcql_query is in authorizationRequest
+        exchange.variables.authorizationRequest.dcql_query =
+          workflowWithDcql.dcql_query;
+
+        // OID4VP 1.0 format: vp_token is object keyed by credential ID
+        const vp_token = {'test-cred': vp_token_jwt};
+
+        const result = await verifySubmission({
+          workflow: workflowWithDcql,
+          vp_token,
+          submission: null, // No submission for OID4VP 1.0
+          exchange,
+          baseUri: config.server.baseUri,
+          documentLoader
+        });
+
+        expect(result.verified).to.be(false);
+        expect(result.errors.includes(
+          'Unaccepted credential issuer')).to.be(true);
+      }
+    );
+  });
+
+  it('should accept OID4VP 1.0 JWT VC when issuer is in ' +
+    'trustedCredentialIssuers', async () => {
+    // Generate real tokens first (before stubs are set)
+    const {vpToken: vp_token_jwt, vcToken: realVcToken, issuerDid} =
+      await generateValidJwtVpToken({
+        aud: domainToDidWeb(config.server.baseUri),
+        challenge: 'test-challenge'
+      });
+
+    await withStubs(
+      () => {
+        const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
+        const verifyUtilsStub = sinon.stub(verifyUtils, 'verifyPresentationJWT')
+          .resolves({
+            verified: true,
+            verifiablePresentation: {
+              verifiableCredential: [{proof: {jwt: realVcToken}}]
+            }
+          });
+        const verifyUtilsStub2 = sinon.stub(verifyUtils, 'verifyCredentialJWT')
+          .resolves({verified: true, signer: {}});
+        const updateStub = sinon.stub(
+          database.collections.Exchanges, 'updateOne')
+          .resolves();
+        return [caStoreStub, verifyUtilsStub, verifyUtilsStub2, updateStub];
+      },
+      async () => {
+        // Workflow with dcql_query and issuer in allowlist
+        const workflowWithDcql = {
+          ...workflow,
+          dcql_query: {
+            credentials: [{
+              id: 'test-cred',
+              format: 'jwt_vc_json',
+              meta: {type_values: [['VerifiableCredential']]}
+            }]
+          },
+          trustedCredentialIssuers: [issuerDid]
+        };
+
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: workflowWithDcql,
+          profile: 'OID4VP-1.0'
+        });
+
+        // Ensure dcql_query is in authorizationRequest
+        exchange.variables.authorizationRequest.dcql_query =
+          workflowWithDcql.dcql_query;
+
+        // OID4VP 1.0 format: vp_token is object keyed by credential ID
+        const vp_token = {'test-cred': vp_token_jwt};
+
+        const result = await verifySubmission({
+          workflow: workflowWithDcql,
+          vp_token,
+          submission: null, // No submission for OID4VP 1.0
+          exchange,
+          baseUri: config.server.baseUri,
+          documentLoader
+        });
+
+        expect(result.verified).to.be(true);
+        expect(result.errors.includes(
+          'Unaccepted credential issuer')).to.be(false);
+      }
+    );
+  });
+});

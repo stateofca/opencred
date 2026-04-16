@@ -92,6 +92,28 @@ Configuration notes:
   want to use a trusted certificate authority for mDoc credentials. The
   `caStore` is also used to verify `x5c` headers in VCDM 1.1 credentials in the
   `jwt_vc_json` format.
+* **Accepting California DMV Driver's License Credentials**: To accept
+  production credentials from the California DMV, add the DMV's issuer DID to
+  `trustedCredentialIssuers` on any workflow that requests
+  `Iso18013DriversLicenseCredential` credentials. This applies to `preset`
+  workflows using `Iso18013DriversLicenseCredential:2025` as well as `native`
+  workflows whose `query` or `dcql_query` includes
+  `Iso18013DriversLicenseCredential`. For example:
+
+```yaml
+trustedCredentialIssuers:
+  # California DMV production issuer (valid until 2027-07-09)
+  - did:jwk:eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6ImJSbGpTekVyS0lfQk5OME1LRVBIVVdHcVR1Um5fVm42eXJvQlRfR0RDbFUiLCJ4NWMiOlsiTUlJQ2VUQ0NBaCtnQXdJQkFnSVVOYjF2czlucklGTmt4Vy9BaDVSYnFTazVENXN3Q2dZSUtvWkl6ajBFQXdJd1VURUxNQWtHQTFVRUJoTUNWVk14RGpBTUJnTlZCQWdNQlZWVExVTkJNUTh3RFFZRFZRUUtEQVpEUVMxRVRWWXhJVEFmQmdOVkJBTU1HRU5oYkdsbWIzSnVhV0VnUkUxV0lFbEJRMEVnVW05dmREQWVGdzB5TmpBME1UQXhOVE14TWpGYUZ3MHlOekEzTURreE5UTXhNakZhTUZZeEN6QUpCZ05WQkFZVEFsVlRNUTR3REFZRFZRUUlEQVZWVXkxRFFURVBNQTBHQTFVRUNnd0dRMEV0UkUxV01TWXdKQVlEVlFRRERCMURZV3hwWm05eWJtbGhJRVJOVmlCSlFVTkJJRlpESUZOcFoyNWxjakJaTUJNR0J5cUdTTTQ5QWdFR0NDcUdTTTQ5QXdFSEEwSUFCRzBaWTBzeEt5aVB3VFRkRENoRHgxRmhxazdrWi8xWitzcTZBVS94Z3dwVkp5T0k4cVNYRHl6NFpPQTJtR21sSnlrUGtjdnRTRjRjUnJNQlhDRDRIVitqZ2M4d2djd3dIUVlEVlIwT0JCWUVGREdQUUxGRUhwaWp2b0ZYaUNpV2c1Z2VVeGpZTUI4R0ExVWRJd1FZTUJhQUZMdDlkV2VTZW0vUG4zSjd1QXIzTnkrY0RGQTJNQjBHQ1dDR1NBR0crRUlCRFFRUUZnNURZV3hwWm05eWJtbGhJRVJOVmpBT0JnTlZIUThCQWY4RUJBTUNCNEF3SVFZRFZSMFNCQm93R0lFV2FXRmpZUzF6YVdkdVpYSkFaRzEyTG1OaExtZHZkakE0QmdOVkhSOEVNVEF2TUMyZ0s2QXBoaWRvZEhSd2N6b3ZMMk55YkM1a2JYWXVZMkV1WjI5MkwybGhZMkV2YldSdll5MXphV2R1WlhJd0NnWUlLb1pJemowRUF3SURTQUF3UlFJZ01yaGlFQ005ZU1JeHRRTzFmK1daUFhuaGRxK0g0ZWlPcnA4a0xpUkFkc0VDSVFDZDI4MktSUEsyUTVtdkRPUGMrRGVrYzFhR3RaRnRhaHVreS9NeDZWQ2JsZz09Il0sInkiOiJKeU9JOHFTWER5ejRaT0EybUdtbEp5a1BrY3Z0U0Y0Y1JyTUJYQ0Q0SFY4In0
+```
+
+  The full DID value can also be copied from the "Driver's License (Preset)"
+  workflow in [configs/combined.example.yaml](configs/combined.example.yaml).
+  The embedded X.509 certificate in this DID expires July 9, 2027; a
+  replacement DID will be published before that date.
+  Note that `trustedCredentialIssuers` is enforced **per-workflow only**; the
+  root-level `opencred.trustedCredentialIssuers` key accepted by the config
+  schema is not used by verification code. If the list is omitted or empty on a
+  workflow, no issuer allowlisting is applied for that workflow.
 
 
 If a `BEDROCK_CONFIG` environment variable is set, the config specified in

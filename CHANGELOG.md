@@ -18,6 +18,7 @@
   - `base64url-universal`
   - `did-jwt`
   - `jsonld`
+- Changed README and example config to clarify prod CA DMV issuer DID.
 
 ## 10.0.4 - 2026-04-03
 
