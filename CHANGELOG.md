@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.0.5 - 2026-04-dd
+## 10.0.5 - 2026-04-16
 
 ### Changed
 - Updates to UI to make better use of `@digitalbazaar/cadmv-ui` package.
