@@ -9,9 +9,14 @@ import expect from 'expect.js';
 import sinon from 'sinon';
 
 import {
+  ANNEX_C_DC_API_PROTOCOL,
+  buildAnnexCDcApiRequest,
+  buildAnnexDDcApiRequest,
   buildDcApiRequest,
   DC_API_OID4VP_ACCEPTED_PROTOCOLS,
   DC_API_OID4VP_PROTOCOLS,
+  stripFieldsForUnsignedAnnexD,
+  UNSIGNED_ANNEX_D_FORBIDDEN_FIELDS,
   unwrapDcApiOid4vpResponse
 } from
   '../../../lib/workflows/common/dc-api-envelope.js';
@@ -79,6 +84,178 @@ describe('dc-api-envelope', () => {
       expect(() => {
         result.protocol = 'x';
       }).to.throwError();
+    });
+  });
+
+  describe('UNSIGNED_ANNEX_D_FORBIDDEN_FIELDS', () => {
+    it('is frozen and lists Annex D unsigned forbidden keys', () => {
+      expect(Object.isFrozen(UNSIGNED_ANNEX_D_FORBIDDEN_FIELDS)).to.be(true);
+      expect([...UNSIGNED_ANNEX_D_FORBIDDEN_FIELDS]).to.eql([
+        'client_id',
+        'client_id_scheme',
+        'expected_origins'
+      ]);
+    });
+  });
+
+  describe('stripFieldsForUnsignedAnnexD', () => {
+    it('removes forbidden fields, keeps others, and does not mutate input',
+      () => {
+        const input = {
+          client_id: 'cid',
+          client_id_scheme: 'x',
+          expected_origins: ['https://a'],
+          response_type: 'vp_token',
+          response_mode: 'dc_api'
+        };
+        const snapshot = {...input};
+        const out = stripFieldsForUnsignedAnnexD(input);
+        expect(input).to.eql(snapshot, 'input mutated');
+        for(const field of UNSIGNED_ANNEX_D_FORBIDDEN_FIELDS) {
+          expect(out).not.to.have.key(field);
+        }
+        expect(out.response_type).to.equal('vp_token');
+        expect(out.response_mode).to.equal('dc_api');
+      });
+
+    it('throws when input is not a plain object', () => {
+      expect(() => stripFieldsForUnsignedAnnexD(null)).to.throwError(e => {
+        expect(e.message).to.equal(
+          'authorizationRequest must be a plain object');
+      });
+      expect(() => stripFieldsForUnsignedAnnexD([])).to.throwError();
+      expect(() => stripFieldsForUnsignedAnnexD('x')).to.throwError();
+    });
+  });
+
+  describe('buildAnnexCDcApiRequest', () => {
+    it('returns frozen org-iso-mdoc envelope with frozen data', () => {
+      const result = buildAnnexCDcApiRequest({
+        deviceRequest: 'dr',
+        encryptionInfo: 'ei'
+      });
+      expect(result.protocol).to.equal(ANNEX_C_DC_API_PROTOCOL);
+      expect(result.data).to.eql({deviceRequest: 'dr', encryptionInfo: 'ei'});
+      expect(Object.isFrozen(result)).to.be(true);
+      expect(Object.isFrozen(result.data)).to.be(true);
+    });
+
+    it('throws when deviceRequest is missing, empty, or non-string', () => {
+      expect(() => buildAnnexCDcApiRequest({
+        encryptionInfo: 'ei'
+      })).to.throwError(e => {
+        expect(e.message).to.equal(
+          'buildAnnexCDcApiRequest: deviceRequest must be a non-empty string');
+      });
+      expect(() => buildAnnexCDcApiRequest({
+        deviceRequest: '',
+        encryptionInfo: 'ei'
+      })).to.throwError(e => {
+        expect(e.message).to.equal(
+          'buildAnnexCDcApiRequest: deviceRequest must be a non-empty string');
+      });
+      expect(() => buildAnnexCDcApiRequest({
+        deviceRequest: 1,
+        encryptionInfo: 'ei'
+      })).to.throwError(e => {
+        expect(e.message).to.equal(
+          'buildAnnexCDcApiRequest: deviceRequest must be a non-empty string');
+      });
+    });
+
+    it('throws when encryptionInfo is missing, empty, or non-string', () => {
+      expect(() => buildAnnexCDcApiRequest({
+        deviceRequest: 'dr'
+      })).to.throwError(e => {
+        expect(e.message).to.equal(
+          'buildAnnexCDcApiRequest: encryptionInfo must be a non-empty string');
+      });
+      expect(() => buildAnnexCDcApiRequest({
+        deviceRequest: 'dr',
+        encryptionInfo: ''
+      })).to.throwError(e => {
+        expect(e.message).to.equal(
+          'buildAnnexCDcApiRequest: encryptionInfo must be a non-empty string');
+      });
+      expect(() => buildAnnexCDcApiRequest({
+        deviceRequest: 'dr',
+        encryptionInfo: null
+      })).to.throwError(e => {
+        expect(e.message).to.equal(
+          'buildAnnexCDcApiRequest: encryptionInfo must be a non-empty string');
+      });
+    });
+  });
+
+  describe('buildAnnexDDcApiRequest', () => {
+    it('signed=true returns frozen v1Signed envelope with { request: jwt }',
+      () => {
+        const jwt = 'header.payload.sig';
+        const result = buildAnnexDDcApiRequest({
+          signed: true,
+          signedJwt: jwt
+        });
+        expect(result).to.eql({
+          protocol: DC_API_OID4VP_PROTOCOLS.v1Signed,
+          data: {request: jwt}
+        });
+        expect(Object.isFrozen(result)).to.be(true);
+      });
+
+    it('signed=false returns frozen v1Unsigned envelope and strips fields',
+      () => {
+        const result = buildAnnexDDcApiRequest({
+          signed: false,
+          authorizationRequest: {
+            client_id: 'x',
+            client_id_scheme: 'y',
+            expected_origins: ['z'],
+            nonce: 'n1'
+          }
+        });
+        expect(result.protocol).to.equal(
+          DC_API_OID4VP_PROTOCOLS.v1Unsigned,
+          'protocol');
+        expect(Object.isFrozen(result)).to.be(true);
+        expect(result.data).to.eql({nonce: 'n1'});
+        for(const field of UNSIGNED_ANNEX_D_FORBIDDEN_FIELDS) {
+          expect(result.data).not.to.have.key(field);
+        }
+      });
+
+    it('rejects non-boolean signed', () => {
+      expect(() => buildAnnexDDcApiRequest({
+        signed: 1,
+        signedJwt: 'x'
+      })).to.throwError(e => {
+        expect(e.message).to.equal(
+          'buildAnnexDDcApiRequest: signed must be a boolean');
+      });
+    });
+
+    it('rejects signed=true without string signedJwt', () => {
+      expect(() => buildAnnexDDcApiRequest({
+        signed: true
+      })).to.throwError(e => {
+        expect(e.message).to.equal(
+          'buildAnnexDDcApiRequest: signedJwt is required when signed=true');
+      });
+      expect(() => buildAnnexDDcApiRequest({
+        signed: true,
+        signedJwt: 1
+      })).to.throwError(e => {
+        expect(e.message).to.equal(
+          'buildAnnexDDcApiRequest: signedJwt is required when signed=true');
+      });
+    });
+
+    it('rejects signed=false without plain authorizationRequest', () => {
+      expect(() => buildAnnexDDcApiRequest({signed: false})).to.throwError(
+        e => {
+          expect(e.message).to.equal(
+            'buildAnnexDDcApiRequest: authorizationRequest must be a plain ' +
+            'object when signed=false');
+        });
     });
   });
 

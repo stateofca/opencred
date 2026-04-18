@@ -12,6 +12,10 @@ import {
   _pemToBase64Der
 } from '../../lib/workflows/common/oid4vp-shared.js';
 import {
+  ANNEX_C_DC_API_PROTOCOL,
+  DC_API_OID4VP_PROTOCOLS
+} from '../../lib/workflows/common/dc-api-envelope.js';
+import {
   convertDerCertificateToPem,
   generateCertificateChain
 } from '../utils/x509.js';
@@ -207,12 +211,12 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
           responseMode: 'dc_api'
         });
 
-        expect(result).to.have.property('annexCRequest');
+        expect(result).to.have.property('dcApiRequest');
         expect(result).to.have.property('updatedExchange');
         expect(result).to.have.property('signingMetadata');
-        expect(result.annexCRequest).to.be.an('object');
-        expect(result.annexCRequest).to.have.property('deviceRequest');
-        expect(result.annexCRequest).to.have.property('encryptionInfo');
+        expect(result.dcApiRequest.protocol).to.equal(ANNEX_C_DC_API_PROTOCOL);
+        expect(result.dcApiRequest.data.deviceRequest).to.be.a('string');
+        expect(result.dcApiRequest.data.encryptionInfo).to.be.a('string');
         const ue = result.updatedExchange;
         expect(ue.state).to.equal('active');
         expect(ue.variables).to.have.property('authorizationRequest');
@@ -438,15 +442,14 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
         }
         expect(err).to.be(undefined);
         expect(result.status).to.equal(200);
-        expect(result.headers.get('content-type')).to.equal(
-          'application/json; charset=utf-8'
-        );
-        const json = result.data;
-        // Annex C returns JSON with deviceRequest and encryptionInfo
-        expect(json).to.have.property('deviceRequest');
-        expect(json).to.have.property('encryptionInfo');
-        expect(json.deviceRequest).to.be.a('string');
-        expect(json.encryptionInfo).to.be.a('string');
+        expect(result.headers.get('content-type')).to.match(
+          /application\/json/i);
+        const {dcApiRequest} = result.data;
+        expect(dcApiRequest.protocol).to.equal(ANNEX_C_DC_API_PROTOCOL);
+        expect(dcApiRequest.protocol).to.not.equal(
+          DC_API_OID4VP_PROTOCOLS.v1Signed);
+        expect(dcApiRequest.data.deviceRequest).to.be.a('string');
+        expect(dcApiRequest.data.encryptionInfo).to.be.a('string');
       });
 
     it('should use dc_api response mode when responseMode=dc_api',
@@ -456,7 +459,7 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
         findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
           .resolves({...exchange, workflowId: mdocTestRP.clientId});
         replaceOneStub = sinon.stub(
-          database.collections.Exchanges, 'updateOne'
+          database.collections.Exchanges, 'replaceOne'
         ).resolves();
 
         let result;
@@ -473,10 +476,14 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
         }
         expect(err).to.be(undefined);
         expect(result.status).to.equal(200);
-        // Annex C returns JSON, not JWT
-        const json = await result.data;
-        expect(json).to.have.property('deviceRequest');
-        expect(json).to.have.property('encryptionInfo');
+        expect(result.headers.get('content-type')).to.match(
+          /application\/json/i);
+        const {dcApiRequest} = result.data;
+        expect(dcApiRequest.protocol).to.equal(ANNEX_C_DC_API_PROTOCOL);
+        expect(dcApiRequest.protocol).to.not.equal(
+          DC_API_OID4VP_PROTOCOLS.v1Signed);
+        expect(dcApiRequest.data.deviceRequest).to.be.a('string');
+        expect(dcApiRequest.data.encryptionInfo).to.be.a('string');
       });
   });
 

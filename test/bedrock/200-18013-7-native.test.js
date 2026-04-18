@@ -16,6 +16,10 @@ import {
   convertDerCertificateToPem,
   generateCertificateChain
 } from '../utils/x509.js';
+import {
+  DC_API_OID4VP_PROTOCOLS,
+  UNSIGNED_ANNEX_D_FORBIDDEN_FIELDS
+} from '../../lib/workflows/common/dc-api-envelope.js';
 import {decodeJwt, decodeProtectedHeader} from 'jose';
 import {
   generateAuthorizationRequest,
@@ -366,6 +370,9 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         });
 
         expect(result).to.have.property('authorizationRequest');
+        expect(result).to.have.property('dcApiRequest');
+        expect(result.dcApiRequest.protocol).to.equal(
+          DC_API_OID4VP_PROTOCOLS.v1Unsigned);
         expect(result).to.have.property('updatedExchange');
         expect(result).to.have.property('signingMetadata');
         expect(result.authorizationRequest).to.be.an('object');
@@ -652,17 +659,20 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
             .get(
               `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
               `${exchange.id}/openid/client/authorization/request` +
-              `?profile=18013-7-Annex-D`
+              `?profile=18013-7-Annex-D&signed=true`
             );
         } catch(e) {
           err = e;
         }
         expect(err).to.be(undefined);
         expect(result.status).to.equal(200);
-        expect(result.headers.get('content-type')).to.equal(
-          'application/oauth-authz-req+jwt'
-        );
-        const jwtText = await result.text();
+        expect(result.headers.get('content-type')).to.match(
+          /application\/json/i);
+        const {dcApiRequest} = result.data;
+        expect(dcApiRequest).to.be.an('object');
+        expect(dcApiRequest.protocol).to.be.a('string');
+        expect(dcApiRequest.data).to.be.an('object');
+        const jwtText = dcApiRequest.data.request;
         const header = decodeProtectedHeader(jwtText);
         expect(header.typ).to.equal(OID4VP_AUTHZ_REQ_JWT_TYP);
         const jwt = decodeJwt(jwtText);
@@ -684,7 +694,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
           .resolves({...exchange, workflowId: mdocTestRP.clientId});
         replaceOneStub = sinon.stub(
-          database.collections.Exchanges, 'updateOne'
+          database.collections.Exchanges, 'replaceOne'
         ).resolves();
 
         let result;
@@ -694,14 +704,17 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
             .get(
               `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
               `${exchange.id}/openid/client/authorization/request` +
-              `?response_mode=dc_api&profile=18013-7-Annex-D`
+              `?response_mode=dc_api&profile=18013-7-Annex-D&signed=true`
             );
         } catch(e) {
           err = e;
         }
         expect(err).to.be(undefined);
         expect(result.status).to.equal(200);
-        const jwtText = await result.text();
+        expect(result.headers.get('content-type')).to.match(
+          /application\/json/i);
+        const {dcApiRequest} = result.data;
+        const jwtText = dcApiRequest.data.request;
         expect(decodeProtectedHeader(jwtText).typ).to.equal(
           OID4VP_AUTHZ_REQ_JWT_TYP);
         const jwt = decodeJwt(jwtText);
@@ -717,7 +730,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
           .resolves({...exchange, workflowId: mdocTestRP.clientId});
         replaceOneStub = sinon.stub(
-          database.collections.Exchanges, 'updateOne'
+          database.collections.Exchanges, 'replaceOne'
         ).resolves();
 
         let result;
@@ -727,22 +740,100 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
             .get(
               `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
               `${exchange.id}/openid/client/authorization/request` +
-              `?profile=18013-7-Annex-D`
+              `?profile=18013-7-Annex-D&signed=true`
             );
         } catch(e) {
           err = e;
         }
         expect(err).to.be(undefined);
         expect(result.status).to.equal(200);
-        const jwtText = await result.text();
+        expect(result.headers.get('content-type')).to.match(
+          /application\/json/i);
+        const {dcApiRequest} = result.data;
+        const jwtText = dcApiRequest.data.request;
         expect(decodeProtectedHeader(jwtText).typ).to.equal(
           OID4VP_AUTHZ_REQ_JWT_TYP);
         const jwt = decodeJwt(jwtText);
         // Annex D defaults to dc_api
         expect(jwt.response_mode).to.equal('dc_api');
       });
+
+    it('should return unsigned dcApiRequest for Annex D when signed flag is ' +
+      'omitted',
+    async function() {
+      const exchange = await createExchangeWithAuthRequest({
+        workflow: mdocTestRP});
+      findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
+        .resolves({...exchange, workflowId: mdocTestRP.clientId});
+      replaceOneStub = sinon.stub(
+        database.collections.Exchanges, 'replaceOne'
+      ).resolves();
+
+      let result;
+      let err;
+      try {
+        result = await client
+          .get(
+            `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
+            `${exchange.id}/openid/client/authorization/request` +
+            `?profile=18013-7-Annex-D`
+          );
+      } catch(e) {
+        err = e;
+      }
+      expect(err).to.be(undefined);
+      expect(result.status).to.equal(200);
+      expect(result.headers.get('content-type')).to.match(/application\/json/i);
+      const {dcApiRequest} = result.data;
+      expect(dcApiRequest.protocol).to.equal(
+        DC_API_OID4VP_PROTOCOLS.v1Unsigned);
+      for(const field of UNSIGNED_ANNEX_D_FORBIDDEN_FIELDS) {
+        expect(dcApiRequest.data).not.to.have.key(field);
+      }
+      expect(dcApiRequest.data.nonce).to.be.a('string');
+      expect(dcApiRequest.data.nonce.length).to.be.greaterThan(0);
+      expect(dcApiRequest.data.dcql_query).to.be.an('object');
+      expect(dcApiRequest.data.client_metadata.vp_formats_supported.mso_mdoc)
+        .to.be.an('object');
+    });
+
+    it('should return signed dcApiRequest for Annex D when signed=true',
+      async function() {
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: mdocTestRP});
+        findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
+          .resolves({...exchange, workflowId: mdocTestRP.clientId});
+        replaceOneStub = sinon.stub(
+          database.collections.Exchanges, 'replaceOne'
+        ).resolves();
+
+        let result;
+        let err;
+        try {
+          result = await client
+            .get(
+              `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
+              `${exchange.id}/openid/client/authorization/request` +
+              `?profile=18013-7-Annex-D&signed=true`
+            );
+        } catch(e) {
+          err = e;
+        }
+        expect(err).to.be(undefined);
+        const {dcApiRequest} = result.data;
+        expect(dcApiRequest.protocol).to.equal(
+          DC_API_OID4VP_PROTOCOLS.v1Signed);
+        expect(dcApiRequest.data.request).to.be.a('string');
+        const protectedHeader = decodeProtectedHeader(
+          dcApiRequest.data.request);
+        expect(protectedHeader.typ).to.equal(OID4VP_AUTHZ_REQ_JWT_TYP);
+        const payload = decodeJwt(dcApiRequest.data.request);
+        expect(payload.client_id).to.equal('x509_san_dns:example.com');
+      });
   });
 
+  // OID4VP 1.0 §5.10 wallet-initiated flow: POST body fields. Successful
+  // responses use a JSON `{dcApiRequest}` wrapper (not a bare JAR JWT).
   describe('POST authorization_request endpoint (OID4VP 1.0 Section 5.10)',
     function() {
       let findOneStub;
@@ -796,6 +887,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         searchParams.set('wallet_metadata', JSON.stringify(walletMetadata));
         searchParams.set('wallet_nonce', walletNonce);
         searchParams.set('profile', '18013-7-Annex-D');
+        searchParams.set('signed', 'true');
 
         let result;
         let err;
@@ -806,7 +898,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
               body: searchParams,
               headers: {
                 'content-type': 'application/x-www-form-urlencoded',
-                accept: 'application/oauth-authz-req+jwt'
+                accept: 'application/json'
               }
             });
         } catch(e) {
@@ -814,10 +906,10 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         }
         expect(err).to.be(undefined);
         expect(result.status).to.equal(200);
-        expect(result.headers.get('content-type')).to.equal(
-          'application/oauth-authz-req+jwt'
-        );
-        const jwtText = await result.text();
+        expect(result.headers.get('content-type')).to.match(
+          /application\/json/i);
+        const {dcApiRequest} = result.data;
+        const jwtText = dcApiRequest.data.request;
         const header = decodeProtectedHeader(jwtText);
         expect(header.typ).to.equal(OID4VP_AUTHZ_REQ_JWT_TYP);
         const jwt = decodeJwt(jwtText);
@@ -847,6 +939,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         const searchParams = new URLSearchParams();
         searchParams.set('wallet_metadata', JSON.stringify(walletMetadata));
         searchParams.set('profile', '18013-7-Annex-D');
+        searchParams.set('signed', 'true');
 
         let result;
         let err;
@@ -857,7 +950,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
               body: searchParams,
               headers: {
                 'content-type': 'application/x-www-form-urlencoded',
-                accept: 'application/oauth-authz-req+jwt'
+                accept: 'application/json'
               }
             });
         } catch(e) {
@@ -865,8 +958,10 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         }
         expect(err).to.be(undefined);
         expect(result.status).to.equal(200);
-        const jwtText = await result.text();
-        const jwt = decodeJwt(jwtText);
+        expect(result.headers.get('content-type')).to.match(
+          /application\/json/i);
+        const {dcApiRequest} = result.data;
+        const jwt = decodeJwt(dcApiRequest.data.request);
         expect(jwt).to.not.have.property('wallet_nonce');
         expect(jwt.client_id).to.equal('x509_san_dns:example.com');
       });
@@ -918,7 +1013,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
                 body: searchParams,
                 headers: {
                   'content-type': 'application/x-www-form-urlencoded',
-                  accept: 'application/json'
+                  accept: 'text/plain'
                 }
               });
           } catch(e) {
@@ -927,7 +1022,8 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           expect(err).to.not.be(undefined);
           expect(err.status).to.equal(406);
           expect(err.data.message).to.contain(
-            'Accept header must be application/oauth-authz-req+jwt');
+            'Accept header must include application/json or ' +
+            'application/oauth-authz-req+jwt');
         });
 
       it('should reject POST request with malformed wallet_metadata',
@@ -978,15 +1074,15 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
             getResult = await client.get(
               `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
               `${exchange.id}/openid/client/authorization/request` +
-              `?profile=18013-7-Annex-D`
+              `?profile=18013-7-Annex-D&signed=true`
             );
           } catch(e) {
             getErr = e;
           }
           expect(getErr).to.be(undefined);
           expect(getResult.status).to.equal(200);
-          const getJwtText = await getResult.text();
-          const getJwt = decodeJwt(getJwtText);
+          const getBody = getResult.data;
+          const getJwt = decodeJwt(getBody.dcApiRequest.data.request);
 
           // Create new exchange for POST to avoid state conflicts
           const exchange2 = await createExchangeWithAuthRequest({
@@ -1002,6 +1098,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           // POST request with same parameters
           const searchParams = new URLSearchParams();
           searchParams.set('profile', '18013-7-Annex-D');
+          searchParams.set('signed', 'true');
 
           let postResult;
           let postErr;
@@ -1012,7 +1109,7 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
                 body: searchParams,
                 headers: {
                   'content-type': 'application/x-www-form-urlencoded',
-                  accept: 'application/oauth-authz-req+jwt'
+                  accept: 'application/json'
                 }
               });
           } catch(e) {
@@ -1020,8 +1117,8 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
           }
           expect(postErr).to.be(undefined);
           expect(postResult.status).to.equal(200);
-          const postJwtText = await postResult.text();
-          const postJwt = decodeJwt(postJwtText);
+          const postBody = postResult.data;
+          const postJwt = decodeJwt(postBody.dcApiRequest.data.request);
 
           // Both should have same structure (except wallet_nonce if provided)
           expect(getJwt.client_id).to.equal(postJwt.client_id);
