@@ -41,6 +41,13 @@
   (DC API envelope, JAR signing, formats, client metadata, session transcript,
   and profile identification).
 
+### Removed
+- Delete orphaned `lib/workflows/native-18013-7.js` (the pre-split monolithic
+  18013-7 handler). All helpers had been duplicated to
+  `lib/workflows/common/oid4vp-shared.js` and `session-transcript.js`, and
+  the two entry points had been superseded by per-profile handlers under
+  `lib/workflows/profiles/native-18013-7-annex-{b,c,d}.js`.
+
 ## 10.0.5 - 2026-04-16
 
 ### Changed
