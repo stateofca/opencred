@@ -105,7 +105,7 @@ describe('dc-api-envelope', () => {
       })).to.throwError();
     });
 
-    it('returns protocol, data, and correct isLegacyIdentifier per id',
+    it('returns protocol, data, and correct isLegacyProtocol per id',
       () => {
         for(const protocol of DC_API_OID4VP_ACCEPTED_PROTOCOLS) {
           const body = {protocol, data: {vp: protocol}};
@@ -115,7 +115,7 @@ describe('dc-api-envelope', () => {
             {
               protocol,
               data: {vp: protocol},
-              isLegacyIdentifier: wantLegacy
+              isLegacyProtocol: wantLegacy
             },
             `unexpected unwrap for protocol "${protocol}"`);
         }
