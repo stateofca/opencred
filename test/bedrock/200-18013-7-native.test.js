@@ -383,12 +383,14 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         // Verify Annex D behavior
         const authRequest = result.authorizationRequest;
         expect(authRequest.response_mode).to.equal('dc_api');
-        expect(authRequest.client_metadata).to.have.property('vp_formats');
         expect(authRequest.client_metadata)
-          .to.not.have.property('vp_formats_supported');
-        expect(authRequest.client_metadata.vp_formats.mso_mdoc).to.eql({
-          alg: ['ES256']
-        });
+          .to.have.property('vp_formats_supported');
+        expect(authRequest.client_metadata).to.not.have.property('vp_formats');
+        expect(authRequest.client_metadata.vp_formats_supported.mso_mdoc)
+          .to.eql({
+            issuerauth_alg_values: [-7],
+            deviceauth_alg_values: [-7]
+          });
         // No jwks or encrypted_response_enc_values_supported for dc_api mode
         expect(authRequest.client_metadata).to.not.have.property('jwks');
         expect(authRequest.client_metadata)
@@ -424,11 +426,16 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         expect(authRequest).to.have.property('state');
         expect(authRequest).to.have.property('dcql_query');
         expect(authRequest).to.have.property('client_metadata');
-        // Annex D uses vp_formats (not vp_formats_supported)
-        expect(authRequest.client_metadata).to.have.property('vp_formats');
-        expect(authRequest.client_metadata.vp_formats.mso_mdoc).to.eql({
-          alg: ['ES256']
-        });
+        // OID4VP 1.0: Annex D uses vp_formats_supported with
+        // issuerauth_alg_values / deviceauth_alg_values (COSE alg ids).
+        expect(authRequest.client_metadata)
+          .to.have.property('vp_formats_supported');
+        expect(authRequest.client_metadata).to.not.have.property('vp_formats');
+        expect(authRequest.client_metadata.vp_formats_supported.mso_mdoc)
+          .to.eql({
+            issuerauth_alg_values: [-7],
+            deviceauth_alg_values: [-7]
+          });
       });
 
     it('should not include response_uri for dc_api mode', async function() {
@@ -583,11 +590,14 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
 
         const authRequest = result.authorizationRequest;
         expect(authRequest.client_metadata).to.be.an('object');
-        expect(authRequest.client_metadata.vp_formats).to.be.an('object');
-        expect(authRequest.client_metadata.vp_formats.mso_mdoc)
+        expect(authRequest.client_metadata.vp_formats_supported)
           .to.be.an('object');
-        expect(authRequest.client_metadata.vp_formats.mso_mdoc.alg)
-          .to.eql(['ES256']);
+        expect(authRequest.client_metadata.vp_formats_supported.mso_mdoc)
+          .to.eql({
+            issuerauth_alg_values: [-7],
+            deviceauth_alg_values: [-7]
+          });
+        expect(authRequest.client_metadata).to.not.have.property('vp_formats');
         // dc_api mode does not use jwks or
         // encrypted_response_enc_values_supported
         expect(authRequest.client_metadata).to.not.have.property('jwks');
@@ -663,7 +673,8 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         expect(jwt.response_mode).to.equal('dc_api');
         expect(jwt).to.have.property('dcql_query');
         expect(jwt).to.have.property('client_metadata');
-        expect(jwt.client_metadata.vp_formats.mso_mdoc).to.be.an('object');
+        expect(jwt.client_metadata.vp_formats_supported.mso_mdoc)
+          .to.be.an('object');
       });
 
     it('should use dc_api response mode when responseMode=dc_api',
