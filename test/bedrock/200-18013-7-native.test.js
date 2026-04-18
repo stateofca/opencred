@@ -1129,9 +1129,10 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
     });
 
   describe('handleAuthorizationResponse', function() {
-    // Tests simulate the raw wallet format (credentialResponse.data from
-    // navigator.credentials.get). The handler wraps this with
-    // { protocol: 'openid4vp', data: responseBody } for the DC API.
+    // Tests post the bare wallet payload (i.e. the inner `data` of a
+    // DigitalCredential). The handler also accepts the wrapped
+    // `{ protocol, data }` envelope via unwrapDcApiOid4vpResponse, with
+    // backward-compatible acceptance of the legacy 'openid4vp' identifier.
     let exchange;
     let authorizationRequest;
 

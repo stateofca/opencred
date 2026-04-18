@@ -1,5 +1,46 @@
 # opencred-platform Changelog
 
+## Unreleased
+
+### Changed
+- OpenID for Verifiable Presentations DC API protocol identifier upgraded to
+  OID4VP 1.0: ISO 18013-7 Annex D and OID4VP HAIP 1.0 flows now emit
+  `openid4vp-v1-unsigned` / `openid4vp-v1-signed` per OID4VP 1.0 §A.1,
+  replacing the pre-1.0 `openid4vp` identifier.
+- Annex D, Annex C, and HAIP `client_metadata` updated to OID4VP 1.0 shape:
+  `vp_formats_supported.mso_mdoc.{issuerauth_alg_values, deviceauth_alg_values}`
+  with COSE algorithm integers (`-7` for ES256), replacing the legacy
+  `vp_formats.mso_mdoc.alg = ['ES256']` shape.
+- HAIP `client_metadata` always populates `jwks.keys` for response encryption
+  (independent of `x5c` presence) and advertises
+  `encrypted_response_enc_values_supported`.
+- Web client (`web/utils/dcapi.js`) is now profile-agnostic; the
+  authorization-request endpoint returns a ready-to-use
+  `{ dcApiRequest: { protocol, data } }` envelope and the wallet response is
+  forwarded back unaltered, removing all client-side JWT decoding and
+  per-profile branching.
+- Annex D unsigned envelopes now strip the OID4VP 1.0 §A.3 forbidden fields
+  (`client_id`, `client_id_scheme`, `expected_origins`).
+- SpruceID DC API handler isolates the `@spruceid/opencred-dc-api` WASM
+  library at the legacy `openid4vp` identifier and translates to/from the v1
+  wire identifier at the OpenCred boundary.
+
+### Added
+- Backward-compat acceptance of the legacy `openid4vp` identifier on responses
+  via a shared `unwrapDcApiOid4vpResponse` helper, with a
+  `legacy_protocol_identifier` telemetry event for observability.
+- New shared modules under `lib/workflows/common/` for DC API envelope
+  construction (`dc-api-envelope.js`), `client_metadata` assembly
+  (`client-metadata.js`), `vp_formats_supported` builders
+  (`oid4vp-formats.js`), session-transcript building
+  (`session-transcript.js`), JAR signing (`jar-signing.js`), and profile
+  identification (`identify-profile.js`).
+- Annex D `?signed=true` query parameter to opt into the OID4VP 1.0 signed
+  request envelope (default unsigned); HAIP remains signed-only.
+- Unit test coverage under `test/unit/workflows/` for the new shared modules
+  (DC API envelope, JAR signing, formats, client metadata, session transcript,
+  and profile identification).
+
 ## 10.0.5 - 2026-04-16
 
 ### Changed

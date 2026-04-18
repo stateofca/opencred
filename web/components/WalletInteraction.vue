@@ -520,7 +520,6 @@ const handleDcApiLaunch = async ({protocolId}) => {
     await startDCApiFlowUtil({
       exchangeData: exchangeData.value,
       httpClient,
-      clientIdScheme: 'x509_san_dns',
       onExchangeUpdate: updatedExchange => {
         emit('replaceExchange', updatedExchange);
       },

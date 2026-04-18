@@ -226,15 +226,18 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
         expect(ue.variables).to.have.property('base64EncryptionInfo');
         expect(ue.variables).to.have.property('base64DeviceRequest');
 
-        // Verify Annex C behavior
+        // Verify Annex C behavior (OID4VP 1.0 client_metadata shape).
         const authRequest = ue.variables.authorizationRequest;
         expect(authRequest.response_mode).to.equal('dc_api');
-        expect(authRequest.client_metadata).to.have.property('vp_formats');
         expect(authRequest.client_metadata)
-          .to.not.have.property('vp_formats_supported');
-        expect(authRequest.client_metadata.vp_formats.mso_mdoc).to.eql({
-          alg: ['ES256']
-        });
+          .to.have.property('vp_formats_supported');
+        expect(authRequest.client_metadata)
+          .to.not.have.property('vp_formats');
+        expect(authRequest.client_metadata.vp_formats_supported.mso_mdoc)
+          .to.eql({
+            issuerauth_alg_values: [-7],
+            deviceauth_alg_values: [-7]
+          });
       });
 
     it('should include correct authorization request structure and claims',
@@ -267,11 +270,14 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
         expect(authRequest).to.have.property('state');
         expect(authRequest).to.have.property('dcql_query');
         expect(authRequest).to.have.property('client_metadata');
-        // Annex C uses vp_formats (not vp_formats_supported)
-        expect(authRequest.client_metadata).to.have.property('vp_formats');
-        expect(authRequest.client_metadata.vp_formats.mso_mdoc).to.eql({
-          alg: ['ES256']
-        });
+        // Annex C uses OID4VP 1.0 vp_formats_supported with COSE alg ints.
+        expect(authRequest.client_metadata)
+          .to.have.property('vp_formats_supported');
+        expect(authRequest.client_metadata.vp_formats_supported.mso_mdoc)
+          .to.eql({
+            issuerauth_alg_values: [-7],
+            deviceauth_alg_values: [-7]
+          });
       });
 
     it('should store exchange variables correctly', async function() {
