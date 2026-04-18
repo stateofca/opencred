@@ -827,7 +827,7 @@ const callbackSuccess = (clientId, exchangeId) => {
  * @property {string} [observedProtocol] - Legacy protocol string
  *   observed (e.g. 'openid4vp').
  * @property {string} [source] - Observing boundary (e.g.
- *   'dc_api_response', 'spruceid_wasm').
+ *   'dc_api_response', '@spruceid/opencred-dc-api').
  * @property {string} [profile] - Active profile when known.
  */
 
