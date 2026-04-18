@@ -744,7 +744,8 @@ const PresentationEvent = {
   PresentationStart: 'presentation_start',
   PresentationSuccess: 'presentation_success',
   PresentationError: 'presentation_error',
-  CallbackSuccess: 'callback_success'
+  CallbackSuccess: 'callback_success',
+  LegacyProtocolIdentifier: 'legacy_protocol_identifier'
 };
 
 // Presentation event log name
@@ -817,9 +818,43 @@ const callbackSuccess = (clientId, exchangeId) => {
   logger.info(PRESENTATION_EVENT_LOG_NAME, successEvent);
 };
 
+/**
+ * Metadata for legacy DC API protocol identifier telemetry message.
+ * We can add more messages like this to hint at implementation gaps
+ * in wallets connected to OpenCred.
+ *
+ * @typedef {object} LegacyProtocolIdentifierMetadata
+ * @property {string} [observedProtocol] - Legacy protocol string
+ *   observed (e.g. 'openid4vp').
+ * @property {string} [source] - Observing boundary (e.g.
+ *   'dc_api_response', 'spruceid_wasm').
+ * @property {string} [profile] - Active profile when known.
+ */
+
+/**
+ * Emits a presentation event when a legacy OID4VP DC API protocol id is
+ * seen (for example the pre-OID4VP-1.0 `openid4vp` value). Used for
+ * conformance telemetry only; it does not change protocol handling.
+ *
+ * @param {object} options - Event fields.
+ * @param {string | undefined} options.clientId - Workflow identifier.
+ * @param {string} options.exchangeId - Exchange identifier.
+ * @param {object} [options.metadata] - Optional metadata.
+ * @returns {void}
+ */
+const legacyProtocolIdentifier = ({clientId, exchangeId, metadata}) => {
+  const event = {
+    ...getPresentationEvent(
+      PresentationEvent.LegacyProtocolIdentifier, clientId, exchangeId),
+    ...(metadata && {metadata})
+  };
+  logger.info(PRESENTATION_EVENT_LOG_NAME, event);
+};
+
 export const logUtils = {
   presentationStart,
   presentationSuccess,
   presentationError,
-  callbackSuccess
+  callbackSuccess,
+  legacyProtocolIdentifier
 };
