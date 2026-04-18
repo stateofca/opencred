@@ -8,7 +8,6 @@
 import * as sinon from 'sinon';
 import {
   _buildDcqlQueryForMdoc,
-  _encodeSessionTranscript,
   _generateEphemeralKeyAgreementPair,
   _getX5cFromSigningKey,
   _pemToBase64Der
@@ -26,6 +25,8 @@ import {baseUrl} from '../mock-data.js';
 import {config} from '@bedrock/core';
 import {createExchangeWithAuthRequest} from '../utils/exchanges.js';
 import {database} from '../../lib/database.js';
+import {encodeSessionTranscript} from
+  '../../lib/workflows/common/session-transcript.js';
 import {exampleKey2} from '../fixtures/signingKeys.js';
 import expect from 'expect.js';
 import {httpClient} from '@digitalbazaar/http-client';
@@ -74,7 +75,7 @@ const mixedFormatTestRP = {
 };
 
 describe('Native 18013-7-Annex-D Workflow - Unit Tests', function() {
-  describe('_encodeSessionTranscript', function() {
+  describe('encodeSessionTranscript', function() {
     it('should encode session transcript with all required fields for dc_api',
       function() {
         const sessionTranscript = {
@@ -84,7 +85,7 @@ describe('Native 18013-7-Annex-D Workflow - Unit Tests', function() {
           jwkThumbprint: null
         };
 
-        const result = _encodeSessionTranscript(sessionTranscript);
+        const result = encodeSessionTranscript(sessionTranscript);
         expect(result).to.be.a(Uint8Array);
         expect(result.length).to.be.greaterThan(0);
       });
@@ -98,7 +99,7 @@ describe('Native 18013-7-Annex-D Workflow - Unit Tests', function() {
         jwkThumbprint: null
       };
 
-      const result = _encodeSessionTranscript(sessionTranscript);
+      const result = encodeSessionTranscript(sessionTranscript);
       expect(result).to.be.a(Uint8Array);
       expect(result.length).to.be.greaterThan(0);
     });
@@ -111,7 +112,7 @@ describe('Native 18013-7-Annex-D Workflow - Unit Tests', function() {
         jwkThumbprint: null
       };
 
-      const result = _encodeSessionTranscript(sessionTranscript);
+      const result = encodeSessionTranscript(sessionTranscript);
       expect(result).to.be.a(Uint8Array);
     });
   });
