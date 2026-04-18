@@ -6,7 +6,7 @@
  */
 
 import expect from 'expect.js';
-import {getInputDescriptors} from '../../common/oid4vp.js';
+import {getInputDescriptors} from '../../lib/workflows/common/oid4vp.js';
 
 describe('OID4VP Input Descriptors', () => {
   const mockExchange = {

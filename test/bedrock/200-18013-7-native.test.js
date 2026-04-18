@@ -12,7 +12,7 @@ import {
   _generateEphemeralKeyAgreementPair,
   _getX5cFromSigningKey,
   _pemToBase64Der
-} from '../../lib/workflows/profiles/common-oid4vp.js';
+} from '../../lib/workflows/common/oid4vp-shared.js';
 import {
   convertDerCertificateToPem,
   generateCertificateChain
@@ -30,7 +30,7 @@ import {exampleKey2} from '../fixtures/signingKeys.js';
 import expect from 'expect.js';
 import {httpClient} from '@digitalbazaar/http-client';
 import https from 'node:https';
-import {OID4VP_AUTHZ_REQ_JWT_TYP} from '../../common/oid4vp.js';
+import {OID4VP_AUTHZ_REQ_JWT_TYP} from '../../lib/workflows/common/oid4vp.js';
 
 const agent = new https.Agent({rejectUnauthorized: false});
 const client = httpClient.extend({agent});

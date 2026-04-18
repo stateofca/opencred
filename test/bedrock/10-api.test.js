@@ -36,7 +36,7 @@ import {generateValidSignedCredential} from '../utils/credentials.js';
 import {httpClient} from '@digitalbazaar/http-client';
 import https from 'node:https';
 import {msalUtils} from '../../common/utils.js';
-import {OID4VP_AUTHZ_REQ_JWT_TYP} from '../../common/oid4vp.js';
+import {OID4VP_AUTHZ_REQ_JWT_TYP} from '../../lib/workflows/common/oid4vp.js';
 
 const agent = new https.Agent({rejectUnauthorized: false});
 const client = httpClient.extend({agent});

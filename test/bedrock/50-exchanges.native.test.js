@@ -32,7 +32,7 @@ import {getDocumentLoader} from '../../common/documentLoader.js';
 import {withStubs} from '../utils/withStubs.js';
 
 import {NativeWorkflowService} from '../../lib/workflows/native-workflow.js';
-import {verifySubmission} from '../../lib/workflows/profiles/common-oid4vp.js';
+import {verifySubmission} from '../../lib/workflows/common/oid4vp-shared.js';
 
 const workflow = {
   type: 'native',

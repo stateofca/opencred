@@ -19,8 +19,8 @@ import {documentLoader} from '../utils/testDocumentLoader.js';
 import {generateValidDidKeyData} from '../utils/dids.js';
 import {generateValidJwtVpToken} from '../utils/jwtVpTokens.js';
 import {generateValidSignedCredential} from '../utils/credentials.js';
-import {getAuthorizationRequest} from '../../common/oid4vp.js';
-import {verifySubmission} from '../../lib/workflows/profiles/common-oid4vp.js';
+import {getAuthorizationRequest} from '../../lib/workflows/common/oid4vp.js';
+import {verifySubmission} from '../../lib/workflows/common/oid4vp-shared.js';
 import {verifyUtils} from '../../common/utils.js';
 
 const testWorkflow = {

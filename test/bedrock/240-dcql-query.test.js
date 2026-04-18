@@ -6,7 +6,7 @@
  */
 
 import expect from 'expect.js';
-import {getDcqlQuery} from '../../common/oid4vp.js';
+import {getDcqlQuery} from '../../lib/workflows/common/oid4vp.js';
 
 describe('DCQL Query Generation', () => {
   describe('Fields Type Handling', () => {

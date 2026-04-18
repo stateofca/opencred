@@ -10,7 +10,7 @@ import {config} from '@bedrock/core';
 import {createId} from '../../common/utils.js';
 import {database} from '../../lib/database.js';
 import expect from 'expect.js';
-import {getAuthorizationRequest} from '../../common/oid4vp.js';
+import {getAuthorizationRequest} from '../../lib/workflows/common/oid4vp.js';
 import {NativeWorkflowService} from '../../lib/workflows/native-workflow.js';
 import {VCApiWorkflowService} from '../../lib/workflows/vc-api-workflow.js';
 import {withStubs} from '../utils/withStubs.js';

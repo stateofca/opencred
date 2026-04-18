@@ -7,7 +7,7 @@
 
 import {config} from '@bedrock/core';
 import {createId} from '../../common/utils.js';
-import {getAuthorizationRequest} from '../../common/oid4vp.js';
+import {getAuthorizationRequest} from '../../lib/workflows/common/oid4vp.js';
 import {NativeWorkflowService} from '../../lib/workflows/native-workflow.js';
 
 // Initialize service instance

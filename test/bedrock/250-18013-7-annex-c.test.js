@@ -10,7 +10,7 @@ import {
   _buildDcqlQueryForMdoc,
   _getX5cFromSigningKey,
   _pemToBase64Der
-} from '../../lib/workflows/profiles/common-oid4vp.js';
+} from '../../lib/workflows/common/oid4vp-shared.js';
 import {
   convertDerCertificateToPem,
   generateCertificateChain
