@@ -5,11 +5,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import {
-  authorizationRequestForProfile,
-  determineOid4VpHandlerForProfile,
-  GoogleWalletRuntimeNotImplementedError
-} from '../../../lib/workflows/common/oid4vp-dispatcher.js';
+import {determineOid4VpHandlerForProfile} from
+  '../../../lib/workflows/common/oid4vp-dispatcher.js';
 import {expect} from 'chai';
 import {identifyProfile} from
   '../../../lib/workflows/common/identify-profile.js';
@@ -24,7 +21,7 @@ describe('profile=apple-wallet / google-wallet routing', () => {
   it('identifyProfile accepts google-wallet with x509_hash', () => {
     const out = identifyProfile({profile: 'google-wallet'});
     expect(out.profile).to.equal('google-wallet');
-    expect(out.responseMode).to.equal('dc_api');
+    expect(out.responseMode).to.equal('dc_api.jwt');
     expect(out.clientIdScheme).to.equal('x509_hash');
   });
 
@@ -33,30 +30,14 @@ describe('profile=apple-wallet / google-wallet routing', () => {
     expect(out.profile).to.equal('OID4VP-combined');
   });
 
-  it(
-    'authorizationRequestForProfile throws 501 for google-wallet',
-    async () => {
-      let caught;
-      try {
-        await authorizationRequestForProfile({
-          profile: 'google-wallet',
-          responseMode: 'dc_api',
-          workflow: {query: []},
-          exchange: {id: 'x', variables: {}},
-          requestUrl: '/x'
-        });
-      } catch(err) {
-        caught = err;
-      }
-      expect(caught).to.be.instanceOf(
-        GoogleWalletRuntimeNotImplementedError);
-      expect(caught.statusCode).to.equal(501);
-      expect(caught.errorCode).to.equal('GOOGLE_WALLET_NOT_IMPLEMENTED');
-    });
-
   it('determineOid4VpHandlerForProfile maps apple-wallet to Annex C handler',
     () => {
       const name = determineOid4VpHandlerForProfile('apple-wallet', {});
       expect(name).to.equal('18013-7-annex-c');
     });
+
+  it('determineOid4VpHandlerForProfile maps google-wallet', () => {
+    const name = determineOid4VpHandlerForProfile('google-wallet', {});
+    expect(name).to.equal('google-wallet');
+  });
 });

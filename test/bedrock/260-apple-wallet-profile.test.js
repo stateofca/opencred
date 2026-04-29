@@ -377,38 +377,4 @@ describe('profile=apple-wallet end-to-end', function() {
       expect(err.data.error).to.equal('READER_AUTH_CONFIG');
     });
   });
-
-  describe('google-wallet profile', function() {
-    it('returns 501 GOOGLE_WALLET_NOT_IMPLEMENTED', async function() {
-      const exchange = await createExchangeWithAuthRequest({
-        workflow: mdocTestRP});
-      const findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
-        .resolves({...exchange, workflowId: mdocTestRP.clientId});
-
-      const searchParams = new URLSearchParams();
-      searchParams.set('profile', 'google-wallet');
-
-      let err;
-      try {
-        await client.post(
-          `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
-          `${exchange.id}/openid/client/authorization/request`,
-          {
-            body: searchParams,
-            headers: {
-              'content-type': 'application/x-www-form-urlencoded',
-              accept: 'application/json'
-            }
-          });
-      } catch(e) {
-        err = e;
-      }
-
-      findOneStub.restore();
-
-      expect(err).to.not.be(undefined);
-      expect(err.status).to.equal(501);
-      expect(err.data.error).to.equal('GOOGLE_WALLET_NOT_IMPLEMENTED');
-    });
-  });
 });

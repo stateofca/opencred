@@ -215,9 +215,80 @@ The `profile=apple-wallet` flow requires `walletCertificates` and emits
 `readerAuthAll`. The generic `profile=18013-7-Annex-C` remains unsigned
 for backwards compatibility.
 
-Google Wallet runtime support (`profile=google-wallet`) currently returns
-HTTP 501; config schema already has a `wallet: google-wallet` slot for a
-future release.
+## Configure Google Wallet (OID4VP 1.0, x509_hash)
+
+Google Wallet supports OID4VP 1.0 with signed JAR requests and
+encrypted responses. OpenCred uses a certificate registered with
+Google to sign requests and identify your relying party via the
+`x509_hash` client_id scheme.
+
+### Obtain a certificate
+
+1. Generate an EC P-256 key pair. Store it securely so that it may
+   sign the CSR and may be rendered into OpenCred config along with
+   the certificate you obtain from Google in your deployed
+   environment.
+2. Create a standard X.509 certificate from the key pair.
+3. Register your public certificate with Google Wallet by contacting
+   `wallet-identity-rp-support@google.com` or following Google's
+   [RP Onboarding](https://developers.google.com/wallet/identity/verify/accepting-ids-from-wallet-online)
+   process. Onboarding typically takes 3–5 business days.
+
+### Install the certificate
+
+Add a `walletCertificates` entry under `opencred:` with
+`wallet: google-wallet`:
+
+```yaml
+opencred:
+  walletCertificates:
+    - wallet: google-wallet
+      id: google-2026
+      type: ES256
+      displayName: Google Wallet reader 2026-Q2
+      privateKeyPem: |
+        -----BEGIN PRIVATE KEY-----
+        ...your EC P-256 key...
+        -----END PRIVATE KEY-----
+      publicKeyPem: |
+        -----BEGIN PUBLIC KEY-----
+        ...matching public key...
+        -----END PUBLIC KEY-----
+      certificatePem: |
+        -----BEGIN CERTIFICATE-----
+        ...your registered certificate...
+        -----END CERTIFICATE-----
+```
+
+Only one `wallet: google-wallet` entry is used at a time (the first
+matching entry in config array order). Multiple entries are allowed
+for rotation — add the new entry, verify it works, then remove the
+old one.
+
+### Request flow
+
+Set the request's `profile` query parameter to `google-wallet`:
+
+```
+POST /workflows/{id}/exchanges/{id}/openid/client/authorization/request?profile=google-wallet
+```
+
+OpenCred responds with a `dcApiRequest` envelope containing a signed
+JWT (protocol `openid4vp-v1-signed`). The JWT includes:
+
+- `client_id` set to `x509_hash:<SHA-256 fingerprint of your cert>`
+- `client_id_scheme: "x509_hash"`
+- `response_mode: "dc_api.jwt"` (encrypted response)
+- `client_metadata.jwks.keys[]` with an ephemeral encryption key
+- `x5c` in the JWT header containing your certificate chain
+
+The response from Google Wallet is an encrypted JWE, which OpenCred
+decrypts and verifies automatically.
+
+For backward compatibility, `profile=18013-7-Annex-D` remains
+supported; it produces an unsigned (or optionally signed) Annex D
+request using the generic `x509_san_dns` scheme without wallet
+certificates.
 
 ### 7. Configure Exchange Protocols
 

@@ -47,7 +47,7 @@
   (DC API envelope, JAR signing, formats, client metadata, session transcript,
   and profile identification).
 - `opencred.walletCertificates[]` config for per-wallet reader-authentication
-  bundles (Apple Wallet today; Google Wallet schema-only, runtime deferred).
+  bundles (Apple Wallet and Google Wallet).
 - `profile=apple-wallet` OID4VP profile: signed ISO/IEC 18013-7 Annex C
   `DeviceRequest` with `readerAuthAll`.
 - `lib/workflows/common/mdoc-device-request.js` spec-conformant DeviceRequest
@@ -56,6 +56,14 @@
   (ES256, x5chain / RFC 9360).
 - `lib/workflows/common/wallet-certificates.js` config loader.
 - `apple-wallet` entry in native `getProtocols()` when configured.
+- Google Wallet profile (`profile=google-wallet`) for OID4VP 1.0
+  signed requests with `x509_hash` client_id scheme and encrypted
+  responses (`dc_api.jwt`). Requires a `walletCertificates` entry
+  with `wallet: google-wallet`.
+- `computeX509HashClientId` helper for x509_hash client_id
+  computation from DER certificates.
+- vp_token array normalization in Annex D and HAIP response handlers
+  (OID4VP 1.0 compliance).
 
 ### Removed
 - Delete orphaned `lib/workflows/native-18013-7.js` (the pre-split monolithic
@@ -63,10 +71,6 @@
   `lib/workflows/common/oid4vp-shared.js` and `session-transcript.js`, and
   the two entry points had been superseded by per-profile handlers under
   `lib/workflows/profiles/native-18013-7-annex-{b,c,d}.js`.
-
-### Deferred
-- `profile=google-wallet` runtime returns HTTP 501; a follow-up plan will land
-  JAR-signed Annex D support.
 
 ## 10.0.5 - 2026-04-16
 

@@ -26,7 +26,7 @@ app:
           - authorization_request
     # Optional: reader-authentication certificates for wallets that
     # require signed Annex C DeviceRequests (Apple) or JAR-signed
-    # OID4VP JWTs (Google, future). See docs/00-configure-workflow.md.
+    # OID4VP JWTs (Google). See docs/00-configure-workflow.md.
     walletCertificates: []
     # walletCertificates:
     #   - wallet: apple-wallet
@@ -48,6 +48,25 @@ app:
     #       -----BEGIN CERTIFICATE-----
     #       ...intermediate(s), leaf-first...
     #       -----END CERTIFICATE-----
+    # Google Wallet (OID4VP 1.0, x509_hash)
+    # Register your certificate with Google at:
+    # wallet-identity-rp-support@google.com
+    # - wallet: google-wallet
+    #   id: google-2026
+    #   type: ES256
+    #   displayName: Google Wallet reader 2026-Q2
+    #   privateKeyPem: |
+    #     -----BEGIN PRIVATE KEY-----
+    #     ...your EC P-256 key...
+    #     -----END PRIVATE KEY-----
+    #   publicKeyPem: |
+    #     -----BEGIN PUBLIC KEY-----
+    #     ...matching public key...
+    #     -----END PUBLIC KEY-----
+    #   certificatePem: |
+    #     -----BEGIN CERTIFICATE-----
+    #     ...your registered certificate...
+    #     -----END CERTIFICATE-----
     workflows:
       - name: "Test Workflow (Native)"
         clientId: "rp1"

@@ -41,3 +41,13 @@ R+Wh5s84sXDicWvzWbTRiN4aNHO5r90=
 `,
   displayName: 'Apple Wallet test reader'
 };
+
+export const googleWalletTestEntry = {
+  wallet: 'google-wallet',
+  id: 'google-test-2026',
+  type: 'ES256',
+  privateKeyPem: appleWalletTestEntry.privateKeyPem,
+  publicKeyPem: appleWalletTestEntry.publicKeyPem,
+  certificatePem: appleWalletTestEntry.certificatePem,
+  displayName: 'Google Wallet test cert'
+};
