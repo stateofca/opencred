@@ -10,7 +10,7 @@ import expect from 'expect.js';
 import {
   applyWorkflowDefaults,
   OpenCredConfigSchema
-} from '../../configs/configUtils.js';
+} from '../../configs/config-utils.js';
 
 const app1 = {
   clientId: 'test1',

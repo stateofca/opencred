@@ -7,7 +7,7 @@
 
 import expect from 'expect.js';
 
-import {DidWebSchema} from '../../configs/configUtils.js';
+import {DidWebSchema} from '../../configs/config-utils.js';
 import {normalizeVpTokenDataIntegrity} from '../../common/utils/vpToken.js';
 import {verifyUtils} from '../../common/utils.js';
 

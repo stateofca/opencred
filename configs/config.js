@@ -6,7 +6,7 @@
  */
 
 import * as bedrock from '@bedrock/core';
-import {applyWorkflowDefaults, OpenCredConfigSchema} from './configUtils.js';
+import {applyWorkflowDefaults, OpenCredConfigSchema} from './config-utils.js';
 import {combineTranslations} from './translation.js';
 import {fileURLToPath} from 'node:url';
 import {isDcApiAvailable} from '../common/dcapi.js';

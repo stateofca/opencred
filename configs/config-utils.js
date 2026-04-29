@@ -6,6 +6,7 @@
  */
 
 import * as z from 'zod';
+import crypto from 'node:crypto';
 import {logger} from '../lib/logger.js';
 
 // Preset configurations
@@ -390,6 +391,31 @@ export const SigningKeySchema = z.object({
   certificatePem: z.string().optional()
 });
 
+/** Base fields shared by all wallet-certificate entries. */
+const WalletCertificateBase = z.object({
+  id: z.string().min(1),
+  type: z.enum(['ES256']),
+  privateKeyPem: z.string(),
+  publicKeyPem: z.string(),
+  certificatePem: z.string(),
+  displayName: z.string().optional()
+});
+
+export const AppleWalletCertificateSchema = WalletCertificateBase.extend({
+  wallet: z.literal('apple-wallet'),
+  apple: z.object({}).optional()
+});
+
+export const GoogleWalletCertificateSchema = WalletCertificateBase.extend({
+  wallet: z.literal('google-wallet'),
+  google: z.object({}).optional()
+});
+
+export const WalletCertificateSchema = z.discriminatedUnion('wallet', [
+  AppleWalletCertificateSchema,
+  GoogleWalletCertificateSchema
+]);
+
 // Main OpenCred configuration schema
 export const OpenCredConfigSchema = z.object({
   options: OptionsSchema.optional(),
@@ -403,12 +429,14 @@ export const OpenCredConfigSchema = z.object({
   trustedCredentialIssuers: z.array(z.string()).optional(),
   caStore: z.array(z.object({pem: z.string()})).default([])
     .transform(arr => arr.map(item => item.pem)),
+  walletCertificates: z.array(WalletCertificateSchema).default([]),
   reCaptcha: ReCaptchaSchema.default({
     enable: false,
     pages: []
   }),
   audit: AuditSchema.default({enable: false})
 }).transform(data => {
+  validateWalletCertificates(data.walletCertificates, {logger});
   // Ensure options is populated with field-level defaults from OptionsSchema
   // Parse through OptionsSchema to apply defaults for any missing fields
   return {
@@ -497,3 +525,115 @@ export const applyWorkflowDefaults = (
     brand: mergedBrand
   };
 };
+
+/**
+ * Validate wallet-certificate entries post-zod-parse.
+ *
+ * Hard-fails (throws) on:
+ * - duplicate `id` across entries
+ * - unparseable `privateKeyPem` or `certificatePem`.
+ *
+ * Warns (via logger, continues) on:
+ * - leaf cert SPKI does not match `publicKeyPem`
+ * - notBefore is future / notAfter is past (according to the leaf cert)
+ * - private key does not match the leaf cert's public key.
+ *
+ * @param {Array} entries - Parsed walletCertificates entries.
+ * @param {{logger: object}} deps - Logger with `.warn` / `.error`.
+ */
+export function validateWalletCertificates(entries, {logger: log}) {
+  const seenIds = new Set();
+  for(const entry of entries) {
+    if(seenIds.has(entry.id)) {
+      throw new Error(
+        `walletCertificates: duplicate id "${entry.id}"`
+      );
+    }
+    seenIds.add(entry.id);
+
+    let privateKeyObj;
+    try {
+      privateKeyObj = crypto.createPrivateKey(entry.privateKeyPem);
+    } catch(err) {
+      throw new Error(
+        `walletCertificates[${entry.id}]: invalid privateKeyPem: ` +
+        err.message
+      );
+    }
+
+    let cert;
+    try {
+      cert = new crypto.X509Certificate(entry.certificatePem);
+    } catch(err) {
+      throw new Error(
+        `walletCertificates[${entry.id}]: invalid certificatePem: ` +
+        err.message
+      );
+    }
+
+    // SPKI ↔ publicKeyPem match (warn only).
+    try {
+      const certSpkiDer = cert.publicKey.export({
+        type: 'spki', format: 'der'
+      });
+      const publicKeyObj = crypto.createPublicKey(entry.publicKeyPem);
+      const providedSpkiDer = publicKeyObj.export({
+        type: 'spki', format: 'der'
+      });
+      if(!certSpkiDer.equals(providedSpkiDer)) {
+        log.warn(
+          `walletCertificates[${entry.id}]: leaf cert SPKI does not ` +
+          `match publicKeyPem; wallets that verify the signature ` +
+          `against the cert public key will reject signed requests`
+        );
+      }
+    } catch(err) {
+      log.warn(
+        `walletCertificates[${entry.id}]: unable to compare SPKI ` +
+        `vs publicKeyPem: ${err.message}`
+      );
+    }
+
+    // notBefore / notAfter bounds (warn only).
+    const now = Date.now();
+    const notBefore = Date.parse(cert.validFrom);
+    const notAfter = Date.parse(cert.validTo);
+    if(Number.isFinite(notBefore) && notBefore > now) {
+      log.warn(
+        `walletCertificates[${entry.id}]: notBefore ` +
+        `${cert.validFrom} is in the future`
+      );
+    }
+    if(Number.isFinite(notAfter) && notAfter < now) {
+      log.warn(
+        `walletCertificates[${entry.id}]: notAfter ` +
+        `${cert.validTo} is in the past; wallet will reject the cert`
+      );
+    }
+
+    // Private-key-matches-cert: derive public key from private key and
+    // compare to cert.publicKey. This is stronger than the publicKeyPem
+    // check above but is still warn-only (avoid hard-failing on config
+    // mismatch per Q17).
+    try {
+      const derivedPublicDer = crypto.createPublicKey(privateKeyObj).export(
+        {type: 'spki', format: 'der'}
+      );
+      const certPublicDer = cert.publicKey.export(
+        {type: 'spki', format: 'der'}
+      );
+      if(!derivedPublicDer.equals(certPublicDer)) {
+        log.warn(
+          `walletCertificates[${entry.id}]: privateKeyPem does not ` +
+          `correspond to the leaf cert's public key; ReaderAuth ` +
+          `signatures produced with this entry will not verify`
+        );
+      }
+    } catch(err) {
+      log.warn(
+        `walletCertificates[${entry.id}]: unable to derive public ` +
+        `key from privateKeyPem: ${err.message}`
+      );
+    }
+  }
+}
