@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## Unreleased
+## 10.0.6 - 2026-04-XX
 
 ### Changed
 - OpenID for Verifiable Presentations DC API protocol identifier upgraded to
@@ -24,6 +24,12 @@
 - SpruceID DC API handler isolates the `@spruceid/opencred-dc-api` WASM
   library at the legacy `openid4vp` identifier and translates to/from the v1
   wire identifier at the OpenCred boundary.
+- Annex C `DeviceRequest` updated with `profile=apple-wallet` and
+  `profile=18013-7-Annex-C` (tag-24 `itemsRequest`; bool-map `nameSpaces`;
+  `deviceRequestInfo` with `documentSets=[[0],[1],…]` per-alternative
+  semantics). Existing unsigned `profile=18013-7-Annex-C` callers see no change
+  in signing requirements but receive the corrected `DeviceRequest` shape.
+- `configs/configUtils.js` → `configs/config-utils.js` (kebab-case consistency).
 
 ### Added
 - Backward-compat acceptance of the legacy `openid4vp` identifier on responses
@@ -40,6 +46,16 @@
 - Unit test coverage under `test/unit/workflows/` for the new shared modules
   (DC API envelope, JAR signing, formats, client metadata, session transcript,
   and profile identification).
+- `opencred.walletCertificates[]` config for per-wallet reader-authentication
+  bundles (Apple Wallet today; Google Wallet schema-only, runtime deferred).
+- `profile=apple-wallet` OID4VP profile: signed ISO/IEC 18013-7 Annex C
+  `DeviceRequest` with `readerAuthAll`.
+- `lib/workflows/common/mdoc-device-request.js` spec-conformant DeviceRequest
+  builder.
+- `lib/workflows/common/mdoc-reader-auth.js` COSE_Sign1 ReaderAuth signer
+  (ES256, x5chain / RFC 9360).
+- `lib/workflows/common/wallet-certificates.js` config loader.
+- `apple-wallet` entry in native `getProtocols()` when configured.
 
 ### Removed
 - Delete orphaned `lib/workflows/native-18013-7.js` (the pre-split monolithic
@@ -47,6 +63,10 @@
   `lib/workflows/common/oid4vp-shared.js` and `session-transcript.js`, and
   the two entry points had been superseded by per-profile handlers under
   `lib/workflows/profiles/native-18013-7-annex-{b,c,d}.js`.
+
+### Deferred
+- `profile=google-wallet` runtime returns HTTP 501; a follow-up plan will land
+  JAR-signed Annex D support.
 
 ## 10.0.5 - 2026-04-16
 

@@ -136,6 +136,89 @@ signingKeys:
       - authorization_request
 ```
 
+## Apple Wallet reader authentication (Annex C)
+
+Apple Wallet requires reader authentication on `mso_mdoc`
+DeviceRequests issued through the Digital Credentials API
+(ISO/IEC 18013-7 Annex C). You need to obtain a reader-auth
+certificate from Apple Business Connect and install it as a
+`walletCertificates` entry.
+
+### Obtain a certificate
+
+1. Generate an EC P-256 key pair. Store it securely so that it may sign the CSR
+   and may be rendered into OpenCred config along with the Certificate you
+   obtain from Apple in your deployed environment.
+2. Produce a CSR per Apple's "Requesting a mobile document on the
+   web" documentation:
+   https://developer.apple.com/documentation/digitalcredentials/requesting-a-mobile-document-on-the-web
+   The CSR must use EC P-256 with SHA-256 per Apple Business requirements.
+3. Submit the CSR through Apple Business. Apple returns a
+   leaf certificate. Collect the intermediate(s) from Apple's
+   published chain.
+
+### Install the certificate
+
+Add a `walletCertificates` entry under `opencred:`. Each entry
+inlines the key pair and the PEM cert chain (leaf first):
+
+```yaml
+opencred:
+  walletCertificates:
+    - wallet: apple-wallet
+      id: apple-2026
+      type: ES256
+      displayName: Apple Wallet reader 2026-Q2
+      privateKeyPem: |
+        -----BEGIN PRIVATE KEY-----
+        ...your EC P-256 key...
+        -----END PRIVATE KEY-----
+      publicKeyPem: |
+        -----BEGIN PUBLIC KEY-----
+        ...matching public key...
+        -----END PUBLIC KEY-----
+      certificatePem: |
+        -----BEGIN CERTIFICATE-----
+        ...leaf cert issued by Apple Business...
+        -----END CERTIFICATE-----
+        -----BEGIN CERTIFICATE-----
+        ...intermediate cert(s), leaf-first...
+        -----END CERTIFICATE-----
+```
+
+Multiple entries with `wallet: apple-wallet` are allowed. OpenCred
+signs every outgoing Annex C request with *all* matching entries in
+config array order and emits them as `readerAuthAll`. Use this to
+roll keys without downtime: add the new entry, wait for clients to
+accept, then remove the old one.
+
+Entries whose `notBefore`/`notAfter` are out of bounds still sign
+but emit warnings. Prune them before clients start rejecting.
+
+### Request flow
+
+Set the request's `profile` query parameter to `apple-wallet`:
+
+```
+POST /workflows/{id}/exchanges/{id}/openid/client/authorization/request?profile=apple-wallet
+```
+
+OpenCred responds with a ready-to-send `dcApiRequest` envelope
+containing the spec-conformant, ReaderAuth-signed DeviceRequest.
+
+For backward compatibility, `profile=18013-7-Annex-C` remains
+supported; it produces the same DeviceRequest shape but *without*
+`readerAuthAll`. Clients that don't require reader authentication
+may continue to use that profile.
+
+The `profile=apple-wallet` flow requires `walletCertificates` and emits
+`readerAuthAll`. The generic `profile=18013-7-Annex-C` remains unsigned
+for backwards compatibility.
+
+Google Wallet runtime support (`profile=google-wallet`) currently returns
+HTTP 501; config schema already has a `wallet: google-wallet` slot for a
+future release.
+
 ### 7. Configure Exchange Protocols
 
 Specify the exchange protocols in the `options` section:

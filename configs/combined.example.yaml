@@ -24,6 +24,30 @@ app:
           -----END PUBLIC KEY-----
         purpose:
           - authorization_request
+    # Optional: reader-authentication certificates for wallets that
+    # require signed Annex C DeviceRequests (Apple) or JAR-signed
+    # OID4VP JWTs (Google, future). See docs/00-configure-workflow.md.
+    walletCertificates: []
+    # walletCertificates:
+    #   - wallet: apple-wallet
+    #     id: apple-2026
+    #     type: ES256
+    #     displayName: Apple Wallet reader 2026-Q2
+    #     privateKeyPem: |
+    #       -----BEGIN PRIVATE KEY-----
+    #       ...your EC P-256 key...
+    #       -----END PRIVATE KEY-----
+    #     publicKeyPem: |
+    #       -----BEGIN PUBLIC KEY-----
+    #       ...matching public key...
+    #       -----END PUBLIC KEY-----
+    #     certificatePem: |
+    #       -----BEGIN CERTIFICATE-----
+    #       ...Apple Business Connect leaf cert...
+    #       -----END CERTIFICATE-----
+    #       -----BEGIN CERTIFICATE-----
+    #       ...intermediate(s), leaf-first...
+    #       -----END CERTIFICATE-----
     workflows:
       - name: "Test Workflow (Native)"
         clientId: "rp1"
@@ -126,7 +150,8 @@ app:
         verifierDid: "TODO" # required
         verifierName: "TODO" # required
         acceptedCredentialType: "TODO" # required
-        credentialVerificationPurpose: "So that we can evaluate your permission to access the requested resource" # optional (default populated in middleware unless overridden here)
+        credentialVerificationPurpose: "So that we can evaluate your permission to
+          access the requested resource" # optional (default populated in middleware unless overridden here)
         allowRevokedCredentials: false # optional (default populated in middleware unless overridden here)
         validateLinkedDomain: false # optional (default populated in middleware unless overridden here)
       - name: "load-test"
@@ -135,8 +160,10 @@ app:
         type: native
         description: "Load Testing Profile"
         brand:
-          primaryLogo: "https://imagedelivery.net/I-hc6FAYxquPgv-npvTcWQ/241cb0c9-d92c-40b7-1745-6d5e68a45d00/public"
-          backgroundImage: "https://imagedelivery.net/I-hc6FAYxquPgv-npvTcWQ/f7516576-f9d3-4a15-1b9e-e95281613700/public"
+          primaryLogo: "https://imagedelivery.net/I-hc6FAYxquPgv-npvTcWQ/241cb0c9-d92c-40\
+            b7-1745-6d5e68a45d00/public"
+          backgroundImage: "https://imagedelivery.net/I-hc6FAYxquPgv-npvTcWQ/f7516576-f9d\
+            3-4a15-1b9e-e95281613700/public"
           cta: "#0B669D"
           primary: "#045199"
           header: "#0979c4"
@@ -287,14 +314,19 @@ app:
         qrTitle: Login with your Wallet app
         qrPageExplain: Scan the following QR Code using the Wallet app on your phone.
         qrPageExplainHelp: (<a href="https://youtube.com">How do I do it?</a>)
-        qrFooter: "Note: Already on your phone with the Wallet app? Open the Wallet app, then come back and tap on the QR code above."
-        qrFooterHelp: Difficulty using the Wallet app to login? revert to using password <a href="#">here</a>
+        qrFooter: "Note: Already on your phone with the Wallet app? Open the Wallet app,
+          then come back and tap on the QR code above."
+        qrFooterHelp: Difficulty using the Wallet app to login? revert to using password
+          <a href="#">here</a>
         qrDisclaimer: If you don't have a Wallet app download it from the app store.
         qrExplainerText: (How do I do it?)
         chapiPageAnotherWay: "Looking for a QR code to scan with your wallet app instead?"
         loginCta: "Login with your credential wallet"
-        loginExplain: "To login with your credential wallet, you will need to have the credential wallet app <with configurable URL to app stores> installed"
-        appInstallExplain: "If you don't have a credential wallet yet, you can get one by downloading the credential wallet app <with configurable URL to app stores>"
+        loginExplain: "To login with your credential wallet, you will need to have the
+          credential wallet app <with configurable URL to app stores> installed"
+        appInstallExplain: "If you don't have a credential wallet yet, you can get one
+          by downloading the credential wallet app <with configurable URL to app
+          stores>"
         appCta: "Open wallet app"
         copyright: "Powered by OpenCred"
         pageTitle: "Login"

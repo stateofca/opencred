@@ -16,6 +16,10 @@ import {
   DC_API_OID4VP_PROTOCOLS
 } from '../../lib/workflows/common/dc-api-envelope.js';
 import {
+  cborDecode,
+  DataItem
+} from '@auth0/mdl/lib/cbor/index.js';
+import {
   convertDerCertificateToPem,
   generateCertificateChain
 } from '../utils/x509.js';
@@ -35,6 +39,64 @@ import https from 'node:https';
 
 const agent = new https.Agent({rejectUnauthorized: false});
 const client = httpClient.extend({agent});
+
+/**
+ * Normalize decoded MDL CBOR (nested Maps) to plain objects for expect.js.
+ *
+ * @param {*} value - Decoded CBOR value.
+ * @returns {*} Plain JSON-compatible structure.
+ */
+function mapsToPlain(value) {
+  if(value instanceof Map) {
+    const o = {};
+    for(const [k, v] of value) {
+      o[k] = mapsToPlain(v);
+    }
+    return o;
+  }
+  if(Array.isArray(value)) {
+    return value.map(mapsToPlain);
+  }
+  return value;
+}
+
+/**
+ * Assert ISO mdoc DeviceRequest bytes match Annex C expectations for the
+ * legacy unsigned `profile=18013-7-Annex-C` path (spec-conformant CBOR).
+ *
+ * @param {{data: {deviceRequest: string}}} dcApiRequest - Annex C envelope.
+ */
+function assertLegacyAnnexCDeviceRequestWireShape(dcApiRequest) {
+  const requestBytes = Buffer.from(
+    dcApiRequest.data.deviceRequest,
+    'base64url'
+  );
+  const decoded = cborDecode(new Uint8Array(requestBytes));
+
+  expect(decoded.get('version')).to.equal('1.1');
+
+  const docRequests = decoded.get('docRequests');
+  expect(docRequests.length).to.be.greaterThan(0);
+
+  const itemsReq = docRequests[0].get('itemsRequest');
+  expect(itemsReq instanceof DataItem).to.be(true);
+
+  const plainIr = mapsToPlain(itemsReq.data);
+  expect(plainIr.docType).to.equal('org.iso.18013.5.1.mDL');
+  expect(plainIr.nameSpaces).to.be.an('object');
+  const ns = plainIr.nameSpaces['org.iso.18013.5.1'];
+  expect(ns).to.be.an('object');
+  Object.values(ns).forEach(v => expect(typeof v).to.equal('boolean'));
+
+  const dri = decoded.get('deviceRequestInfo');
+  expect(dri instanceof DataItem).to.be(true);
+  expect(mapsToPlain(dri.data).useCases).to.eql([{mandatory: true}]);
+  expect(mapsToPlain(dri.data).documentSets).to.eql(
+    docRequests.map((_, i) => [i])
+  );
+
+  expect(decoded.has('readerAuthAll')).to.be(false);
+}
 
 // Test RP with mdoc query
 const mdocTestRP = {
@@ -456,6 +518,8 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
           DC_API_OID4VP_PROTOCOLS.v1Signed);
         expect(dcApiRequest.data.deviceRequest).to.be.a('string');
         expect(dcApiRequest.data.encryptionInfo).to.be.a('string');
+
+        assertLegacyAnnexCDeviceRequestWireShape(dcApiRequest);
       });
 
     it('should use dc_api response mode when responseMode=dc_api',
@@ -490,6 +554,8 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
           DC_API_OID4VP_PROTOCOLS.v1Signed);
         expect(dcApiRequest.data.deviceRequest).to.be.a('string');
         expect(dcApiRequest.data.encryptionInfo).to.be.a('string');
+
+        assertLegacyAnnexCDeviceRequestWireShape(dcApiRequest);
       });
   });
 

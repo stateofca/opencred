@@ -19,6 +19,13 @@ export const appleWallet = {
           'wallet (iOS devices)',
         formats: ['mso_mdoc']
       }
+    },
+    'apple-wallet': {
+      dcapi: {
+        description: 'Open with Apple Wallet — signed Annex C ' +
+          'request with ReaderAuth.',
+        formats: ['mso_mdoc']
+      }
     }
   }
 };
