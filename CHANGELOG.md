@@ -24,6 +24,8 @@
   default picker option. When `false`, the profile moves to the
   advanced settings as a user opt-in. Default: `true` (enabled).
   Inheritable via `configFrom`.
+- Add `node scripts/verify-workflow-credentials.js configs/combined.yaml` to
+  smoke test workflow creation against a running environment.
 
 ## Fixed
 - `dcApiEnabled` config value is now included on the workflow
