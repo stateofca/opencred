@@ -22,7 +22,7 @@ SPDX-License-Identifier: BSD-3-Clause
     <CadmvMainCard
       v-else
       :title="t('verificationTitle')">
-      <div class="column items-center q-gutter-y-lg q-pa-md">
+      <div class="column items-center q-gutter-y-lg q-pa-md q-pb-xl">
         <div class="col row items-center text-lg text-positive">
           <q-icon
             name="fas fa-circle-check"
