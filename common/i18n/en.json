@@ -68,6 +68,7 @@
   "loginRedirectManualHint": "If you are not redirected automatically, {continue}",
   "verificationTitle": "Verification Details",
   "verificationSuccess": "Success! Your credential has been shared.",
+  "verificationSuccessNextStep": "You may now close this tab.",
   "verificationDetails": "Press the button below to close this tab.",
   "verificationCloseBtn": "Close this tab",
   "protocolWallet_oid4vp_qr": "Scan QR code to present with OpenID4VP",

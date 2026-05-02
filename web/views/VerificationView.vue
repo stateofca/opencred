@@ -30,10 +30,14 @@ SPDX-License-Identifier: BSD-3-Clause
             color="positive" />
           {{t('verificationSuccess')}}
         </div>
-        <div>
+        <p v-if="isPopupWindow">
           {{t('verificationDetails')}}
-        </div>
+        </p>
+        <p v-else>
+          {{t('verificationSuccessNextStep')}}
+        </p>
         <CadmvButton
+          v-if="isPopupWindow"
           variant="primary"
           :label="t('verificationCloseBtn')"
           @click="close" />
@@ -49,11 +53,14 @@ import OpenCredExchange from '../components/OpenCredExchange.vue';
 import {QIcon} from 'quasar';
 import {useExchangeContext} from '../composables/useExchangeContext.js';
 import {useReactiveI18n} from '../composables/useReactiveI18n.js';
+import {useWindowPopup} from '../composables/useWindowPopup.js';
 
 // Get context
 const {context, translations} = useExchangeContext();
 
 const {t} = useReactiveI18n({messages: translations});
+
+const {isPopupWindow} = useWindowPopup();
 
 const close = () => window.close();
 
