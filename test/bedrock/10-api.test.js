@@ -227,7 +227,7 @@ describe('OpenCred API - Native Workflow', function() {
     this.rpStub = sinon.stub(config.opencred, 'workflows').value(
       [testWorkflow, testWorkflow2, testWorkflow3, testWorkflow4]);
     this.signingKeysStub = sinon.stub(config.opencred, 'signingKeys')
-      .value([{...exampleKey, purpose: ['id_token']}]);
+      .value([{...exampleKey, purpose: ['access_token', 'id_token']}]);
   });
 
   this.afterEach(() => {
@@ -290,7 +290,7 @@ describe('OpenCred API - Native Workflow', function() {
         database.collections.Exchanges, 'insertOne')
         .resolves(exchange);
       const signingKeysStub = sinon.stub(config.opencred, 'signingKeys')
-        .value([{...exampleKey, purpose: ['id_token']}]);
+        .value([{...exampleKey, purpose: ['access_token', 'id_token']}]);
       const basic = Buffer.from('test:shhh').toString('base64');
       let result;
       let err;
@@ -510,7 +510,7 @@ describe('OpenCred API - Native Workflow', function() {
   it('should return status on exchange with Bearer exchange_result token',
     async function() {
       const signingKeysStub = sinon.stub(config.opencred, 'signingKeys')
-        .value([{...exampleKey, purpose: ['id_token']}]);
+        .value([{...exampleKey, purpose: ['access_token', 'id_token']}]);
       const exchange = await createExchangeWithAuthRequest({
         workflow: testWorkflow});
       const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
@@ -542,7 +542,7 @@ describe('OpenCred API - Native Workflow', function() {
   it('should scrub credential data when Bearer exchange_result token has ' +
     'exchange:partial scope', async function() {
     const signingKeysStub = sinon.stub(config.opencred, 'signingKeys')
-      .value([{...exampleKey, purpose: ['id_token']}]);
+      .value([{...exampleKey, purpose: ['access_token', 'id_token']}]);
     const exchange = await createExchangeWithAuthRequest({
       workflow: testWorkflow});
     exchange.variables = {

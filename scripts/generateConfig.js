@@ -52,6 +52,8 @@ ${toYamlMultiline(publicKey, pemIndent)}
 ${toYamlMultiline(certificatePem, pemIndent)}
         purpose:
           - authorization_request
+          - access_token
+          - id_token
     workflows:
       - name: DL VC (Preset)
         description: Driver's license VC with trusted issuer validation.

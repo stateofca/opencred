@@ -113,6 +113,13 @@ if(import.meta.url === pathToFileURL(process.argv[1]).href) {
       'No purposes for key found!\n\n' +
       'Usage: npm run generate:prime256v1 <purpose1> <purpose2> ... ' +
       '[--domain=<domain>]\n\n' +
+      'Common purposes:\n' +
+      '  authorization_request  OID4VP authorization request JAR signing\n' +
+      '  access_token           Exchange result JWT (exchange_token) after VP\n' +
+      '  id_token               OIDC id_token for login/token endpoint\n\n' +
+      'Example:\n' +
+      '  npm run generate:prime256v1 authorization_request access_token ' +
+      '--domain=opencred.example.com\n\n' +
       '  --domain  When provided, generates a self-signed certificate with ' +
       'SAN DNS\n            for the domain (required for DC API / ' +
       'x509_san_dns client_id_scheme).'

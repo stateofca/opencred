@@ -14,7 +14,7 @@ import {
 } from '../../lib/workflows/common.js';
 import {config} from '@bedrock/core';
 import {database} from '../../lib/database.js';
-import {exampleKey} from '../fixtures/signingKeys.js';
+import {exampleKeyAccessToken} from '../fixtures/signingKeys.js';
 import {httpClient} from '@digitalbazaar/http-client';
 import https from 'node:https';
 
@@ -47,7 +47,7 @@ describe('continuationContext', () => {
 
   before(() => {
     signingKeysStub = sinon.stub(config.opencred, 'signingKeys')
-      .value([{...exampleKey, purpose: ['id_token']}]);
+      .value([exampleKeyAccessToken]);
     workflowStub = sinon.stub(config.opencred, 'workflows').value(
       [exampleWorkflow]
     );

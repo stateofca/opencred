@@ -8,6 +8,7 @@
 import * as bedrock from '@bedrock/core';
 import {applyWorkflowDefaults, OpenCredConfigSchema} from './config-utils.js';
 import {combineTranslations} from './translation.js';
+import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {isDcApiAvailable} from '../common/dcapi.js';
 import {logger} from '../lib/logger.js';
@@ -68,6 +69,75 @@ config['bedrock-webpack'].configs.push({
   }
 });
 
+/**
+ * Auto-generates an access_token signing key if none exists in config.
+ * This key signs exchange result tokens (exchange_token JWTs) after
+ * presentation. Logs a warning about load-balanced deployments.
+ *
+ * @param {object} opencredConfig - OpenCred config object (mutated).
+ */
+function ensureAccessTokenKey(opencredConfig) {
+  const hasAccessTokenKey = opencredConfig.signingKeys?.some(
+    k => k.purpose?.includes('access_token')
+  );
+
+  if(!hasAccessTokenKey) {
+    const {privateKey, publicKey} = crypto.generateKeyPairSync('ec', {
+      namedCurve: 'prime256v1',
+      privateKeyEncoding: {format: 'pem', type: 'pkcs8'},
+      publicKeyEncoding: {format: 'pem', type: 'spki'}
+    });
+
+    const keyId = crypto.createHash('sha256').update(publicKey).digest('hex');
+
+    const newKey = {
+      type: 'ES256',
+      id: keyId,
+      privateKeyPem: privateKey,
+      publicKeyPem: publicKey,
+      purpose: ['access_token']
+    };
+
+    if(!opencredConfig.signingKeys) {
+      opencredConfig.signingKeys = [];
+    }
+    opencredConfig.signingKeys.push(newKey);
+
+    logger.warning(
+      'Auto-generated an access_token signing key. WARNING: In ' +
+      'load-balanced deployments, this auto-generated key will differ on ' +
+      'each instance and cause verification failures when a request is ' +
+      'handled by a different instance than the one that issued the token. ' +
+      'To resolve, provision a consistent access_token key via ' +
+      'opencred.signingKeys configuration.'
+    );
+  }
+}
+
+/**
+ * Warns when any workflow has OIDC settings but no id_token signing key.
+ *
+ * @param {object} opencredConfig - Parsed OpenCred config.
+ */
+function checkOidcKeyConfiguration(opencredConfig) {
+  const hasOidcWorkflow = opencredConfig.workflows?.some(
+    w => w.oidc?.redirectUri || w.oidc?.claims
+  );
+
+  const hasIdTokenKey = opencredConfig.signingKeys?.some(
+    k => k.purpose?.includes('id_token')
+  );
+
+  if(hasOidcWorkflow && !hasIdTokenKey) {
+    logger.warning(
+      'One or more workflows have OIDC configuration (oidc.redirectUri or ' +
+      'oidc.claims) but no signing key with id_token purpose is configured. ' +
+      'The OIDC token endpoint will fail until you add a key with ' +
+      'purpose: ["id_token"] to opencred.signingKeys.'
+    );
+  }
+}
+
 bedrock.events.on('bedrock.init', async () => {
   // After Bedrock has loaded config from env or file, validate config
   // and apply defaults and presets.
@@ -84,8 +154,12 @@ bedrock.events.on('bedrock.init', async () => {
   ).filter(Boolean);
 
   try {
+    ensureAccessTokenKey(opencred);
+
     config.opencred = OpenCredConfigSchema.parse(opencred);
     logger.info('OpenCred Config Successfully Validated.');
+
+    checkOidcKeyConfiguration(config.opencred);
 
     // Check DC API availability and log status
     if(!isDcApiAvailable(config.opencred)) {

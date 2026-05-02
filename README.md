@@ -211,11 +211,23 @@ You must configure a signing key by entering key information in the
 `signingKeys` section of the config, and the public keys will be published in
 the `./well-known/jwks.json` endpoint for keys with the `id_token` purpose as
 well as in the `.well-known/did.json` endpoint for keys with the
-`authorization_request` purpose.
+`authorization_request` purpose. Keys with only the `access_token` purpose
+sign exchange result JWTs (`exchange_token`) and are not advertised in JWKS.
+
+#### Signing key purposes
+
+Each signing key entry may list one or more `purpose` values:
+
+- **`authorization_request`**: Signs OID4VP authorization request JARs. Required for many verifier flows. For `x509_san_dns`, the key must include `certificatePem` trusted by wallets.
+- **`access_token`**: Signs exchange result tokens (`exchange_token`) returned to the browser or wallet after a successful presentation so the UI can load exchange results. If omitted, OpenCred generates a key at startup and logs a warning (problematic behind load balancers unless you configure a stable key).
+- **`id_token`**: Signs OIDC `id_token` JWTs for OpenID Connect login / token endpoint flows. Required only for workflows with `oidc.redirectUri` (and related OIDC settings).
+
+You can combine purposes on one key (e.g. `authorization_request` + `access_token` on the same ES256 key with a certificate) or use separate key entries.
 
 Supported key types for JWT signing include:
 
-JWT alg `ES256`: generate a seed with `npm run generate:prime256v1`.
+JWT alg `ES256`: generate a seed with
+`npm run generate:prime256v1 authorization_request access_token --domain=<your.domain>` (add `--domain` when you need `certificatePem` for DC API).
 
 ```yaml
 signingKeys:
@@ -233,8 +245,9 @@ signingKeys:
       yJ/QkbBA/WJ6PqAuEe8c+sV6U9gkAJIqDw5qLtQ2GFPqDGlfZQo78Pb6rA==
       -----END PUBLIC KEY-----
     purpose:
-      - id_token
       - authorization_request
+      - access_token
+      # - id_token   # add for OIDC login flows only
 ```
 
 #### X.509 Certificate Configuration

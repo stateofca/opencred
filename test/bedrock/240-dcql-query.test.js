@@ -179,8 +179,12 @@ describe('DCQL Query Generation', () => {
       // Verify structure matches expected DCQL format
       expect(credential).to.have.property('id');
       expect(credential.format).to.be('ldp_vc');
-      expect(credential.multiple).to.be(undefined); // interpreted as false
-      expect(credential.require_cryptographic_holder_binding).to.be(true);
+
+      // interpreted as false
+      expect(credential.multiple).to.be(undefined);
+
+      // interpreted as true
+      expect(credential.require_cryptographic_holder_binding).to.be(undefined);
 
       // Base VC type in type_values as expanded IRI
       expect(credential.meta.type_values).to.eql([

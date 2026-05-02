@@ -13,7 +13,7 @@ import {
   verifyExchangeResultToken
 } from '../../lib/workflows/common.js';
 import {config} from '@bedrock/core';
-import {exampleKey} from '../fixtures/signingKeys.js';
+import {exampleKeyAccessToken} from '../fixtures/signingKeys.js';
 
 describe('Exchange Result Token', () => {
   let signingKeysStub;
@@ -24,7 +24,7 @@ describe('Exchange Result Token', () => {
 
   beforeEach(() => {
     signingKeysStub = sinon.stub(config.opencred, 'signingKeys')
-      .value([{...exampleKey, purpose: ['id_token']}]);
+      .value([exampleKeyAccessToken]);
   });
 
   describe('buildExchangeResultToken', () => {
@@ -79,14 +79,14 @@ describe('Exchange Result Token', () => {
       const {SignJWT} = await import('jose');
       const {importPKCS8} = await import('jose');
       const privateKey = await importPKCS8(
-        exampleKey.privateKeyPem, exampleKey.type);
+        exampleKeyAccessToken.privateKeyPem, exampleKeyAccessToken.type);
       const now = Math.floor(Date.now() / 1000);
       const expiredToken = await new SignJWT({
         exchangeId: 'ex-1',
         workflowId: 'wf-1',
         procedurePath: 'verification'
       })
-        .setProtectedHeader({alg: exampleKey.type, typ: 'JWT'})
+        .setProtectedHeader({alg: exampleKeyAccessToken.type, typ: 'JWT'})
         .setIssuedAt(now - 7200)
         .setExpirationTime(now - 3600)
         .sign(privateKey);
@@ -105,11 +105,11 @@ describe('Exchange Result Token', () => {
       const {SignJWT} = await import('jose');
       const {importPKCS8} = await import('jose');
       const privateKey = await importPKCS8(
-        exampleKey.privateKeyPem, exampleKey.type);
+        exampleKeyAccessToken.privateKeyPem, exampleKeyAccessToken.type);
       const badToken = await new SignJWT({
         exchangeId: 'ex-1'
       })
-        .setProtectedHeader({alg: exampleKey.type, typ: 'JWT'})
+        .setProtectedHeader({alg: exampleKeyAccessToken.type, typ: 'JWT'})
         .setIssuedAt()
         .setExpirationTime('10m')
         .sign(privateKey);
