@@ -82,6 +82,16 @@ describe('client-metadata', () => {
       expect(md).to.not.have.key('vp_formats_supported');
     });
 
+    it('cadmv-android: vp_formats with legacy alg, no vp_formats_supported',
+      () => {
+        const md = buildClientMetadata({profile: 'cadmv-android'});
+        expect(Object.isFrozen(md)).to.be(true);
+        expect(md.vp_formats.mso_mdoc.alg).to.eql(['ES256']);
+        expect(md.vp_formats.mso_mdoc).to.not.have.key(
+          'issuerauth_alg_values');
+        expect(md).to.not.have.key('vp_formats_supported');
+      });
+
     it('sets client_name when clientName is a string', () => {
       const md = buildClientMetadata({
         profile: '18013-7-Annex-D',

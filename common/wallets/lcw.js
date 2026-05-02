@@ -76,6 +76,7 @@ export const lcwWallet = {
   description: 'An open source mobile wallet developed by the Digital ' +
     'Credentials Consortium, a network of leading international ' +
     'universities designing an open infrastructure for academic credentials.',
+  platform: ['ios', 'android'],
   supportedFormats: ['ldp_vc'],
   supportedProtocols: {
     vcapi: {

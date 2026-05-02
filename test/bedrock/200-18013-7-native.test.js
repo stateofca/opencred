@@ -16,10 +16,6 @@ import {
   convertDerCertificateToPem,
   generateCertificateChain
 } from '../utils/x509.js';
-import {
-  DC_API_OID4VP_PROTOCOLS,
-  UNSIGNED_ANNEX_D_FORBIDDEN_FIELDS
-} from '../../lib/workflows/common/dc-api-envelope.js';
 import {decodeJwt, decodeProtectedHeader} from 'jose';
 import {
   generateAuthorizationRequest,
@@ -29,6 +25,8 @@ import {baseUrl} from '../mock-data.js';
 import {config} from '@bedrock/core';
 import {createExchangeWithAuthRequest} from '../utils/exchanges.js';
 import {database} from '../../lib/database.js';
+import {DC_API_OID4VP_PROTOCOLS} from
+  '../../lib/workflows/common/dc-api-envelope.js';
 import {encodeSessionTranscript} from
   '../../lib/workflows/common/session-transcript.js';
 import {exampleKey2} from '../fixtures/signingKeys.js';
@@ -758,8 +756,8 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         expect(jwt.response_mode).to.equal('dc_api');
       });
 
-    it('should return unsigned dcApiRequest for Annex D when signed flag is ' +
-      'omitted',
+    it('should return signed dcApiRequest for Annex D when signed flag is ' +
+      'omitted (Annex D is always signed)',
     async function() {
       const exchange = await createExchangeWithAuthRequest({
         workflow: mdocTestRP});
@@ -786,15 +784,13 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
       expect(result.headers.get('content-type')).to.match(/application\/json/i);
       const {dcApiRequest} = result.data;
       expect(dcApiRequest.protocol).to.equal(
-        DC_API_OID4VP_PROTOCOLS.v1Unsigned);
-      for(const field of UNSIGNED_ANNEX_D_FORBIDDEN_FIELDS) {
-        expect(dcApiRequest.data).not.to.have.key(field);
-      }
-      expect(dcApiRequest.data.nonce).to.be.a('string');
-      expect(dcApiRequest.data.nonce.length).to.be.greaterThan(0);
-      expect(dcApiRequest.data.dcql_query).to.be.an('object');
-      expect(dcApiRequest.data.client_metadata.vp_formats_supported.mso_mdoc)
-        .to.be.an('object');
+        DC_API_OID4VP_PROTOCOLS.v1Signed);
+      expect(dcApiRequest.data.request).to.be.a('string');
+      const protectedHeader = decodeProtectedHeader(
+        dcApiRequest.data.request);
+      expect(protectedHeader.typ).to.equal(OID4VP_AUTHZ_REQ_JWT_TYP);
+      const payload = decodeJwt(dcApiRequest.data.request);
+      expect(payload.client_id).to.equal('x509_san_dns:example.com');
     });
 
     it('should return signed dcApiRequest for Annex D when signed=true',

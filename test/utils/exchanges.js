@@ -56,9 +56,10 @@ export async function createExchangeWithAuthRequest({
     responseMode
   });
 
-  // Add authorization request to exchange variables
+  // Add authorization request and profile to exchange variables
   exchange.variables = exchange.variables || {};
   exchange.variables.authorizationRequest = authorizationRequest;
+  exchange.variables.profile = profile || 'OID4VP-combined';
 
   return exchange;
 }

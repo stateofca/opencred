@@ -59,7 +59,7 @@ describe('jar-signing', () => {
         expect(typeof payload.exp).to.equal('number');
       });
 
-    it('uses signingMetadata alg, kid, and x5c in the protected header',
+    it('uses signingMetadata alg and x5c; omits kid when x5c present',
       async () => {
         const {privateKey, publicKey} = await generateKeyPair('ES256');
         const privateKeyPem = await exportPKCS8(privateKey);
@@ -77,12 +77,32 @@ describe('jar-signing', () => {
         });
         const header = decodeProtectedHeader(jwt);
         expect(header.alg).to.equal('ES256');
-        expect(header.kid).to.equal('meta-kid');
+        expect(header).not.to.have.key('kid');
         expect(header.typ).to.equal(OID4VP_AUTHZ_REQ_JWT_TYP);
         expect(header.x5c).to.eql(x5c);
         const publicCryptoKey = await importSPKI(publicKeyPem, 'ES256');
         await jwtVerify(jwt, publicCryptoKey);
       });
+
+    it('uses kid when signingMetadata has no x5c', async () => {
+      const {privateKey, publicKey} = await generateKeyPair('ES256');
+      const privateKeyPem = await exportPKCS8(privateKey);
+      const publicKeyPem = await exportSPKI(publicKey);
+      const jwt = await signJarJwt({
+        authorizationRequest: {nonce: 'n'},
+        signingKey: {privateKeyPem, type: 'ES256'},
+        kid: 'fallback-kid',
+        signingMetadata: {
+          alg: 'ES256',
+          kid: 'meta-kid'
+        }
+      });
+      const header = decodeProtectedHeader(jwt);
+      expect(header.kid).to.equal('meta-kid');
+      expect(header).not.to.have.key('x5c');
+      const publicCryptoKey = await importSPKI(publicKeyPem, 'ES256');
+      await jwtVerify(jwt, publicCryptoKey);
+    });
 
     it('omits x5c when signingMetadata.x5c is empty or absent', async () => {
       const {privateKey, publicKey} = await generateKeyPair('ES256');

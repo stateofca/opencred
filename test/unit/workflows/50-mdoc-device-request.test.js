@@ -14,26 +14,7 @@ import {
   buildDeviceRequestInfo,
   buildItemsRequestBytesList
 } from '../../../lib/workflows/common/mdoc-device-request.js';
-
-/**
- * Normalize decoded MDL CBOR (nested Maps) to plain objects for expect.js.
- *
- * @param {*} value - Decoded CBOR value.
- * @returns {*} Plain JSON-compatible structure.
- */
-function mapsToPlain(value) {
-  if(value instanceof Map) {
-    const o = {};
-    for(const [k, v] of value) {
-      o[k] = mapsToPlain(v);
-    }
-    return o;
-  }
-  if(Array.isArray(value)) {
-    return value.map(mapsToPlain);
-  }
-  return value;
-}
+import {mapsToPlain} from '../../utils/mapsToPlain.js';
 
 describe('mdoc-device-request', () => {
   describe('buildDeviceRequest', () => {

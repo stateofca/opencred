@@ -12,6 +12,7 @@ SPDX-License-Identifier: BSD-3-Clause
       v-if="activeInteractionType === 'dcapi'"
       :key="'dcapi'"
       :exchange-data="exchangeData"
+      :wallets-registry="walletsRegistry"
       :error="interactionState.dcApiError"
       :active="isActive"
       :has-multiple-interaction-options="hasMultipleInteractionOptions"
@@ -106,6 +107,7 @@ workflow:
 <script setup>
 import {
   buildExtendedRegistryForPicker,
+  expandWalletAliases,
   extractCredentialFormats,
   filterWalletsByFormatSupport,
   getPickerOptions,
@@ -189,13 +191,16 @@ const isActive = computed(() => {
 const baseWalletsRegistry = computed(() => {
   const ctx = context?.value || context;
   const wallets = ctx?.options?.wallets;
-  const workflowWalletIds = wallets && Array.isArray(wallets) &&
+  const rawWalletIds = wallets && Array.isArray(wallets) &&
     wallets.length > 0 ? wallets : Object.keys(WALLETS_REGISTRY);
+  const workflowWalletIds = expandWalletAliases(rawWalletIds);
 
   const settings = props.userSettings || {};
   const userEnabledIds = settings.enabledWallets;
-  const enabledWalletIds = userEnabledIds && userEnabledIds.length > 0 ?
-    workflowWalletIds.filter(id => userEnabledIds.includes(id)) :
+  const expandedUserIds = userEnabledIds && userEnabledIds.length > 0 ?
+    expandWalletAliases(userEnabledIds) : null;
+  const enabledWalletIds = expandedUserIds ?
+    workflowWalletIds.filter(id => expandedUserIds.includes(id)) :
     workflowWalletIds;
 
   const availableWallets = {};
@@ -512,7 +517,7 @@ const compatibleWalletsForActiveOption = computed(() => {
 });
 
 // Handle DC API launch
-const handleDcApiLaunch = async ({protocolId}) => {
+const handleDcApiLaunch = async ({protocolId, walletId}) => {
   if(!protocolId) {
     throw new Error('Protocol ID is required');
   }
@@ -526,7 +531,7 @@ const handleDcApiLaunch = async ({protocolId}) => {
       selectedProtocol: protocolId
     });
   } catch(error) {
-    console.error('DC API flow error:', error);
+    console.error('DC API flow error:', {walletId, protocolId}, error);
     interactionState.dcApiError = {
       message: error.message ||
         'An error occurred while starting the DC API flow.'

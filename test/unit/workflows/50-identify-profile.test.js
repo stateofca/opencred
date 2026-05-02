@@ -19,6 +19,7 @@ describe('identify-profile', () => {
       });
       expect(result.profile).to.equal('18013-7-Annex-D');
       expect(result.responseMode).to.equal('dc_api');
+      expect(result.signed).to.be(true);
     });
 
     it('resolves 18013-7-Annex-C with default dc_api response mode', () => {
@@ -75,6 +76,7 @@ describe('identify-profile', () => {
         workflow: {}
       });
       expect(result.profile).to.equal('OID4VP-combined');
+      expect(result.signed).to.be(false);
     });
 
     it('maps legacy "OID4VP" alias to OID4VP-combined', () => {

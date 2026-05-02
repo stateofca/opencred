@@ -15,20 +15,21 @@ import expect from 'expect.js';
 
 describe('canShowOption', () => {
   const baseOptions = {
-    workflow: {query: [{format: ['ldp_vc']}]},
-    availableProtocols: ['OID4VP-draft18', 'interact'],
+    workflow: {query: [{format: ['mso_mdoc']}]},
+    availableProtocols: ['cadmv-android', 'cadmv-ios', 'interact'],
     exchange: {
       protocols: {
-        'OID4VP-draft18': 'openid4vp://test',
+        'cadmv-android': 'https://example.com/authz?request_uri=...',
+        'cadmv-ios': 'https://example.com/authz?request_uri=...',
         interact: 'https://example.com/interact'
       }
     },
     platform: {isIOS: false, isAndroid: false, isMobile: false},
     userSettings: {
-      enabledWallets: ['cadmv-wallet', 'lcw', 'interaction'],
+      enabledWallets: ['cadmv-android', 'cadmv-ios', 'lcw', 'interaction'],
       enabledProtocols: []
     },
-    dcApiSystemAvailable: false
+    dcApiSystemAvailable: true
   };
 
   describe('walletId', () => {
@@ -36,7 +37,7 @@ describe('canShowOption', () => {
       'match', () => {
       const result = canShowOption({
         ...baseOptions,
-        walletId: 'cadmv-wallet'
+        walletId: 'cadmv-android'
       });
       expect(result).to.eql({available: true});
     });
@@ -45,7 +46,7 @@ describe('canShowOption', () => {
       const result = canShowOption({
         ...baseOptions,
         userSettings: {...baseOptions.userSettings, enabledWallets: ['lcw']},
-        walletId: 'cadmv-wallet'
+        walletId: 'cadmv-android'
       });
       expect(result).to.eql({available: false});
     });
@@ -63,7 +64,7 @@ describe('canShowOption', () => {
       const result = canShowOption({
         ...baseOptions,
         availableProtocols: [],
-        walletId: 'cadmv-wallet'
+        walletId: 'cadmv-android'
       });
       expect(result).to.eql({available: false});
     });
@@ -134,7 +135,7 @@ describe('canShowOption', () => {
       const result = canShowOption({
         ...baseOptions,
         workflow: {},
-        walletId: 'cadmv-wallet'
+        walletId: 'cadmv-android'
       });
       expect(result).to.eql({available: false});
     });
@@ -172,7 +173,7 @@ describe('loadUserSettings / saveUserSettings', () => {
       return;
     }
     const settings = {
-      enabledWallets: ['cadmv-wallet'],
+      enabledWallets: ['cadmv-android'],
       enabledProtocols: ['interact']
     };
     saveUserSettings(settings);
@@ -186,18 +187,21 @@ describe('getAvailableWalletIds', () => {
   it('should return wallet IDs that can be shown', () => {
     const result = getAvailableWalletIds({
       ...{
-        workflow: {query: [{format: ['ldp_vc']}]},
-        availableProtocols: ['OID4VP-draft18'],
-        exchange: {protocols: {'OID4VP-draft18': 'test'}},
+        workflow: {query: [{format: ['mso_mdoc']}]},
+        availableProtocols: ['cadmv-android', 'cadmv-ios'],
+        exchange: {protocols: {
+          'cadmv-android': 'https://example.com/authz',
+          'cadmv-ios': 'https://example.com/authz'
+        }},
         platform: {},
         userSettings: {
-          enabledWallets: ['cadmv-wallet', 'lcw'],
+          enabledWallets: ['cadmv-android', 'cadmv-ios', 'lcw'],
           enabledProtocols: []
         },
-        dcApiSystemAvailable: false
+        dcApiSystemAvailable: true
       }
     });
     expect(result).to.be.an('array');
-    expect(result).to.contain('cadmv-wallet');
+    expect(result).to.contain('cadmv-android');
   });
 });

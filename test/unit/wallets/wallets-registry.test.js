@@ -21,7 +21,8 @@ import {
 describe('Wallet Registry and Helper Functions', () => {
   describe('WALLETS_REGISTRY', () => {
     it('should contain all expected wallets', () => {
-      expect(WALLETS_REGISTRY).to.have.property('cadmv-wallet');
+      expect(WALLETS_REGISTRY).to.have.property('cadmv-android');
+      expect(WALLETS_REGISTRY).to.have.property('cadmv-ios');
       expect(WALLETS_REGISTRY).to.have.property('lcw');
       expect(WALLETS_REGISTRY).to.have.property('google-wallet');
       expect(WALLETS_REGISTRY).to.have.property('apple-wallet');
@@ -29,7 +30,7 @@ describe('Wallet Registry and Helper Functions', () => {
     });
 
     it('should have wallet objects with required structure', () => {
-      const wallet = WALLETS_REGISTRY['cadmv-wallet'];
+      const wallet = WALLETS_REGISTRY['cadmv-android'];
       expect(wallet).to.be.an('object');
       expect(wallet).to.have.property('id');
       expect(wallet).to.have.property('supportedFormats');
@@ -40,34 +41,39 @@ describe('Wallet Registry and Helper Functions', () => {
   describe('getWalletsSupportingFormat', () => {
     it('should return correct wallets for ldp_vc format', () => {
       const result = getWalletsSupportingFormat({
-        walletIds: ['cadmv-wallet', 'lcw', 'google-wallet', 'apple-wallet'],
+        walletIds: ['cadmv-android', 'cadmv-ios', 'lcw', 'google-wallet',
+          'apple-wallet'],
         format: 'ldp_vc'
       });
       expect(result).to.be.an('array');
-      expect(result).to.contain('cadmv-wallet');
       expect(result).to.contain('lcw');
+      expect(result).to.not.contain('cadmv-android');
+      expect(result).to.not.contain('cadmv-ios');
       expect(result).to.not.contain('google-wallet');
       expect(result).to.not.contain('apple-wallet');
     });
 
     it('should return correct wallets for jwt_vc_json format', () => {
       const result = getWalletsSupportingFormat({
-        walletIds: ['cadmv-wallet', 'lcw', 'google-wallet'],
+        walletIds: ['cadmv-android', 'cadmv-ios', 'lcw', 'google-wallet'],
         format: 'jwt_vc_json'
       });
       expect(result).to.be.an('array');
-      expect(result).to.contain('cadmv-wallet');
+      expect(result).to.not.contain('cadmv-android');
+      expect(result).to.not.contain('cadmv-ios');
       expect(result).to.not.contain('lcw');
       expect(result).to.not.contain('google-wallet');
     });
 
     it('should return correct wallets for mso_mdoc format', () => {
       const result = getWalletsSupportingFormat({
-        walletIds: ['cadmv-wallet', 'lcw', 'google-wallet', 'apple-wallet'],
+        walletIds: ['cadmv-android', 'cadmv-ios', 'lcw', 'google-wallet',
+          'apple-wallet'],
         format: 'mso_mdoc'
       });
       expect(result).to.be.an('array');
-      expect(result).to.contain('cadmv-wallet');
+      expect(result).to.contain('cadmv-android');
+      expect(result).to.contain('cadmv-ios');
       expect(result).to.contain('google-wallet');
       expect(result).to.contain('apple-wallet');
       expect(result).to.not.contain('lcw');
@@ -75,7 +81,7 @@ describe('Wallet Registry and Helper Functions', () => {
 
     it('should return empty array for unsupported format', () => {
       const result = getWalletsSupportingFormat({
-        walletIds: ['cadmv-wallet', 'lcw'],
+        walletIds: ['cadmv-android', 'lcw'],
         format: 'unsupported_format'
       });
       expect(result).to.be.an('array');
@@ -100,20 +106,20 @@ describe('Wallet Registry and Helper Functions', () => {
       expect(result.length).to.be(0);
     });
 
-    it('should handle mix of valid and invalid walletIds', () => {
+    it('should handle mix of valid and invalid walletIds for mso_mdoc', () => {
       const result = getWalletsSupportingFormat({
-        walletIds: ['cadmv-wallet', 'invalid-wallet', 'lcw'],
-        format: 'ldp_vc'
+        walletIds: ['cadmv-android', 'invalid-wallet', 'lcw'],
+        format: 'mso_mdoc'
       });
       expect(result).to.be.an('array');
-      expect(result).to.contain('cadmv-wallet');
-      expect(result).to.contain('lcw');
-      expect(result.length).to.be(2);
+      expect(result).to.contain('cadmv-android');
+      expect(result).to.not.contain('lcw');
+      expect(result.length).to.be(1);
     });
 
     it('should return empty array for invalid format', () => {
       const result = getWalletsSupportingFormat({
-        walletIds: ['cadmv-wallet'],
+        walletIds: ['cadmv-android'],
         format: null
       });
       expect(result).to.be.an('array');
@@ -134,52 +140,45 @@ describe('Wallet Registry and Helper Functions', () => {
     const mockExchange = {
       protocols: {
         'OID4VP-draft18': 'openid4vp://?request_uri=https://example.com/request',
-        '18013-7-Annex-D': 'https://example.com/annex-d',
-        '18013-7-Annex-C': 'https://example.com/annex-c',
+        'cadmv-android': 'https://example.com/cadmv-android',
+        'cadmv-ios': 'https://example.com/cadmv-ios',
         vcapi: 'https://example.com/exchanges/123',
         chapi: 'https://example.com/chapi'
       }
     };
 
-    it('should return correct ordered list for cadmv-wallet + ldp_vc', () => {
+    it('should return dcapi for cadmv-android + mso_mdoc', () => {
       const result = getProtocolInteractionMethods({
-        walletId: 'cadmv-wallet',
-        format: 'ldp_vc',
-        exchange: mockExchange
-      });
-      expect(result).to.be.an('array');
-      expect(result.length).to.be.greaterThan(0);
-      // Should have link and qr methods for OID4VP-draft18
-      const methods = result.map(r => r.interactionMethod);
-      expect(methods).to.contain('link');
-      expect(methods).to.contain('qr');
-    });
-
-    it('should return correct list for cadmv-wallet + jwt_vc_json', () => {
-      const result = getProtocolInteractionMethods({
-        walletId: 'cadmv-wallet',
-        format: 'jwt_vc_json',
-        exchange: mockExchange
-      });
-      expect(result).to.be.an('array');
-      expect(result.length).to.be.greaterThan(0);
-      // Should have link and qr methods for OID4VP-draft18
-      const methods = result.map(r => r.interactionMethod);
-      expect(methods).to.contain('link');
-      expect(methods).to.contain('qr');
-    });
-
-    it('should return correct ordered list for cadmv-wallet + mso_mdoc', () => {
-      const result = getProtocolInteractionMethods({
-        walletId: 'cadmv-wallet',
+        walletId: 'cadmv-android',
         format: 'mso_mdoc',
         exchange: mockExchange
       });
       expect(result).to.be.an('array');
       expect(result.length).to.be.greaterThan(0);
-      // Should have dcapi method for 18013-7-Annex-D
       const methods = result.map(r => r.interactionMethod);
       expect(methods).to.contain('dcapi');
+    });
+
+    it('should return dcapi for cadmv-ios + mso_mdoc', () => {
+      const result = getProtocolInteractionMethods({
+        walletId: 'cadmv-ios',
+        format: 'mso_mdoc',
+        exchange: mockExchange
+      });
+      expect(result).to.be.an('array');
+      expect(result.length).to.be.greaterThan(0);
+      const methods = result.map(r => r.interactionMethod);
+      expect(methods).to.contain('dcapi');
+    });
+
+    it('should return empty for cadmv-android + ldp_vc (unsupported)', () => {
+      const result = getProtocolInteractionMethods({
+        walletId: 'cadmv-android',
+        format: 'ldp_vc',
+        exchange: mockExchange
+      });
+      expect(result).to.be.an('array');
+      expect(result.length).to.be(0);
     });
 
     it('should return correct ordered list for lcw + ldp_vc', () => {
@@ -229,7 +228,7 @@ describe('Wallet Registry and Helper Functions', () => {
 
     it('should return empty array for null format', () => {
       const result = getProtocolInteractionMethods({
-        walletId: 'cadmv-wallet',
+        walletId: 'cadmv-android',
         format: null,
         exchange: mockExchange
       });
@@ -252,33 +251,18 @@ describe('Wallet Registry and Helper Functions', () => {
       }
     });
 
-    it('should verify request/URL generation for qr method', () => {
+    it('should verify request generation for dcapi method', () => {
       const result = getProtocolInteractionMethods({
-        walletId: 'cadmv-wallet',
-        format: 'ldp_vc',
+        walletId: 'cadmv-android',
+        format: 'mso_mdoc',
         exchange: mockExchange
       });
-      const qrMethod = result.find(r => r.interactionMethod === 'qr');
-      if(qrMethod) {
-        expect(qrMethod).to.have.property('request');
-        expect(qrMethod.request).to.be.a('string');
-        expect(qrMethod.request).to.be(mockExchange.protocols[
-          'OID4VP-draft18']);
-      }
-    });
-
-    it('should verify request/URL generation for link method', () => {
-      const result = getProtocolInteractionMethods({
-        walletId: 'cadmv-wallet',
-        format: 'ldp_vc',
-        exchange: mockExchange
-      });
-      const linkMethod = result.find(r => r.interactionMethod === 'link');
-      if(linkMethod) {
-        expect(linkMethod).to.have.property('request');
-        expect(linkMethod.request).to.be.a('string');
-        expect(linkMethod.request).to.be(mockExchange.protocols[
-          'OID4VP-draft18']);
+      const dcapiMethod = result.find(r => r.interactionMethod === 'dcapi');
+      if(dcapiMethod) {
+        expect(dcapiMethod).to.have.property('request');
+        expect(dcapiMethod.request).to.be.a('string');
+        expect(dcapiMethod.request).to.be(mockExchange.protocols[
+          'cadmv-android']);
       }
     });
 
@@ -298,19 +282,18 @@ describe('Wallet Registry and Helper Functions', () => {
 
     it('should handle missing exchange protocols gracefully', () => {
       const result = getProtocolInteractionMethods({
-        walletId: 'cadmv-wallet',
-        format: 'ldp_vc',
+        walletId: 'cadmv-android',
+        format: 'mso_mdoc',
         exchange: {protocols: {}}
       });
-      // Should return empty array when protocols are missing
       expect(result).to.be.an('array');
       expect(result.length).to.be(0);
     });
 
     it('should handle missing exchange object gracefully', () => {
       const result = getProtocolInteractionMethods({
-        walletId: 'cadmv-wallet',
-        format: 'ldp_vc',
+        walletId: 'cadmv-android',
+        format: 'mso_mdoc',
         exchange: null
       });
       expect(result).to.be.an('array');
@@ -504,23 +487,27 @@ describe('Wallet Registry and Helper Functions', () => {
   describe('filterWalletsByFormatSupport', () => {
     it('should filter wallets by single format', () => {
       const result = filterWalletsByFormatSupport({
-        walletIds: ['cadmv-wallet', 'lcw', 'google-wallet', 'apple-wallet'],
+        walletIds: ['cadmv-android', 'cadmv-ios', 'lcw', 'google-wallet',
+          'apple-wallet'],
         formats: ['ldp_vc']
       });
       expect(result).to.be.an('array');
-      expect(result).to.contain('cadmv-wallet');
       expect(result).to.contain('lcw');
+      expect(result).to.not.contain('cadmv-android');
+      expect(result).to.not.contain('cadmv-ios');
       expect(result).to.not.contain('google-wallet');
       expect(result).to.not.contain('apple-wallet');
     });
 
     it('should filter wallets by multiple formats', () => {
       const result = filterWalletsByFormatSupport({
-        walletIds: ['cadmv-wallet', 'lcw', 'google-wallet', 'apple-wallet'],
+        walletIds: ['cadmv-android', 'cadmv-ios', 'lcw', 'google-wallet',
+          'apple-wallet'],
         formats: ['mso_mdoc', 'ldp_vc']
       });
       expect(result).to.be.an('array');
-      expect(result).to.contain('cadmv-wallet'); // supports both
+      expect(result).to.contain('cadmv-android'); // supports mso_mdoc
+      expect(result).to.contain('cadmv-ios'); // supports mso_mdoc
       expect(result).to.contain('lcw'); // supports ldp_vc
       expect(result).to.contain('google-wallet'); // supports mso_mdoc
       expect(result).to.contain('apple-wallet'); // supports mso_mdoc
@@ -529,7 +516,7 @@ describe('Wallet Registry and Helper Functions', () => {
     it('should return empty array for no matching wallets', () => {
       const result = filterWalletsByFormatSupport({
         walletIds: ['lcw'],
-        formats: ['mso_mdoc'] // LCW doesn't support mso_mdoc
+        formats: ['mso_mdoc']
       });
       expect(result).to.be.an('array');
       expect(result.length).to.be(0);
@@ -546,7 +533,7 @@ describe('Wallet Registry and Helper Functions', () => {
 
     it('should return empty array for empty format list', () => {
       const result = filterWalletsByFormatSupport({
-        walletIds: ['cadmv-wallet', 'lcw'],
+        walletIds: ['cadmv-android', 'lcw'],
         formats: []
       });
       expect(result).to.be.an('array');
@@ -559,7 +546,7 @@ describe('Wallet Registry and Helper Functions', () => {
         formats: ['ldp_vc']
       })).to.eql([]);
       expect(filterWalletsByFormatSupport({
-        walletIds: ['cadmv-wallet'],
+        walletIds: ['cadmv-android'],
         formats: null
       })).to.eql([]);
     });
@@ -569,13 +556,13 @@ describe('Wallet Registry and Helper Functions', () => {
     const mockExchange = {
       protocols: {
         'OID4VP-draft18': 'openid4vp://test',
-        '18013-7-Annex-D': 'test'
+        'cadmv-android': 'https://example.com/cadmv-android'
       }
     };
 
     it('should select dcapi for mobile platform', () => {
       const result = selectInitialProtocolInteraction({
-        walletIds: ['cadmv-wallet'],
+        walletIds: ['cadmv-android'],
         formats: ['mso_mdoc'],
         exchange: mockExchange,
         isMobile: true
@@ -583,40 +570,26 @@ describe('Wallet Registry and Helper Functions', () => {
       expect(result).to.be.an('object');
       expect(result).to.not.be(null);
       expect(result.interactionMethod).to.be('dcapi');
-      expect(result.walletId).to.be('cadmv-wallet');
+      expect(result.walletId).to.be('cadmv-android');
     });
 
-    it('should select qr for desktop platform', () => {
+    it('should select dcapi for cadmv-android on desktop', () => {
       const result = selectInitialProtocolInteraction({
-        walletIds: ['cadmv-wallet'],
-        formats: ['ldp_vc'],
+        walletIds: ['cadmv-android'],
+        formats: ['mso_mdoc'],
         exchange: mockExchange,
         isMobile: false
       });
       expect(result).to.be.an('object');
       expect(result).to.not.be(null);
-      // On desktop, qr should be selected (or link if available)
-      expect(['qr', 'link']).to.contain(result.interactionMethod);
-      expect(result.walletId).to.be('cadmv-wallet');
-    });
-
-    it('should prioritize same-device methods on mobile', () => {
-      const result = selectInitialProtocolInteraction({
-        walletIds: ['cadmv-wallet'],
-        formats: ['ldp_vc'],
-        exchange: mockExchange,
-        isMobile: true
-      });
-      expect(result).to.be.an('object');
-      expect(result).to.not.be(null);
-      // Should prioritize link over qr on mobile
-      expect(['dcapi', 'link']).to.contain(result.interactionMethod);
+      expect(result.interactionMethod).to.be('dcapi');
+      expect(result.walletId).to.be('cadmv-android');
     });
 
     it('should return null for no available combinations', () => {
       const result = selectInitialProtocolInteraction({
         walletIds: ['lcw'],
-        formats: ['mso_mdoc'], // LCW doesn't support mso_mdoc
+        formats: ['mso_mdoc'],
         exchange: mockExchange,
         isMobile: false
       });
@@ -635,7 +608,7 @@ describe('Wallet Registry and Helper Functions', () => {
 
     it('should return null for empty format list', () => {
       const result = selectInitialProtocolInteraction({
-        walletIds: ['cadmv-wallet'],
+        walletIds: ['cadmv-android'],
         formats: [],
         exchange: mockExchange,
         isMobile: false
@@ -645,27 +618,33 @@ describe('Wallet Registry and Helper Functions', () => {
 
     it('should select first available combination by priority', () => {
       const result = selectInitialProtocolInteraction({
-        walletIds: ['cadmv-wallet'],
-        formats: ['ldp_vc'],
+        walletIds: ['cadmv-android'],
+        formats: ['mso_mdoc'],
         exchange: mockExchange,
         isMobile: false
       });
       expect(result).to.be.an('object');
       expect(result).to.not.be(null);
-      expect(result.walletId).to.be('cadmv-wallet');
-      expect(result.protocolId).to.be('OID4VP-draft18');
+      expect(result.walletId).to.be('cadmv-android');
+      expect(result.protocolId).to.be('cadmv-android');
     });
 
     it('should handle multiple wallets and select best match', () => {
+      const exchange = {
+        protocols: {
+          'cadmv-android': 'https://example.com/cadmv-android',
+          'cadmv-ios': 'https://example.com/cadmv-ios'
+        }
+      };
       const result = selectInitialProtocolInteraction({
-        walletIds: ['cadmv-wallet', 'lcw'],
-        formats: ['ldp_vc'],
-        exchange: mockExchange,
+        walletIds: ['cadmv-android', 'cadmv-ios'],
+        formats: ['mso_mdoc'],
+        exchange,
         isMobile: false
       });
       expect(result).to.be.an('object');
       expect(result).to.not.be(null);
-      expect(['cadmv-wallet', 'lcw']).to.contain(result.walletId);
+      expect(['cadmv-android', 'cadmv-ios']).to.contain(result.walletId);
     });
   });
 });

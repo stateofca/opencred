@@ -23,6 +23,8 @@ export const PROTOCOL_FORMAT_MAPPING = {
   'OID4VP-haip-1.0': ['ldp_vc', 'jwt_vc_json'],
   '18013-7-Annex-C': ['mso_mdoc'],
   '18013-7-Annex-D': ['mso_mdoc'],
+  'cadmv-android': ['mso_mdoc'],
+  'cadmv-ios': ['mso_mdoc'],
 
   // Todo: vcapi and chapi could also support the other formats,
   // but unclear exactly how yet

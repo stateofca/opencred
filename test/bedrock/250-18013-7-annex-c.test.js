@@ -36,29 +36,10 @@ import {exampleKey2} from '../fixtures/signingKeys.js';
 import expect from 'expect.js';
 import {httpClient} from '@digitalbazaar/http-client';
 import https from 'node:https';
+import {mapsToPlain} from '../utils/mapsToPlain.js';
 
 const agent = new https.Agent({rejectUnauthorized: false});
 const client = httpClient.extend({agent});
-
-/**
- * Normalize decoded MDL CBOR (nested Maps) to plain objects for expect.js.
- *
- * @param {*} value - Decoded CBOR value.
- * @returns {*} Plain JSON-compatible structure.
- */
-function mapsToPlain(value) {
-  if(value instanceof Map) {
-    const o = {};
-    for(const [k, v] of value) {
-      o[k] = mapsToPlain(v);
-    }
-    return o;
-  }
-  if(Array.isArray(value)) {
-    return value.map(mapsToPlain);
-  }
-  return value;
-}
 
 /**
  * Assert ISO mdoc DeviceRequest bytes match Annex C expectations for the

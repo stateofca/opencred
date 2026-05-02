@@ -147,6 +147,17 @@ function _canShowWallet({
     return {available: false};
   }
 
+  // Platform filtering: on mobile, only show wallets for that platform.
+  // On desktop (neither iOS nor Android), show all for cross-device flows.
+  if(wallet.platform && Array.isArray(wallet.platform)) {
+    if(platform.isIOS && !wallet.platform.includes('ios')) {
+      return {available: false};
+    }
+    if(platform.isAndroid && !wallet.platform.includes('android')) {
+      return {available: false};
+    }
+  }
+
   for(const format of formats) {
     if(!wallet.supportedFormats.includes(format)) {
       continue;
@@ -163,12 +174,6 @@ function _canShowWallet({
       }
       if(combo.interactionMethod === 'dcapi') {
         if(!dcApiSystemAvailable) {
-          continue;
-        }
-        if(combo.protocolId === '18013-7-Annex-C' && !platform.isIOS) {
-          continue;
-        }
-        if(combo.protocolId === '18013-7-Annex-D' && !platform.isAndroid) {
           continue;
         }
       }

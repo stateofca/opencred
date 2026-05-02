@@ -14,6 +14,16 @@ import {
 } from '../../../common/wallets/index.js';
 
 describe('getPickerOptions', () => {
+  // Build extended registry with protocol wallets for OID4VP tests
+  const {extendedRegistry: baseRegistry, extendedWalletIds: baseWalletIds} =
+    buildExtendedRegistryForPicker({
+      enabledWallets: ['cadmv-android', 'cadmv-ios', 'lcw', 'interaction'],
+      enabledProtocols: ['OID4VP-draft18'],
+      availableProtocols: ['OID4VP-draft18', 'interact'],
+      formats: ['ldp_vc'],
+      registry: WALLETS_REGISTRY
+    });
+
   const baseOptions = {
     formats: ['ldp_vc'],
     exchange: {
@@ -23,11 +33,11 @@ describe('getPickerOptions', () => {
       }
     },
     availableProtocols: ['OID4VP-draft18', 'interact'],
-    enabledWallets: ['cadmv-wallet', 'lcw', 'interaction'],
+    enabledWallets: baseWalletIds,
     dcApiSystemAvailable: false,
     dcApiErrorOverride: false,
     workflow: {},
-    registry: WALLETS_REGISTRY
+    registry: baseRegistry
   };
 
   it('should return empty array when formats is empty', () => {
@@ -52,7 +62,7 @@ describe('getPickerOptions', () => {
     expect(qrLink.length).to.be.greaterThan(0);
     expect(qrLink[0]).to.have.property('protocolId', 'OID4VP-draft18');
     expect(qrLink[0]).to.have.property('walletIds');
-    expect(qrLink[0].walletIds).to.contain('cadmv-wallet');
+    expect(qrLink[0].walletIds).to.contain('protocol-OID4VP-draft18');
   });
 
   it('should return qr-and-copy option for interact protocol', () => {
@@ -65,6 +75,14 @@ describe('getPickerOptions', () => {
 
   it('should return one qr-and-link per OID4VP protocol that has compatible' +
     'wallets', () => {
+    const {extendedRegistry, extendedWalletIds} =
+      buildExtendedRegistryForPicker({
+        enabledWallets: ['cadmv-android', 'cadmv-ios', 'lcw', 'interaction'],
+        enabledProtocols: ['OID4VP-draft18', 'OID4VP-1.0'],
+        availableProtocols: ['OID4VP-draft18', 'OID4VP-1.0', 'interact'],
+        formats: ['ldp_vc'],
+        registry: WALLETS_REGISTRY
+      });
     const result = getPickerOptions({
       ...baseOptions,
       exchange: {
@@ -74,23 +92,25 @@ describe('getPickerOptions', () => {
           interact: 'https://example.com/interact'
         }
       },
-      availableProtocols: ['OID4VP-draft18', 'OID4VP-1.0', 'interact']
+      availableProtocols: ['OID4VP-draft18', 'OID4VP-1.0', 'interact'],
+      enabledWallets: extendedWalletIds,
+      registry: extendedRegistry
     });
     const qrLink = result.filter(o => o.method === 'qr-and-link');
     expect(qrLink.length).to.be.greaterThan(0);
     expect(qrLink[0].protocolId).to.be('OID4VP-draft18');
-    expect(qrLink[0].walletIds).to.contain('cadmv-wallet');
+    expect(qrLink[0].walletIds).to.contain('protocol-OID4VP-draft18');
   });
 
   it('should return both OID4VP options when enabledProtocols includes' +
     'OID4VP-1.0', () => {
     const {extendedRegistry, extendedWalletIds} =
       buildExtendedRegistryForPicker({
-        enabledWallets: baseOptions.enabledWallets,
-        enabledProtocols: ['OID4VP-1.0'],
+        enabledWallets: ['cadmv-android', 'cadmv-ios', 'lcw', 'interaction'],
+        enabledProtocols: ['OID4VP-draft18', 'OID4VP-1.0'],
         availableProtocols: ['OID4VP-draft18', 'OID4VP-1.0'],
-        formats: baseOptions.formats,
-        registry: baseOptions.registry
+        formats: ['ldp_vc'],
+        registry: WALLETS_REGISTRY
       });
     const result = getPickerOptions({
       ...baseOptions,
@@ -110,7 +130,7 @@ describe('getPickerOptions', () => {
     const draft18Option = qrLink.find(o => o.protocolId === 'OID4VP-draft18');
     const v10Option = qrLink.find(o => o.protocolId === 'OID4VP-1.0');
     expect(draft18Option).to.be.an('object');
-    expect(draft18Option.walletIds).to.contain('cadmv-wallet');
+    expect(draft18Option.walletIds).to.contain('protocol-OID4VP-draft18');
     expect(v10Option).to.be.an('object');
     expect(v10Option.walletIds).to.contain('protocol-OID4VP-1.0');
   });
@@ -126,7 +146,7 @@ describe('getPickerOptions', () => {
         }
       },
       availableProtocols: ['OID4VP-draft18', 'vcapi', 'interact'],
-      enabledWallets: ['cadmv-wallet', 'lcw', 'interaction']
+      enabledWallets: ['cadmv-android', 'lcw', 'interaction']
     });
     const lcwOption = result.find(o =>
       o.method === 'qr-and-link' &&
@@ -147,7 +167,7 @@ describe('getPickerOptions', () => {
         }
       },
       availableProtocols: ['18013-7-Annex-D'],
-      enabledWallets: ['cadmv-wallet', 'google-wallet'],
+      enabledWallets: ['cadmv-android', 'google-wallet'],
       dcApiSystemAvailable: false
     });
     const dcapi = result.find(o => o.method === 'dcapi');
@@ -160,11 +180,11 @@ describe('getPickerOptions', () => {
       formats: ['mso_mdoc'],
       exchange: {
         protocols: {
-          '18013-7-Annex-D': 'https://example.com/annex-d'
+          'cadmv-android': 'https://example.com/cadmv-android'
         }
       },
-      availableProtocols: ['18013-7-Annex-D'],
-      enabledWallets: ['cadmv-wallet', 'google-wallet'],
+      availableProtocols: ['cadmv-android'],
+      enabledWallets: ['cadmv-android', 'google-wallet'],
       dcApiSystemAvailable: true
     });
     const dcapi = result.find(o => o.method === 'dcapi');
@@ -178,11 +198,11 @@ describe('getPickerOptions', () => {
       formats: ['mso_mdoc'],
       exchange: {
         protocols: {
-          '18013-7-Annex-D': 'https://example.com/annex-d'
+          'cadmv-android': 'https://example.com/cadmv-android'
         }
       },
-      availableProtocols: ['18013-7-Annex-D'],
-      enabledWallets: ['cadmv-wallet', 'google-wallet'],
+      availableProtocols: ['cadmv-android'],
+      enabledWallets: ['cadmv-android', 'google-wallet'],
       dcApiSystemAvailable: true,
       dcApiErrorOverride: true
     });
@@ -201,7 +221,7 @@ describe('getPickerOptions', () => {
         }
       },
       availableProtocols: ['OID4VP-draft18', 'chapi', 'interact'],
-      enabledWallets: ['cadmv-wallet', 'lcw', 'interaction']
+      enabledWallets: ['cadmv-android', 'lcw', 'interaction']
     });
     const chapi = result.find(o => o.method === 'chapi');
     expect(chapi).to.be.an('object');

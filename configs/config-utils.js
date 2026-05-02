@@ -146,7 +146,8 @@ export const QueryByExampleSchema = z.object({
 });
 
 export const availableWallets = [
-  'cadmv-wallet', 'lcw', 'google-wallet', 'apple-wallet', 'vcalm-interaction'];
+  'cadmv-android', 'cadmv-ios', 'lcw', 'google-wallet', 'apple-wallet',
+  'vcalm-interaction'];
 
 // Base Workflow schema
 export const BaseWorkflowSchema = z.object({
@@ -260,7 +261,7 @@ export const OptionsSchema = z.object({
   exchangeProtocols: z.array(z.enum(availableExchangeProtocols))
     .default(['openid4vp', 'chapi']),
   wallets: z.array(z.enum(availableWallets))
-    .default(['cadmv-wallet', 'lcw']),
+    .default(['cadmv-android', 'cadmv-ios', 'lcw']),
   recordExpiresDurationMs: z.number()
     .default(24 * 60 * 60 * 1000) // 1 day in milliseconds
     .transform(val => Math.floor(Math.max(

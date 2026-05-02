@@ -21,6 +21,15 @@ export {
 export {WALLETS_REGISTRY};
 
 /**
+ * Protocol IDs that use the DC API interaction method.
+ */
+const DC_API_PROTOCOL_IDS = [
+  '18013-7-Annex-C', '18013-7-Annex-D',
+  'cadmv-android', 'cadmv-ios',
+  'google-wallet', 'apple-wallet'
+];
+
+/**
  * Global priority order for interaction methods.
  * Higher priority methods appear first in ordered lists.
  */
@@ -448,7 +457,7 @@ export function getPickerOptions({
           c.interactionMethod === 'dcapi' &&
           !['chapi', 'vcapi', 'interact'].includes(c.protocolId) &&
           (format === 'mso_mdoc' ||
-            c.protocolId === '18013-7-Annex-D' ||
+            DC_API_PROTOCOL_IDS.includes(c.protocolId) ||
             c.protocolId === 'OID4VP-HAIP-1.0'));
         if(match) {
           return true;
@@ -465,7 +474,7 @@ export function getPickerOptions({
       });
       if(combos.some(c =>
         c.interactionMethod === 'dcapi' &&
-        ['18013-7-Annex-C', '18013-7-Annex-D'].includes(c.protocolId))) {
+        DC_API_PROTOCOL_IDS.includes(c.protocolId))) {
         return true;
       }
     }
@@ -677,4 +686,30 @@ export function selectInitialProtocolInteraction({
     interactionMethod: selected.interactionMethod,
     request: selected.request
   };
+}
+
+/**
+ * Expand legacy wallet ID aliases to their current equivalents.
+ * E.g., 'cadmv-wallet' → ['cadmv-android', 'cadmv-ios'].
+ *
+ * @param {Array<string>} walletIds - Array of wallet IDs (may contain
+ *   aliases).
+ * @returns {Array<string>} Expanded array with aliases replaced (deduped).
+ */
+export function expandWalletAliases(walletIds) {
+  if(!Array.isArray(walletIds)) {
+    return [];
+  }
+  const ALIASES = {
+    'cadmv-wallet': ['cadmv-android', 'cadmv-ios']
+  };
+  const result = [];
+  for(const id of walletIds) {
+    if(ALIASES[id]) {
+      result.push(...ALIASES[id]);
+    } else {
+      result.push(id);
+    }
+  }
+  return [...new Set(result)];
 }

@@ -36,29 +36,20 @@ SPDX-License-Identifier: BSD-3-Clause
         </cadmv-button>
       </div>
     </div>
-    <!-- Normal State: generic platform-based launch buttons -->
+    <!-- Normal State: wallet-branded launch buttons -->
     <div
       v-else
       class="flex flex-col gap-3 max-w-md mx-auto">
-      <cadmv-button
-        v-for="button in availableButtons"
-        :key="button.protocolId"
-        variant="primary"
+      <WalletLaunchButton
+        v-for="entry in dcApiWallets"
+        :key="entry.walletId"
+        :wallet="entry.wallet"
+        :wallet-id="entry.walletId"
+        :protocol-id="entry.protocolId"
         :loading="active"
         :disabled="active"
-        :class="['w-full', 'justify-start']"
-        @click="handleLaunch(button.protocolId)">
-        <div class="flex items-center gap-3 flex-grow min-w-0 overflow-hidden">
-          <q-icon
-            :name="button.icon"
-            size="32px"
-            class="flex-shrink-0 text-current" />
-          <span class="font-medium text-left truncate min-w-0">
-            {{button.label}}
-          </span>
-        </div>
-      </cadmv-button>
-      <p v-if="availableButtons.length === 0">
+        @launch="handleLaunch" />
+      <p v-if="dcApiWallets.length === 0">
         No compatible wallet found.
       </p>
     </div>
@@ -75,16 +66,19 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
-import {QIcon, useQuasar} from 'quasar';
 import {CadmvButton} from '@digitalbazaar/cadmv-ui';
 import {computed} from 'vue';
 import CountdownDisplay from '../CountdownDisplay.vue';
-import {useI18n} from 'vue-i18n';
+import WalletLaunchButton from '../WalletLaunchButton.vue';
 
 const props = defineProps({
   exchangeData: {
     type: Object,
     required: true
+  },
+  walletsRegistry: {
+    type: Object,
+    default: () => ({})
   },
   active: {
     type: Boolean,
@@ -101,77 +95,42 @@ const props = defineProps({
 });
 
 const emit = defineEmits([
-  'errorOverride',
   'launch',
   'retry',
   'switchInteractionMethod'
 ]);
 
-const $q = useQuasar();
-const {t} = useI18n({useScope: 'global'});
-
-const isIOS = computed(() => $q.platform?.is?.ios ?? false);
-const isAndroid = computed(() => $q.platform?.is?.android ?? false);
-
-const showAnnexC = computed(() => {
-  return !!props.exchangeData?.protocols?.['18013-7-Annex-C'];
-});
-
-const showAnnexD = computed(() => {
-  return !!props.exchangeData?.protocols?.['18013-7-Annex-D'];
-});
-
-const availableButtons = computed(() => {
-  const buttons = [];
-
-  if(isIOS.value) {
-    // iOS: Show one button for Annex-C
-    if(showAnnexC.value) {
-      buttons.push({
-        protocolId: '18013-7-Annex-C',
-        label: t('launchWalletAppIOS'),
-        icon: 'account_balance_wallet'
-      });
-    }
-  } else if(isAndroid.value) {
-    // Android: Show one button for Annex-D
-    if(showAnnexD.value) {
-      buttons.push({
-        protocolId: '18013-7-Annex-D',
-        label: t('launchWalletAppAndroid'),
-        icon: 'account_balance_wallet'
-      });
-    }
-  } else {
-    // Desktop/Other: Show both buttons
-    if(showAnnexC.value) {
-      buttons.push({
-        protocolId: '18013-7-Annex-C',
-        label: t('launchWalletAppIOS'),
-        icon: 'phone_iphone'
-      });
-    }
-    if(showAnnexD.value) {
-      buttons.push({
-        protocolId: '18013-7-Annex-D',
-        label: t('launchWalletAppAndroid'),
-        icon: 'phone_android'
-      });
-    }
+const dcApiWallets = computed(() => {
+  const protocols = props.exchangeData?.protocols;
+  if(!protocols || typeof protocols !== 'object') {
+    return [];
   }
 
-  return buttons;
+  const entries = [];
+  for(const [walletId, wallet] of Object.entries(props.walletsRegistry)) {
+    if(!wallet?.supportedProtocols) {
+      continue;
+    }
+    for(const [protocolId, protocolConfig] of Object.entries(
+      wallet.supportedProtocols)) {
+      if(!protocolConfig?.dcapi) {
+        continue;
+      }
+      if(protocols[protocolId]) {
+        entries.push({walletId, protocolId, wallet});
+        break;
+      }
+    }
+  }
+  return entries;
 });
 
-// Determine if "Try Another Way" button should be shown
-// Show only when there's an error AND there are multiple interaction
-// options available (matching picker logic)
 const shouldShowTryAnotherWay = computed(() => {
   return !!props.error && props.hasMultipleInteractionOptions;
 });
 
-const handleLaunch = protocolId => {
-  emit('launch', {protocolId});
+const handleLaunch = ({walletId, protocolId}) => {
+  emit('launch', {walletId, protocolId});
 };
 
 const handleTryAnotherWay = () => {

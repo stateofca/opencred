@@ -11,6 +11,7 @@ export const appleWallet = {
   description: 'Apple Wallet for storing and presenting digital ' +
     'credentials on iOS devices.',
   icon: '/wallets/apple-wallet-icon.png',
+  platform: ['ios'],
   supportedFormats: ['mso_mdoc'],
   supportedProtocols: {
     '18013-7-Annex-C': {

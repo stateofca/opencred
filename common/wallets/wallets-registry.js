@@ -6,7 +6,8 @@
  */
 
 import {appleWallet} from './apple-wallet.js';
-import {caDmvWallet} from './ca-dmv-wallet.js';
+import {cadmvAndroidWallet} from './cadmv-android.js';
+import {cadmvIosWallet} from './cadmv-ios.js';
 import {googleWallet} from './google-wallet.js';
 import {interactionWallet} from './protocols/index.js';
 import {lcwWallet} from './lcw.js';
@@ -16,7 +17,8 @@ import {lcwWallet} from './lcw.js';
  * This file exists separately to avoid circular dependencies.
  */
 export const WALLETS_REGISTRY = {
-  'cadmv-wallet': caDmvWallet,
+  'cadmv-android': cadmvAndroidWallet,
+  'cadmv-ios': cadmvIosWallet,
   lcw: lcwWallet,
   'google-wallet': googleWallet,
   'apple-wallet': appleWallet,

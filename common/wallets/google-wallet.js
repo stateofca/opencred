@@ -11,6 +11,7 @@ export const googleWallet = {
   description: 'Google Wallet for storing and presenting digital ' +
     'credentials on Android devices.',
   icon: '/wallets/google-wallet-icon.png',
+  platform: ['android'],
   supportedFormats: ['mso_mdoc'],
   supportedProtocols: {
     '18013-7-Annex-D': {
