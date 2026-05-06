@@ -75,9 +75,9 @@ npm run generate:prime256v1 authorization_request -- --domain=opencred.example.c
 Copy the output into your config's `signingKeys` section. Without `--domain`,
 only keys are generated (no certificate).
 
-Configuration notes: 
+### Configuration notes
 
-* In development environments, you likely need to run a local tunnel to access the
+* In development environments, you often need to run a local tunnel to access the
   server from a wallet app. Services "localtunnel" and "ngrok" are popular
   options. Set the `app.server.baseUri` in your config to the URL of the tunnel.
   OpenCred requires a secure connection, so you will need to use a HTTPS URL.
@@ -115,6 +115,27 @@ trustedCredentialIssuers:
   schema is not used by verification code. If the list is omitted or empty on a
   workflow, no issuer allowlisting is applied for that workflow.
 
+* **Accepting TEST California DMV Driver's License Credentials**: The DMV
+  sometimes uses a issuer identify for pre-production testing, which requires
+  the tester to have invited access to a test version of a wallet that can be
+  used to hold these test credentials. To accept test/sandbox credentials from
+  the California DMV's , add the DMV's issuer DID to `trustedCredentialIssuers`
+  on any workflow that requests `Iso18013DriversLicenseCredential` credentials.
+  This applies to `preset` workflows using
+  `Iso18013DriversLicenseCredential:2025` as well as `native` workflows whose
+  `query` or `dcql_query` includes `Iso18013DriversLicenseCredential`. **DO NOT
+  ACCEPT THIS ISSUER IN PRODUCTION SYSTEMS.**
+```yaml
+trustedCredentialIssuers:
+  - did:jwk:eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6IkU1Z0RvRjZ1cHlPbEd3TlNSOTRHR1hVUGJvNU5xeE0xNVM5N2k3d1NxTHMiLCJ4NWMiOlsiTUlJQ2FEQ0NBZzZnQXdJQkFnSVVIT08yZEl5QVRSYkFmeXQzQWNCTzZESGF3aDh3Q2dZSUtvWkl6ajBFQXdJd1VERUxNQWtHQTFVRUJoTUNWVk14RGpBTUJnTlZCQWdNQlZWVExVTkJNUXd3Q2dZRFZRUUtEQU5FVFZZeEl6QWhCZ05WQkFNTUdrTmhiR2xtYjNKdWFXRWdSRTFXSUZKdmIzUWdRMEVnVlVGVU1CNFhEVEkyTURRd09ERTROVGN6TkZvWERUSTNNRGN3TnpFNE5UY3pORm93VmpFTE1Ba0dBMVVFQmhNQ1ZWTXhEakFNQmdOVkJBZ01CVlZUTFVOQk1Rd3dDZ1lEVlFRS0RBTkVUVll4S1RBbkJnTlZCQU1NSUhaaklHMWtiQ0JUYVdkdVpYSWdRMkZzYVdadmNtNXBZU0JFVFZZZ1ZVRlVNRmt3RXdZSEtvWkl6ajBDQVFZSUtvWkl6ajBEQVFjRFFnQUVFNWdEb0Y2dXB5T2xHd05TUjk0R0dYVVBibzVOcXhNMTVTOTdpN3dTcUxzYWNwMUlzK0g2dEtYM2k5QmhnT3FxQTBjc0h3d0xRZERwVDNueTRxQmlpcU9CdnpDQnZEQWRCZ05WSFE0RUZnUVVMRURHUzR0aHo5eUxGc3c3UHhFeXFGUDRxdGd3SHdZRFZSMGpCQmd3Rm9BVVNXaENmUzhDM3dFUHNlQzI4U2NtRm4wajI1VXdIUVlKWUlaSUFZYjRRZ0VOQkJBV0RrTmhiR2xtYjNKdWFXRWdSRTFXTUE0R0ExVWREd0VCL3dRRUF3SUhnREFkQmdOVkhSSUVGakFVZ1JKbGVHRnRjR3hsUUdSdGRpNWpZUzVuYjNZd0xBWURWUjBmQkNVd0l6QWhvQitnSFlZYmFIUjBjSE02THk5dFpHeHpMbVJ0ZGk1allTNW5iM1l2WTNKc01Bb0dDQ3FHU000OUJBTUNBMGdBTUVVQ0lHOG9PWWRuVGZ4ZENMb3N0S3ZFeExZRTVzR1I4bWcySGEzdWFDa09tMW1uQWlFQXppc2VUa1Y4eld6eWRQc1lEY3FTcURneDdKSjJxcjVPMTcvdUJId0xQckU9Il0sInkiOiJHbktkU0xQaC1yU2w5NHZRWVlEcXFnTkhMQjhNQzBIUTZVOTU4dUtnWW9vIn0 # NOT FOR PRODUCTION SYSTEMS: California DMV test/sandbox issuer (valid until 2027-07-07)
+```
+
+The full DID value can also be copied from the "Driver's License (Preset)"
+workflow in [configs/combined.example.yaml](configs/combined.example.yaml).
+The embedded X.509 certificate in this DID expires July 9, 2027; a
+replacement DID will be published before that date.
+
+#### Configuration via Environment Variable
 
 If a `BEDROCK_CONFIG` environment variable is set, the config specified in
 the environment variable will supersede any file based configuration. The
