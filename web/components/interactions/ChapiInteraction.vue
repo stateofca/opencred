@@ -32,7 +32,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['activate', 'error', 'switchInteractionMethod']);
+const emit = defineEmits(['activate', 'error']);
 
 const handleActivate = async () => {
   try {
@@ -57,7 +57,6 @@ const handleActivate = async () => {
       message: error.message ||
         'An error occurred while starting the CHAPI flow.'
     });
-    emit('switchInteractionMethod', null);
   }
 };
 </script>

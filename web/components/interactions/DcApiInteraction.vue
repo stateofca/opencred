@@ -26,32 +26,44 @@ SPDX-License-Identifier: BSD-3-Clause
           @click="handleRetry">
           {{$t('dcApiRetry')}}
         </cadmv-button>
-        <cadmv-button
-          v-if="shouldShowTryAnotherWay"
-          variant="secondary"
-          :loading="!error && active"
-          :disabled="!error && active"
-          @click="handleTryAnotherWay">
-          {{$t('dcApiFallback')}}
-        </cadmv-button>
       </div>
     </div>
     <!-- Normal State: wallet-branded launch buttons -->
     <div
       v-else
       class="flex flex-col gap-3 max-w-md mx-auto">
-      <WalletLaunchButton
-        v-for="entry in dcApiWallets"
-        :key="entry.walletId"
-        :wallet="entry.wallet"
-        :wallet-id="entry.walletId"
-        :protocol-id="entry.protocolId"
-        :loading="active"
-        :disabled="active"
-        @launch="handleLaunch" />
-      <p v-if="dcApiWallets.length === 0">
-        No compatible wallet found.
-      </p>
+      <template v-if="singleProfileMode">
+        <WalletLaunchButton
+          :profile="profile"
+          :label="$t('dcApiSingleProfile_buttonLabel')"
+          :loading="active"
+          :disabled="active"
+          @launch="handleLaunch" />
+        <p class="text-xs text-gray-600 text-center mb-0">
+          <template v-if="singleProfileHandlingWalletNames.length > 0">
+            {{$t('dcApiSingleProfile_handledBy', {
+              names: singleProfileHandlingWalletNames.join(', ')
+            })}}
+          </template>
+          <template v-else>
+            {{$t('dcApiSingleProfile_handledByNone')}}
+          </template>
+        </p>
+      </template>
+      <template v-else>
+        <WalletLaunchButton
+          v-for="entry in dcApiWallets"
+          :key="entry.walletId"
+          :wallet="entry.wallet"
+          :wallet-id="entry.walletId"
+          :profile="entry.profile"
+          :loading="active"
+          :disabled="active"
+          @launch="handleLaunch" />
+        <p v-if="dcApiWallets.length === 0">
+          No compatible wallet found.
+        </p>
+      </template>
     </div>
     <!-- Countdown Display -->
     <p
@@ -69,7 +81,10 @@ SPDX-License-Identifier: BSD-3-Clause
 import {CadmvButton} from '@digitalbazaar/cadmv-ui';
 import {computed} from 'vue';
 import CountdownDisplay from '../CountdownDisplay.vue';
+import {useI18n} from 'vue-i18n';
 import WalletLaunchButton from '../WalletLaunchButton.vue';
+
+const {t} = useI18n({useScope: 'global'});
 
 const props = defineProps({
   exchangeData: {
@@ -80,6 +95,10 @@ const props = defineProps({
     type: Object,
     default: () => ({})
   },
+  profile: {
+    type: String,
+    default: null
+  },
   active: {
     type: Boolean,
     default: false
@@ -87,17 +106,12 @@ const props = defineProps({
   error: {
     type: [Object, String],
     default: null
-  },
-  hasMultipleInteractionOptions: {
-    type: Boolean,
-    default: false
   }
 });
 
 const emit = defineEmits([
   'launch',
-  'retry',
-  'switchInteractionMethod'
+  'retry'
 ]);
 
 const dcApiWallets = computed(() => {
@@ -108,16 +122,16 @@ const dcApiWallets = computed(() => {
 
   const entries = [];
   for(const [walletId, wallet] of Object.entries(props.walletsRegistry)) {
-    if(!wallet?.supportedProtocols) {
+    if(!wallet?.supportedProfiles) {
       continue;
     }
-    for(const [protocolId, protocolConfig] of Object.entries(
-      wallet.supportedProtocols)) {
-      if(!protocolConfig?.dcapi) {
+    for(const [profile, profileConfig] of Object.entries(
+      wallet.supportedProfiles)) {
+      if(!profileConfig?.dcapi) {
         continue;
       }
-      if(protocols[protocolId]) {
-        entries.push({walletId, protocolId, wallet});
+      if(protocols[profile]) {
+        entries.push({walletId, profile, wallet});
         break;
       }
     }
@@ -125,16 +139,28 @@ const dcApiWallets = computed(() => {
   return entries;
 });
 
-const shouldShowTryAnotherWay = computed(() => {
-  return !!props.error && props.hasMultipleInteractionOptions;
+const singleProfileMode = computed(() => !!props.profile);
+
+const singleProfileHandlingWalletNames = computed(() => {
+  if(!singleProfileMode.value) {
+    return [];
+  }
+  const names = [];
+  for(const [walletId, wallet] of
+    Object.entries(props.walletsRegistry)) {
+    const cfg = wallet?.supportedProfiles?.[props.profile];
+    if(!cfg?.dcapi) {
+      continue;
+    }
+    const name = wallet?.nameKey ?
+      t(wallet.nameKey) : (wallet?.name || walletId);
+    names.push(name);
+  }
+  return names;
 });
 
-const handleLaunch = ({walletId, protocolId}) => {
-  emit('launch', {walletId, protocolId});
-};
-
-const handleTryAnotherWay = () => {
-  emit('switchInteractionMethod', null);
+const handleLaunch = ({walletId, profile}) => {
+  emit('launch', {walletId, profile});
 };
 
 const handleRetry = () => {

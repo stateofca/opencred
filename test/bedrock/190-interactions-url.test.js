@@ -346,8 +346,8 @@ describe('Interactions URL Endpoint', () => {
           .resolves(exchange);
         const workflowsStub = sinon.stub(config.opencred, 'workflows')
           .value([testRP]);
-    const signingKeysStub = sinon.stub(config.opencred, 'signingKeys')
-      .value([{...exampleKey, purpose: ['access_token', 'id_token']}]);
+        const signingKeysStub = sinon.stub(config.opencred, 'signingKeys')
+          .value([{...exampleKey, purpose: ['access_token', 'id_token']}]);
 
         try {
           const result = await getWithAcceptOnly(

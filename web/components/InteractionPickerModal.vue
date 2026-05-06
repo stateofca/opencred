@@ -15,29 +15,29 @@ SPDX-License-Identifier: BSD-3-Clause
       </h3>
       <div class="flex flex-col gap-2">
         <button
-          v-for="option in availableOptions"
-          :key="getOptionKey(option)"
+          v-for="entry in pickerEntries"
+          :key="getEntryKey(entry)"
           type="button"
           class="flex flex-col items-stretch p-3 rounded-md border-2
           transition-all text-left w-full"
-          :class="isCurrentOption(option) ?
+          :class="isCurrentEntry(entry) ?
             'border-primary bg-primary/10' :
             'border-gray-300 hover:border-gray-400'"
-          @click="handleSelect(option)">
+          @click="handleSelect(entry)">
           <div class="flex items-center justify-between">
             <span class="font-medium text-gray-900">
-              {{getOptionLabel(option)}}
+              {{getEntryLabel(entry)}}
             </span>
             <span
-              v-if="isCurrentOption(option)"
+              v-if="isCurrentEntry(entry)"
               class="text-sm text-primary">
               {{$t('interactionPicker_current')}}
             </span>
           </div>
           <p
-            v-if="option.walletIds?.length > 0 && walletsRegistry"
+            v-if="getEntryDescription(entry)"
             class="text-sm text-gray-500 mt-1 mb-0">
-            {{getWalletNames(option.walletIds)}}
+            {{getEntryDescription(entry)}}
           </p>
         </button>
       </div>
@@ -54,16 +54,12 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  availableOptions: {
+  pickerEntries: {
     type: Array,
     default: () => []
   },
-  currentOption: {
+  currentEntry: {
     type: Object,
-    default: null
-  },
-  currentInteractionType: {
-    type: String,
     default: null
   },
   walletsRegistry: {
@@ -76,46 +72,38 @@ const emit = defineEmits(['update:modelValue', 'select']);
 
 const {t} = useI18n({useScope: 'global'});
 
-const getOptionKey = option => {
-  const parts = [
-    option.method, option.protocolId, option.walletId].filter(Boolean);
-  return parts.join(':') || option.method;
+const getEntryKey = entry => {
+  const parts = [entry.method, entry.profile].filter(Boolean);
+  return parts.join(':') || entry.method;
 };
 
-const isCurrentOption = option => {
-  if(props.currentOption) {
-    return option.method === props.currentOption.method &&
-      (option.protocolId || '') === (props.currentOption.protocolId || '') &&
-      (option.walletId || '') === (props.currentOption.walletId || '');
+const isCurrentEntry = entry => {
+  if(!props.currentEntry) {
+    return false;
   }
-  if(props.currentInteractionType) {
-    return option.method === props.currentInteractionType;
-  }
-  return false;
+  return entry.method === props.currentEntry.method &&
+    (entry.profile || null) === (props.currentEntry.profile || null);
 };
 
-const getOptionLabel = option => {
-  if(option.labelKey && t(option.labelKey) !== option.labelKey) {
-    return t(option.labelKey);
+const getEntryLabel = entry => {
+  if(entry.labelKey && t(entry.labelKey) !== entry.labelKey) {
+    return t(entry.labelKey);
   }
-  if(option.protocolId) {
-    const key = `interactionMethod_${option.method}_${option.protocolId}`;
-    if(t(key) !== key) {
-      return t(key);
-    }
-    const protocolKey = `protocols_${option.protocolId}_name`;
-    if(t(protocolKey) !== protocolKey) {
-      return `${t(`interactionMethod_${option.method}`) ||
-       option.method} (${t(protocolKey)})`;
-    }
+  if(entry.method === 'dcapi' && entry.profile === null) {
+    return t('interactionMethod_dcapi');
   }
-  if(option.walletId) {
-    const key = `interactionMethod_${option.method}_${option.walletId}`;
-    if(t(key) !== key) {
-      return t(key);
+  if(entry.profile) {
+    const composite =
+      `interactionMethod_${entry.method}_${entry.profile}`;
+    if(t(composite) !== composite) {
+      return t(composite);
+    }
+    const profileName = `profiles_${entry.profile}_name`;
+    if(t(profileName) !== profileName) {
+      return `${t(`interactionMethod_${entry.method}`)} (${t(profileName)})`;
     }
   }
-  return t(`interactionMethod_${option.method}`) || option.method;
+  return t(`interactionMethod_${entry.method}`) || entry.method;
 };
 
 const getWalletNames = walletIds => {
@@ -129,8 +117,15 @@ const getWalletNames = walletIds => {
   }).filter(Boolean).join(', ');
 };
 
-const handleSelect = option => {
-  emit('select', option);
+const getEntryDescription = entry => {
+  if(entry.method === 'dcapi' && entry.profile === null) {
+    return t('interactionPicker_dcapiAggregatorDescription');
+  }
+  return getWalletNames(entry.walletIds);
+};
+
+const handleSelect = entry => {
+  emit('select', entry);
   emit('update:modelValue', false);
 };
 </script>

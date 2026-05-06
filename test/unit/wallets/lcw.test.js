@@ -18,7 +18,7 @@ describe('LCW Wallet Configuration', () => {
       expect(lcwWallet).to.have.property('name');
       expect(lcwWallet).to.have.property('description');
       expect(lcwWallet).to.have.property('supportedFormats');
-      expect(lcwWallet).to.have.property('supportedProtocols');
+      expect(lcwWallet).to.have.property('supportedProfiles');
     });
 
     it('should have correct id and name', () => {
@@ -42,7 +42,7 @@ describe('LCW Wallet Configuration', () => {
 
   describe('protocol/interaction method combinations', () => {
     it('should support ldp_vc + vcapi + qr', () => {
-      const protocol = lcwWallet.supportedProtocols.vcapi;
+      const protocol = lcwWallet.supportedProfiles.vcapi;
       expect(protocol).to.be.an('object');
       expect(protocol.qr).to.be.an('object');
       expect(protocol.qr.formats).to.be.an('array');
@@ -52,7 +52,7 @@ describe('LCW Wallet Configuration', () => {
     });
 
     it('should support ldp_vc + vcapi + link', () => {
-      const protocol = lcwWallet.supportedProtocols.vcapi;
+      const protocol = lcwWallet.supportedProfiles.vcapi;
       expect(protocol).to.be.an('object');
       expect(protocol.link).to.be.an('object');
       expect(protocol.link.formats).to.be.an('array');
@@ -62,7 +62,7 @@ describe('LCW Wallet Configuration', () => {
     });
 
     it('should support ldp_vc + vcapi + copy', () => {
-      const protocol = lcwWallet.supportedProtocols.vcapi;
+      const protocol = lcwWallet.supportedProfiles.vcapi;
       expect(protocol).to.be.an('object');
       expect(protocol.copy).to.be.an('object');
       expect(protocol.copy.formats).to.be.an('array');
@@ -72,7 +72,7 @@ describe('LCW Wallet Configuration', () => {
     });
 
     it('should support ldp_vc + chapi + chapi', () => {
-      const protocol = lcwWallet.supportedProtocols.chapi;
+      const protocol = lcwWallet.supportedProfiles.chapi;
       expect(protocol).to.be.an('object');
       expect(protocol.chapi).to.be.an('object');
       expect(protocol.chapi.formats).to.be.an('array');
@@ -84,7 +84,7 @@ describe('LCW Wallet Configuration', () => {
 
   describe('custom deep link generation', () => {
     it('should generate correct vcapi deep link for qr', () => {
-      const protocol = lcwWallet.supportedProtocols.vcapi;
+      const protocol = lcwWallet.supportedProfiles.vcapi;
       const exchange = {
         protocols: {
           vcapi: 'https://example.com/exchanges/123'
@@ -104,7 +104,7 @@ describe('LCW Wallet Configuration', () => {
     });
 
     it('should generate correct vcapi deep link for link', () => {
-      const protocol = lcwWallet.supportedProtocols.vcapi;
+      const protocol = lcwWallet.supportedProfiles.vcapi;
       const exchange = {
         protocols: {
           vcapi: 'https://example.com/exchanges/456'
@@ -117,7 +117,7 @@ describe('LCW Wallet Configuration', () => {
     });
 
     it('should return null when vcapi URL not available', () => {
-      const protocol = lcwWallet.supportedProtocols.vcapi;
+      const protocol = lcwWallet.supportedProfiles.vcapi;
       const exchange = {
         protocols: {}
       };
@@ -128,7 +128,7 @@ describe('LCW Wallet Configuration', () => {
 
   describe('CHAPI request generation', () => {
     it('should generate CHAPI request object', () => {
-      const protocol = lcwWallet.supportedProtocols.chapi;
+      const protocol = lcwWallet.supportedProfiles.chapi;
       const exchange = {
         protocols: {
           chapi: 'https://example.com/exchange'
@@ -147,7 +147,7 @@ describe('LCW Wallet Configuration', () => {
     });
 
     it('should return null when exchange not available', () => {
-      const protocol = lcwWallet.supportedProtocols.chapi;
+      const protocol = lcwWallet.supportedProfiles.chapi;
       const request = protocol.chapi.getRequest({exchange: null});
       expect(request).to.be(null);
     });

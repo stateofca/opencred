@@ -12,10 +12,10 @@
 export const ALL_CREDENTIAL_FORMATS = ['ldp_vc', 'jwt_vc_json', 'mso_mdoc'];
 
 /**
- * Default mapping of protocols to supported credential formats.
+ * Default mapping of profiles to supported credential formats.
  * Wallets can override/extend these defaults in their configurations.
  */
-export const PROTOCOL_FORMAT_MAPPING = {
+export const PROFILE_FORMAT_MAPPING = {
   'OID4VP-draft18': ['ldp_vc', 'jwt_vc_json'],
   'OID4VP-1.0': ['ldp_vc', 'jwt_vc_json'],
   'OID4VP-combined': ['ldp_vc', 'jwt_vc_json'],

@@ -28,7 +28,7 @@ import {domainToDidWeb} from '../../lib/didWeb.js';
 import {generateValidDidKeyData} from '../utils/dids.js';
 import {generateValidSignedCredential} from '../utils/credentials.js';
 import {getDocumentLoader} from '../../common/documentLoader.js';
-
+import {logger} from '../../lib/logger.js';
 import {withStubs} from '../utils/withStubs.js';
 
 import {NativeWorkflowService} from '../../lib/workflows/native-workflow.js';
@@ -993,11 +993,16 @@ describe('OID4VP 1.0 trustedCredentialIssuers', () => {
   it('should reject OID4VP 1.0 JWT VC when issuer is not in ' +
     'trustedCredentialIssuers', async () => {
     // Generate real tokens first (before stubs are set)
-    const {vpToken: vp_token_jwt, vcToken: realVcToken} =
+    const {
+      vpToken: vp_token_jwt,
+      vcToken: realVcToken
+    } =
       await generateValidJwtVpToken({
         aud: domainToDidWeb(config.server.baseUri),
         challenge: 'test-challenge'
       });
+
+    let loggerInfoStub;
 
     await withStubs(
       () => {
@@ -1014,7 +1019,19 @@ describe('OID4VP 1.0 trustedCredentialIssuers', () => {
         const updateStub = sinon.stub(
           database.collections.Exchanges, 'updateOne')
           .resolves();
-        return [caStoreStub, verifyUtilsStub, verifyUtilsStub2, updateStub];
+        const optionsStub = sinon.stub(config.opencred, 'options').value({
+          ...config.opencred.options,
+          debug: false
+        });
+        loggerInfoStub = sinon.stub(logger, 'info');
+        return [
+          caStoreStub,
+          verifyUtilsStub,
+          verifyUtilsStub2,
+          updateStub,
+          optionsStub,
+          loggerInfoStub
+        ];
       },
       async () => {
         // Workflow with dcql_query to trigger OID4VP 1.0 path
@@ -1054,9 +1071,118 @@ describe('OID4VP 1.0 trustedCredentialIssuers', () => {
         expect(result.verified).to.be(false);
         expect(result.errors.includes(
           'Unaccepted credential issuer')).to.be(true);
+
+        const issuerCall = loggerInfoStub.args.find(
+          ([logName, evt]) => logName === 'presentation_event' &&
+            evt.type === 'presentation_error' &&
+            evt.error === 'Unaccepted credential issuer'
+        );
+        expect(issuerCall).to.be.ok();
+        expect(issuerCall[1]).to.eql({
+          type: 'presentation_error',
+          clientId: workflowWithDcql.clientId,
+          exchangeId: exchange.id,
+          error: 'Unaccepted credential issuer'
+        });
+        expect(issuerCall[1]).not.to.have.key('rejectedIssuer');
       }
     );
   });
+
+  it('logs presentation_event with issuer DID OID4VP 1.0 when options.debug',
+    async () => {
+      const {
+        vpToken: vp_token_jwt,
+        vcToken: realVcToken,
+        issuerDid
+      } =
+        await generateValidJwtVpToken({
+          aud: domainToDidWeb(config.server.baseUri),
+          challenge: 'test-challenge'
+        });
+
+      let loggerDebugStub;
+
+      await withStubs(
+        () => {
+          const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
+          const verifyUtilsStub =
+            sinon.stub(verifyUtils, 'verifyPresentationJWT')
+              .resolves({
+                verified: true,
+                verifiablePresentation: {
+                  verifiableCredential: [{proof: {jwt: realVcToken}}]
+                }
+              });
+          const verifyUtilsStub2 =
+            sinon.stub(verifyUtils, 'verifyCredentialJWT')
+              .resolves({verified: true, signer: {}});
+          const updateStub = sinon.stub(
+            database.collections.Exchanges, 'updateOne')
+            .resolves();
+          const optionsStub = sinon.stub(config.opencred, 'options').value({
+            ...config.opencred.options,
+            debug: true
+          });
+          loggerDebugStub = sinon.stub(logger, 'debug');
+
+          return [
+            caStoreStub,
+            verifyUtilsStub,
+            verifyUtilsStub2,
+            updateStub,
+            optionsStub,
+            loggerDebugStub
+          ];
+        },
+        async () => {
+          const workflowWithDcql = {
+            ...workflow,
+            dcql_query: {
+              credentials: [{
+                id: 'test-cred',
+                format: 'jwt_vc_json',
+                meta: {type_values: [['VerifiableCredential']]}
+              }]
+            },
+            trustedCredentialIssuers: ['did:web:not-a-valid-issuer.org']
+          };
+
+          const exchange = await createExchangeWithAuthRequest({
+            workflow: workflowWithDcql,
+            profile: 'OID4VP-1.0'
+          });
+
+          exchange.variables.authorizationRequest.dcql_query =
+            workflowWithDcql.dcql_query;
+
+          const vp_token = {'test-cred': vp_token_jwt};
+
+          await verifySubmission({
+            workflow: workflowWithDcql,
+            vp_token,
+            submission: null,
+            exchange,
+            baseUri: config.server.baseUri,
+            documentLoader
+          });
+
+          expect(loggerDebugStub.called).to.be(true);
+          const debugIssuerCall = loggerDebugStub.args.find(
+            ([logName]) => logName === 'presentation_event'
+          );
+          expect(debugIssuerCall).to.be.ok();
+          expect(debugIssuerCall[0]).to.equal('presentation_event');
+          expect(debugIssuerCall[1]).to.eql({
+            type: 'presentation_error',
+            clientId: workflowWithDcql.clientId,
+            exchangeId: exchange.id,
+            error: 'Unaccepted credential issuer',
+            rejectedIssuer: issuerDid
+          });
+        }
+      );
+    });
 
   it('should accept OID4VP 1.0 JWT VC when issuer is in ' +
     'trustedCredentialIssuers', async () => {

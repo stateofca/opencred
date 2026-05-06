@@ -19,7 +19,7 @@ describe('Apple Wallet Configuration', () => {
       expect(appleWallet).to.have.property('name');
       expect(appleWallet).to.have.property('description');
       expect(appleWallet).to.have.property('supportedFormats');
-      expect(appleWallet).to.have.property('supportedProtocols');
+      expect(appleWallet).to.have.property('supportedProfiles');
     });
 
     it('should have correct id and name', () => {
@@ -43,7 +43,7 @@ describe('Apple Wallet Configuration', () => {
 
   describe('protocol/interaction method combination', () => {
     it('should support mso_mdoc + 18013-7-Annex-C + dcapi', () => {
-      const protocol = appleWallet.supportedProtocols['18013-7-Annex-C'];
+      const protocol = appleWallet.supportedProfiles['18013-7-Annex-C'];
       expect(protocol).to.be.an('object');
       expect(protocol.dcapi).to.be.an('object');
       expect(protocol.dcapi.formats).to.be.an('array');

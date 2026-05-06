@@ -39,7 +39,7 @@ SPDX-License-Identifier: BSD-3-Clause
       <a
         v-if="selectedWalletForLaunch"
         :href="getWalletDeepLinkUrl(selectedWalletForLaunch.walletId,
-                                    selectedWalletForLaunch.protocolId)"
+                                    selectedWalletForLaunch.profile)"
         target="_blank"
         rel="noopener noreferrer"
         :class="[
@@ -98,12 +98,6 @@ SPDX-License-Identifier: BSD-3-Clause
         :created-at="exchangeData.createdAt"
         :ttl="exchangeData.ttl" />
     </p>
-    <button
-      v-if="active"
-      class="mx-auto max-w-prose text-sm underline text-gray-900 mt-2"
-      @click="handleGoBack">
-      {{$t('exchangeActiveGoBack')}}
-    </button>
     <div
       v-if="$t('qrDisclaimer')"
       class="mt-12 flex flex-col items-center text-gray-900"
@@ -133,13 +127,13 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  profile: {
+    type: String,
+    default: null
+  },
   deepLinkUrl: {
     type: String,
     default: ''
-  },
-  protocolType: {
-    type: String,
-    default: 'openid4vp'
   },
   walletsRegistry: {
     type: Object,
@@ -155,7 +149,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['launch', 'goBack', 'switchInteractionMethod']);
+const emit = defineEmits(['launch']);
 
 const {t} = useI18n({useScope: 'global'});
 const $q = useQuasar();
@@ -203,14 +197,14 @@ const walletNames = computed(() => {
 
 const isLaunchLoading = computed(() => loadingWalletId.value !== null);
 
-const getWalletQrUrl = async (walletId, protocolId) => {
-  if(!walletId || !protocolId || !props.workflow) {
-    return props.exchangeData?.protocols?.[protocolId] ||
+const getWalletQrUrl = async (walletId, profile) => {
+  if(!walletId || !profile || !props.workflow) {
+    return props.exchangeData?.protocols?.[profile] ||
       props.exchangeData?.OID4VP || '';
   }
   const formats = extractCredentialFormats(props.workflow);
   if(formats.length === 0) {
-    return props.exchangeData?.protocols?.[protocolId] ||
+    return props.exchangeData?.protocols?.[profile] ||
       props.exchangeData?.OID4VP || '';
   }
   for(const format of formats) {
@@ -221,7 +215,7 @@ const getWalletQrUrl = async (walletId, protocolId) => {
       registry: props.walletsRegistry
     });
     const matching = combinations.find(c =>
-      c.protocolId === protocolId &&
+      c.profile === profile &&
       (c.interactionMethod === 'qr' || c.interactionMethod === 'link')
     );
     if(matching?.request) {
@@ -229,14 +223,14 @@ const getWalletQrUrl = async (walletId, protocolId) => {
         matching.request : matching.request;
     }
   }
-  return props.exchangeData?.protocols?.[protocolId] ||
+  return props.exchangeData?.protocols?.[profile] ||
     props.exchangeData?.OID4VP || '';
 };
 
-const generateQrCode = async (walletId, protocolId) => {
+const generateQrCode = async (walletId, profile) => {
   isGeneratingQr.value = true;
   try {
-    const url = await getWalletQrUrl(walletId, protocolId);
+    const url = await getWalletQrUrl(walletId, profile);
     if(url) {
       localQrCodeDataUri.value = await QRCode.toDataURL(url);
     } else {
@@ -250,8 +244,8 @@ const generateQrCode = async (walletId, protocolId) => {
 };
 
 watch(() => selectedWalletForLaunch.value, async selected => {
-  if(selected?.walletId && selected?.protocolId) {
-    await generateQrCode(selected.walletId, selected.protocolId);
+  if(selected?.walletId && selected?.profile) {
+    await generateQrCode(selected.walletId, selected.profile);
   } else {
     localQrCodeDataUri.value = props.exchangeData?.QR || '';
   }
@@ -263,8 +257,8 @@ watch(() => props.exchangeData?.QR, newQr => {
   }
 }, {immediate: true});
 
-const getWalletDeepLinkUrl = (walletId, protocolId) => {
-  if(!walletId || !protocolId || !props.workflow) {
+const getWalletDeepLinkUrl = (walletId, profile) => {
+  if(!walletId || !profile || !props.workflow) {
     return props.deepLinkUrl;
   }
   const formats = extractCredentialFormats(props.workflow);
@@ -279,7 +273,7 @@ const getWalletDeepLinkUrl = (walletId, protocolId) => {
       registry: props.walletsRegistry
     });
     const matching = combinations.find(c =>
-      c.protocolId === protocolId &&
+      c.profile === profile &&
       (c.interactionMethod === 'link' || c.interactionMethod === 'copy')
     );
     if(matching?.request) {
@@ -290,7 +284,7 @@ const getWalletDeepLinkUrl = (walletId, protocolId) => {
   return props.deepLinkUrl;
 };
 
-const getProtocolTypeForUrl = (url, protocolId) => {
+const getProtocolTypeForUrl = (url, profile) => {
   if(!url) {
     return null;
   }
@@ -302,7 +296,7 @@ const getProtocolTypeForUrl = (url, protocolId) => {
     if(walletDeepLinkDomains.some(d => url.includes(d))) {
       return 'web';
     }
-    if(['interact', 'vcapi'].includes(protocolId)) {
+    if(['interact', 'vcapi'].includes(profile)) {
       return 'copy';
     }
     return 'web';
@@ -340,10 +334,10 @@ const handleLaunchClick = () => {
   isReset.value = false;
   showNoSchemeHandlerWarning.value = false;
   const walletUrl = getWalletDeepLinkUrl(
-    selected.walletId, selected.protocolId);
+    selected.walletId, selected.profile);
   const protocolTypeValue = getProtocolTypeForUrl(
-    walletUrl, selected.protocolId) ||
-    props.protocolType;
+    walletUrl, selected.profile) ||
+    'openid4vp';
   if(protocolTypeValue === 'copy') {
     copyToClipboard(walletUrl);
     // For copy, clear loading state immediately since there's no scheme handler
@@ -356,11 +350,7 @@ const handleLaunchClick = () => {
     detectSchemeHandler();
   }
   emit('launch',
-    {walletId: selected.walletId, protocolId: selected.protocolId});
-};
-
-const handleGoBack = () => {
-  emit('goBack');
+    {walletId: selected.walletId, profile: selected.profile});
 };
 
 const handleToggleQrCode = () => {

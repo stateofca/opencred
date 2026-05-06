@@ -13,7 +13,7 @@ export const appleWallet = {
   icon: '/wallets/apple-wallet-icon.png',
   platform: ['ios'],
   supportedFormats: ['mso_mdoc'],
-  supportedProtocols: {
+  supportedProfiles: {
     '18013-7-Annex-C': {
       dcapi: {
         description: 'Click the button to request credentials from your ' +

@@ -103,12 +103,6 @@ SPDX-License-Identifier: BSD-3-Clause
     </footer>
     <AppSettingsModal
       v-model="showSettingsModal"
-      :user-settings="userSettings"
-      :workflow="context.workflow"
-      :available-protocols="availableProtocols"
-      :exchange="context.exchangeData"
-      :platform="platform"
-      :dc-api-system-available="dcApiSystemAvailable"
       @update:user-settings="v => userSettings.value = v" />
   </div>
 </template>
@@ -156,22 +150,6 @@ const context = ref({
 const brand = computed(() => context.value.workflow?.brand);
 const workflow = computed(() => context.value.workflow);
 
-const availableProtocols = computed(() => {
-  const ctx = context.value;
-  if(ctx?.exchangeData?.protocols) {
-    return Object.keys(ctx.exchangeData.protocols);
-  }
-  if(!ctx?.options?.exchangeProtocols) {
-    return [];
-  }
-  return ctx.options.exchangeProtocols.map(p => {
-    if(p === 'openid4vp') {
-      return ctx.options.OID4VPdefault || 'OID4VP-combined';
-    }
-    return p;
-  });
-});
-
 const platform = computed(() => ({
   isIOS: $q.platform?.is?.ios ?? false,
   isAndroid: $q.platform?.is?.android ?? false,
@@ -184,7 +162,7 @@ const dcApiSystemAvailable = ref(false);
 const showSettingsModal = ref(false);
 const userSettings = ref({
   enabledWallets: [],
-  enabledProtocols: []
+  enabledProfiles: []
 });
 
 // Fetch context if needed (for initial render)
@@ -233,6 +211,8 @@ onBeforeMount(async () => {
 // Provide context and userSettings to child components
 provideContext({context});
 provide('userSettings', userSettings);
+provide('platform', platform);
+provide('dcApiSystemAvailable', dcApiSystemAvailable);
 
 const handleLanguageChange = lang => {
   locale.value = lang;

@@ -16,7 +16,7 @@ import expect from 'expect.js';
 describe('canShowOption', () => {
   const baseOptions = {
     workflow: {query: [{format: ['mso_mdoc']}]},
-    availableProtocols: ['cadmv-android', 'cadmv-ios', 'interact'],
+    availableProfiles: ['cadmv-android', 'cadmv-ios', 'interact'],
     exchange: {
       protocols: {
         'cadmv-android': 'https://example.com/authz?request_uri=...',
@@ -26,8 +26,8 @@ describe('canShowOption', () => {
     },
     platform: {isIOS: false, isAndroid: false, isMobile: false},
     userSettings: {
-      enabledWallets: ['cadmv-android', 'cadmv-ios', 'lcw', 'interaction'],
-      enabledProtocols: []
+      enabledWallets: ['cadmv-android', 'cadmv-ios', 'lcw'],
+      enabledProfiles: []
     },
     dcApiSystemAvailable: true
   };
@@ -63,68 +63,59 @@ describe('canShowOption', () => {
     it('should return not available when protocol not in exchange', () => {
       const result = canShowOption({
         ...baseOptions,
-        availableProtocols: [],
+        availableProfiles: [],
         walletId: 'cadmv-android'
       });
       expect(result).to.eql({available: false});
     });
 
-    it('should return available for Interaction wallet in jwt_vc_json workflow',
-      () => {
-        const result = canShowOption({
-          ...baseOptions,
-          workflow: {query: [{format: ['jwt_vc_json']}]},
-          walletId: 'interaction'
-        });
-        expect(result).to.eql({available: true});
-      });
   });
 
-  describe('protocolId', () => {
-    it('should return available for enabled protocol with format match', () => {
+  describe('profile', () => {
+    it('should return available for enabled profile with format match', () => {
       const result = canShowOption({
         ...baseOptions,
         userSettings: {
           ...baseOptions.userSettings,
-          enabledProtocols: ['interact']
+          enabledProfiles: ['interact']
         },
-        protocolId: 'interact'
+        profile: 'interact'
       });
       expect(result).to.eql({available: true});
     });
 
-    it('should return not available when protocol not enabled', () => {
+    it('should return not available when profile not enabled', () => {
       const result = canShowOption({
         ...baseOptions,
-        protocolId: 'interact'
+        profile: 'interact'
       });
       expect(result).to.eql({available: false});
     });
 
-    it('should return not available when protocol not in availableProtocols' +
+    it('should return not available when profile not in availableProfiles' +
       'list', () => {
       const result = canShowOption({
         ...baseOptions,
         userSettings: {
           ...baseOptions.userSettings,
-          enabledProtocols: ['interact']
+          enabledProfiles: ['interact']
         },
-        availableProtocols: ['OID4VP-draft18'],
-        protocolId: 'interact'
+        availableProfiles: ['OID4VP-draft18'],
+        profile: 'interact'
       });
       expect(result).to.eql({available: false});
     });
 
-    it('should return available for interact protocol in jwt_vc_json workflow',
+    it('should return available for interact profile in jwt_vc_json workflow',
       () => {
         const result = canShowOption({
           ...baseOptions,
           workflow: {query: [{format: ['jwt_vc_json']}]},
           userSettings: {
             ...baseOptions.userSettings,
-            enabledProtocols: ['interact']
+            enabledProfiles: ['interact']
           },
-          protocolId: 'interact'
+          profile: 'interact'
         });
         expect(result).to.eql({available: true});
       });
@@ -155,17 +146,17 @@ describe('loadUserSettings / saveUserSettings', () => {
     if(typeof globalThis.localStorage === 'undefined') {
       const result = loadUserSettings();
       expect(result).to.have.property('enabledWallets');
-      expect(result).to.have.property('enabledProtocols');
+      expect(result).to.have.property('enabledProfiles');
       expect(result.enabledWallets).to.be.an('array');
-      expect(result.enabledProtocols).to.be.an('array');
+      expect(result.enabledProfiles).to.be.an('array');
       return;
     }
     globalThis.localStorage.removeItem(key);
     const result = loadUserSettings();
     expect(result).to.have.property('enabledWallets');
-    expect(result).to.have.property('enabledProtocols');
+    expect(result).to.have.property('enabledProfiles');
     expect(result.enabledWallets).to.be.an('array');
-    expect(result.enabledProtocols).to.be.an('array');
+    expect(result.enabledProfiles).to.be.an('array');
   });
 
   it('should round-trip settings when localStorage available', () => {
@@ -174,12 +165,12 @@ describe('loadUserSettings / saveUserSettings', () => {
     }
     const settings = {
       enabledWallets: ['cadmv-android'],
-      enabledProtocols: ['interact']
+      enabledProfiles: ['interact']
     };
     saveUserSettings(settings);
     const loaded = loadUserSettings();
     expect(loaded.enabledWallets).to.eql(settings.enabledWallets);
-    expect(loaded.enabledProtocols).to.eql(settings.enabledProtocols);
+    expect(loaded.enabledProfiles).to.eql(settings.enabledProfiles);
   });
 });
 
@@ -188,7 +179,7 @@ describe('getAvailableWalletIds', () => {
     const result = getAvailableWalletIds({
       ...{
         workflow: {query: [{format: ['mso_mdoc']}]},
-        availableProtocols: ['cadmv-android', 'cadmv-ios'],
+        availableProfiles: ['cadmv-android', 'cadmv-ios'],
         exchange: {protocols: {
           'cadmv-android': 'https://example.com/authz',
           'cadmv-ios': 'https://example.com/authz'
@@ -196,7 +187,7 @@ describe('getAvailableWalletIds', () => {
         platform: {},
         userSettings: {
           enabledWallets: ['cadmv-android', 'cadmv-ios', 'lcw'],
-          enabledProtocols: []
+          enabledProfiles: []
         },
         dcApiSystemAvailable: true
       }

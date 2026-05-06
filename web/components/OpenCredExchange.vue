@@ -36,13 +36,32 @@ SPDX-License-Identifier: BSD-3-Clause
       <!-- Interaction-specific info and exchange status -->
       <WalletInteraction
         ref="walletInteractionRef"
-        :available-protocols="availableProtocols"
+        :available-profiles="availableProfiles"
         :user-settings="userSettings"
         :workflow="context.workflow"
         :active="state.active"
         @replace-exchange="handleReplaceExchange"
         @launch="handleDcApiLaunch"
-        @update:active-interaction-type="activeInteractionType = $event" />
+        @update:active-interaction-type="activeInteractionType = $event"
+        @request-picker="showInteractionPicker = true" />
+
+      <!-- "Other ways to connect" link + picker -->
+      <div
+        v-if="pickerEntries.length > 1"
+        class="column items-center mt-4 mx-auto text-center">
+        <a
+          href="#"
+          class="text-sm underline"
+          @click.prevent="showInteractionPicker = true">
+          {{t('interactionPicker_otherWaysLink')}}
+        </a>
+      </div>
+      <InteractionPickerModal
+        v-model="showInteractionPicker"
+        :picker-entries="pickerEntries"
+        :current-entry="activePickerEntry"
+        :wallets-registry="WALLETS_REGISTRY"
+        @select="handlePickerSelect" />
 
       <!-- Explainer Video Link -->
       <div class="mt-2">
@@ -108,8 +127,9 @@ import QRCode from 'qrcode';
 import {useExchangeContext} from '../composables/useExchangeContext.js';
 import {useReactiveI18n} from '../composables/useReactiveI18n.js';
 
-// import {useI18n} from 'vue-i18n';
+import InteractionPickerModal from './InteractionPickerModal.vue';
 import WalletInteraction from './WalletInteraction.vue';
+import {WALLETS_REGISTRY} from '../../common/wallets/index.js';
 
 defineProps({
   purpose: {
@@ -130,7 +150,7 @@ if(!context) {
 }
 
 const userSettings = inject('userSettings', ref(
-  {enabledWallets: [], enabledProtocols: []}));
+  {enabledWallets: [], enabledProfiles: []}));
 
 // Use workflow translations if available
 const {t} = useReactiveI18n({messages: translations});
@@ -144,8 +164,18 @@ const state = reactive({
 
 const activeInteractionType = ref(null);
 const walletInteractionRef = ref(null);
+const showInteractionPicker = ref(false);
 
 const showVideo = ref(false);
+
+const pickerEntries = computed(() =>
+  walletInteractionRef.value?.pickerEntries ?? []);
+const activePickerEntry = computed(() =>
+  walletInteractionRef.value?.activePickerEntry ?? null);
+const handlePickerSelect = entry => {
+  walletInteractionRef.value?.handlePickerSelect?.(entry);
+  showInteractionPicker.value = false;
+};
 
 const statusDialogActions = [
   {
@@ -160,7 +190,7 @@ const statusDialogActions = [
   }
 ];
 
-const availableProtocols = computed(() => {
+const availableProfiles = computed(() => {
   // If exchangeData has protocols, use those keys
   if(context.value?.exchangeData?.protocols) {
     return Object.keys(context.value.exchangeData.protocols);
@@ -198,10 +228,10 @@ const handleError = error => {
   state.statusCheckCount = 0;
 };
 
-const handleDcApiLaunch = ({protocolId}) => {
-  // Launch DC API directly with wallet/protocol
+const handleDcApiLaunch = ({profile}) => {
+  // Launch DC API directly with wallet/profile
   nextTick(() => {
-    walletInteractionRef.value?.launchDcApi?.(protocolId);
+    walletInteractionRef.value?.launchDcApi?.(profile);
   });
 };
 

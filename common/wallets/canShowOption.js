@@ -8,7 +8,7 @@
 import {
   extractCredentialFormats,
   getProtocolInteractionMethods,
-  PROTOCOL_FORMAT_MAPPING
+  PROFILE_FORMAT_MAPPING
 } from './index.js';
 import {WALLETS_REGISTRY} from './wallets-registry.js';
 
@@ -18,8 +18,8 @@ const STORAGE_KEY = 'opencred-app-settings';
  * Default user settings when none are stored.
  */
 export const DEFAULT_USER_SETTINGS = {
-  enabledWallets: Object.keys(WALLETS_REGISTRY),
-  enabledProtocols: []
+  enabledWallets: [],
+  enabledProfiles: []
 };
 
 /**
@@ -37,8 +37,8 @@ export function loadUserSettings() {
     return {
       enabledWallets: Array.isArray(parsed.enabledWallets) ?
         parsed.enabledWallets : DEFAULT_USER_SETTINGS.enabledWallets,
-      enabledProtocols: Array.isArray(parsed.enabledProtocols) ?
-        parsed.enabledProtocols : DEFAULT_USER_SETTINGS.enabledProtocols
+      enabledProfiles: Array.isArray(parsed.enabledProfiles) ?
+        parsed.enabledProfiles : DEFAULT_USER_SETTINGS.enabledProfiles
     };
   } catch {
     return {...DEFAULT_USER_SETTINGS};
@@ -54,7 +54,7 @@ export function saveUserSettings(settings) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       enabledWallets: settings.enabledWallets || [],
-      enabledProtocols: settings.enabledProtocols || []
+      enabledProfiles: settings.enabledProfiles || []
     }));
   } catch {
     // Ignore storage errors
@@ -62,31 +62,31 @@ export function saveUserSettings(settings) {
 }
 
 /**
- * Determine whether a wallet or protocol option can be shown for the given
+ * Determine whether a wallet or profile option can be shown for the given
  * context. Single source of truth for availability.
  *
  * @param {object} options - Options object.
  * @param {object} options.workflow - Workflow with query.
- * @param {Array<string>} options.availableProtocols - Protocols from exchange.
+ * @param {Array<string>} options.availableProfiles - Profiles from exchange.
  * @param {object} options.exchange - Exchange object with protocols.
  * @param {object} options.platform - Platform info
  *   { isIOS, isAndroid, isMobile }.
- * @param {object} options.userSettings - { enabledWallets, enabledProtocols }.
+ * @param {object} options.userSettings - { enabledWallets, enabledProfiles }.
  * @param {boolean} [options.dcApiSystemAvailable=false] - DC API available.
  * @param {string} [options.walletId] - Wallet ID to check.
- * @param {string} [options.protocolId] - Protocol ID to check
- *   (for protocol wallet).
+ * @param {string} [options.profile] - Profile ID to check
+ *   (for profile option).
  * @returns {{ available: boolean }} Result.
  */
 export function canShowOption({
   workflow,
-  availableProtocols = [],
+  availableProfiles = [],
   exchange = {},
   platform = {},
   userSettings = {},
   dcApiSystemAvailable = false,
   walletId,
-  protocolId
+  profile
 }) {
   const formats = extractCredentialFormats(workflow);
   if(formats.length === 0) {
@@ -95,14 +95,14 @@ export function canShowOption({
 
   const enabledWallets = userSettings.enabledWallets ||
     DEFAULT_USER_SETTINGS.enabledWallets;
-  const enabledProtocols = userSettings.enabledProtocols ||
-    DEFAULT_USER_SETTINGS.enabledProtocols;
+  const enabledProfiles = userSettings.enabledProfiles ||
+    DEFAULT_USER_SETTINGS.enabledProfiles;
 
   if(walletId) {
     return _canShowWallet({
       walletId,
       formats,
-      availableProtocols,
+      availableProfiles,
       exchange,
       platform,
       enabledWallets,
@@ -110,13 +110,13 @@ export function canShowOption({
     });
   }
 
-  if(protocolId) {
-    return _canShowProtocol({
-      protocolId,
+  if(profile) {
+    return _canShowProfile({
+      profile,
       formats,
-      availableProtocols,
+      availableProfiles,
       platform,
-      enabledProtocols,
+      enabledProfiles,
       dcApiSystemAvailable
     });
   }
@@ -127,7 +127,7 @@ export function canShowOption({
 function _canShowWallet({
   walletId,
   formats,
-  availableProtocols,
+  availableProfiles,
   exchange,
   platform,
   enabledWallets,
@@ -169,7 +169,7 @@ function _canShowWallet({
       registry: WALLETS_REGISTRY
     });
     for(const combo of combinations) {
-      if(!availableProtocols.includes(combo.protocolId)) {
+      if(!availableProfiles.includes(combo.profile)) {
         continue;
       }
       if(combo.interactionMethod === 'dcapi') {
@@ -184,40 +184,40 @@ function _canShowWallet({
   return {available: false};
 }
 
-function _canShowProtocol({
-  protocolId,
+function _canShowProfile({
+  profile,
   formats,
-  availableProtocols,
+  availableProfiles,
   platform,
-  enabledProtocols,
+  enabledProfiles,
   dcApiSystemAvailable
 }) {
-  if(!enabledProtocols.includes(protocolId)) {
+  if(!enabledProfiles.includes(profile)) {
     return {available: false};
   }
 
-  if(!availableProtocols.includes(protocolId)) {
+  if(!availableProfiles.includes(profile)) {
     return {available: false};
   }
 
-  const protocolFormats = PROTOCOL_FORMAT_MAPPING[protocolId];
-  if(!protocolFormats || !Array.isArray(protocolFormats)) {
+  const profileFormats = PROFILE_FORMAT_MAPPING[profile];
+  if(!profileFormats || !Array.isArray(profileFormats)) {
     return {available: false};
   }
 
-  const formatOverlap = formats.some(f => protocolFormats.includes(f));
+  const formatOverlap = formats.some(f => profileFormats.includes(f));
   if(!formatOverlap) {
     return {available: false};
   }
 
-  if(['18013-7-Annex-C', '18013-7-Annex-D'].includes(protocolId)) {
+  if(['18013-7-Annex-C', '18013-7-Annex-D'].includes(profile)) {
     if(!dcApiSystemAvailable) {
       return {available: false};
     }
-    if(protocolId === '18013-7-Annex-C' && !platform.isIOS) {
+    if(profile === '18013-7-Annex-C' && !platform.isIOS) {
       return {available: false};
     }
-    if(protocolId === '18013-7-Annex-D' && !platform.isAndroid) {
+    if(profile === '18013-7-Annex-D' && !platform.isAndroid) {
       return {available: false};
     }
   }
@@ -229,7 +229,7 @@ function _canShowProtocol({
  * Get all wallet IDs that can be shown for the context.
  *
  * @param {object} options - Same as canShowOption (without
- *   walletId/protocolId).
+ *   walletId/profile).
  * @returns {Array<string>} Wallet IDs.
  */
 export function getAvailableWalletIds(options) {
@@ -241,15 +241,15 @@ export function getAvailableWalletIds(options) {
 }
 
 /**
- * Get all protocol IDs that can be shown for the context.
+ * Get all profile IDs that can be shown for the context.
  *
  * @param {object} options - Same as canShowOption (without
- *   walletId/protocolId).
- * @returns {Array<string>} Protocol IDs.
+ *   walletId/profile).
+ * @returns {Array<string>} Profile IDs.
  */
-export function getAvailableProtocolIds(options) {
-  const protocolIds = options.userSettings?.enabledProtocols || [];
-  return protocolIds.filter(protocolId =>
-    canShowOption({...options, protocolId}).available
+export function getAvailableProfileIds(options) {
+  const profileIds = options.userSettings?.enabledProfiles || [];
+  return profileIds.filter(profile =>
+    canShowOption({...options, profile}).available
   );
 }

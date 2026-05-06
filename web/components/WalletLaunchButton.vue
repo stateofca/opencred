@@ -37,7 +37,8 @@ SPDX-License-Identifier: BSD-3-Clause
           size="32px"
           class="flex-shrink-0 text-current" />
         <span class="font-medium text-left truncate min-w-0">
-          {{wallet?.nameKey ? $t(wallet.nameKey) : (wallet?.name || walletId)}}
+          {{label || (wallet?.nameKey ? $t(wallet.nameKey)
+            : (wallet?.name || walletId))}}
         </span>
         <q-icon
           v-if="copyOnly"
@@ -71,7 +72,8 @@ SPDX-License-Identifier: BSD-3-Clause
         size="32px"
         class="flex-shrink-0 text-current" />
       <span class="font-medium text-left truncate min-w-0">
-        {{wallet?.nameKey ? $t(wallet.nameKey) : (wallet?.name || walletId)}}
+        {{label || (wallet?.nameKey ? $t(wallet.nameKey)
+          : (wallet?.name || walletId))}}
       </span>
       <q-icon
         v-if="copyOnly"
@@ -90,13 +92,18 @@ const props = defineProps({
     type: Object,
     default: null
   },
+  // May be null in single-profile mode (no specific wallet targeted).
   walletId: {
+    type: String,
+    default: null
+  },
+  profile: {
     type: String,
     required: true
   },
-  protocolId: {
+  label: {
     type: String,
-    required: true
+    default: null
   },
   href: {
     type: String,
@@ -125,7 +132,7 @@ const emit = defineEmits(['launch', 'copy']);
 const handleClick = () => {
   const payload = {
     walletId: props.walletId,
-    protocolId: props.protocolId
+    profile: props.profile
   };
   if(props.copyOnly) {
     emit('copy', payload);

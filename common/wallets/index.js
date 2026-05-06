@@ -5,29 +5,19 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import {createProtocolWallet} from './protocols/index.js';
-import {PROTOCOL_FORMAT_MAPPING} from './protocol-format-mapping.js';
+import {PROFILE_FORMAT_MAPPING} from './profile-format-mapping.js';
 import {WALLETS_REGISTRY} from './wallets-registry.js';
 
-export {PROTOCOL_FORMAT_MAPPING};
+export {PROFILE_FORMAT_MAPPING};
 export {
   canShowOption,
   DEFAULT_USER_SETTINGS,
-  getAvailableProtocolIds,
+  getAvailableProfileIds,
   getAvailableWalletIds,
   loadUserSettings,
   saveUserSettings
 } from './canShowOption.js';
 export {WALLETS_REGISTRY};
-
-/**
- * Protocol IDs that use the DC API interaction method.
- */
-const DC_API_PROTOCOL_IDS = [
-  '18013-7-Annex-C', '18013-7-Annex-D',
-  'cadmv-android', 'cadmv-ios',
-  'google-wallet', 'apple-wallet'
-];
 
 /**
  * Global priority order for interaction methods.
@@ -38,10 +28,10 @@ export const INTERACTION_METHOD_PRIORITY = [
 ];
 
 /**
- * Global priority order for protocols.
- * Higher priority protocols appear first in ordered lists.
+ * Global priority order for profiles.
+ * Higher priority profiles appear first in ordered lists.
  */
-export const PROTOCOL_PRIORITY = [
+export const PROFILE_PRIORITY = [
   'OID4VP-draft18',
   'OID4VP-1.0',
   'OID4VP-combined',
@@ -93,7 +83,7 @@ export function getWalletsSupportingFormat({
 }
 
 /**
- * Get ordered list of protocol/interaction method combinations for a wallet
+ * Get ordered list of profile/interaction method combinations for a wallet
  * and format.
  *
  * @param {object} options - Options object.
@@ -102,9 +92,9 @@ export function getWalletsSupportingFormat({
  *   or 'mso_mdoc').
  * @param {object} options.exchange - Exchange object with protocols property.
  * @param {object} [options.registry=WALLETS_REGISTRY] - Wallet registry to use.
- * @returns {Array<{protocolId: string, request: string|object,
+ * @returns {Array<{profile: string, request: string|object,
  *   interactionMethod: string}>}
- *   Ordered array of protocol/interaction method combinations.
+ *   Ordered array of profile/interaction method combinations.
  */
 export function getProtocolInteractionMethods({
   walletId, format, exchange, registry = WALLETS_REGISTRY
@@ -114,21 +104,21 @@ export function getProtocolInteractionMethods({
   }
 
   const wallet = registry[walletId];
-  if(!wallet || !wallet.supportedProtocols) {
+  if(!wallet || !wallet.supportedProfiles) {
     return [];
   }
 
-  // Collect all protocol/interaction method pairs that support the format
+  // Collect all profile/interaction method pairs that support the format
   const candidates = [];
 
-  for(const [protocolId, protocolConfig] of Object.entries(
-    wallet.supportedProtocols)) {
-    if(!protocolConfig || typeof protocolConfig !== 'object') {
+  for(const [profile, profileConfig] of Object.entries(
+    wallet.supportedProfiles)) {
+    if(!profileConfig || typeof profileConfig !== 'object') {
       continue;
     }
 
     for(const [interactionMethod, methodConfig] of Object.entries(
-      protocolConfig)) {
+      profileConfig)) {
       if(!methodConfig || typeof methodConfig !== 'object') {
         continue;
       }
@@ -147,38 +137,38 @@ export function getProtocolInteractionMethods({
         // For qr, link, and copy, use getUrl if available,
         // otherwise use default
         if(typeof methodConfig.getUrl === 'function') {
-          request = methodConfig.getUrl({exchange, protocol: protocolId});
+          request = methodConfig.getUrl({exchange, protocol: profile});
         } else {
-          request = getUrlDefault({exchange, protocol: protocolId});
+          request = getUrlDefault({exchange, protocol: profile});
         }
       } else if(['dcapi', 'chapi'].includes(interactionMethod)) {
         // For dcapi and chapi, use getRequest if available, otherwise
         // use protocol URL
         if(typeof methodConfig.getRequest === 'function') {
-          request = methodConfig.getRequest({exchange, protocol: protocolId});
-        } else if(exchange?.protocols?.[protocolId]) {
+          request = methodConfig.getRequest({exchange, protocol: profile});
+        } else if(exchange?.protocols?.[profile]) {
           // Return protocol URL as placeholder - actual request construction
           // may require async operations
-          request = exchange.protocols[protocolId];
+          request = exchange.protocols[profile];
         }
       }
 
       // Only add if we have a valid request
       if(request !== null && request !== undefined) {
         candidates.push({
-          protocolId,
+          profile,
           interactionMethod,
           request,
           // Store priority indices for sorting
           _interactionPriority: INTERACTION_METHOD_PRIORITY.indexOf(
             interactionMethod),
-          _protocolPriority: PROTOCOL_PRIORITY.indexOf(protocolId)
+          _profilePriority: PROFILE_PRIORITY.indexOf(profile)
         });
       }
     }
   }
 
-  // Sort by interaction method priority first, then protocol priority
+  // Sort by interaction method priority first, then profile priority
   candidates.sort((a, b) => {
     // Handle missing priorities (shouldn't happen, but be safe)
     const aInteractionPriority = a._interactionPriority === -1 ?
@@ -190,18 +180,18 @@ export function getProtocolInteractionMethods({
       return aInteractionPriority - bInteractionPriority;
     }
 
-    const aProtocolPriority = a._protocolPriority === -1 ?
-      Infinity : a._protocolPriority;
-    const bProtocolPriority = b._protocolPriority === -1 ?
-      Infinity : b._protocolPriority;
+    const aProfilePriority = a._profilePriority === -1 ?
+      Infinity : a._profilePriority;
+    const bProfilePriority = b._profilePriority === -1 ?
+      Infinity : b._profilePriority;
 
-    return aProtocolPriority - bProtocolPriority;
+    return aProfilePriority - bProfilePriority;
   });
 
   // Remove temporary priority fields
   return candidates.map(({
     // eslint-disable-next-line no-unused-vars
-    _interactionPriority, _protocolPriority, ...rest
+    _interactionPriority, _profilePriority, ...rest
   }) =>
     rest);
 }
@@ -291,308 +281,8 @@ export function filterWalletsByFormatSupport({
   return Array.from(supportedWallets);
 }
 
-const OID4VP_PROTOCOLS = [
-  'OID4VP-draft18', 'OID4VP-1.0', 'OID4VP-combined',
-  'OID4VP', 'OID4VP-haip-1.0', '18013-7-Annex-B'
-];
-
 /**
- * Build an extended wallet registry that includes protocol wallets for
- * user-enabled protocol variants that are available in the exchange.
- *
- * @param {object} options - Options object.
- * @param {Array<string>} options.enabledWallets - Wallet IDs that are enabled.
- * @param {Array<string>} options.enabledProtocols - User-enabled protocol IDs.
- * @param {Array<string>} options.availableProtocols - Protocol IDs available
- *   in the exchange.
- * @param {Array<string>} options.formats - Credential formats from workflow.
- * @param {object} options.registry - Base wallet registry.
- * @param {string} [options.OID4VPdefault] - Default OID4VP protocol ID.
- * @returns {{extendedRegistry: object, extendedWalletIds: Array<string>}}
- *   Extended registry with protocol wallets and combined wallet IDs.
- */
-export function buildExtendedRegistryForPicker({
-  enabledWallets = [],
-  enabledProtocols = [],
-  availableProtocols = [],
-  formats = [],
-  registry = WALLETS_REGISTRY,
-  OID4VPdefault
-}) {
-  const extendedRegistry = {...registry};
-  const extendedWalletIdsSet = new Set(enabledWallets);
-
-  // Protocols to exclude (DC API only, no qr/link in protocol wallet)
-  const excludedProtocols = ['18013-7-Annex-C', '18013-7-Annex-D'];
-
-  // Determine which protocols qualify: in availableProtocols AND
-  // (in enabledProtocols OR is OID4VPdefault)
-  const qualifyingProtocols = availableProtocols.filter(protocolId => {
-    if(excludedProtocols.includes(protocolId)) {
-      return false;
-    }
-    return enabledProtocols.includes(protocolId) ||
-      protocolId === OID4VPdefault;
-  });
-
-  // For each qualifying protocol, check format overlap and create protocol
-  // wallet
-  for(const protocolId of qualifyingProtocols) {
-    const protocolFormats = PROTOCOL_FORMAT_MAPPING[protocolId];
-    if(!protocolFormats || protocolFormats.length === 0) {
-      continue;
-    }
-
-    // Check format overlap: protocol must support at least one requested format
-    const hasFormatOverlap = formats.some(format =>
-      protocolFormats.includes(format));
-    if(!hasFormatOverlap) {
-      continue;
-    }
-
-    // Create protocol wallet
-    const protocolWallet = createProtocolWallet(protocolId);
-    if(!protocolWallet || !protocolWallet.id) {
-      continue;
-    }
-
-    // Add to extended registry
-    extendedRegistry[protocolWallet.id] = protocolWallet;
-
-    // Add wallet ID to extended set (dedupe handled by Set)
-    extendedWalletIdsSet.add(protocolWallet.id);
-  }
-
-  return {
-    extendedRegistry,
-    extendedWalletIds: Array.from(extendedWalletIdsSet)
-  };
-}
-
-function _getQrLinkCompatibleWallets({
-  walletIds, formats, exchange, protocolId, registry,
-  methods = ['qr', 'link']
-}) {
-  const result = [];
-  for(const walletId of walletIds) {
-    const wallet = registry[walletId];
-    if(!wallet || !wallet.supportedProtocols) {
-      continue;
-    }
-    const protocolConfig = wallet.supportedProtocols[protocolId];
-    if(!protocolConfig) {
-      continue;
-    }
-    for(const [method, methodConfig] of Object.entries(protocolConfig)) {
-      if(!methodConfig?.formats || !methods.includes(method)) {
-        continue;
-      }
-      if(formats.some(f => methodConfig.formats.includes(f)) &&
-        exchange?.protocols?.[protocolId]) {
-        result.push(walletId);
-        break;
-      }
-    }
-  }
-  return result;
-}
-
-/**
- * Build picker option objects for the interaction method picker.
- *
- * @param {object} options - Options object.
- * @param {Array<string>} options.formats - Credential formats from workflow.
- * @param {object} options.exchange - Exchange object with protocols.
- * @param {Array<string>} options.availableProtocols - Protocol IDs
- *   from exchange.
- * @param {Array<string>} options.enabledWallets - Wallet IDs
- *   (options.wallets + user).
- * @param {boolean} [options.dcApiSystemAvailable=false] - DC API available.
- * @param {boolean} [options.dcApiErrorOverride=false] - Hide dcapi after error.
- * @param {object} [options.workflow] - Workflow (dcApiEnabled check).
- * @param {object} [options.registry=WALLETS_REGISTRY] - Wallet registry.
- * @returns {Array<{method: string, protocolId?: string, walletId?: string,
- *   labelKey?: string, walletIds: string[]}>}
- *   Picker option objects for the interaction method picker.
- */
-export function getPickerOptions({
-  formats,
-  exchange = {},
-  availableProtocols = [],
-  enabledWallets = [],
-  dcApiSystemAvailable = false,
-  dcApiErrorOverride = false,
-  workflow = {},
-  registry = WALLETS_REGISTRY
-}) {
-  if(!Array.isArray(formats) || formats.length === 0) {
-    return [];
-  }
-
-  const compatibleWallets = filterWalletsByFormatSupport({
-    walletIds: enabledWallets,
-    formats,
-    registry
-  });
-
-  if(compatibleWallets.length === 0) {
-    return [];
-  }
-
-  const options = [];
-  const oid4vpInExchange = availableProtocols.filter(p =>
-    OID4VP_PROTOCOLS.includes(p));
-
-  const hasDcApi = () => {
-    if(!dcApiSystemAvailable || dcApiErrorOverride ||
-      workflow?.dcApiEnabled === false) {
-      return false;
-    }
-    for(const walletId of compatibleWallets) {
-      for(const format of formats) {
-        const combos = getProtocolInteractionMethods({
-          walletId, format, exchange, registry
-        });
-        const match = combos.find(c =>
-          c.interactionMethod === 'dcapi' &&
-          !['chapi', 'vcapi', 'interact'].includes(c.protocolId) &&
-          (format === 'mso_mdoc' ||
-            DC_API_PROTOCOL_IDS.includes(c.protocolId) ||
-            c.protocolId === 'OID4VP-HAIP-1.0'));
-        if(match) {
-          return true;
-        }
-      }
-    }
-    return false;
-  };
-
-  const getDcApiWallets = () => compatibleWallets.filter(w => {
-    for(const format of formats) {
-      const combos = getProtocolInteractionMethods({
-        walletId: w, format, exchange, registry
-      });
-      if(combos.some(c =>
-        c.interactionMethod === 'dcapi' &&
-        DC_API_PROTOCOL_IDS.includes(c.protocolId))) {
-        return true;
-      }
-    }
-    return false;
-  });
-
-  const getChapiWallets = () => compatibleWallets.filter(w => {
-    for(const format of formats) {
-      const combos = getProtocolInteractionMethods({
-        walletId: w, format, exchange, registry
-      });
-      if(combos.some(c =>
-        c.interactionMethod === 'chapi' || c.protocolId === 'chapi')) {
-        return true;
-      }
-    }
-    return false;
-  });
-
-  const getInteractCopyWallets = () => compatibleWallets.filter(w => {
-    for(const format of formats) {
-      const combos = getProtocolInteractionMethods({
-        walletId: w, format, exchange, registry
-      });
-      if(combos.some(c =>
-        c.protocolId === 'interact' &&
-        (c.interactionMethod === 'qr' || c.interactionMethod === 'copy'))) {
-        return true;
-      }
-    }
-    return false;
-  });
-
-  if(hasDcApi()) {
-    options.push({method: 'dcapi', walletIds: getDcApiWallets()});
-  }
-
-  const chapiWallets = getChapiWallets();
-  if(chapiWallets.length > 0 && availableProtocols.includes('chapi')) {
-    options.push({method: 'chapi', walletIds: chapiWallets});
-  }
-
-  const interactWallets = getInteractCopyWallets();
-  if(interactWallets.length > 0 && availableProtocols.includes('interact')) {
-    options.push({
-      method: 'qr-and-copy',
-      protocolId: 'interact',
-      walletIds: interactWallets
-    });
-  }
-
-  const oid4vpWithWallets = oid4vpInExchange
-    .map(protocolId => ({
-      protocolId,
-      walletIds: _getQrLinkCompatibleWallets({
-        walletIds: compatibleWallets,
-        formats,
-        exchange,
-        protocolId,
-        registry
-      })
-    }))
-    .filter(p => p.walletIds.length > 0);
-
-  if(oid4vpWithWallets.length === 1) {
-    options.push({
-      method: 'qr-and-link',
-      protocolId: oid4vpWithWallets[0].protocolId,
-      walletIds: oid4vpWithWallets[0].walletIds
-    });
-  } else if(oid4vpWithWallets.length > 1) {
-    const ordered = oid4vpWithWallets.sort((a, b) => {
-      const aIdx = PROTOCOL_PRIORITY.indexOf(a.protocolId);
-      const bIdx = PROTOCOL_PRIORITY.indexOf(b.protocolId);
-      return (aIdx === -1 ? Infinity : aIdx) - (bIdx === -1 ? Infinity : bIdx);
-    });
-    for(const {protocolId, walletIds} of ordered) {
-      options.push({
-        method: 'qr-and-link',
-        protocolId,
-        walletIds
-      });
-    }
-  }
-
-  if(availableProtocols.includes('vcapi')) {
-    if(enabledWallets.includes('lcw')) {
-      const lcwVcapi = _getQrLinkCompatibleWallets({
-        walletIds: ['lcw'],
-        formats,
-        exchange,
-        protocolId: 'vcapi',
-        registry,
-        methods: ['qr', 'link', 'copy']
-      });
-      if(lcwVcapi.length > 0) {
-        options.push({
-          method: 'qr-and-link',
-          protocolId: 'vcapi',
-          walletId: 'lcw',
-          labelKey: 'interactionMethod_qr-and-link_lcw',
-          walletIds: ['lcw']
-        });
-      }
-    }
-  }
-
-  options.sort((a, b) => {
-    const aIdx = INTERACTION_METHOD_PRIORITY.indexOf(a.method);
-    const bIdx = INTERACTION_METHOD_PRIORITY.indexOf(b.method);
-    return (aIdx === -1 ? Infinity : aIdx) - (bIdx === -1 ? Infinity : bIdx);
-  });
-
-  return options;
-}
-
-/**
- * Select initial protocol/interaction method combination based on priority.
+ * Select initial profile/interaction method combination based on priority.
  * Prioritizes same-device methods (dcapi, link) on mobile platforms.
  *
  * @param {object} options - Options object.
@@ -601,7 +291,7 @@ export function getPickerOptions({
  * @param {object} options.exchange - Exchange object with protocols property.
  * @param {boolean} options.isMobile - Whether platform is mobile.
  * @param {object} [options.registry=WALLETS_REGISTRY] - Wallet registry to use.
- * @returns {{walletId: string, protocolId: string, interactionMethod: string,
+ * @returns {{walletId: string, profile: string, interactionMethod: string,
  *   request: string|object}|null} First available combination or null.
  */
 export function selectInitialProtocolInteraction({
@@ -612,7 +302,7 @@ export function selectInitialProtocolInteraction({
     return null;
   }
 
-  // Collect all protocol/interaction combinations for all wallets and formats
+  // Collect all profile/interaction combinations for all wallets and formats
   const candidates = [];
 
   for(const walletId of walletIds) {
@@ -632,7 +322,7 @@ export function selectInitialProtocolInteraction({
           // Store priority indices for sorting
           _interactionPriority: INTERACTION_METHOD_PRIORITY.indexOf(
             combo.interactionMethod),
-          _protocolPriority: PROTOCOL_PRIORITY.indexOf(combo.protocolId)
+          _profilePriority: PROFILE_PRIORITY.indexOf(combo.profile)
         });
       }
     }
@@ -643,7 +333,7 @@ export function selectInitialProtocolInteraction({
   }
 
   // Sort by interaction method priority (adjusted for mobile),
-  // then by protocol priority
+  // then by profile priority
   candidates.sort((a, b) => {
     // Handle missing priorities
     const aInteractionPriority = a._interactionPriority === -1 ?
@@ -670,19 +360,19 @@ export function selectInitialProtocolInteraction({
       return aAdjustedPriority - bAdjustedPriority;
     }
 
-    const aProtocolPriority = a._protocolPriority === -1 ?
-      Infinity : a._protocolPriority;
-    const bProtocolPriority = b._protocolPriority === -1 ?
-      Infinity : b._protocolPriority;
+    const aProfilePriority = a._profilePriority === -1 ?
+      Infinity : a._profilePriority;
+    const bProfilePriority = b._profilePriority === -1 ?
+      Infinity : b._profilePriority;
 
-    return aProtocolPriority - bProtocolPriority;
+    return aProfilePriority - bProfilePriority;
   });
 
   // Return first candidate (remove temporary priority fields)
   const selected = candidates[0];
   return {
     walletId: selected.walletId,
-    protocolId: selected.protocolId,
+    profile: selected.profile,
     interactionMethod: selected.interactionMethod,
     request: selected.request
   };

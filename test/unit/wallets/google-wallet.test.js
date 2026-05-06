@@ -18,7 +18,7 @@ describe('Google Wallet Configuration', () => {
       expect(googleWallet).to.have.property('name');
       expect(googleWallet).to.have.property('description');
       expect(googleWallet).to.have.property('supportedFormats');
-      expect(googleWallet).to.have.property('supportedProtocols');
+      expect(googleWallet).to.have.property('supportedProfiles');
     });
 
     it('should have correct id and name', () => {
@@ -42,7 +42,7 @@ describe('Google Wallet Configuration', () => {
 
   describe('protocol/interaction method combination', () => {
     it('should support mso_mdoc + 18013-7-Annex-D + dcapi', () => {
-      const protocol = googleWallet.supportedProtocols['18013-7-Annex-D'];
+      const protocol = googleWallet.supportedProfiles['18013-7-Annex-D'];
       expect(protocol).to.be.an('object');
       expect(protocol.dcapi).to.be.an('object');
       expect(protocol.dcapi.formats).to.be.an('array');

@@ -18,20 +18,20 @@ describe('canShowOption - platform filtering', () => {
       'apple-wallet': 'https://example.com/authz?request_uri=...'
     }
   };
-  const availableProtocols = [
+  const availableProfiles = [
     'cadmv-android', 'cadmv-ios', 'google-wallet', 'apple-wallet'
   ];
   const userSettings = {
     enabledWallets: [
       'cadmv-android', 'cadmv-ios', 'google-wallet', 'apple-wallet'
     ],
-    enabledProtocols: []
+    enabledProfiles: []
   };
 
   it('shows android wallets on android platform', () => {
     const platform = {isIOS: false, isAndroid: true, isMobile: true};
     const result = canShowOption({
-      workflow, availableProtocols, exchange, platform, userSettings,
+      workflow, availableProfiles, exchange, platform, userSettings,
       dcApiSystemAvailable: true, walletId: 'cadmv-android'
     });
     expect(result.available).to.be(true);
@@ -40,7 +40,7 @@ describe('canShowOption - platform filtering', () => {
   it('hides iOS wallets on android platform', () => {
     const platform = {isIOS: false, isAndroid: true, isMobile: true};
     const result = canShowOption({
-      workflow, availableProtocols, exchange, platform, userSettings,
+      workflow, availableProfiles, exchange, platform, userSettings,
       dcApiSystemAvailable: true, walletId: 'cadmv-ios'
     });
     expect(result.available).to.be(false);
@@ -49,7 +49,7 @@ describe('canShowOption - platform filtering', () => {
   it('hides android wallets on iOS platform', () => {
     const platform = {isIOS: true, isAndroid: false, isMobile: true};
     const result = canShowOption({
-      workflow, availableProtocols, exchange, platform, userSettings,
+      workflow, availableProfiles, exchange, platform, userSettings,
       dcApiSystemAvailable: true, walletId: 'cadmv-android'
     });
     expect(result.available).to.be(false);
@@ -58,7 +58,7 @@ describe('canShowOption - platform filtering', () => {
   it('shows iOS wallets on iOS platform', () => {
     const platform = {isIOS: true, isAndroid: false, isMobile: true};
     const result = canShowOption({
-      workflow, availableProtocols, exchange, platform, userSettings,
+      workflow, availableProfiles, exchange, platform, userSettings,
       dcApiSystemAvailable: true, walletId: 'cadmv-ios'
     });
     expect(result.available).to.be(true);
@@ -67,11 +67,11 @@ describe('canShowOption - platform filtering', () => {
   it('shows all wallets on desktop (cross-device)', () => {
     const platform = {isIOS: false, isAndroid: false, isMobile: false};
     const androidResult = canShowOption({
-      workflow, availableProtocols, exchange, platform, userSettings,
+      workflow, availableProfiles, exchange, platform, userSettings,
       dcApiSystemAvailable: true, walletId: 'cadmv-android'
     });
     const iosResult = canShowOption({
-      workflow, availableProtocols, exchange, platform, userSettings,
+      workflow, availableProfiles, exchange, platform, userSettings,
       dcApiSystemAvailable: true, walletId: 'cadmv-ios'
     });
     expect(androidResult.available).to.be(true);

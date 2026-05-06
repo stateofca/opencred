@@ -9,7 +9,6 @@ import {appleWallet} from './apple-wallet.js';
 import {cadmvAndroidWallet} from './cadmv-android.js';
 import {cadmvIosWallet} from './cadmv-ios.js';
 import {googleWallet} from './google-wallet.js';
-import {interactionWallet} from './protocols/index.js';
 import {lcwWallet} from './lcw.js';
 
 /**
@@ -21,6 +20,5 @@ export const WALLETS_REGISTRY = {
   'cadmv-ios': cadmvIosWallet,
   lcw: lcwWallet,
   'google-wallet': googleWallet,
-  'apple-wallet': appleWallet,
-  interaction: interactionWallet
+  'apple-wallet': appleWallet
 };

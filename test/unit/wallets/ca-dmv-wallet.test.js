@@ -17,7 +17,7 @@ describe('CA DMV Android Wallet Configuration', () => {
       expect(cadmvAndroidWallet).to.have.property('name');
       expect(cadmvAndroidWallet).to.have.property('description');
       expect(cadmvAndroidWallet).to.have.property('supportedFormats');
-      expect(cadmvAndroidWallet).to.have.property('supportedProtocols');
+      expect(cadmvAndroidWallet).to.have.property('supportedProfiles');
     });
 
     it('should have correct id and platform', () => {
@@ -27,19 +27,35 @@ describe('CA DMV Android Wallet Configuration', () => {
   });
 
   describe('supportedFormats', () => {
-    it('should contain mso_mdoc only', () => {
+    it('should include mDL and OID4VP VC formats', () => {
       expect(cadmvAndroidWallet.supportedFormats).to.be.an('array');
       expect(cadmvAndroidWallet.supportedFormats).to.contain('mso_mdoc');
-      expect(cadmvAndroidWallet.supportedFormats.length).to.be(1);
+      expect(cadmvAndroidWallet.supportedFormats).to.contain('jwt_vc_json');
+      expect(cadmvAndroidWallet.supportedFormats).to.contain('ldp_vc');
     });
   });
 
   describe('protocol/interaction method combinations', () => {
     it('should support mso_mdoc + cadmv-android + dcapi', () => {
-      const protocol = cadmvAndroidWallet.supportedProtocols['cadmv-android'];
+      const protocol = cadmvAndroidWallet.supportedProfiles['cadmv-android'];
       expect(protocol).to.be.an('object');
       expect(protocol.dcapi).to.be.an('object');
       expect(protocol.dcapi.formats).to.contain('mso_mdoc');
+    });
+
+    describe('OID4VP profiles', () => {
+      for(const profileId of ['OID4VP-1.0', 'OID4VP-draft18']) {
+        it(
+          `should support ${profileId} qr, link + jwt_vc_json/ldp_vc`,
+          () => {
+            const profile = cadmvAndroidWallet.supportedProfiles[profileId];
+            expect(profile).to.be.an('object');
+            expect(profile.qr).to.be.an('object');
+            expect(profile.link).to.be.an('object');
+            expect(profile.qr.formats).to.eql(['jwt_vc_json', 'ldp_vc']);
+            expect(profile.link.formats).to.eql(['jwt_vc_json', 'ldp_vc']);
+          });
+      }
     });
   });
 });
@@ -51,7 +67,7 @@ describe('CA DMV iOS Wallet Configuration', () => {
       expect(cadmvIosWallet).to.have.property('name');
       expect(cadmvIosWallet).to.have.property('description');
       expect(cadmvIosWallet).to.have.property('supportedFormats');
-      expect(cadmvIosWallet).to.have.property('supportedProtocols');
+      expect(cadmvIosWallet).to.have.property('supportedProfiles');
     });
 
     it('should have correct id and platform', () => {
@@ -61,19 +77,35 @@ describe('CA DMV iOS Wallet Configuration', () => {
   });
 
   describe('supportedFormats', () => {
-    it('should contain mso_mdoc only', () => {
+    it('should include mDL and OID4VP VC formats', () => {
       expect(cadmvIosWallet.supportedFormats).to.be.an('array');
       expect(cadmvIosWallet.supportedFormats).to.contain('mso_mdoc');
-      expect(cadmvIosWallet.supportedFormats.length).to.be(1);
+      expect(cadmvIosWallet.supportedFormats).to.contain('jwt_vc_json');
+      expect(cadmvIosWallet.supportedFormats).to.contain('ldp_vc');
     });
   });
 
   describe('protocol/interaction method combinations', () => {
     it('should support mso_mdoc + cadmv-ios + dcapi', () => {
-      const protocol = cadmvIosWallet.supportedProtocols['cadmv-ios'];
+      const protocol = cadmvIosWallet.supportedProfiles['cadmv-ios'];
       expect(protocol).to.be.an('object');
       expect(protocol.dcapi).to.be.an('object');
       expect(protocol.dcapi.formats).to.contain('mso_mdoc');
+    });
+
+    describe('OID4VP profiles', () => {
+      for(const profileId of ['OID4VP-1.0', 'OID4VP-draft18']) {
+        it(
+          `should support ${profileId} qr, link + jwt_vc_json/ldp_vc`,
+          () => {
+            const profile = cadmvIosWallet.supportedProfiles[profileId];
+            expect(profile).to.be.an('object');
+            expect(profile.qr).to.be.an('object');
+            expect(profile.link).to.be.an('object');
+            expect(profile.qr.formats).to.eql(['jwt_vc_json', 'ldp_vc']);
+            expect(profile.link.formats).to.eql(['jwt_vc_json', 'ldp_vc']);
+          });
+      }
     });
   });
 });

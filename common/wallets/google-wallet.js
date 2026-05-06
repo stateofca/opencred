@@ -13,7 +13,7 @@ export const googleWallet = {
   icon: '/wallets/google-wallet-icon.png',
   platform: ['android'],
   supportedFormats: ['mso_mdoc'],
-  supportedProtocols: {
+  supportedProfiles: {
     '18013-7-Annex-D': {
       dcapi: {
         description: 'Click the button to request credentials from ' +

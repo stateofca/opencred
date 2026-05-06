@@ -41,7 +41,8 @@ gwIDAQAB
   purpose: ['id_token']
 };
 
-/** Same material as exampleKey; use purpose access_token for exchange_token tests. */
+/** Same material as exampleKey; use purpose access_token for exchange_token
+ * tests. */
 export const exampleKeyAccessToken = {
   ...exampleKey,
   purpose: ['access_token']

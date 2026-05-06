@@ -74,12 +74,6 @@ SPDX-License-Identifier: BSD-3-Clause
         :created-at="exchangeData.createdAt"
         :ttl="exchangeData.ttl" />
     </p>
-    <button
-      v-if="active"
-      class="mx-auto max-w-prose text-sm underline text-gray-900 mt-2"
-      @click="handleGoBack">
-      {{$t('exchangeActiveGoBack')}}
-    </button>
   </div>
 </template>
 
@@ -101,6 +95,10 @@ const props = defineProps({
     type: Object,
     default: () => ({createdAt: null, ttl: null})
   },
+  profile: {
+    type: String,
+    default: null
+  },
   active: {
     type: Boolean,
     default: false
@@ -119,7 +117,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['launch', 'goBack', 'switchInteractionMethod']);
+const emit = defineEmits(['launch']);
 
 const {t} = useI18n({useScope: 'global'});
 const $q = useQuasar();
@@ -163,8 +161,8 @@ const walletNames = computed(() => {
   }).filter(Boolean).join(', ');
 });
 
-const getWalletUrl = async (walletId, protocolId) => {
-  if(!walletId || !protocolId || !props.workflow) {
+const getWalletUrl = async (walletId, profile) => {
+  if(!walletId || !profile || !props.workflow) {
     return props.exchangeData?.protocols?.interact || '';
   }
   const formats = extractCredentialFormats(props.workflow);
@@ -176,7 +174,7 @@ const getWalletUrl = async (walletId, protocolId) => {
       registry: props.walletsRegistry
     });
     const matching = combinations.find(c =>
-      c.protocolId === protocolId &&
+      c.profile === profile &&
       (c.interactionMethod === 'qr' || c.interactionMethod === 'copy')
     );
     if(matching?.request) {
@@ -187,10 +185,10 @@ const getWalletUrl = async (walletId, protocolId) => {
   return props.exchangeData?.protocols?.interact || '';
 };
 
-const generateQrCode = async (walletId, protocolId) => {
+const generateQrCode = async (walletId, profile) => {
   isGeneratingQr.value = true;
   try {
-    const url = await getWalletUrl(walletId, protocolId);
+    const url = await getWalletUrl(walletId, profile);
     if(url) {
       localQrCodeDataUri.value = await QRCode.toDataURL(url);
     } else {
@@ -204,8 +202,8 @@ const generateQrCode = async (walletId, protocolId) => {
 };
 
 watch(() => selectedWalletForLaunch.value, async selected => {
-  if(selected?.walletId && selected?.protocolId) {
-    await generateQrCode(selected.walletId, selected.protocolId);
+  if(selected?.walletId && selected?.profile) {
+    await generateQrCode(selected.walletId, selected.profile);
   } else {
     localQrCodeDataUri.value = '';
   }
@@ -219,21 +217,17 @@ const handleCopyClick = async () => {
   loadingWalletId.value = selected.walletId;
   isReset.value = false;
   try {
-    const url = await getWalletUrl(selected.walletId, selected.protocolId);
+    const url = await getWalletUrl(selected.walletId, selected.profile);
     if(url) {
       await copyToClipboard(url);
     }
     emit('launch', {
       walletId: selected.walletId,
-      protocolId: selected.protocolId
+      profile: selected.profile
     });
   } finally {
     loadingWalletId.value = null;
   }
-};
-
-const handleGoBack = () => {
-  emit('goBack');
 };
 
 const handleToggleQrCode = () => {

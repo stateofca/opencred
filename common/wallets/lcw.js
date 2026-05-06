@@ -78,7 +78,7 @@ export const lcwWallet = {
     'universities designing an open infrastructure for academic credentials.',
   platform: ['ios', 'android'],
   supportedFormats: ['ldp_vc'],
-  supportedProtocols: {
+  supportedProfiles: {
     vcapi: {
       qr: {
         description: 'Select the plus button in the main menu and then ' +

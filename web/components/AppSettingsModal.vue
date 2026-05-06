@@ -14,78 +14,158 @@ SPDX-License-Identifier: BSD-3-Clause
         {{$t('appSettings_title')}}
       </h3>
 
-      <div class="mb-6">
+      <!-- Wallets section -->
+      <section class="mb-6">
         <h4 class="text-sm font-medium mb-2 text-gray-700">
           {{$t('appSettings_wallets')}}
         </h4>
+
+        <!-- Defaults (locked) -->
+        <p
+          v-if="opts.defaultWallets.length > 0"
+          class="text-xs text-gray-500 mt-2 mb-1">
+          {{$t('appSettings_walletsDefaultsHeading')}}
+        </p>
         <div class="flex flex-col gap-2">
           <label
-            v-for="walletId in walletIds"
-            :key="walletId"
-            class="flex items-start gap-2 cursor-pointer">
+            v-for="row in opts.defaultWallets"
+            :key="row.walletId"
+            class="flex items-start gap-2 opacity-90">
             <input
-              v-model="localEnabledWallets"
               type="checkbox"
-              :value="walletId"
+              checked
+              disabled
               class="rounded mt-0.5">
             <div class="flex flex-col">
-              <span
-                :class="isWalletAvailable(walletId) ?
-                  'text-gray-900' : 'text-gray-400 opacity-60'">
-                {{walletsRegistry[walletId]?.nameKey ? $t(walletsRegistry[
-                  walletId].nameKey) : (walletsRegistry[walletId]?.name ||
-                  walletId)}}
+              <span class="text-gray-900">
+                {{walletLabel(row)}}
+                <span class="text-xs text-gray-500">
+                  {{$t('appSettings_lockedHint')}}
+                </span>
               </span>
-              <span
-                v-if="hasExchangeContext && !isWalletAvailable(walletId)"
-                class="text-xs text-amber-600 mt-0.5">
-                {{$t('appSettings_notAvailableForExchange')}}
+              <span class="text-xs text-gray-600 mt-0.5">
+                {{$t('appSettings_addsLabel', {
+                  methods: methodSummary(row.supportedMethods)
+                })}}
               </span>
             </div>
           </label>
         </div>
-      </div>
 
-      <div>
+        <!-- Extras (toggleable) -->
+        <p class="text-xs text-gray-500 mt-3 mb-1">
+          {{$t('appSettings_walletsExtrasHeading')}}
+        </p>
+        <p
+          v-if="opts.extraWallets.length === 0"
+          class="text-xs text-gray-500">
+          {{$t('appSettings_walletsExtrasEmpty')}}
+        </p>
+        <div
+          v-else
+          class="flex flex-col gap-2">
+          <label
+            v-for="row in opts.extraWallets"
+            :key="row.walletId"
+            class="flex items-start gap-2 cursor-pointer">
+            <input
+              :checked="localEnabledWallets.includes(row.walletId)"
+              type="checkbox"
+              :value="row.walletId"
+              class="rounded mt-0.5"
+              @change="toggleWallet(row.walletId)">
+            <div class="flex flex-col">
+              <span class="text-gray-900">{{walletLabel(row)}}</span>
+              <span class="text-xs text-gray-600 mt-0.5">
+                {{$t('appSettings_addsLabel', {
+                  methods: methodSummary(row.supportedMethods)
+                })}}
+              </span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Advanced: Profiles section -->
+      <section>
         <h4 class="text-sm font-medium mb-2 text-gray-700">
-          {{$t('appSettings_advancedProtocols')}}
+          {{$t('appSettings_advancedProfiles')}}
         </h4>
         <p class="text-xs text-gray-600 mb-2">
-          {{$t('appSettings_protocolsExplain')}}
+          {{$t('appSettings_profilesExplain')}}
         </p>
-        <div class="flex flex-col gap-2 max-h-48 overflow-y-auto">
+
+        <!-- Defaults (locked) -->
+        <p
+          v-if="opts.defaultProfiles.length > 0"
+          class="text-xs text-gray-500 mt-2 mb-1">
+          {{$t('appSettings_profilesDefaultsHeading')}}
+        </p>
+        <div class="flex flex-col gap-2">
           <label
-            v-for="protocolId in protocolIds"
-            :key="protocolId"
-            class="flex items-start gap-2 cursor-pointer">
+            v-for="row in opts.defaultProfiles"
+            :key="row.profile"
+            class="flex items-start gap-2 opacity-90">
             <input
-              v-model="localEnabledProtocols"
               type="checkbox"
-              :value="protocolId"
+              checked
+              disabled
               class="rounded mt-0.5">
             <div class="flex flex-col">
-              <span
-                :class="isProtocolAvailable(protocolId) ?
-                  'text-gray-900' : 'text-gray-400 opacity-60'">
-                {{protocolMetadata[protocolId]?.nameKey ? $t(protocolMetadata[
-                  protocolId].nameKey) : protocolId}}
+              <span class="text-gray-900">
+                {{profileLabel(row)}}
+                <span class="text-xs text-gray-500">
+                  {{$t('appSettings_lockedHint')}}
+                </span>
               </span>
-              <span
-                v-if="hasExchangeContext && !isProtocolAvailable(protocolId)"
-                class="text-xs text-amber-600 mt-0.5">
-                {{$t('appSettings_notAvailableForExchange')}}
+              <span class="text-xs text-gray-600 mt-0.5">
+                {{$t('appSettings_addsLabel', {
+                  methods: methodSummary(row.supportedMethods)
+                })}}
               </span>
             </div>
           </label>
         </div>
-      </div>
+
+        <!-- Extras (toggleable) -->
+        <p class="text-xs text-gray-500 mt-3 mb-1">
+          {{$t('appSettings_profilesExtrasHeading')}}
+        </p>
+        <p
+          v-if="opts.extraProfiles.length === 0"
+          class="text-xs text-gray-500">
+          {{$t('appSettings_profilesExtrasEmpty')}}
+        </p>
+        <div
+          v-else
+          class="flex flex-col gap-2 max-h-48 overflow-y-auto">
+          <label
+            v-for="row in opts.extraProfiles"
+            :key="row.profile"
+            class="flex items-start gap-2 cursor-pointer">
+            <input
+              :checked="localEnabledProfiles.includes(row.profile)"
+              type="checkbox"
+              :value="row.profile"
+              class="rounded mt-0.5"
+              @change="toggleProfile(row.profile)">
+            <div class="flex flex-col">
+              <span class="text-gray-900">{{profileLabel(row)}}</span>
+              <span class="text-xs text-gray-600 mt-0.5">
+                {{$t('appSettings_addsLabel', {
+                  methods: methodSummary(row.supportedMethods)
+                })}}
+              </span>
+            </div>
+          </label>
+        </div>
+      </section>
 
       <p class="text-xs text-gray-600 mt-4">
         {{$t('appSettings_refreshNote')}}
       </p>
     </q-card-section>
-    <q-card-actions
-      align="right">
+    <q-card-actions align="right">
       <q-btn
         flat
         :label="$t('appSettings_reset')"
@@ -99,134 +179,108 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
+import {computed, inject, ref, watch} from 'vue';
 import {
-  canShowOption,
-  DEFAULT_USER_SETTINGS
-} from '../../common/wallets/canShowOption.js';
-import {computed, ref, watch} from 'vue';
-import {
+  DEFAULT_USER_SETTINGS,
   loadUserSettings,
-  saveUserSettings,
-  WALLETS_REGISTRY
-} from '../../common/wallets/index.js';
-import {PROTOCOL_METADATA, PROTOCOLS_LIST} from '../../common/protocols.js';
+  saveUserSettings
+} from '../../common/wallets/canShowOption.js';
 import ModalDialog from './ModalDialog.vue';
+import {useExchangeContext} from '../composables/useExchangeContext.js';
+import {useI18n} from 'vue-i18n';
 
 const props = defineProps({
-  modelValue: {
-    type: Boolean,
-    default: false
-  },
-  userSettings: {
-    type: Object,
-    default: () => ({enabledWallets: [], enabledProtocols: []})
-  },
-  workflow: {
-    type: Object,
-    default: null
-  },
-  availableProtocols: {
-    type: Array,
-    default: () => []
-  },
-  exchange: {
-    type: Object,
-    default: null
-  },
-  platform: {
-    type: Object,
-    default: () => ({isIOS: false, isAndroid: false, isMobile: false})
-  },
-  dcApiSystemAvailable: {
-    type: Boolean,
-    default: false
-  }
+  modelValue: {type: Boolean, default: false}
 });
-
 const emit = defineEmits(['update:modelValue', 'update:userSettings']);
 
-const walletIds = Object.keys(WALLETS_REGISTRY);
-const protocolIds = PROTOCOLS_LIST.filter(id => id !== 'vcapi');
-const protocolMetadata = PROTOCOL_METADATA;
-const walletsRegistry = WALLETS_REGISTRY;
+const {t} = useI18n({useScope: 'global'});
+
+const platform = inject('platform', null);
+const dcApiSystemAvailable = inject('dcApiSystemAvailable', null);
+const {exchangeOptions} = useExchangeContext({platform, dcApiSystemAvailable});
+
+const EMPTY_OPTIONS = {
+  defaultWallets: [], extraWallets: [],
+  defaultProfiles: [], extraProfiles: [],
+  pickerEntries: []
+};
+
+const opts = computed(() => exchangeOptions.value || EMPTY_OPTIONS);
 
 const localEnabledWallets = ref([]);
-const localEnabledProtocols = ref([]);
+const localEnabledProfiles = ref([]);
 
-const hasExchangeContext = computed(() =>
-  props.workflow && props.availableProtocols?.length > 0
-);
-
-const isWalletAvailable = walletId => {
-  if(!hasExchangeContext.value) {
-    return true;
-  }
-  const settingsWithWallet = {
-    enabledWallets: [...new Set([...localEnabledWallets.value, walletId])],
-    enabledProtocols: localEnabledProtocols.value
-  };
-  const {available} = canShowOption({
-    workflow: props.workflow,
-    availableProtocols: props.availableProtocols,
-    exchange: props.exchange || {},
-    platform: props.platform,
-    userSettings: settingsWithWallet,
-    dcApiSystemAvailable: props.dcApiSystemAvailable,
-    walletId
-  });
-  return available;
-};
-
-const isProtocolAvailable = protocolId => {
-  if(!hasExchangeContext.value) {
-    return true;
-  }
-  const settingsWithProtocol = {
-    enabledWallets: localEnabledWallets.value,
-    enabledProtocols: [...new Set([
-      ...localEnabledProtocols.value,
-      protocolId
-    ])]
-  };
-  const {available} = canShowOption({
-    workflow: props.workflow,
-    availableProtocols: props.availableProtocols,
-    exchange: props.exchange || {},
-    platform: props.platform,
-    userSettings: settingsWithProtocol,
-    dcApiSystemAvailable: props.dcApiSystemAvailable,
-    protocolId
-  });
-  return available;
-};
-
-const persistSettings = () => {
+const persist = () => {
   const settings = {
     enabledWallets: [...localEnabledWallets.value],
-    enabledProtocols: [...localEnabledProtocols.value]
+    enabledProfiles: [...localEnabledProfiles.value]
   };
   saveUserSettings(settings);
   emit('update:userSettings', settings);
 };
 
-watch([localEnabledWallets, localEnabledProtocols], persistSettings, {
-  deep: true
-});
+const toggleWallet = id => {
+  const idx = localEnabledWallets.value.indexOf(id);
+  if(idx === -1) {
+    localEnabledWallets.value.push(id);
+  } else {
+    localEnabledWallets.value.splice(idx, 1);
+  }
+};
+
+const toggleProfile = id => {
+  const idx = localEnabledProfiles.value.indexOf(id);
+  if(idx === -1) {
+    localEnabledProfiles.value.push(id);
+  } else {
+    localEnabledProfiles.value.splice(idx, 1);
+  }
+};
+
+watch([localEnabledWallets, localEnabledProfiles], persist, {deep: true});
 
 watch(() => props.modelValue, open => {
-  if(open) {
-    const loaded = loadUserSettings();
-    localEnabledWallets.value = loaded.enabledWallets || [];
-    localEnabledProtocols.value = loaded.enabledProtocols || [];
-    emit('update:userSettings', loaded);
+  if(!open) {
+    return;
   }
+  const loaded = loadUserSettings();
+  localEnabledWallets.value = loaded.enabledWallets || [];
+  localEnabledProfiles.value = loaded.enabledProfiles || [];
+  emit('update:userSettings', loaded);
 }, {immediate: true});
 
 const handleReset = () => {
   localEnabledWallets.value = [...DEFAULT_USER_SETTINGS.enabledWallets];
-  localEnabledProtocols.value = [...DEFAULT_USER_SETTINGS.enabledProtocols];
-  persistSettings();
+  localEnabledProfiles.value = [...DEFAULT_USER_SETTINGS.enabledProfiles];
+  persist();
   emit('update:modelValue', false);
 };
 
+const walletLabel = row => {
+  if(row.nameKey && t(row.nameKey) !== row.nameKey) {
+    return t(row.nameKey);
+  }
+  return row.name || row.walletId;
+};
+
+const profileLabel = row => {
+  if(row.nameKey && t(row.nameKey) !== row.nameKey) {
+    return t(row.nameKey);
+  }
+  return row.profile;
+};
+
+const methodSummary = methods => {
+  if(!Array.isArray(methods) || methods.length === 0) {
+    return '';
+  }
+  return methods
+    .map(m => {
+      const key = `interactionMethodLabel_${m}`;
+      const translated = t(key);
+      return translated === key ? m : translated;
+    })
+    .join(', ');
+};
 </script>

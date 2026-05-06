@@ -6,10 +6,10 @@
  */
 
 /**
- * List of all available protocols in the system.
+ * List of all available profiles in the system.
  * This is a common reference that can be imported and consulted.
  */
-export const PROTOCOLS_LIST = [
+export const PROFILES_LIST = [
   'chapi',
   'OID4VP', // default version for the platform, can change over time
   'OID4VP-draft18', // uses input_descriptors
@@ -24,16 +24,15 @@ export const PROTOCOLS_LIST = [
 ];
 
 /**
- * Metadata for protocol display (i18n keys).
- * Maps each protocol to nameKey and descriptionKey for use in the UI.
+ * Metadata for profile display (i18n keys).
+ * Maps each profile to nameKey and descriptionKey for use in the UI.
  */
-export const PROTOCOL_METADATA = Object.fromEntries(
-  PROTOCOLS_LIST.map(protocolId => [
-    protocolId,
+export const PROFILE_METADATA = Object.fromEntries(
+  PROFILES_LIST.map(profile => [
+    profile,
     {
-      nameKey: `protocols_${protocolId}_name`,
-      descriptionKey: `protocols_${protocolId}_description`
+      nameKey: `profiles_${profile}_name`,
+      descriptionKey: `profiles_${profile}_description`
     }
   ])
 );
-

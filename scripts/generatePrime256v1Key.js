@@ -115,7 +115,8 @@ if(import.meta.url === pathToFileURL(process.argv[1]).href) {
       '[--domain=<domain>]\n\n' +
       'Common purposes:\n' +
       '  authorization_request  OID4VP authorization request JAR signing\n' +
-      '  access_token           Exchange result JWT (exchange_token) after VP\n' +
+      '  access_token           Exchange result JWT (exchange_token)' +
+      ' after VP\n' +
       '  id_token               OIDC id_token for login/token endpoint\n\n' +
       'Example:\n' +
       '  npm run generate:prime256v1 authorization_request access_token ' +
