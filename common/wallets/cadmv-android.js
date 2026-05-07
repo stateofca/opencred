@@ -7,6 +7,7 @@
 
 export const cadmvAndroidWallet = {
   id: 'cadmv-android',
+  groupId: 'cadmv-wallet',
   name: 'CA DMV Wallet (Android)',
   description: 'The CA DMV Wallet app is a free, secure, and convenient ' +
     'mobile application that allows California residents to store and ' +
@@ -43,5 +44,9 @@ export const cadmvAndroidWallet = {
         formats: ['jwt_vc_json', 'ldp_vc']
       }
     }
-  }
+  },
+  storefronts: [{
+    type: 'google',
+    url: 'https://play.google.com/store/apps/details?id=gov.ca.dmv.wallet'
+  }]
 };

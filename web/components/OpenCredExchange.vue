@@ -29,21 +29,14 @@ SPDX-License-Identifier: BSD-3-Clause
         :exchange-data="context.exchangeData || {}" />
 
       <!-- Connect Your Wallet Heading -->
-      <p class="text-body1 text-weight-bold text-heading">
+      <p
+        v-if="te('connectWalletHeading')"
+        class="text-body1 text-weight-bold text-heading">
         {{t('connectWalletHeading')}}
       </p>
 
       <!-- Interaction-specific info and exchange status -->
-      <WalletInteraction
-        ref="walletInteractionRef"
-        :available-profiles="availableProfiles"
-        :user-settings="userSettings"
-        :workflow="context.workflow"
-        :active="state.active"
-        @replace-exchange="handleReplaceExchange"
-        @launch="handleDcApiLaunch"
-        @update:active-interaction-type="activeInteractionType = $event"
-        @request-picker="showInteractionPicker = true" />
+      <WalletInteraction />
 
       <!-- "Other ways to connect" link + picker -->
       <div
@@ -66,7 +59,7 @@ SPDX-License-Identifier: BSD-3-Clause
       <!-- Explainer Video Link -->
       <div class="mt-2">
         <button
-          v-if="t('qrExplainerText') !== '' &&
+          v-if="te('qrExplainerText') &&
             context.workflow.brand?.explainerVideo?.id !== '' &&
             context.workflow.brand?.explainerVideo?.provider"
           :style="{color: context.workflow.brand?.primary}"
@@ -97,6 +90,15 @@ SPDX-License-Identifier: BSD-3-Clause
           </q-card-actions>
         </q-card>
       </q-dialog>
+
+      <!-- Suggested Apps -->
+      <SuggestedApps />
+
+      <!-- Powered by OpenCred + Debug -->
+      <div class="column items-center mt-4 mx-auto text-center">
+        Powered by OpenCred
+      </div>
+      <DebugDisplay />
     </div>
 
     <!-- Status Dialog -->
@@ -118,16 +120,17 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import {CadmvDialog, CadmvMainCard} from '@digitalbazaar/cadmv-ui';
-import {computed, inject, nextTick, onMounted, onUnmounted,
-  reactive, ref} from 'vue';
+import {onMounted, onUnmounted, reactive, ref} from 'vue';
 import CredentialQuerySummary from './CredentialQuerySummary.vue';
+import DebugDisplay from './DebugDisplay.vue';
 import ErrorView from './ErrorView.vue';
 import {httpClient} from '@digitalbazaar/http-client';
-import QRCode from 'qrcode';
-import {useExchangeContext} from '../composables/useExchangeContext.js';
-import {useReactiveI18n} from '../composables/useReactiveI18n.js';
-
 import InteractionPickerModal from './InteractionPickerModal.vue';
+import QRCode from 'qrcode';
+import SuggestedApps from './SuggestedApps.vue';
+import {useExchange} from '../composables/useExchange.js';
+import {useReactiveI18n} from '../composables/useReactiveI18n.js';
+import {useWalletInteraction} from '../composables/useWalletInteraction.js';
 import WalletInteraction from './WalletInteraction.vue';
 import {WALLETS_REGISTRY} from '../../common/wallets/index.js';
 
@@ -139,9 +142,8 @@ defineProps({
   }
 });
 
-const {context, translations} = useExchangeContext();
+const {context, updateExchange} = useExchange();
 
-// Check context and userSettings
 if(!context) {
   throw new Error(
     'OpenCredExchange requires exchangeContext to be provided by parent ' +
@@ -149,11 +151,11 @@ if(!context) {
   );
 }
 
-const userSettings = inject('userSettings', ref(
-  {enabledWallets: [], enabledProfiles: []}));
+const {t, te} = useReactiveI18n();
 
-// Use workflow translations if available
-const {t} = useReactiveI18n({messages: translations});
+const {
+  pickerEntries, activePickerEntry, handlePickerSelect
+} = useWalletInteraction();
 
 const state = reactive({
   active: false,
@@ -162,20 +164,8 @@ const state = reactive({
   statusCheckCount: 0
 });
 
-const activeInteractionType = ref(null);
-const walletInteractionRef = ref(null);
 const showInteractionPicker = ref(false);
-
 const showVideo = ref(false);
-
-const pickerEntries = computed(() =>
-  walletInteractionRef.value?.pickerEntries ?? []);
-const activePickerEntry = computed(() =>
-  walletInteractionRef.value?.activePickerEntry ?? null);
-const handlePickerSelect = entry => {
-  walletInteractionRef.value?.handlePickerSelect?.(entry);
-  showInteractionPicker.value = false;
-};
 
 const statusDialogActions = [
   {
@@ -189,24 +179,6 @@ const statusDialogActions = [
     label: t('statusDialog_resetSession')
   }
 ];
-
-const availableProfiles = computed(() => {
-  // If exchangeData has protocols, use those keys
-  if(context.value?.exchangeData?.protocols) {
-    return Object.keys(context.value.exchangeData.protocols);
-  }
-  // Fallback to options.exchangeProtocols
-  if(!context.value?.options?.exchangeProtocols) {
-    return [];
-  }
-  // Map 'openid4vp' to the default OID4VP protocol
-  return context.value.options.exchangeProtocols.map(p => {
-    if(p === 'openid4vp') {
-      return context.value.options.OID4VPdefault || 'OID4VP-combined';
-    }
-    return p;
-  });
-});
 
 /**
  * Set state.error to the given error object, with defaults applied.
@@ -226,20 +198,6 @@ const handleError = error => {
   };
   state.active = false;
   state.statusCheckCount = 0;
-};
-
-const handleDcApiLaunch = ({profile}) => {
-  // Launch DC API directly with wallet/profile
-  nextTick(() => {
-    walletInteractionRef.value?.launchDcApi?.(profile);
-  });
-};
-
-const handleReplaceExchange = updatedExchange => {
-  context.value.exchangeData = {
-    ...context.value.exchangeData,
-    ...updatedExchange
-  };
 };
 
 const checkStatus = async () => {
@@ -296,7 +254,7 @@ const checkStatus = async () => {
       // so reset the status check count to avoid bothering the user soon.
       state.statusCheckCount = 0;
     }
-    context.value.exchangeData = {...context.value.exchangeData, ...exchange};
+    updateExchange(exchange);
 
     if(exchange.state === 'complete') {
       state.intervalId = clearInterval(state.intervalId);

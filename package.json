@@ -70,6 +70,7 @@
     "@peculiar/x509": "^1.14.3",
     "@quasar/extras": "^1.16.11",
     "@spruceid/opencred-dc-api": "^0.2.0",
+    "@vueuse/core": "^14.3.0",
     "autoprefixer": "^10.4.24",
     "base64url": "^3.0.1",
     "base64url-universal": "^2.0.0",

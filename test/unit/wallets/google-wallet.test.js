@@ -51,4 +51,18 @@ describe('Google Wallet Configuration', () => {
       expect(protocol.dcapi.description).to.be.a('string');
     });
   });
+
+  describe('storefronts', () => {
+    it('should have storefronts array', () => {
+      expect(googleWallet).to.have.property('storefronts');
+      expect(googleWallet.storefronts).to.be.an('array');
+      expect(googleWallet.storefronts.length).to.be(1);
+    });
+
+    it('should have Google Play storefront', () => {
+      const gp = googleWallet.storefronts.find(s => s.type === 'google');
+      expect(gp).to.be.an('object');
+      expect(gp.url).to.contain('play.google.com');
+    });
+  });
 });

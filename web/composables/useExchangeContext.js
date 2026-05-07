@@ -5,67 +5,130 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import {computed, inject, provide} from 'vue';
-import {
-  expandWalletAliases,
-  WALLETS_REGISTRY
-} from '../../common/wallets/index.js';
-import {
-  computeExchangeOptions
-} from '../../common/wallets/exchange-options.js';
+import {computed, onBeforeMount, ref, watch} from 'vue';
+import {config} from '@bedrock/web';
+import {httpClient} from '@digitalbazaar/http-client';
+import {setCssVar} from 'quasar';
+import {useRoute} from 'vue-router';
 
-const EXCHANGE_CTX = 'exchangeContext';
+const context = ref({
+  workflow: {brand: {}},
+  initError: null
+});
+
+const _hasLoaded = ref(false);
+const _loading = ref(false);
+const _loadedForRouteKey = ref(null);
+
+function _invalidateContext() {
+  _hasLoaded.value = false;
+  _loadedForRouteKey.value = null;
+}
+
+function _setDefaultBrand() {
+  if(!_hasLoaded.value && !_loading.value) {
+    context.value.workflow.brand = config?.brand ?? {};
+  }
+}
+
+async function _loadContext({routeName, exchangeToken}) {
+  _setDefaultBrand();
+  if(_loading.value) {
+    return;
+  }
+  if(!routeName || routeName === 'Audit Presentation') {
+    return;
+  }
+
+  const routeKey = `${routeName}:${exchangeToken || ''}`;
+  if(_hasLoaded.value && _loadedForRouteKey.value === routeKey) {
+    return;
+  }
+
+  try {
+    _loading.value = true;
+    let url;
+    if(exchangeToken) {
+      url = `/context/continue?exchange_token=${encodeURIComponent(
+        exchangeToken)}`;
+    } else {
+      url = `/context/${routeName}${window.location.search}`;
+    }
+    const {data} = await httpClient.get(url);
+    context.value = data;
+    context.value.initError = null;
+    _hasLoaded.value = true;
+    _loadedForRouteKey.value = routeKey;
+    if(data.workflow?.brand) {
+      for(const key in data.workflow.brand) {
+        if(typeof data.workflow.brand[key] === 'string') {
+          setCssVar(key, data.workflow.brand[key]);
+        }
+      }
+      if(data.workflow.brand.header) {
+        setCssVar('primary', data.workflow.brand.header);
+      }
+    }
+  } catch(e) {
+    if(e.data?.message) {
+      context.value.initError = {
+        message: e.data.message
+      };
+    } else {
+      console.error('Failed to fetch context:', e);
+    }
+  }
+  _loading.value = false;
+}
 
 /**
- * Composable for sharing exchange context and computed exchange options.
+ * Composable for shared exchange context. Module-level singleton;
+ * fetches context via HTTP based on the current route.
  *
- * @param {object} [options] - Options object.
- * @param {import('vue').Ref<object>} [options.platform] - Reactive
- *   platform info `{isIOS, isAndroid, isMobile}`.
- * @param {import('vue').Ref<boolean>} [options.dcApiSystemAvailable]
- *   - Reactive DC API availability flag.
- * @returns {object} Context and derived values.
+ * @returns {object} Exchange context and derived values.
  */
-export function useExchangeContext({platform, dcApiSystemAvailable} = {}) {
-  const provideContext = ({context}) => provide(EXCHANGE_CTX, context);
-  const context = inject(EXCHANGE_CTX, null);
-  const userSettings = inject('userSettings', null);
+export function useExchangeContext() {
+  const route = useRoute();
 
-  const workflow = computed(() => context?.value?.workflow);
+  const workflow = computed(() => context.value?.workflow ?? null);
   const translations = computed(() => workflow.value?.translations ?? {});
   const brand = computed(() => workflow.value?.brand ?? {});
+  const exchangeData = computed(() => context.value?.exchangeData ?? {});
+  const exchangeState = computed(
+    () => exchangeData.value?.state ?? 'pending');
+  const options = computed(() => context.value?.options ?? {});
 
-  const exchangeOptions = computed(() => {
-    const ctx = context?.value;
-    if(!ctx || !platform || !dcApiSystemAvailable) {
-      return null;
-    }
-    const wf = ctx.workflow || {};
-    const walletIds = wf.wallets || ctx.options?.wallets;
-    const systemWallets = expandWalletAliases(
-      Array.isArray(walletIds) && walletIds.length > 0 ?
-        walletIds : Object.keys(WALLETS_REGISTRY)
-    );
-    const settings = userSettings?.value ||
-      {enabledWallets: [], enabledProfiles: []};
-
-    return computeExchangeOptions({
-      workflow: wf,
-      exchange: ctx.exchangeData || {},
-      systemWallets,
-      oid4vpDefaultProfile: ctx.options?.OID4VPdefault,
-      userSettings: settings,
-      platform: platform.value || {},
-      dcApiSystemAvailable: dcApiSystemAvailable.value || false
+  onBeforeMount(async () => {
+    await _loadContext({
+      routeName: route.name,
+      exchangeToken: route.query?.exchange_token
     });
   });
 
+  watch(() => [route.name, route.query?.exchange_token], async () => {
+    _invalidateContext();
+    context.value.workflow.brand = config?.brand ?? {};
+    await _loadContext({
+      routeName: route.name,
+      exchangeToken: route.query?.exchange_token
+    });
+  });
+
+  const updateExchange = updatedExchange => {
+    context.value.exchangeData = {
+      ...context.value.exchangeData,
+      ...updatedExchange
+    };
+  };
+
   return {
-    provideContext,
     context,
     workflow,
     translations,
     brand,
-    exchangeOptions
+    exchangeData,
+    exchangeState,
+    options,
+    updateExchange
   };
 }

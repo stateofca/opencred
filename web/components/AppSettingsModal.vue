@@ -179,14 +179,14 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
-import {computed, inject, ref, watch} from 'vue';
+import {computed, ref, watch} from 'vue';
 import {
   DEFAULT_USER_SETTINGS,
   loadUserSettings,
   saveUserSettings
 } from '../../common/wallets/canShowOption.js';
 import ModalDialog from './ModalDialog.vue';
-import {useExchangeContext} from '../composables/useExchangeContext.js';
+import {useExchangeOptions} from '../composables/useExchangeOptions.js';
 import {useI18n} from 'vue-i18n';
 
 const props = defineProps({
@@ -196,9 +196,7 @@ const emit = defineEmits(['update:modelValue', 'update:userSettings']);
 
 const {t} = useI18n({useScope: 'global'});
 
-const platform = inject('platform', null);
-const dcApiSystemAvailable = inject('dcApiSystemAvailable', null);
-const {exchangeOptions} = useExchangeContext({platform, dcApiSystemAvailable});
+const {exchangeOptions} = useExchangeOptions();
 
 const EMPTY_OPTIONS = {
   defaultWallets: [], extraWallets: [],

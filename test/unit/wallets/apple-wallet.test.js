@@ -52,4 +52,18 @@ describe('Apple Wallet Configuration', () => {
       expect(protocol.dcapi.description).to.be.a('string');
     });
   });
+
+  describe('storefronts', () => {
+    it('should have storefronts array', () => {
+      expect(appleWallet).to.have.property('storefronts');
+      expect(appleWallet.storefronts).to.be.an('array');
+      expect(appleWallet.storefronts.length).to.be(1);
+    });
+
+    it('should have Apple App Store storefront', () => {
+      const as = appleWallet.storefronts.find(s => s.type === 'apple');
+      expect(as).to.be.an('object');
+      expect(as.url).to.contain('apps.apple.com');
+    });
+  });
 });

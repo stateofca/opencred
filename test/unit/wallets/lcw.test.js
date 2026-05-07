@@ -152,4 +152,24 @@ describe('LCW Wallet Configuration', () => {
       expect(request).to.be(null);
     });
   });
+
+  describe('storefronts', () => {
+    it('should have storefronts array with both platforms', () => {
+      expect(lcwWallet).to.have.property('storefronts');
+      expect(lcwWallet.storefronts).to.be.an('array');
+      expect(lcwWallet.storefronts.length).to.be(2);
+    });
+
+    it('should have Apple App Store storefront', () => {
+      const as = lcwWallet.storefronts.find(s => s.type === 'apple');
+      expect(as).to.be.an('object');
+      expect(as.url).to.contain('apps.apple.com');
+    });
+
+    it('should have Google Play storefront', () => {
+      const gp = lcwWallet.storefronts.find(s => s.type === 'google');
+      expect(gp).to.be.an('object');
+      expect(gp.url).to.contain('play.google.com');
+    });
+  });
 });

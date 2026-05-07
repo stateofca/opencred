@@ -73,7 +73,7 @@ SPDX-License-Identifier: BSD-3-Clause
         {{$t('noSchemeHandlerMessage')}}
       </p>
       <p
-        v-if="walletNames"
+        v-if="te('worksWithWallets') && walletNames"
         class="text-sm text-gray-500 mt-1 mb-0">
         {{$t('worksWithWallets', {names: walletNames})}}
       </p>
@@ -99,7 +99,7 @@ SPDX-License-Identifier: BSD-3-Clause
         :ttl="exchangeData.ttl" />
     </p>
     <div
-      v-if="$t('qrDisclaimer')"
+      v-if="te('qrDisclaimer')"
       class="mt-12 flex flex-col items-center text-gray-900"
       v-html="$t('qrDisclaimer')" />
   </div>
@@ -116,7 +116,7 @@ import {CadmvButton} from '@digitalbazaar/cadmv-ui';
 import CountdownDisplay from '../CountdownDisplay.vue';
 import QRCode from 'qrcode';
 import {QSpinnerTail} from 'quasar';
-import {useI18n} from 'vue-i18n';
+import {useReactiveI18n} from '../../composables/useReactiveI18n.js';
 
 const props = defineProps({
   exchangeData: {
@@ -151,7 +151,7 @@ const props = defineProps({
 
 const emit = defineEmits(['launch']);
 
-const {t} = useI18n({useScope: 'global'});
+const {t, te} = useReactiveI18n();
 const $q = useQuasar();
 const isMobile = computed(() =>
   ($q.platform?.is?.ios ?? false) || ($q.platform?.is?.android ?? false)

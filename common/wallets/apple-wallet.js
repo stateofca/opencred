@@ -28,5 +28,9 @@ export const appleWallet = {
         formats: ['mso_mdoc']
       }
     }
-  }
+  },
+  storefronts: [{
+    type: 'apple',
+    url: 'https://apps.apple.com/us/app/apple-wallet/id1160481993'
+  }]
 };

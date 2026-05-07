@@ -28,5 +28,9 @@ export const googleWallet = {
         formats: ['mso_mdoc']
       }
     }
-  }
+  },
+  storefronts: [{
+    type: 'google',
+    url: 'https://play.google.com/store/apps/details?id=com.google.android.apps.walletnfcrel'
+  }]
 };

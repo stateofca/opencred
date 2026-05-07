@@ -99,25 +99,25 @@ SPDX-License-Identifier: BSD-3-Clause
         icon="settings"
         :aria-label="$t('settings_ariaLabel')"
         class="text-gray-600"
-        @click="showSettingsModal = true" />
+        @click="toggleSettingsModal()" />
     </footer>
     <AppSettingsModal
       v-model="showSettingsModal"
-      @update:user-settings="v => userSettings.value = v" />
+      @update:user-settings="reloadSettings" />
   </div>
 </template>
 
 <script setup>
-import {computed, onBeforeMount, onMounted, provide, ref, watch} from 'vue';
-import {setCssVar, useQuasar} from 'quasar';
+import {onMounted, ref, watch} from 'vue';
 import AppSettingsModal from './AppSettingsModal.vue';
 import {CadmvHeader} from '@digitalbazaar/cadmv-ui';
 import {config} from '@bedrock/web';
-import {httpClient} from '@digitalbazaar/http-client';
-import {useExchangeContext} from './../composables/useExchangeContext.js';
+import {useExchange} from './../composables/useExchange.js';
+import {useExchangeSettings} from './../composables/useExchangeSettings.js';
 import {useHead} from 'unhead';
 import {useI18n} from 'vue-i18n';
 import {useRoute} from 'vue-router';
+import {useToggle} from '@vueuse/core';
 
 const props = defineProps({
   showBackgroundImage: {
@@ -135,84 +135,13 @@ const emit = defineEmits(['changeLanguage']);
 const useNativeTranslations = ref(true);
 const {locale, availableLocales, t} = useI18n({useScope: 'global'});
 
+const {brand, workflow} = useExchange();
+const {reloadSettings} = useExchangeSettings();
+
 const route = useRoute();
-const $q = useQuasar();
-const {provideContext} = useExchangeContext();
-
-// Context for current workflow - will be fetched or use config default
-const context = ref({
-  workflow: {
-    brand: config.brand || {}
-  },
-  initError: null
-});
-
-const brand = computed(() => context.value.workflow?.brand);
-const workflow = computed(() => context.value.workflow);
-
-const platform = computed(() => ({
-  isIOS: $q.platform?.is?.ios ?? false,
-  isAndroid: $q.platform?.is?.android ?? false,
-  isMobile: ($q.platform?.is?.ios ?? false) ||
-    ($q.platform?.is?.android ?? false)
-}));
-
-const dcApiSystemAvailable = ref(false);
 
 const showSettingsModal = ref(false);
-const userSettings = ref({
-  enabledWallets: [],
-  enabledProfiles: []
-});
-
-// Fetch context if needed (for initial render)
-onBeforeMount(async () => {
-  const {loadUserSettings} = await import(
-    '../../common/wallets/canShowOption.js'
-  );
-  userSettings.value = loadUserSettings();
-
-  const exchangeType = route.name;
-  // Skip context fetching for audit route (no context endpoint exists)
-  if(exchangeType && exchangeType !== 'Audit Presentation') {
-    try {
-      const exchangeToken = new URLSearchParams(window.location.search)
-        .get('exchange_token');
-      const url = exchangeToken ?
-        `/context/continue?exchange_token=${encodeURIComponent(
-          exchangeToken)}` :
-        `/context/${exchangeType}${window.location.search}`;
-      const resp = await httpClient.get(url);
-      context.value = resp.data;
-      context.value.initError = null;
-      if(resp.data.workflow.brand) {
-        Object.keys(resp.data.workflow.brand).forEach(key => {
-          setCssVar(key, resp.data.workflow.brand[key]);
-        });
-        // Set --q-primary to header color for CadmvHeader component
-        if(resp.data.workflow.brand.header) {
-          setCssVar('primary', resp.data.workflow.brand.header);
-        }
-      }
-    } catch(e) {
-      // Check if this is a 400 error with a message
-      if(e.data?.message) {
-        context.value.initError = {
-          message: e.data.message
-        };
-      } else {
-        // Use config default on other errors
-        console.error('Failed to fetch context:', e);
-      }
-    }
-  }
-});
-
-// Provide context and userSettings to child components
-provideContext({context});
-provide('userSettings', userSettings);
-provide('platform', platform);
-provide('dcApiSystemAvailable', dcApiSystemAvailable);
+const toggleSettingsModal = useToggle(showSettingsModal);
 
 const handleLanguageChange = lang => {
   locale.value = lang;
@@ -241,9 +170,6 @@ watch(
 );
 
 onMounted(() => {
-  dcApiSystemAvailable.value = !!(
-    navigator.credentials && window.DigitalCredential !== undefined
-  );
   if(config.customTranslateScript) {
     const transEl = document.createElement('google-translate');
     if(config.customTranslateScript.indexOf('translate.google.com') >= 0) {

@@ -55,33 +55,14 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
-import {computed, onBeforeMount, ref} from 'vue';
-import {httpClient} from '@digitalbazaar/http-client';
-
-const appConfig = ref({
-  options: {
-    workflowListingEnabled: false
-  },
-  publicWorkflows: []
-});
+import {computed} from 'vue';
+import {config} from '@bedrock/web';
 
 const workflowListingEnabled = computed(() =>
-  appConfig.value.options?.workflowListingEnabled === true
+  config.options?.workflowListingEnabled === true
 );
 
 const publicWorkflows = computed(() =>
-  appConfig.value.publicWorkflows || []
+  config.publicWorkflows || []
 );
-
-// Fetch context from /config/app.json
-onBeforeMount(async () => {
-  try {
-    const resp = await httpClient.get(
-      '/config/app.json' + window.location.search);
-    appConfig.value = resp.data;
-  } catch(e) {
-    // Use default config on error
-    console.error('Failed to fetch app config:', e);
-  }
-});
 </script>

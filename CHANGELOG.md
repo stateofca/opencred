@@ -3,6 +3,18 @@
 ## 10.0.6 - 2026-04-XX
 
 ### Changed
+- Documented TEST/UAT 2026 issuer DID in README
+- Refactored web UI to use Vue composables instead of provide/inject for
+  exchange context distribution; eliminates duplicate context fetching in
+  LoginView and HomeView.
+- Redesigned wallet app download section to show only workflow-relevant wallets
+  with wallet identity (icon + name) alongside store badges; added
+  platform-aware filtering and collapsible display for 3+ wallets.
+- Added app store links (storefronts) for Google Wallet, Apple Wallet, and
+  Learner Credential Wallet.
+- Added debug display panel toggled via Shift+Ctrl+X when debug mode is enabled.
+- Added "Powered by OpenCred" text on exchange card.
+- Added `@vueuse/core` dependency for keyboard shortcuts and toggle utilities.
 - OpenID for Verifiable Presentations DC API protocol identifier upgraded to
   OID4VP 1.0: ISO 18013-7 Annex D and OID4VP HAIP 1.0 flows now emit
   `openid4vp-v1-unsigned` / `openid4vp-v1-signed` per OID4VP 1.0 §A.1,

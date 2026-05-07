@@ -11,7 +11,7 @@ SPDX-License-Identifier: BSD-3-Clause
     :persistent="persistent"
     @update:model-value="handleUpdate">
     <q-card
-      class="modal-content"
+      :class="['modal-content', cardClass]"
       @click.stop>
       <slot />
     </q-card>
@@ -27,6 +27,10 @@ defineProps({
   persistent: {
     type: Boolean,
     default: false
+  },
+  cardClass: {
+    type: String,
+    default: ''
   }
 });
 

@@ -56,9 +56,9 @@ import {useReactiveI18n} from '../composables/useReactiveI18n.js';
 import {useWindowPopup} from '../composables/useWindowPopup.js';
 
 // Get context
-const {context, translations} = useExchangeContext();
+const {context} = useExchangeContext();
 
-const {t} = useReactiveI18n({messages: translations});
+const {t} = useReactiveI18n();
 
 const {isPopupWindow} = useWindowPopup();
 

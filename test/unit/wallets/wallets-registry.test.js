@@ -557,6 +557,26 @@ describe('Wallet Registry and Helper Functions', () => {
     });
   });
 
+  describe('groupId property', () => {
+    it('cadmv-android and cadmv-ios should share groupId', () => {
+      const android = WALLETS_REGISTRY['cadmv-android'];
+      const ios = WALLETS_REGISTRY['cadmv-ios'];
+      expect(android.groupId).to.be('cadmv-wallet');
+      expect(ios.groupId).to.be('cadmv-wallet');
+      expect(android.groupId).to.be(ios.groupId);
+    });
+
+    it('wallets without explicit groupId should use id as fallback', () => {
+      const lcw = WALLETS_REGISTRY.lcw;
+      const google = WALLETS_REGISTRY['google-wallet'];
+      const apple = WALLETS_REGISTRY['apple-wallet'];
+      // These wallets should NOT have a groupId property
+      expect(lcw.groupId).to.be(undefined);
+      expect(google.groupId).to.be(undefined);
+      expect(apple.groupId).to.be(undefined);
+    });
+  });
+
   describe('selectInitialProtocolInteraction', () => {
     const mockExchange = {
       protocols: {

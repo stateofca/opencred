@@ -105,5 +105,12 @@ export const lcwWallet = {
         getRequest: lcwChapiRequest
       }
     }
-  }
+  },
+  storefronts: [{
+    type: 'apple',
+    url: 'https://apps.apple.com/app/learner-credential-wallet/id1590615710'
+  }, {
+    type: 'google',
+    url: 'https://play.google.com/store/apps/details?id=app.lcw'
+  }]
 };
