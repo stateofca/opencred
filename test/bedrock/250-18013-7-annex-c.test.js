@@ -71,10 +71,12 @@ function assertLegacyAnnexCDeviceRequestWireShape(dcApiRequest) {
 
   const dri = decoded.get('deviceRequestInfo');
   expect(dri instanceof DataItem).to.be(true);
-  expect(mapsToPlain(dri.data).useCases).to.eql([{mandatory: true}]);
-  expect(mapsToPlain(dri.data).documentSets).to.eql(
-    docRequests.map((_, i) => [i])
-  );
+  expect(mapsToPlain(dri.data)).to.eql({
+    useCases: [{
+      mandatory: true,
+      documentSets: docRequests.map((_, i) => [i])
+    }]
+  });
 
   expect(decoded.has('readerAuthAll')).to.be(false);
 }

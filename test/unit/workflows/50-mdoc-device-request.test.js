@@ -55,8 +55,7 @@ describe('mdoc-device-request', () => {
         expect(nsPlain.family_name).to.be(false);
         const dri = decoded.get('deviceRequestInfo');
         expect(mapsToPlain(dri.data)).to.eql({
-          useCases: [{mandatory: true}],
-          documentSets: [[0]]
+          useCases: [{mandatory: true, documentSets: [[0]]}]
         });
         expect(decoded.has('readerAuthAll')).to.be(false);
       });
@@ -84,8 +83,7 @@ describe('mdoc-device-request', () => {
         const decoded = cborDecode(two);
         expect(decoded.get('docRequests').length).to.eql(2);
         expect(mapsToPlain(decoded.get('deviceRequestInfo').data)).to.eql({
-          useCases: [{mandatory: true}],
-          documentSets: [[0], [1]]
+          useCases: [{mandatory: true, documentSets: [[0], [1]]}]
         });
       });
 
