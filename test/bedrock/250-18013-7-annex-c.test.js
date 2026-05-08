@@ -602,6 +602,28 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
           expect(error.message).to.not.contain('Response not found');
         }
       });
+
+      it('should accept lowercase `response` field (spruceid / wallet shape)',
+        async function() {
+          const responseBody = {
+            protocol: 'org-iso-mdoc',
+            data: {
+              response: 'dummy-base64url-encrypted-response'
+            }
+          };
+
+          try {
+            await handleAuthorizationResponse({
+              workflow: mdocTestRP,
+              exchange,
+              responseBody
+            });
+            expect().fail('Should have failed at decryption');
+          } catch(error) {
+            // Should pass structure validation and fail later
+            expect(error.message).to.not.contain('Response not found');
+          }
+        });
     });
 
     describe('HPKE decryption', function() {

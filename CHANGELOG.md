@@ -44,6 +44,9 @@
 - Fix Annex C `deviceRequestInfo` now nesting, placing `documentSets` inside a
   mandatory `UseCase` (`useCases: [{mandatory: true, documentSets:
   [[0], [1], …]}]`)
+- Annex C response handler now accepts either `Response` (uppercase, per ISO
+  18013-7 spec) or `response` (lowercase, as seen in CA DMV wallet and spruceid
+  handler).
 - `configs/configUtils.js` → `configs/config-utils.js` (kebab-case consistency).
 
 ### Added
