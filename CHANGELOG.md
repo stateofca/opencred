@@ -41,6 +41,9 @@
   `deviceRequestInfo` with `documentSets=[[0],[1],…]` per-alternative
   semantics). Existing unsigned `profile=18013-7-Annex-C` callers see no change
   in signing requirements but receive the corrected `DeviceRequest` shape.
+- Fix Annex C `deviceRequestInfo` now nesting, placing `documentSets` inside a
+  mandatory `UseCase` (`useCases: [{mandatory: true, documentSets:
+  [[0], [1], …]}]`)
 - `configs/configUtils.js` → `configs/config-utils.js` (kebab-case consistency).
 
 ### Added
@@ -76,6 +79,8 @@
   computation from DER certificates.
 - vp_token array normalization in Annex D and HAIP response handlers
   (OID4VP 1.0 compliance).
+- Annex C `serializedOrigin` is now the HTML-spec serialized origin
+  (`scheme://host[:port]`), default ports stripped in case of misconfiguration.
 
 ### Removed
 - Delete orphaned `lib/workflows/native-18013-7.js` (the pre-split monolithic

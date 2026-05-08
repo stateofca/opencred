@@ -263,7 +263,6 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
         const ue = result.updatedExchange;
         expect(ue.state).to.equal('active');
         expect(ue.variables).to.have.property('authorizationRequest');
-        expect(ue.variables).to.have.property('encodedSessionTranscript');
         // Annex C uses HPKE encryption, so HPKE keys should be stored
         expect(ue.variables).to.have.property('hpkeRecipientPrivateKey');
         expect(ue.variables).to.have.property('base64EncryptionInfo');
@@ -340,7 +339,6 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
 
       const {variables} = result.updatedExchange;
       expect(variables.authorizationRequest).to.be.an('object');
-      expect(variables.encodedSessionTranscript).to.be.a(Uint8Array);
       // Annex C stores HPKE keys and encryption info
       expect(variables).to.have.property('hpkeRecipientPrivateKey');
       expect(variables).to.have.property('base64EncryptionInfo');
@@ -666,33 +664,16 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
     });
 
     describe('Session transcript construction', function() {
-      it('should use stored encodedSessionTranscript from exchange variables',
+      it('should not store encodedSessionTranscript in exchange variables',
         async function() {
-          // Verify that encodedSessionTranscript is stored
-          expect(exchange.variables.encodedSessionTranscript)
-            .to.be.a(Uint8Array);
-          expect(exchange.variables.encodedSessionTranscript.length)
-            .to.be.greaterThan(0);
+          // Transcript is recomputed at response time from
+          // base64EncryptionInfo + origin; never persisted.
+          expect(exchange.variables.encodedSessionTranscript).to.be(undefined);
+          expect(exchange.variables.base64EncryptionInfo).to.be.a('string');
         });
 
-      it('should reconstruct session transcript if not stored',
+      it('should recompute session transcript at response time',
         async function() {
-          // Generate certificate chain and stub caStore to allow test to
-          // proceed past certificate check
-          const {chain} = await generateCertificateChain({length: 3});
-          const root = chain.pop();
-          const caStoreStub = sinon.stub(config.opencred, 'caStore').value([
-            convertDerCertificateToPem(root.raw, false)
-          ]);
-
-          const exchangeWithoutTranscript = {
-            ...exchange,
-            variables: {
-              ...exchange.variables,
-              encodedSessionTranscript: undefined
-            }
-          };
-
           const responseBody = {
             protocol: 'org-iso-mdoc',
             data: {
@@ -700,19 +681,17 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
             }
           };
 
-          // This will fail at decryption, but should reconstruct transcript
+          // Will fail at CBOR decode / decryption, but should not fail
+          // at session transcript computation.
           try {
             await handleAuthorizationResponse({
               workflow: mdocTestRP,
-              exchange: exchangeWithoutTranscript,
+              exchange,
               responseBody
             });
             expect().fail('Should have failed at decryption');
           } catch(error) {
-            // Should fail at decryption, not session transcript reconstruction
             expect(error.message).to.not.contain('session transcript');
-          } finally {
-            caStoreStub.restore();
           }
         });
     });
