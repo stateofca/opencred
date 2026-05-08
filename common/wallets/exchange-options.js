@@ -309,22 +309,22 @@ function _buildPickerEntries({
         })
       });
       if(dcApiOk) {
-        entries.push({
-          method: 'dcapi', profile,
-          walletIds: _matchingWallets({
-            enabledWalletIds, profile, methods: ['dcapi'],
-            formats, exchange, registry
-          })
-        });
-      }
-    } else if(DC_API_ONLY_PROFILES.includes(profile) && dcApiOk) {
-      entries.push({
-        method: 'dcapi', profile,
-        walletIds: _matchingWallets({
+        const dcApiWallets = _matchingWallets({
           enabledWalletIds, profile, methods: ['dcapi'],
           formats, exchange, registry
-        })
+        });
+        if(dcApiWallets.length > 0) {
+          entries.push({method: 'dcapi', profile, walletIds: dcApiWallets});
+        }
+      }
+    } else if(DC_API_ONLY_PROFILES.includes(profile) && dcApiOk) {
+      const dcApiWallets = _matchingWallets({
+        enabledWalletIds, profile, methods: ['dcapi'],
+        formats, exchange, registry
       });
+      if(dcApiWallets.length > 0) {
+        entries.push({method: 'dcapi', profile, walletIds: dcApiWallets});
+      }
     } else if(profile === 'interact') {
       entries.push({
         method: 'qr-and-copy', profile: 'interact',

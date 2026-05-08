@@ -211,27 +211,30 @@ describe('computeExchangeOptions', () => {
       expect(agg.walletIds).to.contain('cadmv-android');
     });
 
-    it('should emit per-profile dcapi entry for enabled OID4VP extra',
-      () => {
-        const result = computeExchangeOptions({
-          ...baseInput,
-          exchange: {
-            protocols: {
-              'OID4VP-draft18': 'openid4vp://test',
-              'OID4VP-1.0': 'openid4vp://test2',
-              interact: 'https://example.com/interact'
-            }
-          },
-          userSettings: {
-            enabledWallets: [],
-            enabledProfiles: ['OID4VP-1.0']
-          },
-          dcApiSystemAvailable: true
-        });
-        const perProfile = result.pickerEntries.find(
-          e => e.method === 'dcapi' && e.profile === 'OID4VP-1.0');
-        expect(perProfile).to.be.an('object');
+    it('should NOT emit per-profile dcapi entry when no wallet supports ' +
+      'the workflow format over DC API for that profile', () => {
+      // baseInput's workflow is ldp_vc; no wallet in miniRegistry exposes
+      // OID4VP-1.0 dcapi for ldp_vc, so the per-profile dcapi entry must
+      // be omitted.
+      const result = computeExchangeOptions({
+        ...baseInput,
+        exchange: {
+          protocols: {
+            'OID4VP-draft18': 'openid4vp://test',
+            'OID4VP-1.0': 'openid4vp://test2',
+            interact: 'https://example.com/interact'
+          }
+        },
+        userSettings: {
+          enabledWallets: [],
+          enabledProfiles: ['OID4VP-1.0']
+        },
+        dcApiSystemAvailable: true
       });
+      const perProfile = result.pickerEntries.find(
+        e => e.method === 'dcapi' && e.profile === 'OID4VP-1.0');
+      expect(perProfile).to.be(undefined);
+    });
 
     it('should produce single-profile dcapi entry with walletIds', () => {
       const oid4vpRegistry = {
@@ -271,27 +274,52 @@ describe('computeExchangeOptions', () => {
       expect(entry.walletIds).to.contain('test-wallet');
     });
 
-    it('should produce single-profile dcapi entry with empty walletIds ' +
-      'when no wallets match', () => {
+    it('should NOT emit a single-profile dcapi entry when no wallets match',
+      () => {
+        const result = computeExchangeOptions({
+          ...baseInput,
+          exchange: {
+            protocols: {
+              'OID4VP-draft18': 'openid4vp://test',
+              'OID4VP-1.0': 'openid4vp://test2'
+            }
+          },
+          systemWallets: [],
+          userSettings: {
+            enabledWallets: [],
+            enabledProfiles: ['OID4VP-1.0']
+          },
+          dcApiSystemAvailable: true
+        });
+        const entry = result.pickerEntries.find(
+          e => e.method === 'dcapi' && e.profile === 'OID4VP-1.0');
+        expect(entry).to.be(undefined);
+      });
+
+    it('should NOT emit any dcapi entry for a jwt_vc_json-only workflow ' +
+      'even when DC API is available (no wallet supports jwt_vc_json over ' +
+      'DC API)', () => {
       const result = computeExchangeOptions({
         ...baseInput,
+        workflow: {query: [{format: ['jwt_vc_json']}]},
         exchange: {
           protocols: {
-            'OID4VP-draft18': 'openid4vp://test',
-            'OID4VP-1.0': 'openid4vp://test2'
+            'OID4VP-1.0': 'openid4vp://test',
+            interact: 'https://example.com/interact'
           }
         },
-        systemWallets: [],
+        systemWallets: ['cadmv-ios'],
+        oid4vpDefaultProfile: 'OID4VP-1.0',
         userSettings: {
           enabledWallets: [],
           enabledProfiles: ['OID4VP-1.0']
         },
+        platform: {isIOS: true, isAndroid: false, isMobile: true},
         dcApiSystemAvailable: true
       });
-      const entry = result.pickerEntries.find(
-        e => e.method === 'dcapi' && e.profile === 'OID4VP-1.0');
-      expect(entry).to.be.an('object');
-      expect(entry.walletIds).to.eql([]);
+      const dcapiEntries = result.pickerEntries.filter(
+        e => e.method === 'dcapi');
+      expect(dcapiEntries).to.eql([]);
     });
 
     it('should emit qr-and-link for enabled OID4VP extra', () => {
@@ -438,6 +466,8 @@ describe('computeExchangeOptions', () => {
     });
 
     it('should put aggregator dcapi before per-profile dcapi', () => {
+      // Include google-wallet so the 18013-7-Annex-D per-profile dcapi
+      // entry has matching walletIds and is actually emitted.
       const result = computeExchangeOptions({
         ...baseInput,
         workflow: {query: [{format: ['mso_mdoc']}]},
@@ -447,7 +477,7 @@ describe('computeExchangeOptions', () => {
             '18013-7-Annex-D': 'https://x'
           }
         },
-        systemWallets: ['cadmv-android'],
+        systemWallets: ['cadmv-android', 'google-wallet'],
         userSettings: {
           enabledWallets: [],
           enabledProfiles: ['18013-7-Annex-D']
