@@ -158,8 +158,8 @@ describe('Session Stores', () => {
       expect(stores.dirty).to.be(true);
       expect(stores.updatedExchange.variables.dcApiSession.session)
         .to.eql(session);
-      expect(stores.updatedExchange.variables.dcApiSession
-        .session_creation_response.id).to.be(sessionId);
+      expect(stores.updatedExchange.variables.dcApiSession.id)
+        .to.be(sessionId);
     });
 
     it('should return session from memory on getSession', async () => {

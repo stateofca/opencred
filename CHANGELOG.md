@@ -47,6 +47,16 @@
 - Annex C response handler now accepts either `Response` (uppercase, per ISO
   18013-7 spec) or `response` (lowercase, as seen in CA DMV wallet and spruceid
   handler).
+- Upgraded `@spruceid/opencred-dc-api` to `0.3.0-rc.1`. The spruceid handler
+  now passes mDL issuer trust anchors (from `caStore`, treated as
+  `TrustPurpose::Iaca` alt anchors) and the reader cert chain (from the
+  `authorization_request` signing key, full leaf+intermediate chain) as
+  separate `issuerCaX5cPem` / `readerCaX5cPem` config fields on
+  `DcApi.new`, replacing the legacy single combined-chain argument. The
+  WASM API also moved its top-level constructor to a config-object shape
+  and renamed `create_new_session`/`initiate_request`/`submit_response` to
+  `createNewSession`/`initiateRequest`/`submitResponse`; the handler is
+  updated accordingly.
 - `configs/configUtils.js` → `configs/config-utils.js` (kebab-case consistency).
 
 ### Added

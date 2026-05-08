@@ -5,8 +5,10 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import {buildCertChainPem} from
-  '../../../lib/workflows/profiles/native-spruceid-18013-7.js';
+import {
+  buildIssuerTrustAnchorsPem,
+  buildReaderCertChainPem
+} from '../../../lib/workflows/profiles/native-spruceid-18013-7.js';
 import expect from 'expect.js';
 
 // Test certificates (structurally valid PEM, dummy content)
@@ -16,6 +18,14 @@ BAYTAlVTMQswCQYDVQQIDAJDQTESMBAGA1UEBwwJVGVzdENpdHkxFTATBgNVBAoM
 DFRlc3RPcmdVbml0MTAeFw0yNjAxMDEwMDAwMDBaFw0zNjAxMDEwMDAwMDBaMEUx
 CzAJBgNVBAYTAlVTMQswCQYDVQQIDAJDQTESMBAGA1UEBwwJVGVzdENpdHkxFTAT
 BgNVBAoMDFRlc3RPcmdVbml0MTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFak
+-----END CERTIFICATE-----`;
+
+const INTERMEDIATE_CERT = `-----BEGIN CERTIFICATE-----
+MIIBxTCCAWugAwIBAgIUIntermediate001TestMAoGCCqGSM49BAMCMEUxCzAJBgN
+VBAYTAlVTMQswCQYDVQQIDAJDQTESMBAGA1UEBwwJVGVzdENpdHkxFTATBgNVBAoM
+DFRlc3RPcmdVbml0MTAeFw0yNjAxMDEwMDAwMDBaFw0zNjAxMDEwMDAwMDBaMEUx
+CzAJBgNVBAYTAlVTMQswCQYDVQQIDAJDQTESMBAGA1UEBwwJVGVzdENpdHkxFTAT
+BgNVBAoMDFRlc3RPcmdVbml0MTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABINTM
 -----END CERTIFICATE-----`;
 
 const IACA_ROOT_1 = `-----BEGIN CERTIFICATE-----
@@ -34,60 +44,67 @@ AJBgNVBAYTAlVTMQswCQYDVQQIDAJDQTESMBAGA1UEBwwJVGVzdENpdHkxFTATBg
 NVBAoMDFRlc3RPcmdVbml0MTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABROOT2
 -----END CERTIFICATE-----`;
 
-describe('buildCertChainPem', () => {
-  it('should concatenate signing cert with caStore certs', () => {
-    const result = buildCertChainPem({
-      signingCertPem: SIGNING_CERT,
-      caStoreCerts: [
-        {pem: IACA_ROOT_1},
-        {pem: IACA_ROOT_2}
-      ]
+function countCertBlocks(pem) {
+  return (pem.match(/-----BEGIN CERTIFICATE-----/g) || []).length;
+}
+
+describe('buildReaderCertChainPem', () => {
+  it('returns the normalized signing cert PEM unchanged for a single cert',
+    () => {
+      const result = buildReaderCertChainPem({signingCertPem: SIGNING_CERT});
+      expect(countCertBlocks(result)).to.be(1);
+      expect(result).to.contain('TestSigningCert0001');
+      expect(result).to.match(/-----END CERTIFICATE-----\s*$/);
     });
 
-    // Result should contain all three certificates
-    const certCount = (result.match(/-----BEGIN CERTIFICATE-----/g) || [])
-      .length;
-    expect(certCount).to.be(3);
-
-    // Signing cert should come first
-    const signingIndex = result.indexOf('TestSigningCert0001');
-    const root1Index = result.indexOf('IACARoot0001');
-    const root2Index = result.indexOf('IACARoot0002');
-
-    expect(signingIndex).to.be.greaterThan(-1);
-    expect(root1Index).to.be.greaterThan(-1);
-    expect(root2Index).to.be.greaterThan(-1);
-
-    // Signing cert before IACA roots
-    expect(signingIndex).to.be.lessThan(root1Index);
-    expect(root1Index).to.be.lessThan(root2Index);
-  });
-
-  it('should work with empty caStore', () => {
-    const result = buildCertChainPem({
-      signingCertPem: SIGNING_CERT,
-      caStoreCerts: []
-    });
-
-    const certCount = (result.match(/-----BEGIN CERTIFICATE-----/g) || [])
-      .length;
-    expect(certCount).to.be(1);
+  it('preserves multi-cert chains (leaf + intermediate)', () => {
+    const chain = SIGNING_CERT + '\n' + INTERMEDIATE_CERT;
+    const result = buildReaderCertChainPem({signingCertPem: chain});
+    expect(countCertBlocks(result)).to.be(2);
     expect(result).to.contain('TestSigningCert0001');
+    expect(result).to.contain('Intermediate001');
+    expect(result.indexOf('TestSigningCert0001'))
+      .to.be.lessThan(result.indexOf('Intermediate001'));
   });
 
-  it('should work when caStoreCerts is undefined', () => {
-    const result = buildCertChainPem({
-      signingCertPem: SIGNING_CERT
+  it('strips trailing whitespace after the END boundary', () => {
+    const messy = SIGNING_CERT + '   \n\n  ';
+    const result = buildReaderCertChainPem({signingCertPem: messy});
+    expect(countCertBlocks(result)).to.be(1);
+    expect(result).to.match(/-----END CERTIFICATE-----\s*$/);
+    // No trailing junk past the last END boundary's newline.
+    expect(result.endsWith(' ')).to.be(false);
+  });
+});
+
+describe('buildIssuerTrustAnchorsPem', () => {
+  it('concatenates each caStore entry as a separate PEM block', () => {
+    const result = buildIssuerTrustAnchorsPem({
+      caStoreCerts: [{pem: IACA_ROOT_1}, {pem: IACA_ROOT_2}]
     });
-
-    const certCount = (result.match(/-----BEGIN CERTIFICATE-----/g) || [])
-      .length;
-    expect(certCount).to.be(1);
+    expect(countCertBlocks(result)).to.be(2);
+    expect(result).to.contain('IACARoot0001');
+    expect(result).to.contain('IACARoot0002');
+    expect(result.indexOf('IACARoot0001'))
+      .to.be.lessThan(result.indexOf('IACARoot0002'));
   });
 
-  it('should skip caStore entries with no pem property', () => {
-    const result = buildCertChainPem({
-      signingCertPem: SIGNING_CERT,
+  it('accepts the runtime-flat shape (array of PEM strings)', () => {
+    const result = buildIssuerTrustAnchorsPem({
+      caStoreCerts: [IACA_ROOT_1, IACA_ROOT_2]
+    });
+    expect(countCertBlocks(result)).to.be(2);
+  });
+
+  it('accepts a mix of string and {pem} entries', () => {
+    const result = buildIssuerTrustAnchorsPem({
+      caStoreCerts: [IACA_ROOT_1, {pem: IACA_ROOT_2}]
+    });
+    expect(countCertBlocks(result)).to.be(2);
+  });
+
+  it('skips entries with no usable PEM', () => {
+    const result = buildIssuerTrustAnchorsPem({
       caStoreCerts: [
         {pem: IACA_ROOT_1},
         {},
@@ -95,84 +112,21 @@ describe('buildCertChainPem', () => {
         {pem: IACA_ROOT_2}
       ]
     });
-
-    const certCount = (result.match(/-----BEGIN CERTIFICATE-----/g) || [])
-      .length;
-    expect(certCount).to.be(3);
+    expect(countCertBlocks(result)).to.be(2);
   });
 
-  it('should handle signing cert with trailing whitespace', () => {
-    const messyCert = SIGNING_CERT + '   \n\n  ';
-    const result = buildCertChainPem({
-      signingCertPem: messyCert,
+  it('returns "" for empty caStore', () => {
+    expect(buildIssuerTrustAnchorsPem({caStoreCerts: []})).to.be('');
+  });
+
+  it('returns "" when caStoreCerts is omitted entirely', () => {
+    expect(buildIssuerTrustAnchorsPem()).to.be('');
+  });
+
+  it('does NOT include the signing cert', () => {
+    const result = buildIssuerTrustAnchorsPem({
       caStoreCerts: [{pem: IACA_ROOT_1}]
     });
-
-    const certCount = (result.match(/-----BEGIN CERTIFICATE-----/g) || [])
-      .length;
-    expect(certCount).to.be(2);
-  });
-
-  it(
-    'normalizes signingCertPem with normalizePem (first PEM block only)',
-    () => {
-      const multiCertChain = SIGNING_CERT + '\n' + IACA_ROOT_1;
-      const result = buildCertChainPem({
-        signingCertPem: multiCertChain,
-        caStoreCerts: [{pem: IACA_ROOT_2}]
-      });
-
-      const certCount = (result.match(/-----BEGIN CERTIFICATE-----/g) || [])
-        .length;
-      expect(certCount).to.be(2);
-      expect(result).to.contain('TestSigningCert0001');
-      expect(result).to.contain('IACARoot0002');
-      expect(result).not.to.contain('IACARoot0001');
-    }
-  );
-
-  it('should work with caStore as array of strings', () => {
-    const result = buildCertChainPem({
-      signingCertPem: SIGNING_CERT,
-      caStoreCerts: [IACA_ROOT_1, IACA_ROOT_2]
-    });
-
-    const certCount = (result.match(/-----BEGIN CERTIFICATE-----/g) || [])
-      .length;
-    expect(certCount).to.be(3);
-
-    const signingIndex = result.indexOf('TestSigningCert0001');
-    const root1Index = result.indexOf('IACARoot0001');
-    const root2Index = result.indexOf('IACARoot0002');
-
-    expect(signingIndex).to.be.greaterThan(-1);
-    expect(root1Index).to.be.greaterThan(-1);
-    expect(root2Index).to.be.greaterThan(-1);
-    expect(signingIndex).to.be.lessThan(root1Index);
-    expect(root1Index).to.be.lessThan(root2Index);
-  });
-
-  it('should handle mixed caStore formats (strings and objects)', () => {
-    const result = buildCertChainPem({
-      signingCertPem: SIGNING_CERT,
-      caStoreCerts: [
-        IACA_ROOT_1, // string format
-        {pem: IACA_ROOT_2} // object format
-      ]
-    });
-
-    const certCount = (result.match(/-----BEGIN CERTIFICATE-----/g) || [])
-      .length;
-    expect(certCount).to.be(3);
-
-    const signingIndex = result.indexOf('TestSigningCert0001');
-    const root1Index = result.indexOf('IACARoot0001');
-    const root2Index = result.indexOf('IACARoot0002');
-
-    expect(signingIndex).to.be.greaterThan(-1);
-    expect(root1Index).to.be.greaterThan(-1);
-    expect(root2Index).to.be.greaterThan(-1);
-    expect(signingIndex).to.be.lessThan(root1Index);
-    expect(root1Index).to.be.lessThan(root2Index);
+    expect(result).to.not.contain('TestSigningCert0001');
   });
 });
