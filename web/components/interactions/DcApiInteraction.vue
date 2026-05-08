@@ -26,6 +26,12 @@ SPDX-License-Identifier: BSD-3-Clause
           @click="handleRetry">
           {{$t('dcApiRetry')}}
         </cadmv-button>
+        <cadmv-button
+          v-if="fallbackEntry"
+          variant="secondary"
+          @click="handleFallback">
+          {{$t('dcApiFallback')}}
+        </cadmv-button>
       </div>
     </div>
     <!-- Normal State: wallet-branded launch buttons -->
@@ -114,12 +120,21 @@ const props = defineProps({
   error: {
     type: [Object, String],
     default: null
+  },
+  // The next picker entry to offer as a quick "Try another way"
+  // fallback when the DC API flow has failed (e.g. user canceled, or
+  // their wallet didn't have the requested credential). Pass `null` to
+  // hide the fallback button.
+  fallbackEntry: {
+    type: Object,
+    default: null
   }
 });
 
 const emit = defineEmits([
   'launch',
-  'retry'
+  'retry',
+  'fallback'
 ]);
 
 const allowedWalletIdSet = computed(() =>
@@ -184,5 +199,9 @@ const handleLaunch = ({walletId, profile}) => {
 
 const handleRetry = () => {
   emit('retry');
+};
+
+const handleFallback = () => {
+  emit('fallback');
 };
 </script>

@@ -17,8 +17,10 @@ SPDX-License-Identifier: BSD-3-Clause
       :profile="activePickerEntry.profile || null"
       :error="interactionState.dcApiError"
       :active="isActive"
+      :fallback-entry="fallbackPickerEntry"
       @launch="handleDcApiLaunch"
-      @retry="handleDcApiRetry" />
+      @retry="handleDcApiRetry"
+      @fallback="handleDcApiFallback" />
     <QrAndLinkInteraction
       v-else-if="activePickerEntry?.method === 'qr-and-link'"
       :exchange-data="exchangeData"
@@ -71,7 +73,8 @@ const {
 } = useExchange();
 
 const {
-  activePickerEntry, interactionState, handleDcApiRetry
+  activePickerEntry, interactionState, pickerEntries,
+  handleDcApiRetry, handlePickerSelect
 } = useWalletInteraction();
 
 const protocolUrl = computed(() => {
@@ -107,6 +110,36 @@ const compatibleWalletsForActiveEntry = computed(() => {
   }
   return [];
 });
+
+// Compute the next picker entry after the active one — used to offer
+// a "Try another way" shortcut when the DC API flow has failed (e.g.
+// the workflow's hybrid query lets the user fall back from mDoc-over-
+// DC-API to OID4VP qr-and-link for a JWT VC).
+const fallbackPickerEntry = computed(() => {
+  const entries = pickerEntries.value || [];
+  const active = activePickerEntry.value;
+  if(!active || entries.length < 2) {
+    return null;
+  }
+  const activeIdx = entries.findIndex(
+    e => e.method === active.method && e.profile === active.profile);
+  for(let i = activeIdx + 1; i < entries.length; i++) {
+    const next = entries[i];
+    if(next && (next.walletIds?.length ?? 0) > 0) {
+      return next;
+    }
+  }
+  return null;
+});
+
+const handleDcApiFallback = () => {
+  const next = fallbackPickerEntry.value;
+  if(!next) {
+    return;
+  }
+  interactionState.dcApiError = null;
+  handlePickerSelect(next);
+};
 
 const handleDcApiLaunch = async ({profile, walletId}) => {
   if(!profile) {
