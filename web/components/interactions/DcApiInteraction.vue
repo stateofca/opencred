@@ -95,6 +95,14 @@ const props = defineProps({
     type: Object,
     default: () => ({})
   },
+  // Allowlist of wallet IDs from the active picker entry. The picker
+  // entry already filters by `workflow.wallets`; we use it here so the
+  // launch buttons match the workflow's wallet configuration. Pass
+  // `null` to disable filtering.
+  walletIds: {
+    type: Array,
+    default: null
+  },
   profile: {
     type: String,
     default: null
@@ -114,14 +122,21 @@ const emit = defineEmits([
   'retry'
 ]);
 
+const allowedWalletIdSet = computed(() =>
+  props.walletIds === null ? null : new Set(props.walletIds));
+
 const dcApiWallets = computed(() => {
   const protocols = props.exchangeData?.protocols;
   if(!protocols || typeof protocols !== 'object') {
     return [];
   }
 
+  const allowed = allowedWalletIdSet.value;
   const entries = [];
   for(const [walletId, wallet] of Object.entries(props.walletsRegistry)) {
+    if(allowed && !allowed.has(walletId)) {
+      continue;
+    }
     if(!wallet?.supportedProfiles) {
       continue;
     }
@@ -145,9 +160,13 @@ const singleProfileHandlingWalletNames = computed(() => {
   if(!singleProfileMode.value) {
     return [];
   }
+  const allowed = allowedWalletIdSet.value;
   const names = [];
   for(const [walletId, wallet] of
     Object.entries(props.walletsRegistry)) {
+    if(allowed && !allowed.has(walletId)) {
+      continue;
+    }
     const cfg = wallet?.supportedProfiles?.[props.profile];
     if(!cfg?.dcapi) {
       continue;

@@ -13,6 +13,7 @@ SPDX-License-Identifier: BSD-3-Clause
       :key="`dcapi:${activePickerEntry.profile || 'all'}`"
       :exchange-data="exchangeData"
       :wallets-registry="WALLETS_REGISTRY"
+      :wallet-ids="activePickerEntry.walletIds || []"
       :profile="activePickerEntry.profile || null"
       :error="interactionState.dcApiError"
       :active="isActive"
