@@ -56,6 +56,7 @@ const {context} = useExchangeContext();
 
 const autoRedirectTimerId = ref(null);
 const schedulingAutoRedirect = ref(false);
+const isRedirecting = ref(false);
 
 function clearAutoRedirectTimer() {
   if(autoRedirectTimerId.value != null) {
@@ -74,11 +75,15 @@ onBeforeUnmount(clearAutoRedirectTimer);
 
 const continueToClient = () => {
   clearAutoRedirectTimer();
+  if(isRedirecting.value) {
+    return;
+  }
   const {exchangeData, workflow} = context.value;
   const redirectUri = workflow?.oidc?.redirectUri;
   if(!exchangeData?.oidc?.code || !redirectUri) {
     return;
   }
+  isRedirecting.value = true;
   const queryParams = new URLSearchParams({
     state: exchangeData.oidc.state,
     code: exchangeData.oidc.code
