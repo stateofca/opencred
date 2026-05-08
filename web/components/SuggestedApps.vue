@@ -62,7 +62,7 @@ const {t} = useReactiveI18n();
 const {exchangeOptions} = useExchangeOptions();
 const {platform} = usePlatform();
 
-const VISIBLE_THRESHOLD = 2;
+const VISIBLE_THRESHOLD = 1;
 const showAll = ref(false);
 
 const walletRows = computed(() => {
