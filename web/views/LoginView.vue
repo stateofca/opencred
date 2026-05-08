@@ -73,6 +73,7 @@ const showLoginContinue = computed(() =>
 onBeforeUnmount(clearAutoRedirectTimer);
 
 const continueToClient = () => {
+  clearAutoRedirectTimer();
   const {exchangeData, workflow} = context.value;
   const redirectUri = workflow?.oidc?.redirectUri;
   if(!exchangeData?.oidc?.code || !redirectUri) {
