@@ -9,7 +9,7 @@ SPDX-License-Identifier: BSD-3-Clause
   <CadmvMainCard
     :title="t('exchangePageTitle', context.workflow.name)"
     :subtitle="t('exchangePageExplain', undefined)"
-    class="column items-center q-pb-md">
+    class="opencred-main-card column items-center q-pb-md">
     <div v-if="context.exchangeData?.state === 'complete'" />
     <div
       v-else-if="state.error">

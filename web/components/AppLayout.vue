@@ -69,8 +69,8 @@ SPDX-License-Identifier: BSD-3-Clause
       <div
         v-if="props.showBackgroundImage && !props.hasError &&
           workflow?.brand?.backgroundImage"
-        class="absolute top-0 left-0 right-0 bg-no-repeat bg-cover
-               clip-path-bg z-0 min-h-[360px]"
+        class="opencred-hero-background absolute top-0 left-0 right-0
+               bg-no-repeat bg-cover clip-path-bg z-0 min-h-[360px]"
         :style="{ 'background-image': `url(${
           typeof workflow?.brand?.backgroundImage === 'string' ?
             workflow?.brand?.backgroundImage :

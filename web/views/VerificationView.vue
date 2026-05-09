@@ -21,7 +21,8 @@ SPDX-License-Identifier: BSD-3-Clause
       purpose="verification" />
     <CadmvMainCard
       v-else
-      :title="t('verificationTitle')">
+      :title="t('verificationTitle')"
+      class="opencred-main-card">
       <div class="column items-center q-gutter-y-lg q-pa-md q-pb-xl">
         <div class="col row items-center text-lg text-positive">
           <q-icon
