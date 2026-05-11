@@ -24,11 +24,12 @@ SPDX-License-Identifier: BSD-3-Clause
       :title="t('verificationTitle')"
       class="opencred-main-card">
       <div class="column items-center q-gutter-y-lg q-pa-md q-pb-xl">
-        <div class="col row items-center text-lg text-positive">
+        <div class="col column items-center text-center text-lg text-positive">
           <q-icon
             name="fas fa-circle-check"
             size="md"
-            color="positive" />
+            color="positive"
+            class="q-mb-sm" />
           {{t('verificationSuccess')}}
         </div>
         <p v-if="isPopupWindow">
