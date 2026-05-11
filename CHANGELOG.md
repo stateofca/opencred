@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.0.6 - 2026-04-XX
+## 10.0.6 - 2026-05-11
 
 ### Changed
 - Documented TEST/UAT 2026 issuer DID in README
