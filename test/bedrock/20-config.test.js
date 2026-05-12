@@ -12,6 +12,9 @@ import {
   OpenCredConfigSchema,
   resolveConfigFrom
 } from '../../configs/config-utils.js';
+import {
+  validateWorkflowIdentifiers
+} from '../../configs/config.js';
 
 // configFrom test fixtures
 const baseNativeWorkflow = {
@@ -391,6 +394,177 @@ describe('Config - brand override behavior', function() {
     expect(result.brand.primary).to.equal('#008f5a');
     expect(result.brand.header).to.equal('#004225');
     expect(result.brand.homeLink).to.equal('https://example.com/home');
+  });
+});
+
+describe('Config - workflowId schema and uniqueness', function() {
+  it('should accept a workflow with a valid workflowId', function() {
+    const cfg = {
+      workflows: [{
+        clientId: 'test-client',
+        clientSecret: 'secret',
+        workflowId: 'my-legacy-slug',
+        type: 'native',
+        query: [{type: ['VerifiableCredential']}]
+      }],
+      defaultBrand: {cta: '#006847', primary: '#008f5a', header: '#004225'}
+    };
+    const result = OpenCredConfigSchema.parse(cfg);
+    expect(result.workflows[0].workflowId).to.equal('my-legacy-slug');
+  });
+
+  it('should accept a workflow without workflowId', function() {
+    const cfg = {
+      workflows: [{
+        clientId: 'test-client',
+        clientSecret: 'secret',
+        type: 'native',
+        query: [{type: ['VerifiableCredential']}]
+      }],
+      defaultBrand: {cta: '#006847', primary: '#008f5a', header: '#004225'}
+    };
+    const result = OpenCredConfigSchema.parse(cfg);
+    expect(result.workflows[0].workflowId).to.be(undefined);
+  });
+
+  it('should reject workflowId with invalid characters', function() {
+    const cfg = {
+      workflows: [{
+        clientId: 'test-client',
+        clientSecret: 'secret',
+        workflowId: 'has spaces!',
+        type: 'native',
+        query: [{type: ['VerifiableCredential']}]
+      }],
+      defaultBrand: {cta: '#006847', primary: '#008f5a', header: '#004225'}
+    };
+    expect(() => OpenCredConfigSchema.parse(cfg)).to.throwError();
+  });
+});
+
+describe('Config - workflowId not inherited via configFrom', function() {
+  it('should not inherit workflowId from parent', function() {
+    const parent = {
+      ...baseNativeWorkflow,
+      workflowId: 'parent-slug'
+    };
+    const child = {
+      clientId: 'child-wfid',
+      type: 'native',
+      configFrom: 'parent-native',
+      query: [{type: ['VerifiableCredential']}]
+    };
+
+    const result = applyWorkflowDefaults({
+      opencred,
+      workflows: [parent, child],
+      workflow: child
+    });
+
+    expect(result.workflowId).to.be(undefined);
+  });
+
+  it('resolveConfigFrom should not include workflowId', function() {
+    const parent = {
+      ...baseNativeWorkflow,
+      workflowId: 'parent-slug'
+    };
+    const child = {
+      clientId: 'child-resolve',
+      type: 'native',
+      configFrom: 'parent-native'
+    };
+
+    const result = resolveConfigFrom({
+      workflow: child,
+      workflows: [parent, child]
+    });
+
+    expect(result.workflowId).to.be(undefined);
+  });
+});
+
+describe('Config - workflow identifier uniqueness', function() {
+  it('should throw on duplicate clientId', function() {
+    const cfg = {
+      workflows: [
+        {clientId: 'dup', clientSecret: 's1', type: 'native',
+          query: [{type: ['VerifiableCredential']}]},
+        {clientId: 'dup', clientSecret: 's2', type: 'native',
+          query: [{type: ['VerifiableCredential']}]}
+      ]
+    };
+    const parsed = OpenCredConfigSchema.parse({
+      ...cfg,
+      defaultBrand: {cta: '#006847', primary: '#008f5a', header: '#004225'}
+    });
+    expect(() => validateWorkflowIdentifiers(parsed))
+      .to.throwError(/Duplicate clientId "dup"/);
+  });
+
+  it('should throw on duplicate workflowId', function() {
+    const cfg = {
+      workflows: [
+        {clientId: 'a', clientSecret: 's1', workflowId: 'same-slug',
+          type: 'native', query: [{type: ['VerifiableCredential']}]},
+        {clientId: 'b', clientSecret: 's2', workflowId: 'same-slug',
+          type: 'native', query: [{type: ['VerifiableCredential']}]}
+      ]
+    };
+    const parsed = OpenCredConfigSchema.parse({
+      ...cfg,
+      defaultBrand: {cta: '#006847', primary: '#008f5a', header: '#004225'}
+    });
+    expect(() => validateWorkflowIdentifiers(parsed))
+      .to.throwError(/Duplicate workflowId "same-slug"/);
+  });
+
+  it('should not throw when workflowIds are unique', function() {
+    const cfg = {
+      workflows: [
+        {clientId: 'a', clientSecret: 's1', workflowId: 'slug-a',
+          type: 'native', query: [{type: ['VerifiableCredential']}]},
+        {clientId: 'b', clientSecret: 's2', workflowId: 'slug-b',
+          type: 'native', query: [{type: ['VerifiableCredential']}]}
+      ]
+    };
+    const parsed = OpenCredConfigSchema.parse({
+      ...cfg,
+      defaultBrand: {cta: '#006847', primary: '#008f5a', header: '#004225'}
+    });
+    expect(() => validateWorkflowIdentifiers(parsed)).to.not.throwError();
+  });
+
+  it('should not throw when no workflowIds are set', function() {
+    const cfg = {
+      workflows: [
+        {clientId: 'x', clientSecret: 's1', type: 'native',
+          query: [{type: ['VerifiableCredential']}]},
+        {clientId: 'y', clientSecret: 's2', type: 'native',
+          query: [{type: ['VerifiableCredential']}]}
+      ]
+    };
+    const parsed = OpenCredConfigSchema.parse({
+      ...cfg,
+      defaultBrand: {cta: '#006847', primary: '#008f5a', header: '#004225'}
+    });
+    expect(() => validateWorkflowIdentifiers(parsed)).to.not.throwError();
+  });
+
+  it('should not throw on cross-collision (warns only)', function() {
+    const cfg = {
+      workflows: [
+        {clientId: 'foo', clientSecret: 's1', type: 'native',
+          query: [{type: ['VerifiableCredential']}]},
+        {clientId: 'bar', clientSecret: 's2', workflowId: 'foo',
+          type: 'native', query: [{type: ['VerifiableCredential']}]}
+      ]
+    };
+    const parsed = OpenCredConfigSchema.parse({
+      ...cfg,
+      defaultBrand: {cta: '#006847', primary: '#008f5a', header: '#004225'}
+    });
+    expect(() => validateWorkflowIdentifiers(parsed)).to.not.throwError();
   });
 });
 

@@ -153,6 +153,8 @@ export const availableWallets = [
 export const BaseWorkflowSchema = z.object({
   clientId: z.string(), // Used to identify the workflow
   clientSecret: z.string(), // To authenticate exchange API requests
+  // Legacy fallback identifier for URL-path resolution
+  workflowId: z.string().regex(/^[a-zA-Z0-9_-]+$/).optional(),
   configFrom: z.string().optional(), // Used to reference a different workflow
   name: z.string().optional(),
   description: z.string().optional(),

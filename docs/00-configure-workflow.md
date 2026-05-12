@@ -83,6 +83,35 @@ workflows:
           - jwt_vc_json
 ```
 
+#### Legacy Workflow Identifier (Deprecated)
+
+If you are migrating from an earlier version of OpenCred where API clients
+used a different identifier (slug) in URL paths, you can set `workflowId`
+on a workflow to preserve backward compatibility:
+
+```yaml
+workflows:
+  - clientId: my-new-uuid-style-id
+    clientSecret: my-secret
+    workflowId: my-old-slug
+    type: native
+    # ...
+```
+
+When `workflowId` is set, clients can use either `clientId` or `workflowId`
+in URL paths (e.g., `POST /workflows/my-old-slug/exchanges`) and in Basic
+authentication. The `clientId` takes precedence: if two workflows have a
+matching `clientId` and `workflowId` for the same identifier, the `clientId`
+match wins.
+
+**Constraints:**
+- `workflowId` is optional; omit it for new workflows.
+- Must match `^[a-zA-Z0-9_-]+$` (alphanumeric, hyphens, underscores).
+- Must be unique across all workflows.
+- Cannot be the same as another workflow's `clientId` (a warning is logged
+  on startup if this occurs).
+- Not inherited via `configFrom`.
+
 ### 5. Generate and Configure the `id_token` Signing Key
 
 Generate a new RSA key with purpose `id_token`.

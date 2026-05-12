@@ -115,6 +115,57 @@ function ensureAccessTokenKey(opencredConfig) {
 }
 
 /**
+ * Validates that workflow identifiers (clientId, legacy workflowId) are unique
+ * across all configured workflows.
+ *
+ * @param {object} opencredConfig - Parsed OpenCred config.
+ * @throws {Error} If duplicate clientId or workflowId values are found.
+ */
+export function validateWorkflowIdentifiers(opencredConfig) {
+  const workflows = opencredConfig.workflows ?? [];
+
+  // Check for duplicate clientId values
+  const clientIds = new Map();
+  for(const w of workflows) {
+    if(clientIds.has(w.clientId)) {
+      throw new Error(
+        `Duplicate clientId "${w.clientId}" found in workflow configuration. ` +
+        `Each workflow must have a unique clientId.`
+      );
+    }
+    clientIds.set(w.clientId, w);
+  }
+
+  // Check for duplicate workflowId values
+  const workflowIds = new Map();
+  for(const w of workflows) {
+    if(!w.workflowId) {
+      continue;
+    }
+    if(workflowIds.has(w.workflowId)) {
+      throw new Error(
+        `Duplicate workflowId "${w.workflowId}" found in workflow ` +
+        `configuration. Each workflowId must be unique.`
+      );
+    }
+    workflowIds.set(w.workflowId, w);
+  }
+
+  // Warn on cross-collisions: workflowId matching another workflow's clientId
+  for(const [wfId, owner] of workflowIds) {
+    const collision = clientIds.get(wfId);
+    if(collision && collision !== owner) {
+      logger.warning(
+        `Workflow "${owner.clientId}" has workflowId "${wfId}" which ` +
+        `matches the clientId of another workflow. The clientId match ` +
+        `will take precedence; the workflowId will be unreachable for ` +
+        `that identifier.`
+      );
+    }
+  }
+}
+
+/**
  * Warns when any workflow has OIDC settings but no id_token signing key.
  *
  * @param {object} opencredConfig - Parsed OpenCred config.
@@ -157,6 +208,7 @@ bedrock.events.on('bedrock.init', async () => {
     ensureAccessTokenKey(opencred);
 
     config.opencred = OpenCredConfigSchema.parse(opencred);
+    validateWorkflowIdentifiers(config.opencred);
     logger.info('OpenCred Config Successfully Validated.');
 
     checkOidcKeyConfiguration(config.opencred);

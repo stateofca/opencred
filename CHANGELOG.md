@@ -1,5 +1,16 @@
 # opencred-platform Changelog
 
+## 10.0.7 - 2026-05-XX
+
+### Changed
+- Optional `workflowId` property on workflow configuration for backward
+  compatibility with clients migrating from earlier OpenCred versions.
+  Clients can use either `clientId` or `workflowId` in URL paths and
+  authentication.
+- Startup validation for duplicate `clientId` and `workflowId` values.
+  Uniqueness enforcement.
+- Made test filenames more consistent.
+
 ## 10.0.6 - 2026-05-11
 
 ### Changed

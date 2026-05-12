@@ -71,6 +71,7 @@ app:
       - name: "Test Workflow (Native)"
         clientId: "rp1"
         clientSecret: "DeepestAndDarkest"
+        # workflowId: rp1-legacy-slug  # Optional: legacy identifier for URL path compatibility
         type: native
         description: "Test App"
         brand:
