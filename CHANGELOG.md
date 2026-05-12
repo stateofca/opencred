@@ -13,6 +13,10 @@
 - Improved translation merging with `configFrom` inheritance to enable
   more selective merging and multi-level overrides.
 
+### Fixed
+- Fixed issue with Google Translate anchor href="#" triggering Vue Router navigation,
+  which would redirect to "/" and break the exchange flow.
+
 ## 10.0.6 - 2026-05-11
 
 ### Changed

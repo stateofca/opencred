@@ -186,6 +186,18 @@ onMounted(() => {
     const currentDiv = document.getElementById('translations-btn');
     if(currentDiv) {
       currentDiv.appendChild(transEl);
+      // The CDN script loads asynchronously after appendChild, so the custom
+      // element is only upgraded (connectedCallback + innerHTML set) once
+      // customElements.define('google-translate') is called by the script.
+      // whenDefined() resolves at that moment, after the synchronous upgrade.
+      customElements.whenDefined('google-translate').then(() => {
+        const anchor = transEl.querySelector('a[href="#"]');
+        if(anchor) {
+          // Prevent href="#" from triggering Vue Router navigation, which
+          // would redirect to "/" and break the verification flow.
+          anchor.addEventListener('click', e => e.preventDefault());
+        }
+      });
     }
     useNativeTranslations.value = false;
     useHead({script: [{src: config.customTranslateScript}]});
