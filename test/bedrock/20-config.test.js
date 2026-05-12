@@ -9,6 +9,7 @@ import expect from 'expect.js';
 
 import {
   applyWorkflowDefaults,
+  mergeTranslations,
   OpenCredConfigSchema,
   resolveConfigFrom
 } from '../../configs/config-utils.js';
@@ -630,5 +631,178 @@ describe('Config - optional BrandSchema fields', function() {
     expect(result.workflows[0].brand.cta).to.equal('#006847');
     expect(result.workflows[0].brand.primary).to.equal('#008f5a');
     expect(result.workflows[0].brand.header).to.equal('#004225');
+  });
+});
+
+describe('Config - configFrom translations deep merge', function() {
+  it('should deep-merge parent and child translations per locale', function() {
+    const parent = {
+      ...baseNativeWorkflow,
+      translations: {
+        en: {copyright: 'Parent ©', appTitle: 'Parent App'}
+      }
+    };
+    const child = {
+      clientId: 'child-trans-merge',
+      type: 'native',
+      configFrom: 'parent-native',
+      query: [{type: ['VerifiableCredential']}],
+      translations: {
+        en: {appTitle: 'Child App', qrPageExplain: 'Child QR'}
+      }
+    };
+
+    const result = applyWorkflowDefaults({
+      opencred,
+      workflows: [parent, child],
+      workflow: child
+    });
+
+    // Parent key preserved
+    expect(result.translations.en.copyright).to.equal('Parent ©');
+    // Child overrides parent key
+    expect(result.translations.en.appTitle).to.equal('Child App');
+    // Child-only key present
+    expect(result.translations.en.qrPageExplain).to.equal('Child QR');
+  });
+
+  it('should inherit parent translations wholesale when child has none',
+    function() {
+      const parent = {
+        ...baseNativeWorkflow,
+        translations: {
+          en: {copyright: 'Parent ©', appTitle: 'Parent App'}
+        }
+      };
+      const child = {
+        clientId: 'child-no-trans',
+        type: 'native',
+        configFrom: 'parent-native',
+        query: [{type: ['VerifiableCredential']}]
+      };
+
+      const result = applyWorkflowDefaults({
+        opencred,
+        workflows: [parent, child],
+        workflow: child
+      });
+
+      expect(result.translations.en.copyright).to.equal('Parent ©');
+      expect(result.translations.en.appTitle).to.equal('Parent App');
+    });
+
+  it('should pass child translations through when parent has none',
+    function() {
+      const parent = {
+        clientId: 'parent-native',
+        clientSecret: 'parent-secret',
+        type: 'native',
+        query: [{type: ['VerifiableCredential']}]
+      };
+      const child = {
+        clientId: 'child-only-trans',
+        type: 'native',
+        configFrom: 'parent-native',
+        query: [{type: ['VerifiableCredential']}],
+        translations: {
+          en: {appTitle: 'Child Only'}
+        }
+      };
+
+      const result = applyWorkflowDefaults({
+        opencred,
+        workflows: [parent, child],
+        workflow: child
+      });
+
+      expect(result.translations.en.appTitle).to.equal('Child Only');
+    });
+
+  it('should handle multiple locales independently', function() {
+    const parent = {
+      ...baseNativeWorkflow,
+      translations: {
+        en: {copyright: 'English ©', appTitle: 'EN Title'},
+        es: {copyright: 'Spanish ©', appTitle: 'ES Title'}
+      }
+    };
+    const child = {
+      clientId: 'child-multi-locale',
+      type: 'native',
+      configFrom: 'parent-native',
+      query: [{type: ['VerifiableCredential']}],
+      translations: {
+        en: {appTitle: 'Child EN Title'}
+      }
+    };
+
+    const result = applyWorkflowDefaults({
+      opencred,
+      workflows: [parent, child],
+      workflow: child
+    });
+
+    // en: child overrides appTitle, parent copyright preserved
+    expect(result.translations.en.appTitle).to.equal('Child EN Title');
+    expect(result.translations.en.copyright).to.equal('English ©');
+    // es: inherited wholesale from parent
+    expect(result.translations.es.copyright).to.equal('Spanish ©');
+    expect(result.translations.es.appTitle).to.equal('ES Title');
+  });
+
+  it('should allow empty-string override to blank out a parent key',
+    function() {
+      const parent = {
+        ...baseNativeWorkflow,
+        translations: {
+          en: {copyright: 'Parent ©'}
+        }
+      };
+      const child = {
+        clientId: 'child-blank',
+        type: 'native',
+        configFrom: 'parent-native',
+        query: [{type: ['VerifiableCredential']}],
+        translations: {
+          en: {copyright: ''}
+        }
+      };
+
+      const result = applyWorkflowDefaults({
+        opencred,
+        workflows: [parent, child],
+        workflow: child
+      });
+
+      expect(result.translations.en.copyright).to.equal('');
+    });
+});
+
+describe('Config - mergeTranslations helper', function() {
+  it('should return undefined when both inputs are falsy', function() {
+    expect(mergeTranslations(undefined, undefined)).to.be(undefined);
+    expect(mergeTranslations(null, null)).to.be(undefined);
+  });
+
+  it('should return child when parent is falsy', function() {
+    const child = {en: {title: 'Hello'}};
+    expect(mergeTranslations(undefined, child)).to.eql(child);
+  });
+
+  it('should return parent when child is falsy', function() {
+    const parent = {en: {title: 'Hello'}};
+    expect(mergeTranslations(parent, undefined)).to.eql(parent);
+  });
+
+  it('should not mutate input objects', function() {
+    const parent = {en: {a: '1', b: '2'}};
+    const child = {en: {b: '3', c: '4'}};
+    const parentCopy = JSON.parse(JSON.stringify(parent));
+    const childCopy = JSON.parse(JSON.stringify(child));
+
+    mergeTranslations(parent, child);
+
+    expect(parent).to.eql(parentCopy);
+    expect(child).to.eql(childCopy);
   });
 });

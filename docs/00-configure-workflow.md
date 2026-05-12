@@ -112,6 +112,61 @@ match wins.
   on startup if this occurs).
 - Not inherited via `configFrom`.
 
+#### Workflow Inheritance with `configFrom`
+
+A workflow can inherit shared base fields from another workflow by setting
+`configFrom` to the parent's `clientId`:
+
+```yaml
+workflows:
+  - clientId: my-base
+    clientSecret: base-secret
+    type: native
+    brand:
+      cta: '#006847'
+      homeLink: https://example.com
+    translations:
+      en:
+        copyright: '© 2026 Example'
+        appTitle: Base App
+    query:
+      - type:
+          - VerifiableCredential
+
+  - clientId: my-child
+    configFrom: my-base
+    type: native
+    translations:
+      en:
+        appTitle: Child App
+        qrPageExplain: Scan with your wallet
+    query:
+      - type:
+          - VerifiedEmailCredential
+```
+
+**Inherited fields:** `name`, `description`, `brand`, `caStore`, `dcApiEnabled`,
+`wallets`, `oidc`, `callback`, `translations`, `trustedCredentialIssuers`,
+`untrustedVariableAllowList`, `public`, `clientSecret`.
+
+**Deep-merge behavior:**
+
+- **`brand`** is deep-merged in three levels: `defaultBrand` ← parent brand ←
+  child brand. Partial overrides are additive.
+- **`translations`** is deep-merged per locale. Within each locale, the child's
+  keys override the parent's; parent-only keys are preserved. Locales absent
+  on the child are inherited wholesale. In the example above, the resolved
+  `translations.en` for `my-child` would be:
+  `{copyright: '© 2026 Example', appTitle: 'Child App', qrPageExplain: 'Scan with your wallet'}`.
+- All other inherited fields use **shallow replacement**: if the child defines
+  the field, the child's value wins entirely.
+
+**Constraints:**
+- Only one level of inheritance is allowed (a `configFrom` target must not itself
+  use `configFrom`).
+- Fields related to the credential query (e.g., `query`, `dcql_query`,
+  `verifiablePresentationRequest`) are never inherited.
+
 ### 5. Generate and Configure the `id_token` Signing Key
 
 Generate a new RSA key with purpose `id_token`.

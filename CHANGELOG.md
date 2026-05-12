@@ -10,6 +10,8 @@
 - Startup validation for duplicate `clientId` and `workflowId` values.
   Uniqueness enforcement.
 - Made test filenames more consistent.
+- Improved translation merging with `configFrom` inheritance to enable
+  more selective merging and multi-level overrides.
 
 ## 10.0.6 - 2026-05-11
 

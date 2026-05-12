@@ -527,6 +527,38 @@ export const resolveConfigFrom = ({workflow, workflows}) => {
 };
 
 /**
+ * Deep-merge translations from parent and child at the per-locale level.
+ * Each locale is shallow-merged: child keys override parent keys within the
+ * same locale; parent-only keys are preserved. Locales absent on the child
+ * are inherited wholesale from the parent.
+ *
+ * @param {object|undefined} parentTranslations - Parent translations object.
+ * @param {object|undefined} childTranslations - Child translations object.
+ * @returns {object|undefined} - Merged translations, or undefined if both
+ *   inputs are falsy.
+ */
+export const mergeTranslations = (parentTranslations, childTranslations) => {
+  if(!parentTranslations && !childTranslations) {
+    return undefined;
+  }
+  if(!parentTranslations) {
+    return childTranslations;
+  }
+  if(!childTranslations) {
+    return parentTranslations;
+  }
+
+  const merged = {...parentTranslations};
+  for(const locale of Object.keys(childTranslations)) {
+    merged[locale] = {
+      ...(parentTranslations[locale] ?? {}),
+      ...childTranslations[locale]
+    };
+  }
+  return merged;
+};
+
+/**
  * Populate workflow with defaults from root brand and configFrom parent.
  *
  * When configFrom is set, only base/shared fields are inherited from the
@@ -559,10 +591,16 @@ export const applyWorkflowDefaults = ({opencred, workflows, workflow}) => {
       {...baseBrand, ...inherited.brand} : baseBrand;
     const mergedBrand = {...parentBrand, ...(workflow.brand ?? {})};
 
+    // Translations merge: parent.<locale> → child.<locale> (per-key)
+    const mergedTranslations = mergeTranslations(
+      inherited.translations, workflow.translations
+    );
+
     return {
       ...inherited,
       ...workflow,
-      brand: mergedBrand
+      brand: mergedBrand,
+      ...(mergedTranslations && {translations: mergedTranslations})
     };
   }
 
