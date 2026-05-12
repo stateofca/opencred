@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.0.7 - 2026-05-12
+## 10.0.7 - 2026-05-dd
 
 ### Changed
 - Optional `workflowId` property on workflow configuration for backward
