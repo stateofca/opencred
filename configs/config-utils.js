@@ -449,19 +449,96 @@ export const OpenCredConfigSchema = z.object({
 });
 
 /**
- * Populate workflow with defaults from root and configFrom peers.
+ * Fields from a parent workflow that configFrom is allowed to inherit.
+ * Only base/shared fields — type-specific fields (query, protocol settings)
+ * are never inherited.
+ */
+export const INHERITABLE_FIELDS = [
+  'name',
+  'description',
+  'brand',
+  'caStore',
+  'dcApiEnabled',
+  'wallets',
+  'oidc',
+  'callback',
+  'translations',
+  'trustedCredentialIssuers',
+  'untrustedVariableAllowList',
+  'public',
+  'clientSecret'
+];
+
+/**
+ * Resolve configFrom inheritance for a workflow. Returns only the
+ * inheritable base fields from the referenced parent workflow.
+ *
+ * Constraints:
+ * - Parent must exist in the workflows array.
+ * - Parent must not itself use configFrom (max 1 level of inheritance).
+ *
+ * @param {object} options - Options object.
+ * @param {object} options.workflow - The child workflow with configFrom set.
+ * @param {Array} options.workflows - Array of all workflow configurations.
+ * @returns {object} - Object containing only inheritable fields from parent.
+ */
+export const resolveConfigFrom = ({workflow, workflows}) => {
+  const parent = workflows.find(r => r.clientId === workflow.configFrom);
+  if(!parent) {
+    const error = new Error(
+      `[${workflow.clientId}]: configFrom "${workflow.configFrom}" not found`
+    );
+    logger.error(error.message);
+    throw error;
+  }
+
+  if(parent.configFrom) {
+    const error = new Error(
+      `[${workflow.clientId}]: configFrom target "${parent.clientId}" itself ` +
+      `uses configFrom — only 1 level of inheritance is allowed`
+    );
+    logger.error(error.message);
+    throw error;
+  }
+
+  logger.info(
+    `[${workflow.clientId}]: inheriting base config from ` +
+    `"${parent.clientId}"`
+  );
+
+  if(parent.type && workflow.type && parent.type !== workflow.type) {
+    logger.info(
+      `[${workflow.clientId}]: cross-type configFrom inheritance ` +
+      `(parent: ${parent.type}, child: ${workflow.type})`
+    );
+  }
+
+  // Pick only inheritable fields from the parent
+  const inherited = {};
+  for(const field of INHERITABLE_FIELDS) {
+    if(field in parent) {
+      inherited[field] = parent[field];
+    }
+  }
+
+  return inherited;
+};
+
+/**
+ * Populate workflow with defaults from root brand and configFrom parent.
+ *
+ * When configFrom is set, only base/shared fields are inherited from the
+ * parent workflow. Type-specific fields (query, dcql_query, etc.) are never
+ * inherited — the child must always provide its own type and credential
+ * request configuration.
  *
  * @param {object} options - Options object.
  * @param {object} options.opencred - The opencred configuration object.
  * @param {Array} options.workflows - Array of workflow configurations.
  * @param {object} options.workflow - The workflow configuration to populate.
- * @param {Array} options.refs - Array of reference configurations.
  * @returns {object} - Workflow configuration object with defaults applied.
  */
-export const applyWorkflowDefaults = (
-  {opencred, workflows, workflow, refs = []}
-) => {
-  // Compute base brand: DEFAULT_BRAND merged with opencred.defaultBrand
+export const applyWorkflowDefaults = ({opencred, workflows, workflow}) => {
   const baseBrand = {...DEFAULT_BRAND, ...(opencred.defaultBrand ?? {})};
 
   if(workflow.configFrom) {
@@ -472,53 +549,21 @@ export const applyWorkflowDefaults = (
       logger.error(error.message);
       throw error;
     }
-    const configFrom = workflows.find(r => r.clientId === workflow.configFrom);
-    if(!configFrom) {
-      const error = new Error(
-        `[${workflow.clientId}]: configFrom ${workflow.configFrom} not found`
-      );
-      logger.error(error.message);
-      throw error;
-    }
-    // Check for circular reference: if we've already seen this workflow's
-    // clientId or the configFrom's clientId in our reference chain, it's a
-    // cycle
-    if(refs.includes(workflow.clientId) ||
-      refs.includes(configFrom.clientId)) {
-      const error = new Error(
-        `[${workflow.clientId}]: Circular configFrom reference detected`
-      );
-      logger.error(error.message);
-      throw error;
-    }
-    if(configFrom.configFrom) {
-      const configFromResult = applyWorkflowDefaults({
-        opencred,
-        workflows,
-        workflow: configFrom,
-        refs: refs.concat(workflow.clientId)
-      });
-      // Merge brand: configFrom's brand (which already includes base +
-      // its overrides) with this workflow's brand overrides
-      const inheritedBrand = configFromResult.brand ?? baseBrand;
-      const mergedBrand = {...inheritedBrand, ...(workflow.brand ?? {})};
-      return {
-        ...configFromResult,
-        ...workflow,
-        brand: mergedBrand
-      };
-    }
-    // Merge brand: configFrom's brand (merged with base) with this workflow's
-    // brand overrides
-    const configFromBrand = configFrom.brand ?
-      {...baseBrand, ...configFrom.brand} : baseBrand;
-    const mergedBrand = {...configFromBrand, ...(workflow.brand ?? {})};
+
+    const inherited = resolveConfigFrom({workflow, workflows});
+
+    // Brand merge: baseBrand → parent brand → child brand
+    const parentBrand = inherited.brand ?
+      {...baseBrand, ...inherited.brand} : baseBrand;
+    const mergedBrand = {...parentBrand, ...(workflow.brand ?? {})};
+
     return {
-      ...configFrom,
+      ...inherited,
       ...workflow,
       brand: mergedBrand
     };
   }
+
   // No configFrom: merge base brand with workflow's brand overrides
   const mergedBrand = {...baseBrand, ...(workflow.brand ?? {})};
   return {
