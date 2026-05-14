@@ -20,6 +20,7 @@ import {
   generatePresentationSubmission,
   generateValidJwtVpToken
 } from '../utils/jwtVpTokens.js';
+import {clientIdForProfile} from '../../common/oid4vp-utils.js';
 import {config} from '@bedrock/core';
 import {createExchangeWithAuthRequest} from '../utils/exchanges.js';
 import {database} from '../../lib/database.js';
@@ -1248,6 +1249,379 @@ describe('OID4VP 1.0 trustedCredentialIssuers', () => {
         expect(result.verified).to.be(true);
         expect(result.errors.includes(
           'Unaccepted credential issuer')).to.be(false);
+      }
+    );
+  });
+});
+
+describe('OID4VP JWT VP audience', () => {
+  it('passes OID4VP 1.0 decentralized_identifier client_id to VP verifier',
+    async () => {
+      const workflowWithDcql = {
+        ...workflow,
+        dcql_query: {
+          credentials: [{
+            id: 'test-cred',
+            format: 'jwt_vc_json',
+            meta: {type_values: [['VerifiableCredential']]}
+          }]
+        },
+        trustedCredentialIssuers: []
+      };
+
+      const exchange = await createExchangeWithAuthRequest({
+        workflow: workflowWithDcql,
+        profile: 'OID4VP-1.0'
+      });
+      exchange.variables.authorizationRequest.dcql_query =
+        workflowWithDcql.dcql_query;
+
+      const expectedAudience = clientIdForProfile({
+        profile: 'OID4VP-1.0',
+        domain: config.server.baseUri
+      });
+      exchange.variables.authorizationRequest.client_id = expectedAudience;
+
+      const {vpToken: vp_token_jwt, vcToken: realVcToken, issuerDid} =
+        await generateValidJwtVpToken({
+          aud: expectedAudience,
+          challenge: exchange.challenge,
+          template: {
+            '@context': [
+              'https://www.w3.org/ns/credentials/v2',
+              'https://www.w3.org/ns/credentials/examples/v2'
+            ],
+            type: ['VerifiableCredential', 'MyPrototypeCredential']
+          }
+        });
+
+      let verifyPresentationStub;
+
+      await withStubs(
+        () => {
+          const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
+          verifyPresentationStub =
+            sinon.stub(verifyUtils, 'verifyPresentationJWT')
+              .resolves({
+                verified: true,
+                verifiablePresentation: {
+                  verifiableCredential: [{proof: {jwt: realVcToken}}]
+                }
+              });
+          const verifyUtilsStub2 = sinon.stub(
+            verifyUtils, 'verifyCredentialJWT')
+            .resolves({verified: true, signer: {}});
+          const updateStub = sinon.stub(
+            database.collections.Exchanges, 'updateOne')
+            .resolves();
+          return [
+            caStoreStub,
+            verifyPresentationStub,
+            verifyUtilsStub2,
+            updateStub
+          ];
+        },
+        async () => {
+          const workflowTrusted = {
+            ...workflowWithDcql,
+            trustedCredentialIssuers: [issuerDid]
+          };
+          const result = await verifySubmission({
+            workflow: workflowTrusted,
+            vp_token: {'test-cred': vp_token_jwt},
+            submission: null,
+            exchange,
+            baseUri: config.server.baseUri,
+            documentLoader
+          });
+
+          expect(result.verified).to.be(true);
+          expect(verifyPresentationStub.called).to.be(true);
+          expect(verifyPresentationStub.firstCall.args[1].audience).to.equal(
+            expectedAudience);
+        }
+      );
+    });
+
+  it('passes OID4VP-draft18 client_id (bare did:web) to VP verifier',
+    async () => {
+      const workflowStub = {
+        ...workflow,
+        trustedCredentialIssuers: [],
+        caStore: false
+      };
+
+      const exchange = await createExchangeWithAuthRequest({
+        workflow: workflowStub,
+        profile: 'OID4VP-draft18'
+      });
+
+      const expectedAudience =
+        exchange.variables.authorizationRequest.client_id;
+      expect(expectedAudience).to.equal(
+        domainToDidWeb(config.server.baseUri));
+
+      const {vpToken: vp_token_jwt, vcToken: realVcToken, issuerDid} =
+        await generateValidJwtVpToken({
+          aud: expectedAudience,
+          challenge: exchange.challenge,
+          template: {
+            '@context': [
+              'https://www.w3.org/ns/credentials/v2',
+              'https://www.w3.org/ns/credentials/examples/v2'
+            ],
+            type: ['VerifiableCredential', 'MyPrototypeCredential']
+          }
+        });
+
+      const submission = generatePresentationSubmission({
+        authorizationRequest: exchange.variables.authorizationRequest,
+        vpToken: vp_token_jwt
+      });
+
+      let verifyPresentationStub;
+
+      await withStubs(
+        () => {
+          const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
+          verifyPresentationStub =
+            sinon.stub(verifyUtils, 'verifyPresentationJWT')
+              .resolves({
+                verified: true,
+                verifiablePresentation: {
+                  verifiableCredential: [{proof: {jwt: realVcToken}}]
+                }
+              });
+          const verifyUtilsStub2 = sinon.stub(
+            verifyUtils, 'verifyCredentialJWT')
+            .resolves({verified: true, signer: {}});
+          const updateStub = sinon.stub(
+            database.collections.Exchanges, 'updateOne')
+            .resolves();
+          return [
+            caStoreStub,
+            verifyPresentationStub,
+            verifyUtilsStub2,
+            updateStub
+          ];
+        },
+        async () => {
+          const workflowTrusted = {
+            ...workflowStub,
+            trustedCredentialIssuers: [issuerDid]
+          };
+          const result = await verifySubmission({
+            workflow: workflowTrusted,
+            vp_token: vp_token_jwt,
+            submission,
+            exchange,
+            baseUri: config.server.baseUri,
+            documentLoader
+          });
+
+          expect(result.verified).to.be(true);
+          expect(verifyPresentationStub.called).to.be(true);
+          expect(verifyPresentationStub.firstCall.args[1].audience).to.equal(
+            expectedAudience);
+        }
+      );
+    });
+});
+
+describe('OID4VP 1.0 vp_token string normalization', () => {
+  it('should verify OID4VP 1.0 submission when vp_token is a ' +
+    'JSON string', async () => {
+    const {vpToken: vp_token_jwt, vcToken: realVcToken, issuerDid} =
+      await generateValidJwtVpToken({
+        aud: domainToDidWeb(config.server.baseUri),
+        challenge: 'test-challenge'
+      });
+
+    await withStubs(
+      () => {
+        const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
+        const verifyUtilsStub = sinon.stub(
+          verifyUtils, 'verifyPresentationJWT')
+          .resolves({
+            verified: true,
+            verifiablePresentation: {
+              verifiableCredential: [{proof: {jwt: realVcToken}}]
+            }
+          });
+        const verifyUtilsStub2 = sinon.stub(
+          verifyUtils, 'verifyCredentialJWT')
+          .resolves({verified: true, signer: {}});
+        const updateStub = sinon.stub(
+          database.collections.Exchanges, 'updateOne')
+          .resolves();
+        return [caStoreStub, verifyUtilsStub, verifyUtilsStub2, updateStub];
+      },
+      async () => {
+        const workflowWithDcql = {
+          ...workflow,
+          dcql_query: {
+            credentials: [{
+              id: 'test-cred',
+              format: 'jwt_vc_json',
+              meta: {type_values: [['VerifiableCredential']]}
+            }]
+          },
+          trustedCredentialIssuers: [issuerDid]
+        };
+
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: workflowWithDcql,
+          profile: 'OID4VP-1.0'
+        });
+
+        exchange.variables.authorizationRequest.dcql_query =
+          workflowWithDcql.dcql_query;
+
+        const vp_token = JSON.stringify({'test-cred': vp_token_jwt});
+
+        const result = await verifySubmission({
+          workflow: workflowWithDcql,
+          vp_token,
+          submission: null,
+          exchange,
+          baseUri: config.server.baseUri,
+          documentLoader
+        });
+
+        expect(result.verified).to.be(true);
+        expect(result.errors.length).to.be(0);
+      }
+    );
+  });
+
+  it('should verify OID4VP 1.0 submission when vp_token is a JSON string ' +
+    'with array-valued credential (spec Section 8.1)', async () => {
+    const {vpToken: vp_token_jwt, vcToken: realVcToken, issuerDid} =
+      await generateValidJwtVpToken({
+        aud: domainToDidWeb(config.server.baseUri),
+        challenge: 'test-challenge'
+      });
+
+    await withStubs(
+      () => {
+        const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
+        const verifyUtilsStub = sinon.stub(
+          verifyUtils, 'verifyPresentationJWT')
+          .resolves({
+            verified: true,
+            verifiablePresentation: {
+              verifiableCredential: [{proof: {jwt: realVcToken}}]
+            }
+          });
+        const verifyUtilsStub2 = sinon.stub(
+          verifyUtils, 'verifyCredentialJWT')
+          .resolves({verified: true, signer: {}});
+        const updateStub = sinon.stub(
+          database.collections.Exchanges, 'updateOne')
+          .resolves();
+        return [caStoreStub, verifyUtilsStub, verifyUtilsStub2, updateStub];
+      },
+      async () => {
+        const workflowWithDcql = {
+          ...workflow,
+          dcql_query: {
+            credentials: [{
+              id: 'test-cred',
+              format: 'jwt_vc_json',
+              meta: {type_values: [['VerifiableCredential']]}
+            }]
+          },
+          trustedCredentialIssuers: [issuerDid]
+        };
+
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: workflowWithDcql,
+          profile: 'OID4VP-1.0'
+        });
+
+        exchange.variables.authorizationRequest.dcql_query =
+          workflowWithDcql.dcql_query;
+
+        const vp_token = JSON.stringify(
+          {'test-cred': [vp_token_jwt]});
+
+        const result = await verifySubmission({
+          workflow: workflowWithDcql,
+          vp_token,
+          submission: null,
+          exchange,
+          baseUri: config.server.baseUri,
+          documentLoader
+        });
+
+        expect(result.verified).to.be(true);
+        expect(result.errors.length).to.be(0);
+      }
+    );
+  });
+
+  it('should reject JSON-stringified vp_token when issuer not ' +
+    'trusted', async () => {
+    const {vpToken: vp_token_jwt, vcToken: realVcToken} =
+      await generateValidJwtVpToken({
+        aud: domainToDidWeb(config.server.baseUri),
+        challenge: 'test-challenge'
+      });
+
+    await withStubs(
+      () => {
+        const caStoreStub = sinon.stub(config.opencred, 'caStore').value([]);
+        const verifyUtilsStub = sinon.stub(
+          verifyUtils, 'verifyPresentationJWT')
+          .resolves({
+            verified: true,
+            verifiablePresentation: {
+              verifiableCredential: [{proof: {jwt: realVcToken}}]
+            }
+          });
+        const verifyUtilsStub2 = sinon.stub(
+          verifyUtils, 'verifyCredentialJWT')
+          .resolves({verified: true, signer: {}});
+        const updateStub = sinon.stub(
+          database.collections.Exchanges, 'updateOne')
+          .resolves();
+        return [caStoreStub, verifyUtilsStub, verifyUtilsStub2, updateStub];
+      },
+      async () => {
+        const workflowWithDcql = {
+          ...workflow,
+          dcql_query: {
+            credentials: [{
+              id: 'test-cred',
+              format: 'jwt_vc_json',
+              meta: {type_values: [['VerifiableCredential']]}
+            }]
+          },
+          trustedCredentialIssuers: ['did:web:not-a-valid-issuer.org']
+        };
+
+        const exchange = await createExchangeWithAuthRequest({
+          workflow: workflowWithDcql,
+          profile: 'OID4VP-1.0'
+        });
+
+        exchange.variables.authorizationRequest.dcql_query =
+          workflowWithDcql.dcql_query;
+
+        const vp_token = JSON.stringify({'test-cred': vp_token_jwt});
+
+        const result = await verifySubmission({
+          workflow: workflowWithDcql,
+          vp_token,
+          submission: null,
+          exchange,
+          baseUri: config.server.baseUri,
+          documentLoader
+        });
+
+        expect(result.verified).to.be(false);
+        expect(result.errors.includes(
+          'Unaccepted credential issuer')).to.be(true);
       }
     );
   });

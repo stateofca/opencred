@@ -7,17 +7,8 @@
 
 import expect from 'expect.js';
 
-// Inline replica of the normalizer for direct testing.
-// The real implementation is private in the handler files.
-function normalizeVpTokenValue(value) {
-  if(Array.isArray(value)) {
-    if(value.length === 0) {
-      throw new Error('vp_token array is empty for credential ID');
-    }
-    return value[0];
-  }
-  return value;
-}
+import {normalizeVpTokenValue} from
+  '../../../lib/workflows/common/dc-api-envelope.js';
 
 describe('vp_token value normalization (OID4VP 1.0 array format)', () => {
   it('returns string values unchanged', () => {

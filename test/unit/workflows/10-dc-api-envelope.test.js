@@ -15,6 +15,8 @@ import {
   buildDcApiRequest,
   DC_API_OID4VP_ACCEPTED_PROTOCOLS,
   DC_API_OID4VP_PROTOCOLS,
+  normalizeVpTokenMap,
+  normalizeVpTokenValue,
   stripFieldsForUnsignedAnnexD,
   UNSIGNED_ANNEX_D_FORBIDDEN_FIELDS,
   unwrapDcApiOid4vpResponse
@@ -306,6 +308,60 @@ describe('dc-api-envelope', () => {
       expect(Object.isFrozen(out)).to.be(false);
       out.extra = true;
       expect(out.extra).to.be(true);
+    });
+  });
+
+  describe('normalizeVpTokenValue', () => {
+    it('returns string values unchanged', () => {
+      expect(normalizeVpTokenValue('abc123')).to.equal('abc123');
+    });
+
+    it('extracts first element from array values', () => {
+      expect(normalizeVpTokenValue(['abc123', 'def456'])).to.equal('abc123');
+    });
+
+    it('throws on empty arrays', () => {
+      expect(() => normalizeVpTokenValue([]))
+        .to.throwError(/empty/);
+    });
+  });
+
+  describe('normalizeVpTokenMap', () => {
+    it('passes through string map values unchanged', () => {
+      const input = {0: 'abc'};
+      expect(normalizeVpTokenMap(input)).to.eql({0: 'abc'});
+      expect(input).to.eql({0: 'abc'}, 'input must not be mutated');
+    });
+
+    it('unwraps single-element arrays', () => {
+      expect(normalizeVpTokenMap({0: ['abc']})).to.eql({0: 'abc'});
+    });
+
+    it('uses first element for multi-element arrays', () => {
+      expect(normalizeVpTokenMap({0: ['a', 'b']})).to.eql({0: 'a'});
+    });
+
+    it('throws on empty arrays with credential id in message', () => {
+      expect(() => normalizeVpTokenMap({0: []}))
+        .to.throwError(/credential ID "0"/);
+    });
+
+    it('returns null and undefined unchanged', () => {
+      expect(normalizeVpTokenMap(null)).to.be(null);
+      expect(normalizeVpTokenMap(undefined)).to.be(undefined);
+    });
+
+    it('normalizes mixed string and array values, w/first element', () => {
+      expect(normalizeVpTokenMap({
+        a: 'x',
+        b: ['y'],
+        c: ['u', 'v']
+      })).to.eql({a: 'x', b: 'y', c: 'u'});
+    });
+
+    it('returns arrays unchanged (not a credential-id map)', () => {
+      const arr = ['only'];
+      expect(normalizeVpTokenMap(arr)).to.be(arr);
     });
   });
 
