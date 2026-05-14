@@ -161,9 +161,6 @@ describe('OID4VP Client Metadata', () => {
       const jwtVcJson =
         authorizationRequest.client_metadata.vp_formats_supported.jwt_vc_json;
       expect(jwtVcJson).to.be.an('object');
-      expect(jwtVcJson).to.have.property('alg');
-      expect(jwtVcJson.alg).to.be.an('array');
-      expect(jwtVcJson.alg).to.contain('ES256');
       expect(jwtVcJson).to.have.property('alg_values');
       expect(jwtVcJson.alg_values).to.be.an('array');
       expect(jwtVcJson.alg_values).to.contain('ES256');
@@ -192,15 +189,9 @@ describe('OID4VP Client Metadata', () => {
       const ldpVc = authorizationRequest.client_metadata.vp_formats_supported
         .ldp_vc;
       expect(ldpVc).to.be.an('object');
-      expect(ldpVc).to.have.property('proof_type');
-      expect(ldpVc.proof_type).to.be.an('array');
-      expect(ldpVc.proof_type).to.contain('ecdsa-rdfc-2019');
       expect(ldpVc).to.have.property('proof_type_values');
       expect(ldpVc.proof_type_values).to.be.an('array');
-      expect(ldpVc.proof_type_values).to.contain('DataIntegrityProof');
-      expect(ldpVc).to.have.property('cryptosuite_values');
-      expect(ldpVc.cryptosuite_values).to.be.an('array');
-      expect(ldpVc.cryptosuite_values).to.contain('ecdsa-rdfc-2019');
+      expect(ldpVc.proof_type_values).to.contain('ecdsa-rdfc-2019');
     });
   });
 

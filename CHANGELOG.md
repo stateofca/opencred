@@ -1,5 +1,18 @@
 # opencred-platform Changelog
 
+## 10.0.8 - 2026-05-XX
+
+### Changed
+- Refactored DCQL query generation for testability
+- VC matching against DCQL queries directly instead of draft-era
+  `meta['@context']` and `meta.type`.
+
+### Added
+- Log `context_fetch` event when the document loader fetches a JSON-LD context
+  from the network.
+- Schema validation requires `context` when `type` is present in workflow query
+  items.
+
 ## 10.0.7 - 2026-05-12
 
 ### Changed

@@ -94,35 +94,36 @@ describe('DidWebSchema', () => {
 });
 
 describe('checkVcQueryMatch presentation_definition (path parsing)', () => {
-  it('should match VC when path $.type extracts field & filter matches', () => {
-    const vc = {
-      '@context': ['https://www.w3.org/2018/credentials/v1'],
-      type: ['VerifiableCredential', 'IDCardCredential'],
-      credentialSubject: {id: 'did:example:123'}
-    };
-    const presentation_definition = {
-      id: 'test-pd',
-      input_descriptors: [{
-        id: 'id-card',
-        constraints: {
-          fields: [{
-            path: ['$.type'],
-            filter: {
-              contains: {type: 'string', const: 'IDCardCredential'}
-            }
-          }]
-        }
-      }]
-    };
-    const result = verifyUtils.checkVcQueryMatch({
-      vc,
-      presentation_definition,
-      presentation_submission: {}
+  it('should match VC when path $.type extracts field & filter matches',
+    async () => {
+      const vc = {
+        '@context': ['https://www.w3.org/2018/credentials/v1'],
+        type: ['VerifiableCredential', 'IDCardCredential'],
+        credentialSubject: {id: 'did:example:123'}
+      };
+      const presentation_definition = {
+        id: 'test-pd',
+        input_descriptors: [{
+          id: 'id-card',
+          constraints: {
+            fields: [{
+              path: ['$.type'],
+              filter: {
+                contains: {type: 'string', const: 'IDCardCredential'}
+              }
+            }]
+          }
+        }]
+      };
+      const result = await verifyUtils.checkVcQueryMatch({
+        vc,
+        presentation_definition,
+        presentation_submission: {}
+      });
+      expect(result).to.be(true);
     });
-    expect(result).to.be(true);
-  });
 
-  it('matches VC when path $[\'@context\'] extracts field', () => {
+  it('matches VC when path $[\'@context\'] extracts field', async () => {
     const vc = {
       '@context': [
         'https://www.w3.org/2018/credentials/v1',
@@ -145,7 +146,7 @@ describe('checkVcQueryMatch presentation_definition (path parsing)', () => {
         }
       }]
     };
-    const result = verifyUtils.checkVcQueryMatch({
+    const result = await verifyUtils.checkVcQueryMatch({
       vc,
       presentation_definition,
       presentation_submission: {}
@@ -153,35 +154,36 @@ describe('checkVcQueryMatch presentation_definition (path parsing)', () => {
     expect(result).to.be(true);
   });
 
-  it('does not match when filter does not match extracted field', () => {
-    const vc = {
-      '@context': ['https://www.w3.org/2018/credentials/v1'],
-      type: ['VerifiableCredential'],
-      credentialSubject: {id: 'did:example:123'}
-    };
-    const presentation_definition = {
-      id: 'test-pd',
-      input_descriptors: [{
-        id: 'id-card',
-        constraints: {
-          fields: [{
-            path: ['$.type'],
-            filter: {
-              contains: {type: 'string', const: 'IDCardCredential'}
-            }
-          }]
-        }
-      }]
-    };
-    const result = verifyUtils.checkVcQueryMatch({
-      vc,
-      presentation_definition,
-      presentation_submission: {}
+  it('does not match when filter does not match extracted field',
+    async () => {
+      const vc = {
+        '@context': ['https://www.w3.org/2018/credentials/v1'],
+        type: ['VerifiableCredential'],
+        credentialSubject: {id: 'did:example:123'}
+      };
+      const presentation_definition = {
+        id: 'test-pd',
+        input_descriptors: [{
+          id: 'id-card',
+          constraints: {
+            fields: [{
+              path: ['$.type'],
+              filter: {
+                contains: {type: 'string', const: 'IDCardCredential'}
+              }
+            }]
+          }
+        }]
+      };
+      const result = await verifyUtils.checkVcQueryMatch({
+        vc,
+        presentation_definition,
+        presentation_submission: {}
+      });
+      expect(result).to.be(false);
     });
-    expect(result).to.be(false);
-  });
 
-  it('should handle path as single string', () => {
+  it('should handle path as single string', async () => {
     const vc = {
       type: ['VerifiableCredential', 'TestCredential'],
       credentialSubject: {}
@@ -200,7 +202,7 @@ describe('checkVcQueryMatch presentation_definition (path parsing)', () => {
         }
       }]
     };
-    const result = verifyUtils.checkVcQueryMatch({
+    const result = await verifyUtils.checkVcQueryMatch({
       vc,
       presentation_definition,
       presentation_submission: {}

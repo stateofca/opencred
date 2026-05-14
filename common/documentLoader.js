@@ -48,7 +48,9 @@ import {
 } from 'x25519-key-agreement-2020-context';
 
 import {agent} from '@bedrock/https-agent';
+import {contextFetch} from '../lib/logger/events/contextFetch.js';
 import {httpClient} from '@digitalbazaar/http-client';
+import {logger} from '../lib/logger.js';
 
 const didWebDriver = DidWeb.driver();
 const didKeyDriver = DidKey.driver();
@@ -99,6 +101,8 @@ export const getDocumentLoader = () => {
   // automatically handle all http(s) contexts that are not handled above
   const customHandler = {
     async get({url}) {
+      const event = contextFetch({url});
+      logger.info(event.logName, event.event);
       const response = await httpClient.get(url, {agent});
       const {data} = response;
       return data;

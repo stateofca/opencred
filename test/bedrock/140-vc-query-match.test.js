@@ -65,152 +65,180 @@ describe('VC Query Match', () => {
   };
 
   describe('DCQL Query Matching', () => {
-    it('should match a credential that satisfies the DCQL query', () => {
+    it('should match a credential that satisfies the DCQL query', async () => {
       const dcqlQuery = {
         credentials: [{
-          id: 'driver-license-query',
+          id: 'permanent-resident-query',
           format: 'ldp_vc',
           meta: {
-            '@context': [
-              'https://www.w3.org/2018/credentials/v1',
-              'https://w3id.org/citizenship/v1'
-            ],
-            type: ['VerifiableCredential', 'DriverLicenseCredential']
+            type_values: [
+              [
+                'https://www.w3.org/2018/credentials#VerifiableCredential',
+                'https://w3id.org/citizenship#PermanentResidentCard'
+              ]
+            ]
           }
         }]
       };
 
-      const result = verifyUtils.checkVcQueryMatch({
-        vc: driverLicenseVc,
+      const result = await verifyUtils.checkVcQueryMatch({
+        vc: permanentResidentVc,
         dcql_query: dcqlQuery
       });
 
       expect(result).to.be(true);
     });
 
-    it('should not match vc of wrong type specified in DCQL query', () => {
+    it('should not match vc of wrong type specified in DCQL query',
+      async () => {
+        const dcqlQuery = {
+          credentials: [{
+            id: 'permanent-resident-query',
+            format: 'ldp_vc',
+            meta: {
+              type_values: [
+                [
+                  'https://www.w3.org/2018/credentials#VerifiableCredential',
+                  'https://w3id.org/citizenship#PermanentResidentCard'
+                ]
+              ]
+            }
+          }]
+        };
+
+        const result = await verifyUtils.checkVcQueryMatch({
+          vc: wrongTypeVc,
+          dcql_query: dcqlQuery
+        });
+
+        expect(result).to.be(false);
+      });
+
+    it('should match when VC types satisfy one of multiple type_values ' +
+      'sub-arrays', async () => {
       const dcqlQuery = {
         credentials: [{
-          id: 'driver-license-query',
+          id: 'multi-type-query',
           format: 'ldp_vc',
           meta: {
-            '@context': [
-              'https://www.w3.org/2018/credentials/v1',
-              'https://w3id.org/citizenship/v1'
-            ],
-            type: ['VerifiableCredential', 'DriverLicenseCredential']
+            type_values: [
+              ['https://example.org/NonExistentType'],
+              ['https://www.w3.org/2018/credentials#VerifiableCredential']
+            ]
           }
         }]
       };
 
-      const result = verifyUtils.checkVcQueryMatch({
-        vc: wrongTypeVc,
+      const result = await verifyUtils.checkVcQueryMatch({
+        vc: permanentResidentVc,
         dcql_query: dcqlQuery
       });
 
-      expect(result).to.be(false);
+      expect(result).to.be(true);
     });
   });
 
   describe('Presentation Definition Matching', () => {
-    it('should match vc that satisfies the presentation definition', () => {
-      const presentationDefinition = {
-        id: 'test-presentation-definition',
-        input_descriptors: [{
-          id: 'permanent-resident-card',
-          constraints: {
-            fields: [
-              {
-                path: '$[\'@context\']',
-                filter: {
-                  type: 'array',
-                  contains: [
-                    {
-                      type: 'string',
-                      const: 'https://www.w3.org/2018/credentials/v1'
-                    },
-                    {
-                      type: 'string',
-                      const: 'https://w3id.org/citizenship/v1'
-                    }
-                  ]
+    it('should match vc that satisfies the presentation definition',
+      async () => {
+        const presentationDefinition = {
+          id: 'test-presentation-definition',
+          input_descriptors: [{
+            id: 'permanent-resident-card',
+            constraints: {
+              fields: [
+                {
+                  path: '$[\'@context\']',
+                  filter: {
+                    type: 'array',
+                    contains: [
+                      {
+                        type: 'string',
+                        const: 'https://www.w3.org/2018/credentials/v1'
+                      },
+                      {
+                        type: 'string',
+                        const: 'https://w3id.org/citizenship/v1'
+                      }
+                    ]
+                  }
+                },
+                {
+                  path: '$[\'type\']',
+                  filter: {
+                    type: 'array',
+                    contains: [
+                      {
+                        type: 'string',
+                        const: 'PermanentResidentCard'
+                      }
+                    ]
+                  }
                 }
-              },
-              {
-                path: '$[\'type\']',
-                filter: {
-                  type: 'array',
-                  contains: [
-                    {
-                      type: 'string',
-                      const: 'PermanentResidentCard'
-                    }
-                  ]
-                }
-              }
-            ]
-          }
-        }]
-      };
+              ]
+            }
+          }]
+        };
 
-      const result = verifyUtils.checkVcQueryMatch({
-        vc: permanentResidentVc,
-        presentation_definition: presentationDefinition
+        const result = await verifyUtils.checkVcQueryMatch({
+          vc: permanentResidentVc,
+          presentation_definition: presentationDefinition
+        });
+
+        expect(result).to.be(true);
       });
 
-      expect(result).to.be(true);
-    });
-
-    it('no match on vc that doesn\'t satisfy presentation definition', () => {
-      const presentationDefinition = {
-        id: 'test-presentation-definition',
-        input_descriptors: [{
-          id: 'permanent-resident-card',
-          constraints: {
-            fields: [
-              {
-                path: '$[\'@context\']',
-                filter: {
-                  type: 'array',
-                  contains: [
-                    {
-                      type: 'string',
-                      const: 'https://www.w3.org/2018/credentials/v1'
-                    },
-                    {
-                      type: 'string',
-                      const: 'https://w3id.org/citizenship/v1'
-                    }
-                  ]
+    it('no match on vc that doesn\'t satisfy presentation definition',
+      async () => {
+        const presentationDefinition = {
+          id: 'test-presentation-definition',
+          input_descriptors: [{
+            id: 'permanent-resident-card',
+            constraints: {
+              fields: [
+                {
+                  path: '$[\'@context\']',
+                  filter: {
+                    type: 'array',
+                    contains: [
+                      {
+                        type: 'string',
+                        const: 'https://www.w3.org/2018/credentials/v1'
+                      },
+                      {
+                        type: 'string',
+                        const: 'https://w3id.org/citizenship/v1'
+                      }
+                    ]
+                  }
+                },
+                {
+                  path: '$[\'type\']',
+                  filter: {
+                    type: 'array',
+                    contains: [
+                      {
+                        type: 'string',
+                        const: 'PermanentResidentCard'
+                      }
+                    ]
+                  }
                 }
-              },
-              {
-                path: '$[\'type\']',
-                filter: {
-                  type: 'array',
-                  contains: [
-                    {
-                      type: 'string',
-                      const: 'PermanentResidentCard'
-                    }
-                  ]
-                }
-              }
-            ]
-          }
-        }]
-      };
+              ]
+            }
+          }]
+        };
 
-      const result = verifyUtils.checkVcQueryMatch({
-        vc: driverLicenseVc,
-        presentation_definition: presentationDefinition
+        const result = await verifyUtils.checkVcQueryMatch({
+          vc: driverLicenseVc,
+          presentation_definition: presentationDefinition
+        });
+
+        expect(result).to.be(false);
       });
-
-      expect(result).to.be(false);
-    });
 
     it('should match vc that satisfies presentation definition ' +
-      'with allOf', () => {
+      'with allOf', async () => {
       const driverLicenseVcWithAllContexts = {
         '@context': [
           'https://www.w3.org/2018/credentials/v1',
@@ -274,7 +302,7 @@ describe('VC Query Match', () => {
         }]
       };
 
-      const result = verifyUtils.checkVcQueryMatch({
+      const result = await verifyUtils.checkVcQueryMatch({
         vc: driverLicenseVcWithAllContexts,
         presentation_definition: presentationDefinition
       });
@@ -282,7 +310,7 @@ describe('VC Query Match', () => {
       expect(result).to.be(true);
     });
 
-    it('should not match vc missing required context in allOf', () => {
+    it('should not match vc missing required context in allOf', async () => {
       const driverLicenseVcMissingContext = {
         '@context': [
           'https://www.w3.org/2018/credentials/v1',
@@ -334,7 +362,7 @@ describe('VC Query Match', () => {
         }]
       };
 
-      const result = verifyUtils.checkVcQueryMatch({
+      const result = await verifyUtils.checkVcQueryMatch({
         vc: driverLicenseVcMissingContext,
         presentation_definition: presentationDefinition
       });
@@ -344,7 +372,7 @@ describe('VC Query Match', () => {
   });
 
   describe('VPR Matching', () => {
-    it('should match a credential that satisfies the VPR', () => {
+    it('should match a credential that satisfies the VPR', async () => {
       const vpr = {
         query: {
           type: 'QueryByExample',
@@ -361,7 +389,7 @@ describe('VC Query Match', () => {
         }
       };
 
-      const result = verifyUtils.checkVcQueryMatch({
+      const result = await verifyUtils.checkVcQueryMatch({
         vc: prototypeVc,
         vpr
       });
@@ -369,55 +397,57 @@ describe('VC Query Match', () => {
       expect(result).to.be(true);
     });
 
-    it('should not match a credential that does not satisfy the VPR', () => {
-      const vpr = {
-        query: {
-          type: 'QueryByExample',
-          credentialQuery: {
-            reason: 'Please present your prototype credential',
-            example: {
-              '@context': [
-                'https://www.w3.org/ns/credentials/v2',
-                'https://www.w3.org/ns/credentials/examples/v2'
-              ],
-              type: 'MyPrototypeCredential'
+    it('should not match a credential that does not satisfy the VPR',
+      async () => {
+        const vpr = {
+          query: {
+            type: 'QueryByExample',
+            credentialQuery: {
+              reason: 'Please present your prototype credential',
+              example: {
+                '@context': [
+                  'https://www.w3.org/ns/credentials/v2',
+                  'https://www.w3.org/ns/credentials/examples/v2'
+                ],
+                type: 'MyPrototypeCredential'
+              }
             }
           }
-        }
-      };
+        };
 
-      const result = verifyUtils.checkVcQueryMatch({
-        vc: driverLicenseVc,
-        vpr
+        const result = await verifyUtils.checkVcQueryMatch({
+          vc: driverLicenseVc,
+          vpr
+        });
+
+        expect(result).to.be(false);
       });
-
-      expect(result).to.be(false);
-    });
   });
 
   describe('Workflow Query Matching', () => {
     describe('Basic Matching', () => {
-      it('should match credential that satisfies query with type only', () => {
-        const query = [{
-          type: ['OpenBadgeCredential'],
-          format: ['ldp_vc']
-        }];
+      it('should match credential that satisfies query with type only',
+        async () => {
+          const query = [{
+            type: ['OpenBadgeCredential'],
+            format: ['ldp_vc']
+          }];
 
-        const result = verifyUtils.checkVcQueryMatch({
-          vc: openBadgeVc,
-          query
+          const result = await verifyUtils.checkVcQueryMatch({
+            vc: openBadgeVc,
+            query
+          });
+
+          expect(result).to.be(true);
         });
 
-        expect(result).to.be(true);
-      });
-
       it('should match credential that satisfies query with context only',
-        () => {
+        async () => {
           const query = [{
             context: ['https://www.w3.org/2018/credentials/v1']
           }];
 
-          const result = verifyUtils.checkVcQueryMatch({
+          const result = await verifyUtils.checkVcQueryMatch({
             vc: driverLicenseVc,
             query
           });
@@ -425,7 +455,7 @@ describe('VC Query Match', () => {
           expect(result).to.be(true);
         });
 
-      it('should match credential with both type and context', () => {
+      it('should match credential with both type and context', async () => {
         const query = [{
           type: ['DriverLicenseCredential'],
           context: [
@@ -434,7 +464,7 @@ describe('VC Query Match', () => {
           ]
         }];
 
-        const result = verifyUtils.checkVcQueryMatch({
+        const result = await verifyUtils.checkVcQueryMatch({
           vc: driverLicenseVc,
           query
         });
@@ -444,13 +474,13 @@ describe('VC Query Match', () => {
     });
 
     describe('Non-Matching', () => {
-      it('should not match when type doesn\'t match', () => {
+      it('should not match when type doesn\'t match', async () => {
         const query = [{
           type: ['OpenBadgeCredential'],
           format: ['ldp_vc']
         }];
 
-        const result = verifyUtils.checkVcQueryMatch({
+        const result = await verifyUtils.checkVcQueryMatch({
           vc: wrongTypeVc,
           query
         });
@@ -458,7 +488,7 @@ describe('VC Query Match', () => {
         expect(result).to.be(false);
       });
 
-      it('should not match when context doesn\'t match', () => {
+      it('should not match when context doesn\'t match', async () => {
         const query = [{
           context: [
             'https://www.w3.org/2018/credentials/v1',
@@ -466,7 +496,7 @@ describe('VC Query Match', () => {
           ]
         }];
 
-        const result = verifyUtils.checkVcQueryMatch({
+        const result = await verifyUtils.checkVcQueryMatch({
           vc: driverLicenseVc,
           query
         });
@@ -474,7 +504,7 @@ describe('VC Query Match', () => {
         expect(result).to.be(false);
       });
 
-      it('should not match when type partially matches', () => {
+      it('should not match when type partially matches', async () => {
         const query = [{
           type: [
             'VerifiableCredential',
@@ -483,7 +513,7 @@ describe('VC Query Match', () => {
           ]
         }];
 
-        const result = verifyUtils.checkVcQueryMatch({
+        const result = await verifyUtils.checkVcQueryMatch({
           vc: driverLicenseVc,
           query
         });
@@ -493,7 +523,7 @@ describe('VC Query Match', () => {
     });
 
     describe('Multiple Query Items', () => {
-      it('should match when any query item matches', () => {
+      it('should match when any query item matches', async () => {
         const query = [
           {
             type: ['NonExistentCredential']
@@ -507,7 +537,7 @@ describe('VC Query Match', () => {
           }
         ];
 
-        const result = verifyUtils.checkVcQueryMatch({
+        const result = await verifyUtils.checkVcQueryMatch({
           vc: driverLicenseVc,
           query
         });
@@ -515,7 +545,7 @@ describe('VC Query Match', () => {
         expect(result).to.be(true);
       });
 
-      it('should not match when no query items match', () => {
+      it('should not match when no query items match', async () => {
         const query = [
           {
             type: ['NonExistentCredential1']
@@ -525,7 +555,7 @@ describe('VC Query Match', () => {
           }
         ];
 
-        const result = verifyUtils.checkVcQueryMatch({
+        const result = await verifyUtils.checkVcQueryMatch({
           vc: driverLicenseVc,
           query
         });
@@ -535,10 +565,10 @@ describe('VC Query Match', () => {
     });
 
     describe('Edge Cases', () => {
-      it('should return false for empty query array', () => {
+      it('should return false for empty query array', async () => {
         const query = [];
 
-        const result = verifyUtils.checkVcQueryMatch({
+        const result = await verifyUtils.checkVcQueryMatch({
           vc: driverLicenseVc,
           query
         });
@@ -546,43 +576,45 @@ describe('VC Query Match', () => {
         expect(result).to.be(false);
       });
 
-      it('should match when query has no type or context (format only)', () => {
-        const query = [{
-          format: ['ldp_vc']
-        }];
+      it('should match when query has no type or context (format only)',
+        async () => {
+          const query = [{
+            format: ['ldp_vc']
+          }];
 
-        const result = verifyUtils.checkVcQueryMatch({
-          vc: driverLicenseVc,
-          query
+          const result = await verifyUtils.checkVcQueryMatch({
+            vc: driverLicenseVc,
+            query
+          });
+
+          expect(result).to.be(true);
         });
 
-        expect(result).to.be(true);
-      });
+      it('should skip invalid query items and match valid ones',
+        async () => {
+          const query = [
+            null,
+            {
+              type: ['DriverLicenseCredential']
+            },
+            'invalid'
+          ];
 
-      it('should skip invalid query items and match valid ones', () => {
-        const query = [
-          null,
-          {
-            type: ['DriverLicenseCredential']
-          },
-          'invalid'
-        ];
+          const result = await verifyUtils.checkVcQueryMatch({
+            vc: driverLicenseVc,
+            query
+          });
 
-        const result = verifyUtils.checkVcQueryMatch({
-          vc: driverLicenseVc,
-          query
+          expect(result).to.be(true);
         });
 
-        expect(result).to.be(true);
-      });
-
-      it('should ignore empty type array in query item', () => {
+      it('should ignore empty type array in query item', async () => {
         const query = [{
           type: [],
           context: ['https://www.w3.org/2018/credentials/v1']
         }];
 
-        const result = verifyUtils.checkVcQueryMatch({
+        const result = await verifyUtils.checkVcQueryMatch({
           vc: driverLicenseVc,
           query
         });
@@ -590,13 +622,13 @@ describe('VC Query Match', () => {
         expect(result).to.be(true);
       });
 
-      it('should ignore empty context array in query item', () => {
+      it('should ignore empty context array in query item', async () => {
         const query = [{
           type: ['DriverLicenseCredential'],
           context: []
         }];
 
-        const result = verifyUtils.checkVcQueryMatch({
+        const result = await verifyUtils.checkVcQueryMatch({
           vc: driverLicenseVc,
           query
         });
@@ -606,12 +638,12 @@ describe('VC Query Match', () => {
     });
 
     describe('Priority', () => {
-      it('should use query when vpr is not present', () => {
+      it('should use query when vpr is not present', async () => {
         const query = [{
           type: ['DriverLicenseCredential']
         }];
 
-        const result = verifyUtils.checkVcQueryMatch({
+        const result = await verifyUtils.checkVcQueryMatch({
           vc: driverLicenseVc,
           query
         });
@@ -619,7 +651,7 @@ describe('VC Query Match', () => {
         expect(result).to.be(true);
       });
 
-      it('should use vpr when both vpr and query are present', () => {
+      it('should use vpr when both vpr and query are present', async () => {
         const vpr = {
           query: {
             type: 'QueryByExample',
@@ -642,13 +674,13 @@ describe('VC Query Match', () => {
 
         // vpr should take priority, so it should match prototypeVc,
         // not driverLicenseVc
-        const resultWithPrototype = verifyUtils.checkVcQueryMatch({
+        const resultWithPrototype = await verifyUtils.checkVcQueryMatch({
           vc: prototypeVc,
           vpr,
           query
         });
 
-        const resultWithDriverLicense = verifyUtils.checkVcQueryMatch({
+        const resultWithDriverLicense = await verifyUtils.checkVcQueryMatch({
           vc: driverLicenseVc,
           vpr,
           query
@@ -659,17 +691,18 @@ describe('VC Query Match', () => {
       });
 
       it('should use dcql_query when both dcql_query and query present',
-        () => {
+        async () => {
           const dcqlQuery = {
             credentials: [{
               id: 'test',
               format: 'ldp_vc',
               meta: {
-                '@context': [
-                  'https://www.w3.org/2018/credentials/v1',
-                  'https://w3id.org/citizenship/v1'
-                ],
-                type: ['VerifiableCredential', 'DriverLicenseCredential']
+                type_values: [
+                  [
+                    'https://www.w3.org/2018/credentials#VerifiableCredential',
+                    'https://w3id.org/citizenship#PermanentResidentCard'
+                  ]
+                ]
               }
             }]
           };
@@ -678,9 +711,8 @@ describe('VC Query Match', () => {
             type: ['NonExistentCredential']
           }];
 
-          // dcql_query should take priority, so it should match driverLicenseVc
-          const result = verifyUtils.checkVcQueryMatch({
-            vc: driverLicenseVc,
+          const result = await verifyUtils.checkVcQueryMatch({
+            vc: permanentResidentVc,
             dcql_query: dcqlQuery,
             query
           });
@@ -688,7 +720,7 @@ describe('VC Query Match', () => {
           expect(result).to.be(true);
         });
 
-      it('should use presentation_definition when both present', () => {
+      it('should use presentation_definition when both present', async () => {
         const presentationDefinition = {
           id: 'test-presentation-definition',
           input_descriptors: [{
@@ -717,17 +749,19 @@ describe('VC Query Match', () => {
         }];
 
         // presentation_definition should take priority
-        const resultWithPermanentResident = verifyUtils.checkVcQueryMatch({
-          vc: permanentResidentVc,
-          presentation_definition: presentationDefinition,
-          query
-        });
+        const resultWithPermanentResident =
+          await verifyUtils.checkVcQueryMatch({
+            vc: permanentResidentVc,
+            presentation_definition: presentationDefinition,
+            query
+          });
 
-        const resultWithDriverLicense = verifyUtils.checkVcQueryMatch({
-          vc: driverLicenseVc,
-          presentation_definition: presentationDefinition,
-          query
-        });
+        const resultWithDriverLicense =
+          await verifyUtils.checkVcQueryMatch({
+            vc: driverLicenseVc,
+            presentation_definition: presentationDefinition,
+            query
+          });
 
         expect(resultWithPermanentResident).to.be(true);
         expect(resultWithDriverLicense).to.be(false);
@@ -737,17 +771,18 @@ describe('VC Query Match', () => {
 
   describe('Error Handling', () => {
     it('should allow both dcql_query and presentation_definition ' +
-      '(dcql_query takes priority)', () => {
+      '(dcql_query takes priority)', async () => {
       const dcqlQuery = {
         credentials: [{
           id: 'test',
           format: 'ldp_vc',
           meta: {
-            '@context': [
-              'https://www.w3.org/2018/credentials/v1',
-              'https://w3id.org/citizenship/v1'
-            ],
-            type: ['VerifiableCredential', 'DriverLicenseCredential']
+            type_values: [
+              [
+                'https://www.w3.org/2018/credentials#VerifiableCredential',
+                'https://w3id.org/citizenship#PermanentResidentCard'
+              ]
+            ]
           }
         }]
       };
@@ -760,10 +795,8 @@ describe('VC Query Match', () => {
         }]
       };
 
-      // Should not throw - both are allowed for backward compatibility
-      // dcql_query takes priority
-      const result = verifyUtils.checkVcQueryMatch({
-        vc: driverLicenseVc,
+      const result = await verifyUtils.checkVcQueryMatch({
+        vc: permanentResidentVc,
         dcql_query: dcqlQuery,
         presentation_definition: presentationDefinition
       });
@@ -772,7 +805,7 @@ describe('VC Query Match', () => {
   });
 
   describe('Edge Cases', () => {
-    it('should handle VPR with unsupported query type', () => {
+    it('should handle VPR with unsupported query type', async () => {
       const vpr = {
         query: {
           type: 'UnsupportedQueryType',
@@ -783,7 +816,7 @@ describe('VC Query Match', () => {
         }
       };
 
-      const result = verifyUtils.checkVcQueryMatch({
+      const result = await verifyUtils.checkVcQueryMatch({
         vc: driverLicenseVc,
         vpr
       });
@@ -791,12 +824,12 @@ describe('VC Query Match', () => {
       expect(result).to.be(false);
     });
 
-    it('should handle DCQL query with no credentials', () => {
+    it('should handle DCQL query with no credentials', async () => {
       const dcqlQuery = {
         credentials: []
       };
 
-      const result = verifyUtils.checkVcQueryMatch({
+      const result = await verifyUtils.checkVcQueryMatch({
         vc: driverLicenseVc,
         dcql_query: dcqlQuery
       });
@@ -804,17 +837,18 @@ describe('VC Query Match', () => {
       expect(result).to.be(false);
     });
 
-    it('should handle presentation definition w/out input descriptors', () => {
-      const presentationDefinition = {
-        input_descriptors: []
-      };
+    it('should handle presentation definition w/out input descriptors',
+      async () => {
+        const presentationDefinition = {
+          input_descriptors: []
+        };
 
-      const result = verifyUtils.checkVcQueryMatch({
-        vc: driverLicenseVc,
-        presentation_definition: presentationDefinition
+        const result = await verifyUtils.checkVcQueryMatch({
+          vc: driverLicenseVc,
+          presentation_definition: presentationDefinition
+        });
+
+        expect(result).to.be(false);
       });
-
-      expect(result).to.be(false);
-    });
   });
 });

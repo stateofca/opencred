@@ -1041,8 +1041,7 @@ describe('OID4VP 1.0 trustedCredentialIssuers', () => {
           dcql_query: {
             credentials: [{
               id: 'test-cred',
-              format: 'jwt_vc_json',
-              meta: {type_values: [['VerifiableCredential']]}
+              format: 'jwt_vc_json'
             }]
           },
           trustedCredentialIssuers: ['did:web:not-a-valid-issuer.org']
@@ -1053,7 +1052,6 @@ describe('OID4VP 1.0 trustedCredentialIssuers', () => {
           profile: 'OID4VP-1.0'
         });
 
-        // Ensure dcql_query is in authorizationRequest
         exchange.variables.authorizationRequest.dcql_query =
           workflowWithDcql.dcql_query;
 
@@ -1142,8 +1140,7 @@ describe('OID4VP 1.0 trustedCredentialIssuers', () => {
             dcql_query: {
               credentials: [{
                 id: 'test-cred',
-                format: 'jwt_vc_json',
-                meta: {type_values: [['VerifiableCredential']]}
+                format: 'jwt_vc_json'
               }]
             },
             trustedCredentialIssuers: ['did:web:not-a-valid-issuer.org']
@@ -1218,8 +1215,7 @@ describe('OID4VP 1.0 trustedCredentialIssuers', () => {
           dcql_query: {
             credentials: [{
               id: 'test-cred',
-              format: 'jwt_vc_json',
-              meta: {type_values: [['VerifiableCredential']]}
+              format: 'jwt_vc_json'
             }]
           },
           trustedCredentialIssuers: [issuerDid]
@@ -1230,17 +1226,15 @@ describe('OID4VP 1.0 trustedCredentialIssuers', () => {
           profile: 'OID4VP-1.0'
         });
 
-        // Ensure dcql_query is in authorizationRequest
         exchange.variables.authorizationRequest.dcql_query =
           workflowWithDcql.dcql_query;
 
-        // OID4VP 1.0 format: vp_token is object keyed by credential ID
         const vp_token = {'test-cred': vp_token_jwt};
 
         const result = await verifySubmission({
           workflow: workflowWithDcql,
           vp_token,
-          submission: null, // No submission for OID4VP 1.0
+          submission: null,
           exchange,
           baseUri: config.server.baseUri,
           documentLoader
@@ -1262,8 +1256,7 @@ describe('OID4VP JWT VP audience', () => {
         dcql_query: {
           credentials: [{
             id: 'test-cred',
-            format: 'jwt_vc_json',
-            meta: {type_values: [['VerifiableCredential']]}
+            format: 'jwt_vc_json'
           }]
         },
         trustedCredentialIssuers: []
@@ -1462,8 +1455,7 @@ describe('OID4VP 1.0 vp_token string normalization', () => {
           dcql_query: {
             credentials: [{
               id: 'test-cred',
-              format: 'jwt_vc_json',
-              meta: {type_values: [['VerifiableCredential']]}
+              format: 'jwt_vc_json'
             }]
           },
           trustedCredentialIssuers: [issuerDid]
@@ -1527,8 +1519,7 @@ describe('OID4VP 1.0 vp_token string normalization', () => {
           dcql_query: {
             credentials: [{
               id: 'test-cred',
-              format: 'jwt_vc_json',
-              meta: {type_values: [['VerifiableCredential']]}
+              format: 'jwt_vc_json'
             }]
           },
           trustedCredentialIssuers: [issuerDid]
@@ -1593,8 +1584,7 @@ describe('OID4VP 1.0 vp_token string normalization', () => {
           dcql_query: {
             credentials: [{
               id: 'test-cred',
-              format: 'jwt_vc_json',
-              meta: {type_values: [['VerifiableCredential']]}
+              format: 'jwt_vc_json'
             }]
           },
           trustedCredentialIssuers: ['did:web:not-a-valid-issuer.org']

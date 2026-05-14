@@ -45,6 +45,7 @@ const baseNativeWorkflow = {
     idTokenExpirySeconds: 3600
   },
   query: [{type: ['Iso18013DriversLicenseCredential'],
+    context: ['https://www.w3.org/2018/credentials/v1', 'https://w3id.org/vdl/v1'],
     format: ['jwt_vc_json']}],
   dcql_query: {credentials: [{id: 'test', format: 'jwt_vc_json'}]},
   verifiablePresentationRequest: '{"query":{"type":"QueryByExample"}}'
@@ -110,7 +111,9 @@ describe('Config - configFrom inheritance', function() {
     const child = {
       clientId: 'child-3',
       configFrom: 'parent-native',
-      query: [{type: ['OpenBadgeCredential'], format: ['ldp_vc']}]
+      query: [{type: ['OpenBadgeCredential'],
+        context: ['https://www.w3.org/ns/credentials/v2'],
+        format: ['ldp_vc']}]
     };
 
     const result = applyWorkflowDefaults({
@@ -127,7 +130,7 @@ describe('Config - configFrom inheritance', function() {
       clientId: 'child-4',
       type: 'native',
       configFrom: 'parent-native',
-      query: [{type: ['VerifiableCredential']}],
+      query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}],
       brand: {
         homeLink: 'https://child.example.com',
         cta: '#444444'
@@ -151,19 +154,19 @@ describe('Config - configFrom inheritance', function() {
       const grandparent = {
         clientId: 'grandparent',
         type: 'native',
-        query: [{type: ['VerifiableCredential']}]
+        query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]
       };
       const parent = {
         clientId: 'parent-chained',
         type: 'native',
         configFrom: 'grandparent',
-        query: [{type: ['VerifiableCredential']}]
+        query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]
       };
       const child = {
         clientId: 'child-chained',
         type: 'native',
         configFrom: 'parent-chained',
-        query: [{type: ['VerifiableCredential']}]
+        query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]
       };
 
       expect(() => applyWorkflowDefaults({
@@ -178,7 +181,7 @@ describe('Config - configFrom inheritance', function() {
       clientId: 'orphan',
       type: 'native',
       configFrom: 'nonexistent',
-      query: [{type: ['VerifiableCredential']}]
+      query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]
     };
 
     expect(() => applyWorkflowDefaults({
@@ -193,7 +196,7 @@ describe('Config - configFrom inheritance', function() {
       clientId: 'bad-ref',
       type: 'native',
       configFrom: 123,
-      query: [{type: ['VerifiableCredential']}]
+      query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]
     };
 
     expect(() => applyWorkflowDefaults({
@@ -256,7 +259,7 @@ describe('Config - configFrom inheritance', function() {
       name: 'Child Name',
       public: false,
       caStore: true,
-      query: [{type: ['VerifiableCredential']}]
+      query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]
     };
 
     const result = applyWorkflowDefaults({
@@ -303,7 +306,8 @@ describe('Config - reCaptcha optional', function() {
         clientSecret: 'secret',
         type: 'native',
         query: [{
-          type: ['VerifiableCredential']
+          type: ['VerifiableCredential'],
+          context: ['https://www.w3.org/ns/credentials/v2']
         }],
         oidc: {
           redirectUri: 'https://example.com'
@@ -331,7 +335,8 @@ describe('Config - reCaptcha optional', function() {
         clientSecret: 'secret',
         type: 'native',
         query: [{
-          type: ['VerifiableCredential']
+          type: ['VerifiableCredential'],
+          context: ['https://www.w3.org/ns/credentials/v2']
         }],
         oidc: {
           redirectUri: 'https://example.com'
@@ -368,7 +373,8 @@ describe('Config - brand override behavior', function() {
       clientSecret: 'secret',
       type: 'native',
       query: [{
-        type: ['VerifiableCredential']
+        type: ['VerifiableCredential'],
+        context: ['https://www.w3.org/ns/credentials/v2']
       }],
       oidc: {
         redirectUri: 'https://example.com'
@@ -406,7 +412,7 @@ describe('Config - workflowId schema and uniqueness', function() {
         clientSecret: 'secret',
         workflowId: 'my-legacy-slug',
         type: 'native',
-        query: [{type: ['VerifiableCredential']}]
+        query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]
       }],
       defaultBrand: {cta: '#006847', primary: '#008f5a', header: '#004225'}
     };
@@ -420,7 +426,7 @@ describe('Config - workflowId schema and uniqueness', function() {
         clientId: 'test-client',
         clientSecret: 'secret',
         type: 'native',
-        query: [{type: ['VerifiableCredential']}]
+        query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]
       }],
       defaultBrand: {cta: '#006847', primary: '#008f5a', header: '#004225'}
     };
@@ -435,7 +441,7 @@ describe('Config - workflowId schema and uniqueness', function() {
         clientSecret: 'secret',
         workflowId: 'has spaces!',
         type: 'native',
-        query: [{type: ['VerifiableCredential']}]
+        query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]
       }],
       defaultBrand: {cta: '#006847', primary: '#008f5a', header: '#004225'}
     };
@@ -453,7 +459,7 @@ describe('Config - workflowId not inherited via configFrom', function() {
       clientId: 'child-wfid',
       type: 'native',
       configFrom: 'parent-native',
-      query: [{type: ['VerifiableCredential']}]
+      query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]
     };
 
     const result = applyWorkflowDefaults({
@@ -490,9 +496,9 @@ describe('Config - workflow identifier uniqueness', function() {
     const cfg = {
       workflows: [
         {clientId: 'dup', clientSecret: 's1', type: 'native',
-          query: [{type: ['VerifiableCredential']}]},
+          query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]},
         {clientId: 'dup', clientSecret: 's2', type: 'native',
-          query: [{type: ['VerifiableCredential']}]}
+          query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]}
       ]
     };
     const parsed = OpenCredConfigSchema.parse({
@@ -507,9 +513,9 @@ describe('Config - workflow identifier uniqueness', function() {
     const cfg = {
       workflows: [
         {clientId: 'a', clientSecret: 's1', workflowId: 'same-slug',
-          type: 'native', query: [{type: ['VerifiableCredential']}]},
+          type: 'native', query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]},
         {clientId: 'b', clientSecret: 's2', workflowId: 'same-slug',
-          type: 'native', query: [{type: ['VerifiableCredential']}]}
+          type: 'native', query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]}
       ]
     };
     const parsed = OpenCredConfigSchema.parse({
@@ -524,9 +530,9 @@ describe('Config - workflow identifier uniqueness', function() {
     const cfg = {
       workflows: [
         {clientId: 'a', clientSecret: 's1', workflowId: 'slug-a',
-          type: 'native', query: [{type: ['VerifiableCredential']}]},
+          type: 'native', query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]},
         {clientId: 'b', clientSecret: 's2', workflowId: 'slug-b',
-          type: 'native', query: [{type: ['VerifiableCredential']}]}
+          type: 'native', query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]}
       ]
     };
     const parsed = OpenCredConfigSchema.parse({
@@ -540,9 +546,9 @@ describe('Config - workflow identifier uniqueness', function() {
     const cfg = {
       workflows: [
         {clientId: 'x', clientSecret: 's1', type: 'native',
-          query: [{type: ['VerifiableCredential']}]},
+          query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]},
         {clientId: 'y', clientSecret: 's2', type: 'native',
-          query: [{type: ['VerifiableCredential']}]}
+          query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]}
       ]
     };
     const parsed = OpenCredConfigSchema.parse({
@@ -556,9 +562,9 @@ describe('Config - workflow identifier uniqueness', function() {
     const cfg = {
       workflows: [
         {clientId: 'foo', clientSecret: 's1', type: 'native',
-          query: [{type: ['VerifiableCredential']}]},
+          query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]},
         {clientId: 'bar', clientSecret: 's2', workflowId: 'foo',
-          type: 'native', query: [{type: ['VerifiableCredential']}]}
+          type: 'native', query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]}
       ]
     };
     const parsed = OpenCredConfigSchema.parse({
@@ -577,7 +583,8 @@ describe('Config - optional BrandSchema fields', function() {
         clientSecret: 'secret',
         type: 'native',
         query: [{
-          type: ['VerifiableCredential']
+          type: ['VerifiableCredential'],
+          context: ['https://www.w3.org/ns/credentials/v2']
         }],
         oidc: {
           redirectUri: 'https://example.com'
@@ -604,7 +611,8 @@ describe('Config - optional BrandSchema fields', function() {
         clientSecret: 'secret',
         type: 'native',
         query: [{
-          type: ['VerifiableCredential']
+          type: ['VerifiableCredential'],
+          context: ['https://www.w3.org/ns/credentials/v2']
         }],
         oidc: {
           redirectUri: 'https://example.com'
@@ -646,7 +654,7 @@ describe('Config - configFrom translations deep merge', function() {
       clientId: 'child-trans-merge',
       type: 'native',
       configFrom: 'parent-native',
-      query: [{type: ['VerifiableCredential']}],
+      query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}],
       translations: {
         en: {appTitle: 'Child App', qrPageExplain: 'Child QR'}
       }
@@ -678,7 +686,7 @@ describe('Config - configFrom translations deep merge', function() {
         clientId: 'child-no-trans',
         type: 'native',
         configFrom: 'parent-native',
-        query: [{type: ['VerifiableCredential']}]
+        query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]
       };
 
       const result = applyWorkflowDefaults({
@@ -697,13 +705,13 @@ describe('Config - configFrom translations deep merge', function() {
         clientId: 'parent-native',
         clientSecret: 'parent-secret',
         type: 'native',
-        query: [{type: ['VerifiableCredential']}]
+        query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}]
       };
       const child = {
         clientId: 'child-only-trans',
         type: 'native',
         configFrom: 'parent-native',
-        query: [{type: ['VerifiableCredential']}],
+        query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}],
         translations: {
           en: {appTitle: 'Child Only'}
         }
@@ -730,7 +738,7 @@ describe('Config - configFrom translations deep merge', function() {
       clientId: 'child-multi-locale',
       type: 'native',
       configFrom: 'parent-native',
-      query: [{type: ['VerifiableCredential']}],
+      query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}],
       translations: {
         en: {appTitle: 'Child EN Title'}
       }
@@ -762,7 +770,7 @@ describe('Config - configFrom translations deep merge', function() {
         clientId: 'child-blank',
         type: 'native',
         configFrom: 'parent-native',
-        query: [{type: ['VerifiableCredential']}],
+        query: [{type: ['VerifiableCredential'], context: ['https://www.w3.org/ns/credentials/v2']}],
         translations: {
           en: {copyright: ''}
         }

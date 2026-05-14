@@ -22,6 +22,7 @@ import {
 import {ConfidentialClientApplication} from '@azure/msal-node';
 import {decodeJwt} from 'jose';
 import {didResolver} from './documentLoader.js';
+import {expandTypes} from '../lib/workflows/common/type-expansion.js';
 import {generateId} from 'bnid';
 import {httpClient} from '@digitalbazaar/http-client';
 import {JSONPath} from 'jsonpath-plus';
@@ -255,38 +256,29 @@ const verifyJWTVP = async (jwt, options = {}) => {
 /**
  * Checks if a Verifiable Credential matches a query specification.
  *
- * @param {object} options - Options object containing VC and query specs.
- * @param {object} options.vc - The Verifiable Credential object to check.
- * @param {object} [options.vpr] - The Verifiable Presentation Request (legacy
- * format) object.
- * @param {object} [options.dcql_query] - The DCQL query object describing
- * credential requirements.
- * @param {object} [options.presentation_definition] - The OID4VP presentation
- * definition object (legacy format).
- * @param {object} [options.presentation_submission] - The Presentation
- * Submission object (Draft 18 format indicator).
- * @param {Array} [options.query] - The workflow.query array (fallback option).
- * @returns {boolean} True if the VC matches the query specification.
- * @throws {Error} If more than one query type is specified or none are
- * specified.
+ * @param {object} options - Options.
+ * @param {object} options.vc - The Verifiable Credential to check.
+ * @param {object} [options.vpr] - The Verifiable Presentation Request.
+ * @param {object} [options.dcql_query] - The DCQL query object.
+ * @param {object} [options.presentation_definition] - The presentation
+ *   definition (legacy).
+ * @param {object} [options.presentation_submission] - The presentation
+ *   submission (Draft 18).
+ * @param {Array} [options.query] - The workflow.query array (fallback).
+ * @returns {Promise<boolean>} True if the VC matches the query.
  */
-function checkVcQueryMatch({
+async function checkVcQueryMatch({
   vc, vpr, dcql_query, presentation_definition, presentation_submission,
   query}) {
-  // If submission against draft18, check that first,
-  // otherwise check dcql_query, or fall back to vpr
   if(presentation_definition && (presentation_submission || !dcql_query)) {
     return checkVcForPresentationDefinition(vc, presentation_definition);
   }
-  // Fallback to dcql_query if presentation_definition not available
   if(dcql_query) {
     return checkVcForDcql(vc, dcql_query);
   }
-  // Handle presentation exchange VPR (Doesn't depend on submission format)
   if(vpr) {
     return checkVcForVpr(vc, vpr);
   }
-  // Fallback to workflow.query if vpr not available
   if(query) {
     return checkVcForQuery(vc, query);
   }
@@ -383,48 +375,59 @@ function checkVcForQuery(vc, query) {
 }
 
 /**
- * Checks if a Verifiable Credential matches a single credential query.
+ * Checks if a Verifiable Credential matches a single DCQL credential query.
+ *
+ * For queries with meta.type_values (OID4VP 1.0), expands the VC's type
+ * array to IRIs using the VC's own @context, then checks if the expanded
+ * types are a superset of at least one type_values sub-array.
  *
  * @param {object} vc - The Verifiable Credential to check.
  * @param {object} credentialQuery - A single credential query from DCQL.
- * @returns {object} - Object with `matches` (boolean) and `errors` (array).
+ * @returns {Promise<object>} - Object with `matches` (boolean) and
+ *   `errors` (array).
  */
-function checkVcAgainstCredentialQuery(vc, credentialQuery) {
+async function checkVcAgainstCredentialQuery(vc, credentialQuery) {
   const errors = [];
 
-  // Note: Format checking is not done here because VCs don't have a format
-  // property. Format validation happens at the submission level (in
-  // verifyDraft18Submission/verifyOID4VPSubmission) where format information
-  // is available from:
-  // - Draft 18: presentation_submission.descriptor_map[].format or
-  //   path_nested.format
-  // - OID4VP 1.0: dcql_query.credentials[].format
+  if(credentialQuery.meta?.type_values) {
+    const typeValues = credentialQuery.meta.type_values;
+    const vcTypes = arrayOf(vc.type);
+    const vcContexts = arrayOf(vc['@context']);
 
-  // Check meta constraints if specified
-  if(credentialQuery.meta) {
-    // For now, we'll do basic context and type matching A full implementation
-    // would need to handle all meta properties
-    if(credentialQuery.meta['@context']) {
-      const expectedContext = arrayOf(credentialQuery.meta['@context']);
-      const vcContext = arrayOf(vc['@context']);
-      if(!expectedContext.every(ctx => vcContext.includes(ctx))) {
-        const expectedStr = expectedContext.join(', ');
-        const gotStr = vcContext.join(', ');
-        errors.push(
-          `Context mismatch: expected all of [${expectedStr}], ` +
-          `got [${gotStr}]`
-        );
-      }
+    if(vcContexts.length === 0) {
+      errors.push('VC has no @context for type expansion');
+      return {matches: false, errors};
     }
-    if(credentialQuery.meta.type) {
-      const expectedType = arrayOf(credentialQuery.meta.type);
-      const vcType = arrayOf(vc.type);
-      if(!expectedType.every(type => vcType.includes(type))) {
-        errors.push(
-          `Type mismatch: expected all of [${expectedType.join(', ')}], ` +
-          `got [${vcType.join(', ')}]`
-        );
+
+    let expandedVcTypes;
+    try {
+      expandedVcTypes = await expandTypes({
+        types: vcTypes,
+        contexts: vcContexts
+      });
+    } catch(e) {
+      errors.push(`Failed to expand VC types: ${e.message}`);
+      return {matches: false, errors};
+    }
+
+    // Each sub-array is a set of required type IRIs; the VC must contain all.
+    const typeMatch = typeValues.some(requiredTypes => {
+      if(!Array.isArray(requiredTypes) || requiredTypes.length === 0) {
+        return true;
       }
+      return requiredTypes.every(
+        reqType => expandedVcTypes.includes(reqType)
+      );
+    });
+
+    if(!typeMatch) {
+      const expandedStr = expandedVcTypes.join(', ');
+      const expectedStr = typeValues
+        .map(tv => `[${tv.join(', ')}]`).join(' | ');
+      errors.push(
+        `Type mismatch: VC types [${expandedStr}] do not satisfy any ` +
+        `of the required type_values: ${expectedStr}`
+      );
     }
   }
 
@@ -439,9 +442,9 @@ function checkVcAgainstCredentialQuery(vc, credentialQuery) {
  *
  * @param {object} vc - The Verifiable Credential to check.
  * @param {object} dcql_query - The DCQL query.
- * @returns {boolean} True if the VC matches any of the credential queries.
+ * @returns {Promise<boolean>} True if the VC matches any credential query.
  */
-function checkVcForDcql(vc, dcql_query) {
+async function checkVcForDcql(vc, dcql_query) {
   if(!dcql_query.credentials || !Array.isArray(dcql_query.credentials)) {
     return false;
   }
@@ -450,7 +453,6 @@ function checkVcForDcql(vc, dcql_query) {
     return false;
   }
 
-  // Check all credential queries, return true if any match
   const allErrors = [];
   for(let i = 0; i < dcql_query.credentials.length; i++) {
     const credentialQuery = dcql_query.credentials[i];
@@ -462,21 +464,17 @@ function checkVcForDcql(vc, dcql_query) {
       continue;
     }
 
-    const result = checkVcAgainstCredentialQuery(vc, credentialQuery);
+    const result = await checkVcAgainstCredentialQuery(vc, credentialQuery);
     if(result.matches) {
-      // Found a match, return true immediately
       return true;
     }
 
-    // Record errors for this query
     allErrors.push({
       queryIndex: i,
       errors: result.errors
     });
   }
 
-  // All queries failed, return false
-  // Note: allErrors contains organized error information for debugging
   return false;
 }
 
