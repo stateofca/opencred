@@ -98,8 +98,9 @@ SPDX-License-Identifier: BSD-3-Clause
       <div class="column items-center mt-4 mx-auto text-center">
         Powered by OpenCred
       </div>
-      <DebugDisplay />
     </div>
+
+    <DebugDisplay />
 
     <!-- Status Dialog -->
     <CadmvDialog
