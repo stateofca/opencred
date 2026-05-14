@@ -29,6 +29,9 @@ import {Ed25519VerificationKey2020}
   from '@digitalbazaar/ed25519-verification-key-2020';
 import {JsonLdDocumentLoader} from 'jsonld-document-loader';
 import {
+  contexts as OPEN_BADGES_CONTEXT_MAP
+} from '@digitalcredentials/open-badges-context';
+import {
   contexts as SL_CONTEXT_MAP
 } from '@digitalbazaar/vc-status-list-context';
 import {
@@ -88,6 +91,7 @@ export const getDocumentLoader = () => {
   jsonLdDocLoader.addDocuments({documents: DATA_INTEGRITY_CONTEXT_MAP});
   jsonLdDocLoader.addDocuments({documents: DID_CONTEXT_MAP});
   jsonLdDocLoader.addDocuments({documents: ED25519_SIG_2020_CONTEXT_MAP});
+  jsonLdDocLoader.addDocuments({documents: OPEN_BADGES_CONTEXT_MAP});
   jsonLdDocLoader.addDocuments({documents: SL_CONTEXT_MAP});
   jsonLdDocLoader.addDocuments({documents: VC_DPP_CONTEXT_MAP});
   jsonLdDocLoader.addDocuments({documents: VDL_AAMVA_CONTEXT_MAP});

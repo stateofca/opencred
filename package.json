@@ -67,6 +67,7 @@
     "@digitalbazaar/vdl-aamva-context": "^1.0.0",
     "@digitalbazaar/vdl-context": "^1.0.0",
     "@digitalbazaar/vvc-context": "^1.0.0",
+    "@digitalcredentials/open-badges-context": "^3.0.0",
     "@hpke/core": "^1.9.0",
     "@peculiar/x509": "^1.14.3",
     "@quasar/extras": "^1.16.11",

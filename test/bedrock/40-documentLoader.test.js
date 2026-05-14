@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+import * as obCtx from '@digitalcredentials/open-badges-context';
 import * as sinon from 'sinon';
 import expect from 'expect.js';
 import {getDocumentLoader} from '../../common/documentLoader.js';
@@ -97,5 +98,23 @@ mZ0JmU1YxeE94SG1WalRQeWlBY2ZqVGF1Znp0N3RpUDZYb0Y2VSJ9');
     expect(didWebData.document).property('capabilityInvocation');
     expect(didWebData.document.id).equal(didWebData.documentUrl);
     stub.restore();
+  });
+
+  describe('Static contexts', () => {
+    it('loads Open Badges v3 context from the static map (no network)',
+      async function() {
+        const stub = sinon.stub(httpClient, 'get');
+        try {
+          const result = await documentLoader(obCtx.CONTEXT_URL_V3);
+          expect(result).property('document');
+          expect(result).property('documentUrl');
+          expect(result.documentUrl).equal(obCtx.CONTEXT_URL_V3);
+          expect(result.document).property('@context');
+          // No network fetch should have happened for a static context.
+          expect(stub.called).equal(false);
+        } finally {
+          stub.restore();
+        }
+      });
   });
 });

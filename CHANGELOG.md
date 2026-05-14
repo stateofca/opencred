@@ -12,6 +12,9 @@
   from the network.
 - Schema validation requires `context` when `type` is present in workflow query
   items.
+- Statically load the Open Badges v3.0.3 context
+  (`https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json`) via
+  `@digitalcredentials/open-badges-context`
 
 ## 10.0.7 - 2026-05-12
 
