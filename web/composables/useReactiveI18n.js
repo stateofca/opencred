@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+import {debugOverrides} from './useDebugTranslations.js';
 import {useExchangeContext} from './useExchangeContext.js';
 import {useI18n} from 'vue-i18n';
 import {watch} from 'vue';
@@ -12,12 +13,14 @@ import {watch} from 'vue';
 /**
  * Composable for reactive i18n with workflow translations.
  * Automatically pulls translations from the exchange context
- * and merges them into a local i18n scope.
+ * and merges them into a local i18n scope. Debug overrides
+ * are applied last so edits are visible in local-scope
+ * components.
  *
  * @param {object} [options] - Options.
  * @param {import('vue').ComputedRef<object>} [options.messages]
- *   Override translations source. Defaults to workflow translations
- *   from useExchangeContext().
+ *   Override translations source. Defaults to workflow
+ *   translations from useExchangeContext().
  * @returns {object} I18n instance with added `te` helper.
  */
 export function useReactiveI18n({messages} = {}) {
@@ -26,11 +29,22 @@ export function useReactiveI18n({messages} = {}) {
 
   const i18n = useI18n({useScope: 'local'});
 
-  watch(source, msgs => {
-    for(const [locale, msg] of Object.entries(msgs || {})) {
-      i18n.mergeLocaleMessage(locale, msg);
-    }
-  }, {immediate: true, deep: true});
+  watch(
+    [source, debugOverrides],
+    ([msgs, overrides]) => {
+      const locales = new Set([
+        ...Object.keys(msgs || {}),
+        ...Object.keys(overrides || {})
+      ]);
+      for(const locale of locales) {
+        i18n.setLocaleMessage(locale, {
+          ...(msgs?.[locale] || {}),
+          ...(overrides?.[locale] || {})
+        });
+      }
+    },
+    {immediate: true, deep: true}
+  );
 
   /**
    * Check if a translation key exists and has a non-empty value.

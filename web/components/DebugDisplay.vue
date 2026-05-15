@@ -21,15 +21,40 @@ SPDX-License-Identifier: BSD-3-Clause
         dense
         @click="showDebug = false" />
     </q-card-section>
-    <q-card-section class="q-pt-sm column flex-grow overflow-hidden">
-      <textarea
-        readonly
-        :value="debugText"
-        class="w-full flex-grow font-mono text-xs overflow-auto"
-        style="resize: none;" />
-    </q-card-section>
+    <q-tabs
+      v-model="activeTab"
+      dense
+      class="text-grey"
+      active-color="primary"
+      indicator-color="primary"
+      align="left"
+      narrow-indicator>
+      <q-tab
+        name="info"
+        label="Info" />
+      <q-tab
+        name="translations"
+        label="Translations" />
+    </q-tabs>
+    <q-separator />
+    <q-tab-panels
+      v-model="activeTab"
+      animated
+      class="debug-modal__panels">
+      <q-tab-panel
+        name="info"
+        class="column full-height q-pa-sm">
+        <DebugInfoPanel ref="infoPanel" />
+      </q-tab-panel>
+      <q-tab-panel
+        name="translations"
+        class="column full-height q-pa-sm">
+        <DebugTranslationsPanel />
+      </q-tab-panel>
+    </q-tab-panels>
     <q-card-actions align="right">
       <q-btn
+        v-if="activeTab === 'info'"
         flat
         :label="copyLabel"
         @click="copyDebug" />
@@ -42,46 +67,23 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
-import {computed, ref} from 'vue';
+import {ref} from 'vue';
 import {useDebug} from '../composables/useDebug.js';
-import {useExchange} from '../composables/useExchange.js';
-import {useWalletInteraction} from '../composables/useWalletInteraction.js';
 
+import DebugInfoPanel from './DebugInfoPanel.vue';
+import DebugTranslationsPanel from './DebugTranslationsPanel.vue';
 import ModalDialog from './ModalDialog.vue';
 
 const {showDebug} = useDebug();
-const {
-  exchangeData, exchangeState, workflow, dcApiSystemAvailable, isActive
-} = useExchange();
-const {
-  activePickerEntry, activeInteractionType, pickerEntries, interactionState
-} = useWalletInteraction();
 
+const activeTab = ref('info');
 const copyLabel = ref('Copy');
-
-const debugText = computed(() => {
-  const sections = [
-    `active interaction type: ${activeInteractionType.value ?? 'null'}`,
-    `active picker entry: ${JSON.stringify(activePickerEntry.value, null, 2)}`,
-    `state: ${exchangeState.value}`,
-    `active: ${isActive.value}`,
-    '',
-    'interaction state:',
-    `dcApiError=${interactionState.value?.dcApiError}`,
-    `dcapi system available: ${dcApiSystemAvailable.value}`,
-    '',
-    `picker entries: ${JSON.stringify(pickerEntries.value, null, 2)}`,
-    '',
-    `exchange data:\n${JSON.stringify(exchangeData.value, null, 2)}`,
-    '',
-    `workflow:\n${JSON.stringify(workflow.value, null, 2)}`
-  ];
-  return sections.join('\n');
-});
+const infoPanel = ref(null);
 
 async function copyDebug() {
   try {
-    await navigator.clipboard.writeText(debugText.value);
+    const text = infoPanel.value?.copyPayload ?? '';
+    await navigator.clipboard.writeText(text);
     copyLabel.value = 'Copied!';
     setTimeout(() => {
       copyLabel.value = 'Copy';
@@ -99,5 +101,30 @@ async function copyDebug() {
   height: 90vh;
   display: flex;
   flex-direction: column;
+}
+
+.debug-modal .debug-modal__panels {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+@media (min-width: 2048px) {
+  .q-dialog__inner--minimized:has(> .debug-modal) {
+    justify-content: flex-end;
+  }
+  .q-dialog__inner--minimized > div.debug-modal {
+    width: 48vw;
+  }
+
+  /* Shift page layout left so content centers in the remaining space
+     beside the debug modal. */
+  body:has(.debug-modal) .opencred-main-container {
+    padding-right: 32vw;
+  }
+
+  /* Transparent backdrop so page content is visible alongside the modal. */
+  .q-dialog:has(.debug-modal) .q-dialog__backdrop {
+    background: transparent;
+  }
 }
 </style>

@@ -8,6 +8,9 @@
   `meta['@context']` and `meta.type`.
 
 ### Added
+- Expanded debug modal with tabbed Info and Translations views.
+- Compact Info tab with summarized workflow/picker state and raw exchange JSON.
+- Memory-only translation override editor with YAML copy workflow.
 - Log `context_fetch` event when the document loader fetches a JSON-LD context
   from the network.
 - Schema validation requires `context` when `type` is present in workflow query

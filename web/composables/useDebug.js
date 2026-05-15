@@ -106,5 +106,5 @@ export function useDebug() {
     }
   });
 
-  return {showDebug};
+  return {showDebug, debugEnabled};
 }
