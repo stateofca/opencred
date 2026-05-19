@@ -8,32 +8,30 @@ SPDX-License-Identifier: BSD-3-Clause
 <template>
   <div class="flex flex-col items-center justify-center">
     <!-- Error State -->
-    <div
+    <CadmvBanner
       v-if="error"
-      class="flex flex-col items-center">
-      <p class="text-red-600 mb-4 text-center">
-        <span class="font-bold">
-          Error receiving credential from wallet.
-        </span>
-        <br>
-        <span class="text-sm">{{error.message || error}}</span>
-      </p>
-      <div class="flex gap-4">
+      class="w-full max-w-md"
+      variant="error"
+      :dismissible="false"
+      :text="errorMessage">
+      <template #action>
         <cadmv-button
-          variant="primary"
-          :loading="!error && active"
-          :disabled="!error && active"
+          flat
+          dense
+          class="error-action error-action--primary"
           @click="handleRetry">
           {{$t('dcApiRetry')}}
         </cadmv-button>
         <cadmv-button
           v-if="fallbackEntry"
-          variant="secondary"
+          flat
+          dense
+          class="error-action"
           @click="handleFallback">
           {{$t('dcApiFallback')}}
         </cadmv-button>
-      </div>
-    </div>
+      </template>
+    </CadmvBanner>
     <!-- Normal State: wallet-branded launch buttons -->
     <div
       v-else
@@ -84,7 +82,7 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
-import {CadmvButton} from '@digitalbazaar/cadmv-ui';
+import {CadmvBanner, CadmvButton} from '@digitalbazaar/cadmv-ui';
 import {computed} from 'vue';
 import CountdownDisplay from '../CountdownDisplay.vue';
 import {useI18n} from 'vue-i18n';
@@ -136,6 +134,16 @@ const emit = defineEmits([
   'retry',
   'fallback'
 ]);
+
+const errorMessage = computed(() => {
+  if(!props.error) {
+    return '';
+  }
+  if(typeof props.error === 'string') {
+    return props.error;
+  }
+  return props.error.message || t('error_defaultMessage');
+});
 
 const allowedWalletIdSet = computed(() =>
   props.walletIds === null ? null : new Set(props.walletIds));
@@ -205,3 +213,24 @@ const handleFallback = () => {
   emit('fallback');
 };
 </script>
+
+<style scoped>
+:deep(.q-banner__content.text-body2) {
+  font-size: 0.75rem;
+}
+
+:deep(.error-action.custom-btn) {
+  min-width: 0;
+  padding: 0.5rem 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.0;
+  white-space: normal;
+}
+:deep(.error-action--primary.custom-btn) {
+  font-weight: 600;
+  border: 1px solid var(--q-negative);
+}
+:deep(.error-action--primary.custom-btn:not(:last-child)) {
+  margin-right: 0.5rem;
+}
+</style>
