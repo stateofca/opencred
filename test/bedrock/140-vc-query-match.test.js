@@ -1,6 +1,11 @@
 import expect from 'expect.js';
 import {verifyUtils} from '../../common/utils.js';
 
+// Local convenience constant for test expectations, avoiding extra test-only
+// exports.
+const VC_BASE_IRI =
+  'https://www.w3.org/2018/credentials#VerifiableCredential';
+
 describe('VC Query Match', () => {
   // Test credentials without proofs for matching
   const driverLicenseVc = {
@@ -135,6 +140,170 @@ describe('VC Query Match', () => {
       });
 
       expect(result).to.be(true);
+    });
+
+    describe('Claim Matching', () => {
+      it('should match when @context claim value is present in VC',
+        async () => {
+          const dcqlQuery = {
+            credentials: [{
+              id: 'context-claim-present',
+              format: 'ldp_vc',
+              claims: [{
+                path: ['$[\'@context\']'],
+                values: ['https://www.w3.org/2018/credentials/v1']
+              }]
+            }]
+          };
+
+          const result = await verifyUtils.checkVcQueryMatch({
+            vc: permanentResidentVc,
+            dcql_query: dcqlQuery
+          });
+
+          expect(result).to.be(true);
+        });
+
+      it('should not match when @context claim value is missing from VC',
+        async () => {
+          const dcqlQuery = {
+            credentials: [{
+              id: 'context-claim-missing',
+              format: 'ldp_vc',
+              claims: [{
+                path: ['$[\'@context\']'],
+                values: ['https://example.org/nonexistent/v1']
+              }]
+            }]
+          };
+
+          const result = await verifyUtils.checkVcQueryMatch({
+            vc: permanentResidentVc,
+            dcql_query: dcqlQuery
+          });
+
+          expect(result).to.be(false);
+        });
+
+      it('should match when $.type claim value is present in VC',
+        async () => {
+          const dcqlQuery = {
+            credentials: [{
+              id: 'type-claim-present',
+              format: 'ldp_vc',
+              claims: [{
+                path: ['$.type'],
+                values: ['PermanentResidentCard']
+              }]
+            }]
+          };
+
+          const result = await verifyUtils.checkVcQueryMatch({
+            vc: permanentResidentVc,
+            dcql_query: dcqlQuery
+          });
+
+          expect(result).to.be(true);
+        });
+
+      it('should not match when $.type claim value is missing from VC',
+        async () => {
+          const dcqlQuery = {
+            credentials: [{
+              id: 'type-claim-missing',
+              format: 'ldp_vc',
+              claims: [{
+                path: ['$.type'],
+                values: ['PermanentResidentCard']
+              }]
+            }]
+          };
+
+          const result = await verifyUtils.checkVcQueryMatch({
+            vc: driverLicenseVc,
+            dcql_query: dcqlQuery
+          });
+
+          expect(result).to.be(false);
+        });
+
+      it('should resolve JWT-format type path candidates to $.type',
+        async () => {
+          const dcqlQuery = {
+            credentials: [{
+              id: 'jwt-type-claim',
+              format: 'jwt_vc_json',
+              claims: [{
+                path: [
+                  '$.vc.type',
+                  '$.verifiableCredential.type',
+                  '$.type'
+                ],
+                values: ['PermanentResidentCard']
+              }]
+            }]
+          };
+
+          const result = await verifyUtils.checkVcQueryMatch({
+            vc: permanentResidentVc,
+            dcql_query: dcqlQuery
+          });
+
+          expect(result).to.be(true);
+        });
+
+      it('should fail when type_values matches but a claim is unsatisfied',
+        async () => {
+          const dcqlQuery = {
+            credentials: [{
+              id: 'combined-type-values-and-claims',
+              format: 'ldp_vc',
+              meta: {
+                type_values: [[VC_BASE_IRI]]
+              },
+              claims: [
+                {
+                  path: ['$.type'],
+                  values: ['PermanentResidentCard']
+                },
+                {
+                  path: ['$[\'@context\']'],
+                  values: ['https://example.org/missing/v1']
+                }
+              ]
+            }]
+          };
+
+          const result = await verifyUtils.checkVcQueryMatch({
+            vc: permanentResidentVc,
+            dcql_query: dcqlQuery
+          });
+
+          expect(result).to.be(false);
+        });
+
+      it('should silently skip unrecognized claim paths', async () => {
+        const dcqlQuery = {
+          credentials: [{
+            id: 'unrecognized-claim-path',
+            format: 'ldp_vc',
+            meta: {
+              type_values: [[VC_BASE_IRI]]
+            },
+            claims: [{
+              path: ['$.credentialSubject.id'],
+              values: ['did:example:not-matching']
+            }]
+          }]
+        };
+
+        const result = await verifyUtils.checkVcQueryMatch({
+          vc: permanentResidentVc,
+          dcql_query: dcqlQuery
+        });
+
+        expect(result).to.be(true);
+      });
     });
   });
 

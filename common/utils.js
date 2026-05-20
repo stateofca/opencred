@@ -1,6 +1,6 @@
 /*!
- * Copyright 2023 - 2026 California Department of Motor Vehicles Copyright 2023
- * - 2024 Digital Bazaar, Inc.
+ * Copyright 2023 - 2026 California Department of Motor Vehicles
+ * Copyright 2023 - 2026 Digital Bazaar, Inc.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -377,9 +377,17 @@ function checkVcForQuery(vc, query) {
 /**
  * Checks if a Verifiable Credential matches a single DCQL credential query.
  *
- * For queries with meta.type_values (OID4VP 1.0), expands the VC's type
- * array to IRIs using the VC's own @context, then checks if the expanded
- * types are a superset of at least one type_values sub-array.
+ * For queries with `meta.type_values` (OID4VP 1.0), expands the VC's `type`
+ * array to IRIs using the VC's own `@context`, then checks if the expanded
+ * types are a superset of at least one `type_values` sub-array.
+ *
+ * Also verifies DCQL `claims[]` entries whose `path` candidates resolve to
+ * a recognized VC field (`@context` or `type`, including JWT-format path
+ * variants). For each such claim, every value in `claim.values` must be
+ * present in `arrayOf(vc[field])` (case-sensitive). Claims whose paths do
+ * not resolve to a recognized field (for example, `mso_mdoc` namespaced
+ * paths) are silently skipped, since those claim shapes are not routed
+ * through this function.
  *
  * @param {object} vc - The Verifiable Credential to check.
  * @param {object} credentialQuery - A single credential query from DCQL.
@@ -431,10 +439,70 @@ async function checkVcAgainstCredentialQuery(vc, credentialQuery) {
     }
   }
 
+  if(Array.isArray(credentialQuery.claims)) {
+    for(const claim of credentialQuery.claims) {
+      if(!claim || !Array.isArray(claim.path) || claim.path.length === 0) {
+        continue;
+      }
+      const field = _resolveClaimVcField(claim.path);
+      if(!field) {
+        // Unrecognized claim path: do not fail the match. Other claim
+        // shapes (for example, mso_mdoc namespaced paths) are not routed
+        // through this function.
+        continue;
+      }
+      const required = Array.isArray(claim.values) ? claim.values : [];
+      if(required.length === 0) {
+        continue;
+      }
+      const actual = arrayOf(vc[field]);
+      const missing = required.filter(v => !actual.includes(v));
+      if(missing.length > 0) {
+        errors.push(
+          `Claim mismatch on '${field}': VC is missing required ` +
+          `value(s) [${missing.join(', ')}]`
+        );
+      }
+    }
+  }
+
   return {
     matches: errors.length === 0,
     errors
   };
+}
+
+/**
+ * Maps a DCQL claim path candidate list to the VC field it targets.
+ *
+ * Recognized paths (in candidate order, first match wins):
+ *   `$['@context']`, `$.vc['@context']` map to `@context`.
+ *   `$.type`, `$.vc.type`, `$.verifiableCredential.type` map to `type`.
+ *
+ * @param {Array<string>} pathCandidates - JSONPath strings from a DCQL
+ *   claim's `path` array.
+ * @returns {string|null} - The VC field name (`'@context'` or `'type'`),
+ *   or `null` if no candidate matches a known field.
+ */
+function _resolveClaimVcField(pathCandidates) {
+  const ctxPaths = new Set([
+    '$[\'@context\']',
+    '$.vc[\'@context\']'
+  ]);
+  const typePaths = new Set([
+    '$.type',
+    '$.vc.type',
+    '$.verifiableCredential.type'
+  ]);
+  for(const p of pathCandidates) {
+    if(ctxPaths.has(p)) {
+      return '@context';
+    }
+    if(typePaths.has(p)) {
+      return 'type';
+    }
+  }
+  return null;
 }
 
 /**

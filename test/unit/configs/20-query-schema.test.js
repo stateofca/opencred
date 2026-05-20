@@ -33,27 +33,23 @@ describe('OpenCredQuerySchema', () => {
     expect(result.success).to.be(true);
   });
 
-  it('should reject query with type but no context', () => {
+  it('should accept query with type only', () => {
+    // Avoiding a breaking change to config validation in this patch version. In
+    // 10.1+ we may require contexts in VC queries.
     const result = OpenCredQuerySchema.safeParse([{
       type: ['VerifiableCredential'],
       format: ['ldp_vc']
     }]);
-    expect(result.success).to.be(false);
-    expect(result.error.issues[0].message).to.contain(
-      'must also include "context"'
-    );
+    expect(result.success).to.be(true);
   });
 
-  it('should reject query item with type and empty context array', () => {
+  it('should accept query with type and empty context array', () => {
     const result = OpenCredQuerySchema.safeParse([{
       type: ['VerifiableCredential'],
       context: [],
       format: ['ldp_vc']
     }]);
-    expect(result.success).to.be(false);
-    expect(result.error.issues[0].message).to.contain(
-      'must also include "context"'
-    );
+    expect(result.success).to.be(true);
   });
 
   it('should accept multiple items when all valid', () => {
@@ -69,23 +65,5 @@ describe('OpenCredQuerySchema', () => {
       }
     ]);
     expect(result.success).to.be(true);
-  });
-
-  it('should reject when any item has type without context', () => {
-    const result = OpenCredQuerySchema.safeParse([
-      {
-        type: ['VerifiableCredential'],
-        context: ['https://www.w3.org/ns/credentials/v2'],
-        format: ['ldp_vc']
-      },
-      {
-        type: ['OpenBadgeCredential'],
-        format: ['ldp_vc']
-      }
-    ]);
-    expect(result.success).to.be(false);
-    expect(result.error.issues[0].message).to.contain(
-      'must also include "context"'
-    );
   });
 });

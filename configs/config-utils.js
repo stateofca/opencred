@@ -137,21 +137,7 @@ export const OpenCredQuerySchema = z.array(z.object({
   fields: z.record(z.string(), z.array(z.string())).optional(),
   format: z.array(
     z.enum(['jwt_vc_json', 'ldp_vc', 'mso_mdoc'])).default(['ldp_vc'])
-}).refine(
-  q => {
-    const hasType = q.type && q.type.length > 0;
-    const hasContext = q.context && q.context.length > 0;
-    if(hasType && !hasContext) {
-      return false;
-    }
-    return true;
-  },
-  {
-    message: 'Query items with "type" must also include "context" ' +
-      'for JSON-LD type expansion. Ensure context and type are on the ' +
-      'same query array item.'
-  }
-)).min(1);
+})).min(1);
 
 // Query by Example schema for lightweight VC queries
 export const QueryByExampleSchema = z.object({
