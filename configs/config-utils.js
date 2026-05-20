@@ -176,6 +176,10 @@ export const BaseWorkflowSchema = z.object({
   caStore: z.boolean().default(true), // If false, cert/x5c checks are skipped
   // By default,experimental DC API is disabled
   dcApiEnabled: z.boolean().default(false),
+  // Whether the Interaction URL (qr-and-copy) profile is a default
+  // (locked-on) picker option. When undefined here, inherits from
+  // options.interactEnabled (global default: true).
+  interactEnabled: z.boolean().optional(),
   wallets: z.array(z.enum(availableWallets)).optional(),
   oidc: OpenIdConnectSchema.optional(),
   callback: CallbackSchema.optional(),
@@ -291,6 +295,12 @@ export const OptionsSchema = z.object({
       900 // Max 900 seconds
     ))),
   includeQRByDefault: z.boolean().default(true),
+
+  // Default visibility of the Interaction URL (qr-and-copy) interaction method
+  // in the exchange picker. default true. When false, method is available
+  // only via the advanced-settings.
+  interactEnabled: z.boolean().default(true),
+
   OID4VPdefault: z.enum([
     'OID4VP-draft18', 'OID4VP-combined', 'OID4VP-1.0'
   ]).default('OID4VP-combined'),
@@ -476,6 +486,7 @@ export const INHERITABLE_FIELDS = [
   'brand',
   'caStore',
   'dcApiEnabled',
+  'interactEnabled',
   'wallets',
   'oidc',
   'callback',

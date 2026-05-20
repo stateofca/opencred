@@ -346,14 +346,16 @@ describe('computeExchangeOptions', () => {
   });
 
   describe('interact profile', () => {
-    it('should always emit qr-and-copy when interact is available', () => {
+    it('should emit qr-and-copy when interact is available and ' +
+      'interactEnabled is default (true)', () => {
       const result = computeExchangeOptions(baseInput);
       const interact = result.pickerEntries.find(
         e => e.method === 'qr-and-copy' && e.profile === 'interact');
       expect(interact).to.be.an('object');
     });
 
-    it('should include interact in defaultProfiles', () => {
+    it('should include interact in defaultProfiles when interactEnabled ' +
+      'is default', () => {
       const result = computeExchangeOptions(baseInput);
       expect(result.defaultProfiles.map(p => p.profile))
         .to.contain('interact');
@@ -367,6 +369,69 @@ describe('computeExchangeOptions', () => {
       const interact = result.pickerEntries.find(
         e => e.profile === 'interact');
       expect(interact).to.be(undefined);
+    });
+
+    it('should move interact to extraProfiles when ' +
+      'interactEnabled is false', () => {
+      const result = computeExchangeOptions({
+        ...baseInput,
+        workflow: {
+          ...baseInput.workflow,
+          interactEnabled: false
+        }
+      });
+      expect(result.defaultProfiles.map(p => p.profile))
+        .to.not.contain('interact');
+      const extra = result.extraProfiles.find(
+        p => p.profile === 'interact');
+      expect(extra).to.be.an('object');
+    });
+
+    it('should not emit interact picker entry by default when ' +
+      'interactEnabled is false', () => {
+      const result = computeExchangeOptions({
+        ...baseInput,
+        workflow: {
+          ...baseInput.workflow,
+          interactEnabled: false
+        }
+      });
+      const interact = result.pickerEntries.find(
+        e => e.profile === 'interact');
+      expect(interact).to.be(undefined);
+    });
+
+    it('should emit interact picker entry when interactEnabled is ' +
+      'false but user enables it', () => {
+      const result = computeExchangeOptions({
+        ...baseInput,
+        workflow: {
+          ...baseInput.workflow,
+          interactEnabled: false
+        },
+        userSettings: {
+          enabledWallets: [],
+          enabledProfiles: ['interact']
+        }
+      });
+      const interact = result.pickerEntries.find(
+        e => e.method === 'qr-and-copy' && e.profile === 'interact');
+      expect(interact).to.be.an('object');
+    });
+
+    it('should treat interactEnabled: true same as default', () => {
+      const result = computeExchangeOptions({
+        ...baseInput,
+        workflow: {
+          ...baseInput.workflow,
+          interactEnabled: true
+        }
+      });
+      expect(result.defaultProfiles.map(p => p.profile))
+        .to.contain('interact');
+      const interact = result.pickerEntries.find(
+        e => e.method === 'qr-and-copy' && e.profile === 'interact');
+      expect(interact).to.be.an('object');
     });
   });
 

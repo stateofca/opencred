@@ -51,8 +51,8 @@ OpenCred deployment.
 
 - Input the full local tunnel URI as the `app.server.baseUri` property.
 - If the VC to be verified includes an x509 certificate (x5c claim), input the
-certificate in the `pem` property under `caStore`. If not, remove the `caStore`
-property and its children.
+  certificate in the `pem` property under `caStore`. If not, remove the
+  `caStore` property and its children.
 
 If you need to keep the `caStore` for workflows that may interact with different
 relying parties, you can selectively bypass the CA checks.
@@ -105,6 +105,7 @@ matching `clientId` and `workflowId` for the same identifier, the `clientId`
 match wins.
 
 **Constraints:**
+
 - `workflowId` is optional; omit it for new workflows.
 - Must match `^[a-zA-Z0-9_-]+$` (alphanumeric, hyphens, underscores).
 - Must be unique across all workflows.
@@ -123,11 +124,11 @@ workflows:
     clientSecret: base-secret
     type: native
     brand:
-      cta: '#006847'
+      cta: "#006847"
       homeLink: https://example.com
     translations:
       en:
-        copyright: '© 2026 Example'
+        copyright: "© 2026 Example"
         appTitle: Base App
     query:
       - type:
@@ -146,8 +147,9 @@ workflows:
 ```
 
 **Inherited fields:** `name`, `description`, `brand`, `caStore`, `dcApiEnabled`,
-`wallets`, `oidc`, `callback`, `translations`, `trustedCredentialIssuers`,
-`untrustedVariableAllowList`, `public`, `clientSecret`.
+`interactEnabled`, `wallets`, `oidc`, `callback`, `translations`,
+`trustedCredentialIssuers`, `untrustedVariableAllowList`, `public`,
+`clientSecret`.
 
 **Deep-merge behavior:**
 
@@ -162,6 +164,7 @@ workflows:
   the field, the child's value wins entirely.
 
 **Constraints:**
+
 - Only one level of inheritance is allowed (a `configFrom` target must not itself
   use `configFrom`).
 - Fields related to the credential query (e.g., `query`, `dcql_query`,
@@ -271,7 +274,7 @@ opencred:
 ```
 
 Multiple entries with `wallet: apple-wallet` are allowed. OpenCred
-signs every outgoing Annex C request with *all* matching entries in
+signs every outgoing Annex C request with _all_ matching entries in
 config array order and emits them as `readerAuthAll`. Use this to
 roll keys without downtime: add the new entry, wait for clients to
 accept, then remove the old one.
@@ -291,7 +294,7 @@ OpenCred responds with a ready-to-send `dcApiRequest` envelope
 containing the spec-conformant, ReaderAuth-signed DeviceRequest.
 
 For backward compatibility, `profile=18013-7-Annex-C` remains
-supported; it produces the same DeviceRequest shape but *without*
+supported; it produces the same DeviceRequest shape but _without_
 `readerAuthAll`. Clients that don't require reader authentication
 may continue to use that profile.
 
@@ -384,6 +387,33 @@ options:
     - openid4vp
 ```
 
+Advanced: You may tune which interaction methods are available for the system or
+a workflow.
+
+- The Interaction URL protocol provides a QR-and-copy interaction method
+  that works with any wallet capable of navigating to an HTTPS URL. It is
+  enabled by default for all workflows. (`interactEnabled`)
+- The DC API protocol is enabled by default for all workflows. (`dcApiEnabled`).
+  It is available for mDoc credential queries.
+
+To change the default globally, add to the `options` section:
+
+```yaml
+options:
+  interactEnabled: false
+  dcApiEnabled: false
+```
+
+To override per-workflow, add `interactEnabled` to the workflow:
+
+```yaml
+workflows:
+  - clientId: my-workflow
+    type: native
+    interactEnabled: false # Disable Interaction URL for this workflow
+    dcApiEnabled: false # Disable DC API for this workflow
+    # ... other config
+```
 
 ### 8. Run OpenCred
 

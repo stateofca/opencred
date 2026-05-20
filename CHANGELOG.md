@@ -18,6 +18,16 @@
 - Statically load the Open Badges v3.0.3 context
   (`https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json`) via
   `@digitalcredentials/open-badges-context`
+- `interactEnabled` configuration option (global
+  `options.interactEnabled` and per-workflow `workflow.interactEnabled`)
+  controls whether the Interaction URL (qr-and-copy) profile is a
+  default picker option. When `false`, the profile moves to the
+  advanced settings as a user opt-in. Default: `true` (enabled).
+  Inheritable via `configFrom`.
+
+## Fixed
+- `dcApiEnabled` config value is now included on the workflow
+  object sent to the frontend, ensuring picker respects config
 
 ## 10.0.7 - 2026-05-12
 

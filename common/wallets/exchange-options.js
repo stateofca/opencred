@@ -123,9 +123,11 @@ export function computeExchangeOptions(input) {
     }
   }
 
-  // interact is always default when available (replaces the retired
-  // synthetic interaction-wallet)
-  if(!defaultProfileSet.has('interact')) {
+  // interact is default when available AND interactEnabled is not false.
+  // When interactEnabled is false, interact defaults through to
+  // extraProfiles so users can still opt in via advanced settings.
+  const interactDefault = (workflow?.interactEnabled ?? true) !== false;
+  if(interactDefault && !defaultProfileSet.has('interact')) {
     const compat = _profileCompat({
       profile: 'interact', formats, availableProfiles,
       platform, dcApiSystemAvailable

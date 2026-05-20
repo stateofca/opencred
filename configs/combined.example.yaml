@@ -170,7 +170,8 @@ app:
         verifierDid: "TODO" # required
         verifierName: "TODO" # required
         acceptedCredentialType: "TODO" # required
-        credentialVerificationPurpose: "So that we can evaluate your permission to
+        credentialVerificationPurpose:
+          "So that we can evaluate your permission to
           access the requested resource" # optional (default populated in middleware unless overridden here)
         allowRevokedCredentials: false # optional (default populated in middleware unless overridden here)
         validateLinkedDomain: false # optional (default populated in middleware unless overridden here)
@@ -180,9 +181,11 @@ app:
         type: native
         description: "Load Testing Profile"
         brand:
-          primaryLogo: "https://imagedelivery.net/I-hc6FAYxquPgv-npvTcWQ/241cb0c9-d92c-40\
+          primaryLogo:
+            "https://imagedelivery.net/I-hc6FAYxquPgv-npvTcWQ/241cb0c9-d92c-40\
             b7-1745-6d5e68a45d00/public"
-          backgroundImage: "https://imagedelivery.net/I-hc6FAYxquPgv-npvTcWQ/f7516576-f9d\
+          backgroundImage:
+            "https://imagedelivery.net/I-hc6FAYxquPgv-npvTcWQ/f7516576-f9d\
             3-4a15-1b9e-e95281613700/public"
           cta: "#0B669D"
           primary: "#045199"
@@ -250,6 +253,7 @@ app:
             - given_name
             - document_number
         dcApiEnabled: true
+        # interactEnabled: false  # Disable Interaction URL for this workflow
         public: true
       - name: "Driver's License Query"
         clientId: "query-dl"
@@ -273,6 +277,9 @@ app:
       exchangeProtocols:
         - chapi
         - openid4vp
+      # interactEnabled: true  # Whether the Interaction URL (qr-and-copy)
+      #                        # profile is enabled by default. Can be
+      #                        # overridden per-workflow. Default: true.
       recordExpiresDurationMs: 86400000
     defaultBrand:
       cta: "#0B669D"
@@ -334,17 +341,21 @@ app:
         qrTitle: Login with your Wallet app
         qrPageExplain: Scan the following QR Code using the Wallet app on your phone.
         qrPageExplainHelp: (<a href="https://youtube.com">How do I do it?</a>)
-        qrFooter: "Note: Already on your phone with the Wallet app? Open the Wallet app,
+        qrFooter:
+          "Note: Already on your phone with the Wallet app? Open the Wallet app,
           then come back and tap on the QR code above."
-        qrFooterHelp: Difficulty using the Wallet app to login? revert to using password
+        qrFooterHelp:
+          Difficulty using the Wallet app to login? revert to using password
           <a href="#">here</a>
         qrDisclaimer: If you don't have a Wallet app download it from the app store.
         qrExplainerText: (How do I do it?)
         chapiPageAnotherWay: "Looking for a QR code to scan with your wallet app instead?"
         loginCta: "Login with your credential wallet"
-        loginExplain: "To login with your credential wallet, you will need to have the
+        loginExplain:
+          "To login with your credential wallet, you will need to have the
           credential wallet app <with configurable URL to app stores> installed"
-        appInstallExplain: "If you don't have a credential wallet yet, you can get one
+        appInstallExplain:
+          "If you don't have a credential wallet yet, you can get one
           by downloading the credential wallet app <with configurable URL to app
           stores>"
         appCta: "Open wallet app"

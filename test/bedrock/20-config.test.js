@@ -26,6 +26,7 @@ const baseNativeWorkflow = {
   description: 'A parent workflow',
   caStore: false,
   dcApiEnabled: true,
+  interactEnabled: false,
   wallets: ['cadmv-ios', 'cadmv-android'],
   public: true,
   trustedCredentialIssuers: ['did:web:example.com'],
@@ -75,6 +76,7 @@ describe('Config - configFrom inheritance', function() {
     expect(result.description).to.equal('A parent workflow');
     expect(result.caStore).to.equal(false);
     expect(result.dcApiEnabled).to.equal(true);
+    expect(result.interactEnabled).to.equal(false);
     expect(result.wallets).to.eql(['cadmv-ios', 'cadmv-android']);
     expect(result.public).to.equal(true);
     expect(result.trustedCredentialIssuers).to.eql(['did:web:example.com']);
