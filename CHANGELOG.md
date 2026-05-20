@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.0.8 - 2026-05-XX
+## 10.0.8 - 2026-05-20
 
 ### Changed
 - Refactored DCQL query generation for testability
