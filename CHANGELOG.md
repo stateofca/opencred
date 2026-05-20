@@ -3,7 +3,7 @@
 ## 10.0.8 - 2026-05-20
 
 ### Changed
-- Refactored DCQL query generation for testability
+- Refactored DCQL query generation for testability.
 - Improve DCQL query matching performance with shortcuts
   for built-in VC base type, while allowing custom `dcql_query`.
 
