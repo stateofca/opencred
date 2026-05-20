@@ -17,11 +17,11 @@ SPDX-License-Identifier: BSD-3-Clause
         v-for="(row, idx) in visibleRows"
         :key="idx"
         class="wallet-row row items-center q-gutter-x-sm">
-        <img
+        <!-- <img
           v-if="row.icon"
           :src="row.icon"
           :alt="row.displayName"
-          class="wallet-icon">
+          class="wallet-icon"> -->
         <span class="wallet-name text-body2 text-weight-medium">
           {{row.displayName}}
         </span>
