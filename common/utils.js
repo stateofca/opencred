@@ -27,6 +27,7 @@ import {generateId} from 'bnid';
 import {httpClient} from '@digitalbazaar/http-client';
 import {JSONPath} from 'jsonpath-plus';
 import {logger} from '../lib/logger.js';
+import {VC_BASE_IRI} from '../lib/workflows/common/oid4vp.js';
 import {verifyChain} from './x509.js';
 
 // General Utilities
@@ -375,19 +376,73 @@ function checkVcForQuery(vc, query) {
 }
 
 /**
+ * Map of generation-side `type_values` IRIs to the compact term that
+ * every well-formed VC carries in `vc.type` for the same concept.
+ * Used by the matcher fast path to answer `meta.type_values` checks
+ * without invoking JSON-LD expansion. Today this carries exactly one
+ * entry; new entries are added here as we expand what the generation
+ * path emits in `meta.type_values`.
+ */
+const _KNOWN_TYPE_ALIASES = new Map([
+  [VC_BASE_IRI, 'VerifiableCredential']
+]);
+
+/**
+ * Returns true when every IRI required by `typeValues` has a known
+ * compact alias in `_KNOWN_TYPE_ALIASES`. When true, the matcher can
+ * answer the `meta.type_values` check from `vc.type` membership alone
+ * (no JSON-LD expansion).
+ *
+ * Empty `typeValues` (and any non-array / empty sub-array) returns
+ * false, deferring to the expansion path for invalid or unusual shapes.
+ *
+ * @param {Array<Array<string>>} typeValues - The `type_values` shape
+ *   from a DCQL credential query's `meta`.
+ * @returns {boolean} - True when the fast path applies.
+ */
+function _typeValuesAreAllKnownAliases(typeValues) {
+  if(!Array.isArray(typeValues) || typeValues.length === 0) {
+    return false;
+  }
+  return typeValues.every(sub =>
+    Array.isArray(sub) &&
+    sub.length > 0 &&
+    sub.every(iri => _KNOWN_TYPE_ALIASES.has(iri))
+  );
+}
+
+/**
+ * Returns true when the VC's `type` array satisfies at least one
+ * sub-array of `typeValues` under "compact OR expanded" membership.
+ *
+ * For each sub-array, every required IRI must be present in `vcTypes`
+ * either as the IRI itself or as its compact alias from
+ * `_KNOWN_TYPE_ALIASES`. Mirrors the any-sub-array semantics used in
+ * full DCQL query matching.
+ *
+ * @param {Array<string>} vcTypes - The VC's `type` array.
+ * @param {Array<Array<string>>} typeValues - The `type_values` shape
+ *   from a DCQL credential query's `meta`.
+ * @returns {boolean} - True when the VC satisfies the requirement.
+ */
+function _vcSatisfiesAliasedTypeValues(vcTypes, typeValues) {
+  return typeValues.some(sub =>
+    sub.every(iri =>
+      vcTypes.includes(iri) ||
+      vcTypes.includes(_KNOWN_TYPE_ALIASES.get(iri))
+    )
+  );
+}
+
+/**
  * Checks if a Verifiable Credential matches a single DCQL credential query.
  *
- * For queries with `meta.type_values` (OID4VP 1.0), expands the VC's `type`
- * array to IRIs using the VC's own `@context`, then checks if the expanded
- * types are a superset of at least one `type_values` sub-array.
- *
- * Also verifies DCQL `claims[]` entries whose `path` candidates resolve to
- * a recognized VC field (`@context` or `type`, including JWT-format path
- * variants). For each such claim, every value in `claim.values` must be
- * present in `arrayOf(vc[field])` (case-sensitive). Claims whose paths do
- * not resolve to a recognized field (for example, `mso_mdoc` namespaced
- * paths) are silently skipped, since those claim shapes are not routed
- * through this function.
+ * For DCQL queries with `meta.type_values` (OID4VP 1.0): when every required
+ * IRI is one of the known aliases (`_KNOWN_TYPE_ALIASES`), fast-matches against
+ * known values. When any required IRI is not in the alias map, falls back to
+ * expanding the VC's `type` array via `expandTypes` and requires at least one
+ * `type_values` sub-array to be a subset of the expanded VC types. Also
+ * verifies DCQL `claims[]` entries.
  *
  * @param {object} vc - The Verifiable Credential to check.
  * @param {object} credentialQuery - A single credential query from DCQL.
@@ -407,35 +462,55 @@ async function checkVcAgainstCredentialQuery(vc, credentialQuery) {
       return {matches: false, errors};
     }
 
-    let expandedVcTypes;
-    try {
-      expandedVcTypes = await expandTypes({
-        types: vcTypes,
-        contexts: vcContexts
-      });
-    } catch(e) {
-      errors.push(`Failed to expand VC types: ${e.message}`);
-      return {matches: false, errors};
-    }
-
-    // Each sub-array is a set of required type IRIs; the VC must contain all.
-    const typeMatch = typeValues.some(requiredTypes => {
-      if(!Array.isArray(requiredTypes) || requiredTypes.length === 0) {
-        return true;
+    if(_typeValuesAreAllKnownAliases(typeValues)) {
+      // Fast path: every required IRI has a known compact alias; check
+      // membership on vc.type directly without JSON-LD expansion. This
+      // also tolerates VCs whose `type` array contains extra/unknown
+      // terms that the VC's @context does not define.
+      if(!_vcSatisfiesAliasedTypeValues(vcTypes, typeValues)) {
+        const vcTypesStr = vcTypes.join(', ');
+        const expectedStr = typeValues
+          .map(tv => `[${tv.join(', ')}]`).join(' | ');
+        errors.push(
+          `Type mismatch: VC types [${vcTypesStr}] do not satisfy any ` +
+          `of the required type_values: ${expectedStr}`
+        );
       }
-      return requiredTypes.every(
-        reqType => expandedVcTypes.includes(reqType)
-      );
-    });
+    } else {
+      // Expansion path: some required IRI is not in the alias map.
+      // Typically reached for implementer-supplied dcql_query overrides
+      // with arbitrary IRIs.
+      let expandedVcTypes;
+      try {
+        expandedVcTypes = await expandTypes({
+          types: vcTypes,
+          contexts: vcContexts
+        });
+      } catch(e) {
+        errors.push(`Failed to expand VC types: ${e.message}`);
+        return {matches: false, errors};
+      }
 
-    if(!typeMatch) {
-      const expandedStr = expandedVcTypes.join(', ');
-      const expectedStr = typeValues
-        .map(tv => `[${tv.join(', ')}]`).join(' | ');
-      errors.push(
-        `Type mismatch: VC types [${expandedStr}] do not satisfy any ` +
-        `of the required type_values: ${expectedStr}`
-      );
+      // Each sub-array is a set of required type IRIs; the VC must
+      // contain all.
+      const typeMatch = typeValues.some(requiredTypes => {
+        if(!Array.isArray(requiredTypes) || requiredTypes.length === 0) {
+          return true;
+        }
+        return requiredTypes.every(
+          reqType => expandedVcTypes.includes(reqType)
+        );
+      });
+
+      if(!typeMatch) {
+        const expandedStr = expandedVcTypes.join(', ');
+        const expectedStr = typeValues
+          .map(tv => `[${tv.join(', ')}]`).join(' | ');
+        errors.push(
+          `Type mismatch: VC types [${expandedStr}] do not satisfy any ` +
+          `of the required type_values: ${expectedStr}`
+        );
+      }
     }
   }
 

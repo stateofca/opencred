@@ -4,8 +4,8 @@
 
 ### Changed
 - Refactored DCQL query generation for testability
-- VC matching against DCQL queries directly instead of draft-era
-  `meta['@context']` and `meta.type`.
+- Improve DCQL query matching performance with shortcuts
+  for built-in VC base type, while allowing custom `dcql_query`.
 
 ### Added
 - Expanded debug modal with tabbed Info and Translations views.

@@ -305,6 +305,188 @@ describe('VC Query Match', () => {
         expect(result).to.be(true);
       });
     });
+
+    describe('Base type fast path', () => {
+      it('should match base type_values from compact VerifiableCredential',
+        async () => {
+          const dcqlQuery = {
+            credentials: [{
+              id: 'base-type-fast-path',
+              format: 'ldp_vc',
+              meta: {
+                type_values: [[VC_BASE_IRI]]
+              }
+            }]
+          };
+
+          const result = await verifyUtils.checkVcQueryMatch({
+            vc: permanentResidentVc,
+            dcql_query: dcqlQuery
+          });
+
+          expect(result).to.be(true);
+        });
+
+      it('should match base type_values when VC has extra unknown types',
+        // This will fail in later processing, but it is useful to
+        // identify the intended match and continue processing, so we
+        // can return the most relevant error to the user.
+        async () => {
+          const vcWithUnknownType = {
+            '@context': ['https://www.w3.org/ns/credentials/v2'],
+            type: ['VerifiableCredential', 'WeirdCustomType'],
+            credentialSubject: {
+              id: 'did:example:holder-weird'
+            }
+          };
+
+          const dcqlQuery = {
+            credentials: [{
+              id: 'base-type-unknown-extra',
+              format: 'ldp_vc',
+              meta: {
+                type_values: [[VC_BASE_IRI]]
+              }
+            }]
+          };
+
+          const result = await verifyUtils.checkVcQueryMatch({
+            vc: vcWithUnknownType,
+            dcql_query: dcqlQuery
+          });
+
+          expect(result).to.be(true);
+        });
+
+      it('should not match when VerifiableCredential is missing from type',
+        async () => {
+          const vcMissingBaseType = {
+            '@context': ['https://www.w3.org/2018/credentials/v1'],
+            type: ['PermanentResidentCard'],
+            credentialSubject: {
+              id: 'did:example:holder-no-base-type'
+            }
+          };
+
+          const dcqlQuery = {
+            credentials: [{
+              id: 'base-type-missing',
+              format: 'ldp_vc',
+              meta: {
+                type_values: [[VC_BASE_IRI]]
+              }
+            }]
+          };
+
+          const result = await verifyUtils.checkVcQueryMatch({
+            vc: vcMissingBaseType,
+            dcql_query: dcqlQuery
+          });
+
+          expect(result).to.be(false);
+        });
+
+      it('should match when vc.type carries the expanded base IRI',
+        async () => {
+          const vcWithExpandedBaseType = {
+            '@context': ['https://www.w3.org/2018/credentials/v1'],
+            type: [VC_BASE_IRI],
+            credentialSubject: {
+              id: 'did:example:holder-iri-type'
+            }
+          };
+
+          const dcqlQuery = {
+            credentials: [{
+              id: 'base-type-expanded-iri',
+              format: 'ldp_vc',
+              meta: {
+                type_values: [[VC_BASE_IRI]]
+              }
+            }]
+          };
+
+          const result = await verifyUtils.checkVcQueryMatch({
+            vc: vcWithExpandedBaseType,
+            dcql_query: dcqlQuery
+          });
+
+          expect(result).to.be(true);
+        });
+
+      it('should use expansion path when type_values mixes aliased and ' +
+        'custom IRIs', async () => {
+        const dcqlQuery = {
+          credentials: [{
+            id: 'base-type-mixed-sub-arrays',
+            format: 'ldp_vc',
+            meta: {
+              type_values: [
+                [VC_BASE_IRI],
+                ['https://example.org/X']
+              ]
+            }
+          }]
+        };
+
+        const result = await verifyUtils.checkVcQueryMatch({
+          vc: permanentResidentVc,
+          dcql_query: dcqlQuery
+        });
+
+        expect(result).to.be(true);
+      });
+
+      it('should match custom IRI type_values via expansion path',
+        async () => {
+          const dcqlQuery = {
+            credentials: [{
+              id: 'custom-iri-expansion',
+              format: 'ldp_vc',
+              meta: {
+                type_values: [[
+                  'https://w3id.org/citizenship#PermanentResidentCard'
+                ]]
+              }
+            }]
+          };
+
+          const result = await verifyUtils.checkVcQueryMatch({
+            vc: permanentResidentVc,
+            dcql_query: dcqlQuery
+          });
+
+          expect(result).to.be(true);
+        });
+
+      it('should reject VC with empty @context for base type_values',
+        async () => {
+          const vcNoContext = {
+            '@context': [],
+            type: ['VerifiableCredential'],
+            credentialSubject: {
+              id: 'did:example:holder-no-context'
+            }
+          };
+
+          const dcqlQuery = {
+            credentials: [{
+              id: 'base-type-empty-context',
+              format: 'ldp_vc',
+              meta: {
+                type_values: [[VC_BASE_IRI]]
+              }
+            }]
+          };
+
+          const result = await verifyUtils.checkVcQueryMatch({
+            vc: vcNoContext,
+            dcql_query: dcqlQuery
+          });
+
+          expect(result).to.be(false);
+        });
+    });
   });
 
   describe('Presentation Definition Matching', () => {
