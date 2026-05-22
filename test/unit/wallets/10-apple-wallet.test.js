@@ -42,6 +42,22 @@ describe('Apple Wallet Configuration', () => {
   });
 
   describe('protocol/interaction method combination', () => {
+    it('should list apple-wallet profile before 18013-7-Annex-C', () => {
+      const keys = Object.keys(appleWallet.supportedProfiles);
+      expect(keys[0]).to.be('apple-wallet');
+      expect(keys).to.contain('18013-7-Annex-C');
+    });
+
+    it('should support mso_mdoc + apple-wallet + dcapi', () => {
+      const protocol = appleWallet.supportedProfiles['apple-wallet'];
+      expect(protocol).to.be.an('object');
+      expect(protocol.dcapi).to.be.an('object');
+      expect(protocol.dcapi.formats).to.be.an('array');
+      expect(protocol.dcapi.formats).to.contain('mso_mdoc');
+      expect(protocol.dcapi.formats.length).to.be(1);
+      expect(protocol.dcapi.description).to.be.a('string');
+    });
+
     it('should support mso_mdoc + 18013-7-Annex-C + dcapi', () => {
       const protocol = appleWallet.supportedProfiles['18013-7-Annex-C'];
       expect(protocol).to.be.an('object');

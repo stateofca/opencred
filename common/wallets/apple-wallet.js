@@ -14,17 +14,17 @@ export const appleWallet = {
   platform: ['ios'],
   supportedFormats: ['mso_mdoc'],
   supportedProfiles: {
-    '18013-7-Annex-C': {
-      dcapi: {
-        description: 'Click the button to request credentials from your ' +
-          'wallet (iOS devices)',
-        formats: ['mso_mdoc']
-      }
-    },
     'apple-wallet': {
       dcapi: {
         description: 'Open with Apple Wallet — signed Annex C ' +
           'request with ReaderAuth.',
+        formats: ['mso_mdoc']
+      }
+    },
+    '18013-7-Annex-C': {
+      dcapi: {
+        description: 'Click the button to request credentials from your ' +
+          'wallet (iOS devices)',
         formats: ['mso_mdoc']
       }
     }
