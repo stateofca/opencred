@@ -39,6 +39,7 @@
   "pageTitleAuditPresentation": "Audit presentation",
   "dcApiRetry": "Retry",
   "dcApiFallback": "Another way",
+  "defaultDcApiErrorMessage": "",
   "otherOptions": "Other options",
   "interactionMethod_dcapi": "Open wallet app",
   "interactionMethod_qr": "Scan QR code",

@@ -1,5 +1,10 @@
 # opencred-platform Changelog
 
+## 10.0.9 - 2026-05-XX
+
+### Added
+- Config may set a human-oriented generic error message for DC API workflows with `defaultDcApiErrorMessage`. When empty, the technical error message is shown.
+
 ## 10.0.8 - 2026-05-20
 
 ### Changed

@@ -83,8 +83,9 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import {CadmvBanner, CadmvButton} from '@digitalbazaar/cadmv-ui';
-import {computed} from 'vue';
+import {computed, watch} from 'vue';
 import CountdownDisplay from '../CountdownDisplay.vue';
+import {resolveDcApiErrorMessage} from '../../utils/dc-api-error-message.js';
 import {useI18n} from 'vue-i18n';
 import WalletLaunchButton from '../WalletLaunchButton.vue';
 
@@ -135,14 +136,13 @@ const emit = defineEmits([
   'fallback'
 ]);
 
-const errorMessage = computed(() => {
-  if(!props.error) {
-    return '';
+const errorMessage = computed(() =>
+  resolveDcApiErrorMessage({error: props.error, t}));
+
+watch(() => props.error, value => {
+  if(value) {
+    console.warn('[DcApiInteraction] error detail:', value);
   }
-  if(typeof props.error === 'string') {
-    return props.error;
-  }
-  return props.error.message || t('error_defaultMessage');
 });
 
 const allowedWalletIdSet = computed(() =>
