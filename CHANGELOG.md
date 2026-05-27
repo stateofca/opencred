@@ -6,24 +6,25 @@
 - ReaderAuth wire shape updated for Apple Wallet support.
 
 ### Added
-- Config may set a human-oriented generic error message for DC API workflows with `defaultDcApiErrorMessage`. When empty, the technical error message is shown.
+- Config may set a human-oriented generic error message for DC API workflows
+  with `defaultDcApiErrorMessage`. When empty, the technical error message is
+  shown.
 - New optional workflow query item `fieldsToRetain` list of fields to mark
   `intent_to_retain: true` in mDoc DC API device requests.
 - Startup sanity check for `walletCertificates` entries: logs
 - `scripts/analyze-presentation-events.js` CLI entry point that reads CSV log
   exports, parses `@message` JSON, and writes analysis output. Drop a log CSV
-  with a "@message" column and run with
-  `node scripts/analyze-presentation-events.js <csv>...` to get a summary of
-  events, exchanges, and success rates by clientId/profile.
-- `npm run oidc-rp -- --workflow <workflow>` to start an OIDC RP server that
-  can be used to test OpenCred's login flow. Launches basic express server
-  that lets you click a button to direct into opencred OIDC workflow and then
-  back to RP to analyze id_token data.
-- `scripts/audit-dc-api-request.js` (`npm run audit-dc-api`) — CLI that
-  decodes a base64url `deviceRequest` (and optional `encryptionInfo`),
-  inspects the leaf reader certificate, and diffs two requests field-by-field
-  with `--compare`. JSON output by default; `--pretty` for human-readable
-  text.
+  with a "@message" column and run with `node
+  scripts/analyze-presentation-events.js <csv>...` to get a summary of events,
+  exchanges, and success rates by clientId/profile.
+- `npm run oidc-rp -- --workflow <workflow>` to start an OIDC RP server that can
+  be used to test OpenCred's login flow. Launches basic express server that lets
+  you click a button to direct into opencred OIDC workflow and then back to RP
+  to analyze id_token data.
+- `scripts/audit-dc-api-request.js` (`npm run audit-dc-api`) — CLI that decodes
+  a base64url `deviceRequest` (and optional `encryptionInfo`), inspects the leaf
+  reader certificate, and diffs two requests field-by-field with `--compare`.
+  JSON output by default; `--pretty` for human-readable text.
 
 ### Changed
 - Prioritize `apple-wallet` profile over Annex C for Apple Wallet launch
