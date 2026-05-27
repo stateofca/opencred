@@ -13,7 +13,7 @@
   shown.
 - New optional workflow query item `fieldsToRetain` list of fields to mark
   `intent_to_retain: true` in mDoc DC API device requests.
-- Startup sanity check for `walletCertificates` entries: logs
+- Startup sanity check for `walletCertificates` entries: ensures SANs match.
 - `scripts/analyze-presentation-events.js` CLI entry point that reads CSV log
   exports, parses `@message` JSON, and writes analysis output. Drop a log CSV
   with a "@message" column and run with `node
