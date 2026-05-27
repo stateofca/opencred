@@ -26,7 +26,7 @@ SPDX-License-Identifier: BSD-3-Clause
           v-if="fallbackEntry"
           flat
           dense
-          class="error-action"
+          class="error-action error-action--primary"
           @click="handleFallback">
           {{$t('dcApiFallback')}}
         </cadmv-button>
