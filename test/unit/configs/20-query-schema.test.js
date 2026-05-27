@@ -66,4 +66,39 @@ describe('OpenCredQuerySchema', () => {
     ]);
     expect(result.success).to.be(true);
   });
+
+  it('should accept query with fieldsToRetain only', () => {
+    const result = OpenCredQuerySchema.safeParse([{
+      fieldsToRetain: {'org.iso.18013.5.1': ['family_name']},
+      format: ['mso_mdoc']
+    }]);
+    expect(result.success).to.be(true);
+  });
+
+  it('should accept query with both fields and fieldsToRetain', () => {
+    const result = OpenCredQuerySchema.safeParse([{
+      fields: {'org.iso.18013.5.1': ['given_name']},
+      fieldsToRetain: {'org.iso.18013.5.1': ['family_name']},
+      format: ['mso_mdoc']
+    }]);
+    expect(result.success).to.be(true);
+  });
+
+  it('should accept query with overlapping fields in fields and ' +
+    'fieldsToRetain', () => {
+    const result = OpenCredQuerySchema.safeParse([{
+      fields: {'org.iso.18013.5.1': ['family_name', 'given_name']},
+      fieldsToRetain: {'org.iso.18013.5.1': ['family_name']},
+      format: ['mso_mdoc']
+    }]);
+    expect(result.success).to.be(true);
+  });
+
+  it('should reject fieldsToRetain with non-string-array values', () => {
+    const result = OpenCredQuerySchema.safeParse([{
+      fieldsToRetain: {'org.iso.18013.5.1': 'family_name'},
+      format: ['mso_mdoc']
+    }]);
+    expect(result.success).to.be(false);
+  });
 });

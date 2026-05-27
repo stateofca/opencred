@@ -538,6 +538,43 @@ describe('Native 18013-7-Annex-C Workflow - Integration Tests', function() {
 
         assertLegacyAnnexCDeviceRequestWireShape(dcApiRequest);
       });
+
+    it('encodes intent_to_retain=false for all claims when no ' +
+      'fieldsToRetain', async function() {
+      const exchange = await createExchangeWithAuthRequest({
+        workflow: mdocTestRP});
+      findOneStub = sinon.stub(database.collections.Exchanges, 'findOne')
+        .resolves({...exchange, workflowId: mdocTestRP.clientId});
+      replaceOneStub = sinon.stub(
+        database.collections.Exchanges, 'replaceOne'
+      ).resolves();
+
+      let result;
+      let err;
+      try {
+        result = await client
+          .get(
+            `${baseUrl}/workflows/${mdocTestRP.clientId}/exchanges/` +
+              `${exchange.id}/openid/client/authorization/request` +
+              `?profile=18013-7-Annex-C`
+          );
+      } catch(e) {
+        err = e;
+      }
+      expect(err).to.be(undefined);
+      expect(result.status).to.equal(200);
+
+      const requestBytes = Buffer.from(
+        result.data.dcApiRequest.data.deviceRequest,
+        'base64url'
+      );
+      const decoded = cborDecode(new Uint8Array(requestBytes));
+      const itemsReq = decoded.get('docRequests')[0].get('itemsRequest');
+      const plainIr = mapsToPlain(itemsReq.data);
+      const ns = plainIr.nameSpaces['org.iso.18013.5.1'];
+      expect(ns).to.be.an('object');
+      Object.values(ns).forEach(v => expect(v).to.equal(false));
+    });
   });
 
   describe('handleAuthorizationResponse', function() {

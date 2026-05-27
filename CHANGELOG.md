@@ -4,6 +4,9 @@
 
 ### Added
 - Config may set a human-oriented generic error message for DC API workflows with `defaultDcApiErrorMessage`. When empty, the technical error message is shown.
+- New optional workflow query item `fieldsToRetain` list of fields to mark
+  `intent_to_retain: true` in mDoc DC API device requests.
+- Startup sanity check for `walletCertificates` entries: logs
 - `scripts/analyze-presentation-events.js` CLI entry point that reads CSV log
   exports, parses `@message` JSON, and writes analysis output. Drop a log CSV
   with a "@message" column and run with

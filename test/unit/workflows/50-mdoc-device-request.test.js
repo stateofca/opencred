@@ -27,8 +27,14 @@ describe('mdoc-device-request', () => {
               format: 'mso_mdoc',
               meta: {doctype_value: 'org.iso.18013.5.1.mDL'},
               claims: [
-                {path: ['org.iso.18013.5.1', 'given_name']},
-                {path: ['org.iso.18013.5.1', 'family_name']}
+                {
+                  path: ['org.iso.18013.5.1', 'given_name'],
+                  intent_to_retain: false
+                },
+                {
+                  path: ['org.iso.18013.5.1', 'family_name'],
+                  intent_to_retain: false
+                }
               ]
             }]
           }
@@ -59,6 +65,49 @@ describe('mdoc-device-request', () => {
         });
         expect(decoded.has('readerAuthAll')).to.be(false);
       });
+
+    it('encodes intent_to_retain=true when claim.intent_to_retain is true',
+      () => {
+        const bytes = buildDeviceRequest({
+          dcqlQuery: {
+            credentials: [{
+              id: 'x',
+              format: 'mso_mdoc',
+              meta: {doctype_value: 'org.iso.18013.5.1.mDL'},
+              claims: [{
+                path: ['org.iso.18013.5.1', 'given_name'],
+                intent_to_retain: true
+              }]
+            }]
+          }
+        });
+        const decoded = cborDecode(bytes);
+        const itemsRequest = decoded.get('docRequests')[0].get(
+          'itemsRequest');
+        const nsPlain = mapsToPlain(itemsRequest.data).nameSpaces[
+          'org.iso.18013.5.1'];
+        expect(nsPlain.given_name).to.be(true);
+      });
+
+    it('encodes intent_to_retain=false when claim.intent_to_retain is ' +
+      'absent (default)', () => {
+      const bytes = buildDeviceRequest({
+        dcqlQuery: {
+          credentials: [{
+            id: 'x',
+            format: 'mso_mdoc',
+            meta: {doctype_value: 'org.iso.18013.5.1.mDL'},
+            claims: [{path: ['org.iso.18013.5.1', 'given_name']}]
+          }]
+        }
+      });
+      const decoded = cborDecode(bytes);
+      const itemsRequest = decoded.get('docRequests')[0].get(
+        'itemsRequest');
+      const nsPlain = mapsToPlain(itemsRequest.data).nameSpaces[
+        'org.iso.18013.5.1'];
+      expect(nsPlain.given_name).to.be(false);
+    });
 
     it('sets documentSets to alternatives [[0], [1]] for two mdoc queries',
       () => {

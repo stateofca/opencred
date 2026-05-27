@@ -75,6 +75,11 @@ ${toYamlMultiline(certificatePem, pemIndent)}
                 - family_name
                 - given_name
                 - document_number
+            fieldsToRetain:
+              org.iso.18013.5.1:
+                - family_name
+                - given_name
+                - document_number
             format:
               - mso_mdoc
         dcApiEnabled: true
@@ -106,6 +111,11 @@ ${toYamlMultiline(certificatePem, pemIndent)}
             format:
               - jwt_vc_json
           - fields:
+              org.iso.18013.5.1:
+                - family_name
+                - given_name
+                - document_number
+            fieldsToRetain:
               org.iso.18013.5.1:
                 - family_name
                 - given_name

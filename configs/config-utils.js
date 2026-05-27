@@ -135,6 +135,7 @@ export const OpenCredQuerySchema = z.array(z.object({
   type: z.array(z.string()).optional(),
   context: z.array(z.string()).optional(),
   fields: z.record(z.string(), z.array(z.string())).optional(),
+  fieldsToRetain: z.record(z.string(), z.array(z.string())).optional(),
   format: z.array(
     z.enum(['jwt_vc_json', 'ldp_vc', 'mso_mdoc'])).default(['ldp_vc'])
 })).min(1);

@@ -223,6 +223,35 @@ signingKeys:
       - authorization_request
 ```
 
+#### mDL query fields (`fields` / `fieldsToRetain`)
+
+For `mso_mdoc` query items, `fields` lists the namespace → field names to
+request from the holder. The optional `fieldsToRetain` alternative uses the same
+shape and declares which of those claims the verifier intends to retain after
+the transaction (ISO/IEC 18013-5 §8.3). You don't need to include a retained
+field in both lists. The requested claim set per namespace is the **union** of
+`fields[ns]` and `fieldsToRetain[ns]`; each claim's
+`intent_to_retain` flag is `true` only when the field appears in
+`fieldsToRetain[ns]`, otherwise `false`. Omitting `fieldsToRetain`
+keeps the legacy behavior (`intent_to_retain: false` for every
+claim).
+
+```yaml
+query:
+  - fields:
+      org.iso.18013.5.1:
+        - given_name
+        - family_name
+        - document_number
+    fieldsToRetain:
+      org.iso.18013.5.1:
+        - given_name
+        - family_name
+        - document_number
+    format:
+      - mso_mdoc
+```
+
 ## Apple Wallet reader authentication (Annex C)
 
 Apple Wallet requires reader authentication on `mso_mdoc`
