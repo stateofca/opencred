@@ -57,6 +57,9 @@ const miniRegistry = {
     platform: ['android'],
     supportedFormats: ['mso_mdoc'],
     supportedProfiles: {
+      'google-wallet': {
+        dcapi: {formats: ['mso_mdoc']}
+      },
       '18013-7-Annex-D': {
         dcapi: {formats: ['mso_mdoc']}
       }

@@ -14,17 +14,17 @@ export const googleWallet = {
   platform: ['android'],
   supportedFormats: ['mso_mdoc'],
   supportedProfiles: {
-    '18013-7-Annex-D': {
-      dcapi: {
-        description: 'Click the button to request credentials from ' +
-          'your wallet (Android devices)',
-        formats: ['mso_mdoc']
-      }
-    },
     'google-wallet': {
       dcapi: {
         description: 'Open with Google Wallet — signed OID4VP 1.0 ' +
           'request with x509_hash.',
+        formats: ['mso_mdoc']
+      }
+    },
+    '18013-7-Annex-D': {
+      dcapi: {
+        description: 'Click the button to request credentials from ' +
+          'your wallet (Android devices)',
         formats: ['mso_mdoc']
       }
     }

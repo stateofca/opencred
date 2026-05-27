@@ -4,6 +4,8 @@
 
 ### Fixed
 - ReaderAuth wire shape updated for Apple Wallet support.
+- Ensure `google-wallet` profile is launched at a higher priority than
+  `18013-7-Annex-D` for Google Wallet invocations.
 
 ### Added
 - Config may set a human-oriented generic error message for DC API workflows
