@@ -17,8 +17,6 @@ import {
 } from 'cbor-x';
 import {appleWalletTestEntry} from '../fixtures/wallet-certificates.js';
 import {baseUrl} from '../mock-data.js';
-import {buildReaderAuthentication} from
-  '../../lib/workflows/common/mdoc-reader-auth.js';
 import {config} from '@bedrock/core';
 import {createExchangeWithAuthRequest} from '../utils/exchanges.js';
 import crypto from 'node:crypto';
@@ -188,18 +186,25 @@ function decodeReaderAuthSign1(entry) {
 }
 
 /**
- * Rebuild ReaderAuthenticationBytes the same way as Annex C + `signReaderAuth`.
+ * Rebuild ReaderAuthenticationAllBytes the way Apple Wallet would
+ * reconstruct it for verifying `readerAuthAll[i]`.
  *
- * @param {object} options - Inputs mirroring the handler.
+ * @param {object} options - Inputs taken from the wire DeviceRequest.
  * @param {string} options.base64EncryptionInfo - DC API encryption info.
- * @param {string} options.serializedOrigin - Server base URI string.
- * @param {*} options.itemsReqDataItem - Tag-24 ItemsRequest `DataItem`.
- * @returns {Uint8Array} ReaderAuthenticationBytes (tag-24 wrapped).
+ * @param {string} options.serializedOrigin - Server origin string.
+ * @param {Array} options.itemsReqDataItems - Tag-24 ItemsRequest
+ *   `DataItem` values in `docRequests` order.
+ * @param {*} options.deviceRequestInfoDataItem - Tag-24
+ *   DeviceRequestInfo `DataItem`, or `null` if the wire request
+ *   omitted it.
+ * @returns {Uint8Array} ReaderAuthenticationAllBytes (tag-24 wrapped
+ *   4-element tuple).
  */
-function buildReaderAuthenticationBytesFromWire({
+function buildReaderAuthenticationAllBytesFromWire({
   base64EncryptionInfo,
   serializedOrigin,
-  itemsReqDataItem
+  itemsReqDataItems,
+  deviceRequestInfoDataItem
 }) {
   const dcapiInfoForTranscript = [base64EncryptionInfo, serializedOrigin];
   const dcapiInfoBytesForTranscript = cborEncodePlain(dcapiInfoForTranscript);
@@ -210,14 +215,14 @@ function buildReaderAuthenticationBytesFromWire({
   const sessionTranscript = [
     null, null, ['dcapi', dcapiInfoHashForReaderAuth]];
 
-  const itemsRequestBytes = new Uint8Array(cborEncode(itemsReqDataItem));
-
-  const readerAuthentication = buildReaderAuthentication({
+  const readerAuthenticationAll = [
+    'ReaderAuthenticationAll',
     sessionTranscript,
-    itemsRequestBytes
-  });
+    itemsReqDataItems,
+    deviceRequestInfoDataItem ?? null
+  ];
   return new Uint8Array(
-    cborEncode(DataItem.fromData(readerAuthentication))
+    cborEncode(DataItem.fromData(readerAuthenticationAll))
   );
 }
 
@@ -313,19 +318,25 @@ describe('profile=apple-wallet end-to-end', function() {
       expect(Buffer.from(new Uint8Array(x5raw))).to.eql(
         Buffer.from(derFixture));
 
-      const itemsReq = decodedDr.get('docRequests')[0].get('itemsRequest');
-      const readerAuthenticationBytes = buildReaderAuthenticationBytesFromWire({
-        base64EncryptionInfo: dcApiRequest.data.encryptionInfo,
-        serializedOrigin: 'https://example.com',
-        itemsReqDataItem: itemsReq
-      });
+      const docRequests = decodedDr.get('docRequests');
+      const itemsReqDataItems = docRequests.map(dr => dr.get('itemsRequest'));
+      const deviceRequestInfoDataItem =
+        decodedDr.get('deviceRequestInfo') ?? null;
+
+      const readerAuthenticationAllBytes =
+        buildReaderAuthenticationAllBytesFromWire({
+          base64EncryptionInfo: dcApiRequest.data.encryptionInfo,
+          serializedOrigin: 'https://example.com',
+          itemsReqDataItems,
+          deviceRequestInfoDataItem
+        });
 
       const publicKey = await importSPKI(
         appleWalletTestEntry.publicKeyPem, 'ES256');
       const forVerify = new Sign1(
         ensureCoseHeaderMap(sign1.protectedHeaders),
         ensureCoseHeaderMap(sign1.unprotectedHeaders),
-        readerAuthenticationBytes,
+        readerAuthenticationAllBytes,
         sign1.signature
       );
       expect(await forVerify.verify(publicKey)).to.be(true);

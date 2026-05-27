@@ -6,8 +6,7 @@
  */
 
 import {
-  buildReaderAuthentication,
-  signReaderAuth,
+  buildReaderAuthenticationAll,
   signReaderAuthAll
 } from '../../../lib/workflows/common/mdoc-reader-auth.js';
 import {appleWalletTestEntry} from '../../fixtures/wallet-certificates.js';
@@ -34,98 +33,105 @@ function pemToDer(pem) {
 }
 
 describe('mdoc-reader-auth signer', () => {
-  it('buildReaderAuthentication yields ReaderAuthentication tuple', () => {
+  it('buildReaderAuthenticationAll yields the 4-element tuple', () => {
     const sessionTranscript = [
-      null, null, ['OpenID4VPDCAPIHandover', new Uint8Array(32)]
+      null, null, ['dcapi', new Uint8Array(32)]
     ];
-    const itemsRequestBytes = new Uint8Array([0xa0]);
-    const t = buildReaderAuthentication({sessionTranscript, itemsRequestBytes});
+    const itemsRequestList = [
+      {docType: 'org.iso.18013.5.1.mDL', nameSpaces: {
+        'org.iso.18013.5.1': {family_name: true}
+      }},
+      {docType: 'org.iso.18013.5.1.mDL', nameSpaces: {
+        'org.iso.18013.5.1': {given_name: false}
+      }}
+    ];
+    const deviceRequestInfo = {
+      useCases: [{mandatory: true, documentSets: [[0], [1]]}]
+    };
+
+    const t = buildReaderAuthenticationAll({
+      sessionTranscript, itemsRequestList, deviceRequestInfo
+    });
     expect(t).to.be.an(Array);
-    expect(t.length).to.be(3);
-    expect(t[0]).to.be('ReaderAuthentication');
+    expect(t.length).to.be(4);
+
+    // Apple Wallet expectation not found in Annex C text
+    expect(t[0]).to.be('ReaderAuthenticationAll');
+
     expect(t[1]).to.eql(sessionTranscript);
-    expect(t[2]).to.be.a(Uint8Array);
-    expect(t[2][0]).to.be(0xa0);
+    expect(t[2]).to.be.an(Array);
+    expect(t[2].length).to.be(2);
+    expect(t[2][0]).to.be.a(DataItem);
+    expect(t[2][1]).to.be.a(DataItem);
+    expect(t[3]).to.be.a(DataItem);
+
+    // round-trip CBOR encode → decode to confirm tag-24 wrapping
+    const encoded = new Uint8Array(cborEncode(DataItem.fromData(t)));
+    const decoded = cborDecode(encoded);
+    // decoded is the inner tuple after the tag-24 unwrap (DataItem
+    // .data round-trips back to the wire array; the @auth0/mdl
+    // decoder unwraps tag-24 to bytes, but the outer DataItem.fromData
+    // wrap is what we're verifying — assert leading bytes via a
+    // separate buffer check below).
+    expect(decoded).to.be.ok();
+
+    // Leading bytes: outer wrap is tag-24 (0xD8 0x18) around a bstr.
+    expect(encoded[0]).to.be(0xD8);
+    expect(encoded[1]).to.be(0x18);
   });
 
-  it('produces COSE_Sign1 with x5chain; verifies with payload', async () => {
-    const privateKey = await loadTestKey();
-    const publicKey = await importSPKI(
-      appleWalletTestEntry.publicKeyPem, 'ES256');
-    const der = pemToDer(appleWalletTestEntry.certificatePem);
-    const derChain = [der];
-    const sessionTranscript = [
-      null, null, ['OpenID4VPDCAPIHandover', new Uint8Array(32)]
+  it('buildReaderAuthenticationAll uses CBOR null when ' +
+   'deviceRequestInfo is omitted', () => {
+    const sessionTranscript = [null, null, ['dcapi', new Uint8Array(32)]];
+    const itemsRequestList = [
+      {docType: 'org.iso.18013.5.1.mDL', nameSpaces: {
+        'org.iso.18013.5.1': {family_name: true}
+      }}
     ];
-    const itemsRequestBytes = new Uint8Array([0xa0]);
 
-    const readerAuthentication = buildReaderAuthentication({
-      sessionTranscript,
-      itemsRequestBytes
+    const t1 = buildReaderAuthenticationAll({
+      sessionTranscript, itemsRequestList, deviceRequestInfo: null
     });
-    const readerAuthenticationBytes = new Uint8Array(
-      cborEncode(DataItem.fromData(readerAuthentication))
-    );
-
-    const sign1 = await signReaderAuth({
-      privateKey,
-      derChain,
-      sessionTranscript,
-      itemsRequestBytes
+    const t2 = buildReaderAuthenticationAll({
+      sessionTranscript, itemsRequestList
+      // deviceRequestInfo omitted
     });
-
-    expect(sign1.x5chain.length).to.be(1);
-    expect(Buffer.from(sign1.x5chain[0])).to.eql(Buffer.from(der));
-    expect(sign1.protectedHeaders.get(COSE_ALG)).to.be(-7);
-
-    const encoded = sign1.encode();
-    const wire = new Uint8Array(encoded);
-    const decoded = cborDecode(wire);
-    expect(decoded instanceof Sign1).to.be(true);
-    expect(decoded.constructor.name).to.be('Sign1');
-
-    const parts = decoded.getContentForEncoding();
-    expect(parts.length).to.be(4);
-
-    expect(decoded.protectedHeaders.get(COSE_ALG)).to.be(-7);
-
-    const uh = parts[1];
-    const x5raw = uh instanceof Map ?
-      uh.get(COSE_HDR_X5CHAIN) :
-      (uh[COSE_HDR_X5CHAIN] ?? uh[String(COSE_HDR_X5CHAIN)]);
-    expect(x5raw).to.be.ok();
-    expect(Buffer.from(new Uint8Array(x5raw))).to.eql(Buffer.from(der));
-
-    const payloadSlot = parts[2];
-    expect(Buffer.from(payloadSlot).length).to.be(0);
-
-    expect(Buffer.from(decoded.signature).length).to.be(64);
-
-    const forVerify = new Sign1(
-      decoded.protectedHeaders,
-      decoded.unprotectedHeaders,
-      readerAuthenticationBytes,
-      decoded.signature
-    );
-    expect(await forVerify.verify(publicKey)).to.be(true);
+    expect(t1[3]).to.be(null);
+    expect(t2[3]).to.be(null);
   });
 
-  it('signReaderAuthAll preserves order and count', async () => {
+  it('signReaderAuthAll signs ReaderAuthenticationAllBytes; ' +
+   'preserves order; verifies for every entry', async () => {
     const privateKey = await loadTestKey();
     const publicKey = await importSPKI(
       appleWalletTestEntry.publicKeyPem, 'ES256');
     const derChain = [pemToDer(appleWalletTestEntry.certificatePem)];
     const sessionTranscript = [
-      null, null, ['OpenID4VPDCAPIHandover', new Uint8Array(32)]
+      null, null, ['dcapi', new Uint8Array(32)]
     ];
-    const itemsRequestBytes = new Uint8Array([0xa0]);
+    const itemsRequestList = [
+      {docType: 'org.iso.18013.5.1.mDL', nameSpaces: {
+        'org.iso.18013.5.1': {family_name: true, given_name: false}
+      }},
+      {docType: 'org.iso.18013.5.1.mDL', nameSpaces: {
+        'org.iso.18013.5.1': {document_number: true}
+      }}
+    ];
+    const deviceRequestInfo = {
+      useCases: [{mandatory: true, documentSets: [[0], [1]]}]
+    };
 
-    const readerAuthentication = buildReaderAuthentication({
+    // Independently rebuild ReaderAuthenticationAllBytes from spec, so
+    // a buggy buildReaderAuthenticationAll wouldn't make this test
+    // pass.
+    const expectedTuple = [
+      'ReaderAuthenticationAll',
       sessionTranscript,
-      itemsRequestBytes
-    });
-    const readerAuthenticationBytes = new Uint8Array(
-      cborEncode(DataItem.fromData(readerAuthentication))
+      itemsRequestList.map(ir => DataItem.fromData(ir)),
+      DataItem.fromData(deviceRequestInfo)
+    ];
+    const expectedReaderAuthAllBytes = new Uint8Array(
+      cborEncode(DataItem.fromData(expectedTuple))
     );
 
     const entries = [
@@ -135,7 +141,8 @@ describe('mdoc-reader-auth signer', () => {
     const all = await signReaderAuthAll({
       entries,
       sessionTranscript,
-      itemsRequestBytes
+      itemsRequestList,
+      deviceRequestInfo
     });
     expect(all.length).to.be(2);
 
@@ -144,10 +151,59 @@ describe('mdoc-reader-auth signer', () => {
       const restored = new Sign1(
         dec.protectedHeaders,
         dec.unprotectedHeaders,
-        readerAuthenticationBytes,
+        expectedReaderAuthAllBytes,
         dec.signature
       );
       expect(await restored.verify(publicKey)).to.be(true);
     }
+  });
+
+  it('signReaderAuthAll wire entries carry x5chain + ES256', async () => {
+    const privateKey = await loadTestKey();
+    const der = pemToDer(appleWalletTestEntry.certificatePem);
+    const derChain = [der];
+    const itemsRequestList = [{
+      docType: 'org.iso.18013.5.1.mDL',
+      nameSpaces: {'org.iso.18013.5.1': {family_name: true}}
+    }];
+    const deviceRequestInfo = {
+      useCases: [{mandatory: true, documentSets: [[0]]}]
+    };
+    const sessionTranscript = [
+      null, null, ['dcapi', new Uint8Array(32)]
+    ];
+
+    const [sign1] = await signReaderAuthAll({
+      entries: [{privateKey, derChain}],
+      sessionTranscript,
+      itemsRequestList,
+      deviceRequestInfo
+    });
+
+    expect(sign1.x5chain.length).to.be(1);
+    expect(Buffer.from(sign1.x5chain[0])).to.eql(Buffer.from(der));
+    expect(sign1.protectedHeaders.get(COSE_ALG)).to.be(-7);
+
+    const wire = new Uint8Array(sign1.encode());
+    const decoded = cborDecode(wire);
+    expect(decoded instanceof Sign1).to.be(true);
+
+    const parts = decoded.getContentForEncoding();
+    expect(parts.length).to.be(4);
+
+    const uh = parts[1];
+    const x5raw = uh instanceof Map ?
+      uh.get(COSE_HDR_X5CHAIN) :
+      (uh[COSE_HDR_X5CHAIN] ?? uh[String(COSE_HDR_X5CHAIN)]);
+    expect(x5raw).to.be.ok();
+    expect(Buffer.from(new Uint8Array(x5raw))).to.eql(Buffer.from(der));
+
+    // payload slot on the wire is empty (detached). The
+    // device-request encoder will substitute CBOR null when emitting
+    // readerAuthAll on the wire — that substitution is covered by
+    // bedrock 261, not here.
+    expect(Buffer.from(parts[2]).length).to.be(0);
+
+    expect(Buffer.from(decoded.signature).length).to.be(64);
   });
 });

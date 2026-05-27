@@ -2,6 +2,9 @@
 
 ## 10.0.9 - 2026-05-XX
 
+### Fixed
+- ReaderAuth wire shape updated for Apple Wallet support.
+
 ### Added
 - Config may set a human-oriented generic error message for DC API workflows with `defaultDcApiErrorMessage`. When empty, the technical error message is shown.
 - New optional workflow query item `fieldsToRetain` list of fields to mark
@@ -16,6 +19,11 @@
   can be used to test OpenCred's login flow. Launches basic express server
   that lets you click a button to direct into opencred OIDC workflow and then
   back to RP to analyze id_token data.
+- `scripts/audit-dc-api-request.js` (`npm run audit-dc-api`) — CLI that
+  decodes a base64url `deviceRequest` (and optional `encryptionInfo`),
+  inspects the leaf reader certificate, and diffs two requests field-by-field
+  with `--compare`. JSON output by default; `--pretty` for human-readable
+  text.
 
 ### Changed
 - Prioritize `apple-wallet` profile over Annex C for Apple Wallet launch

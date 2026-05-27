@@ -136,8 +136,17 @@ describe('mdoc-device-request', () => {
         });
       });
 
-    it('includes readerAuthAll when a non-empty array is passed', () => {
-      const signStubs = [{alg: 'ES256'}, {kid: 'key-1'}];
+    it('flattens readerAuthAll to a 4-element COSE_Sign1 wire tuple ' +
+      'with null detached payload', () => {
+      const encodedProtectedHeaders = new Uint8Array([0xa1, 0x01, 0x26]);
+      const unprotectedHeaders = new Map([[33, new Uint8Array([1, 2, 3])]]);
+      const signature = new Uint8Array([9, 8, 7]);
+      const signStub = {
+        encodedProtectedHeaders,
+        unprotectedHeaders,
+        payload: new Uint8Array(),
+        signature
+      };
       const bytes = buildDeviceRequest({
         dcqlQuery: {
           credentials: [{
@@ -146,11 +155,64 @@ describe('mdoc-device-request', () => {
             claims: [{path: ['org.iso.18013.5.1', 'given_name']}]
           }]
         },
-        readerAuthAll: signStubs
+        readerAuthAll: [signStub]
       });
       const decoded = cborDecode(bytes);
-      expect(mapsToPlain(decoded.get('readerAuthAll'))).to.eql(signStubs);
+      const readerAuthAll = decoded.get('readerAuthAll');
+      expect(readerAuthAll).to.be.an('array');
+      expect(readerAuthAll.length).to.equal(1);
+      const entry = readerAuthAll[0];
+      expect(entry).to.be.an('array');
+      expect(entry.length).to.equal(4);
+      expect(entry[2]).to.equal(null);
+      expect(entry[0]).to.be.a(Uint8Array);
+      expect(entry[1]).to.be.a(Map);
+      expect(entry[3]).to.be.a(Uint8Array);
     });
+
+    it('normalizes a pre-flattened 4-element array to null at index 2',
+      () => {
+        const encodedProtectedHeaders = new Uint8Array([0xa1, 0x01, 0x26]);
+        const unprotectedHeaders = new Map();
+        const signature = new Uint8Array([4, 5, 6]);
+        const bytes = buildDeviceRequest({
+          dcqlQuery: {
+            credentials: [{
+              id: 'x',
+              format: 'mso_mdoc',
+              claims: [{path: ['org.iso.18013.5.1', 'given_name']}]
+            }]
+          },
+          readerAuthAll: [[
+            encodedProtectedHeaders,
+            unprotectedHeaders,
+            new Uint8Array([0xff]),
+            signature
+          ]]
+        });
+        const decoded = cborDecode(bytes);
+        const entry = decoded.get('readerAuthAll')[0];
+        expect(entry[2]).to.equal(null);
+        expect(entry[3]).to.eql(signature);
+      });
+
+    it('throws TypeError for an unrecognized readerAuthAll entry shape',
+      () => {
+        expect(() => buildDeviceRequest({
+          dcqlQuery: {
+            credentials: [{
+              id: 'x',
+              format: 'mso_mdoc',
+              claims: [{path: ['org.iso.18013.5.1', 'given_name']}]
+            }]
+          },
+          readerAuthAll: [{alg: 'ES256'}]
+        })).to.throwError(e => {
+          expect(e).to.be.a(TypeError);
+          expect(e.message).to.contain(
+            'cose-kit Sign1 or 4-element array');
+        });
+      });
 
     it('throws BadMdocRequestError when there are no mdoc credentials',
       () => {
