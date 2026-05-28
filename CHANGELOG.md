@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.0.9 - 2026-05-XX
+## 10.0.9 - 2026-05-28
 
 ### Fixed
 - ReaderAuth wire shape updated for Apple Wallet support.
