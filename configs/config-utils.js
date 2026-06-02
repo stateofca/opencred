@@ -289,6 +289,12 @@ export const OptionsSchema = z.object({
       Math.max(val, 10), // Min 10 seconds
       900 // Max 900 seconds
     ))),
+  exchangeTtlDisplayThresholdSeconds: z.number()
+    .default(60) // 1 minute
+    .transform(val => Math.floor(Math.min(
+      Math.max(val, 0), // Min 0 seconds (timer never shows when 0)
+      900 // Max matches exchangeTtlSeconds upper bound
+    ))),
   includeQRByDefault: z.boolean().default(true),
 
   // Default visibility of the Interaction URL (qr-and-copy) interaction method
@@ -304,9 +310,13 @@ export const OptionsSchema = z.object({
 }).transform(data => {
   // exchangeTtlSeconds cannot exceed recordExpiresDurationMs
   const maxExchangeTtl = Math.min(900, data.recordExpiresDurationMs / 1000);
+  const clampedTtl = Math.min(data.exchangeTtlSeconds, maxExchangeTtl);
   return {
     ...data,
-    exchangeTtlSeconds: Math.min(data.exchangeTtlSeconds, maxExchangeTtl)
+    exchangeTtlSeconds: clampedTtl,
+    exchangeTtlDisplayThresholdSeconds: Math.min(
+      data.exchangeTtlDisplayThresholdSeconds, clampedTtl
+    )
   };
 });
 

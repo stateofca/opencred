@@ -91,13 +91,9 @@ SPDX-License-Identifier: BSD-3-Clause
         <span>{{$t('interactionMethod_qr')}}</span>
       </button>
     </div>
-    <p class="text-gray-900 mt-4">
-      {{$t('exchangeActiveExpiryMessage')}}
-      <CountdownDisplay
-        v-if="exchangeData?.createdAt && exchangeData?.ttl"
-        :created-at="exchangeData.createdAt"
-        :ttl="exchangeData.ttl" />
-    </p>
+    <CountdownDisplay
+      :expires="exchangeData.expires"
+      :display-threshold="exchangeTtlDisplayThresholdSeconds" />
     <div
       v-if="te('qrDisclaimer')"
       class="mt-12 flex flex-col items-center text-gray-900"
@@ -116,6 +112,7 @@ import {CadmvButton} from '@digitalbazaar/cadmv-ui';
 import CountdownDisplay from '../CountdownDisplay.vue';
 import QRCode from 'qrcode';
 import {QSpinnerTail} from 'quasar';
+import {useExchangeOptions} from '../../composables/useExchangeOptions.js';
 import {useReactiveI18n} from '../../composables/useReactiveI18n.js';
 
 const props = defineProps({
@@ -152,6 +149,7 @@ const props = defineProps({
 const emit = defineEmits(['launch']);
 
 const {t, te} = useReactiveI18n();
+const {exchangeTtlDisplayThresholdSeconds} = useExchangeOptions();
 const $q = useQuasar();
 const isMobile = computed(() =>
   ($q.platform?.is?.ios ?? false) || ($q.platform?.is?.android ?? false)

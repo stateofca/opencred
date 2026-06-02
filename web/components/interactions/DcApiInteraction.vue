@@ -69,15 +69,10 @@ SPDX-License-Identifier: BSD-3-Clause
         </p>
       </template>
     </div>
-    <!-- Countdown Display -->
-    <p
-      v-if="exchangeData?.createdAt && exchangeData?.ttl"
-      class="text-gray-900 mt-4 q-mx-md text-center">
-      {{$t('exchangeActiveExpiryMessage')}}
-      <CountdownDisplay
-        :created-at="exchangeData.createdAt"
-        :ttl="exchangeData.ttl" />
-    </p>
+    <CountdownDisplay
+      :expires="exchangeData.expires"
+      :display-threshold="exchangeTtlDisplayThresholdSeconds"
+      wrapper-class="q-mx-md text-center" />
   </div>
 </template>
 
@@ -86,10 +81,12 @@ import {CadmvBanner, CadmvButton} from '@digitalbazaar/cadmv-ui';
 import {computed, watch} from 'vue';
 import CountdownDisplay from '../CountdownDisplay.vue';
 import {resolveDcApiErrorMessage} from '../../utils/dc-api-error-message.js';
+import {useExchangeOptions} from '../../composables/useExchangeOptions.js';
 import {useI18n} from 'vue-i18n';
 import WalletLaunchButton from '../WalletLaunchButton.vue';
 
 const {t} = useI18n({useScope: 'global'});
+const {exchangeTtlDisplayThresholdSeconds} = useExchangeOptions();
 
 const props = defineProps({
   exchangeData: {

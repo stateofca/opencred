@@ -5,6 +5,17 @@
 ### Added
 - Workflows may configure multiple OIDC `redirectUri` values (string or array).
   requested `redirect_uri` is bound to the exchange.
+- Exchange responses include `expires` (ISO 8601 `dateTimeStamp` with `Z`
+  suffix) indicating when the exchange expires. `createdAt` is no longer
+  mutated on refresh/reset.
+- `exchangeTtlDisplayThresholdSeconds` option (default `60`) controls when
+  the on-screen countdown becomes visible.
+- `ttl` field is deprecated in API responses; prefer VCALM prop `expires`.
+
+### Changed
+- Native workflow: the exchange `expires`/TTL is reset by the reset
+  endpoint (without mutating `createdAt`). Ordinary activity no longer
+  extends an exchange's expiry.
 
 ## 10.0.9 - 2026-05-28
 

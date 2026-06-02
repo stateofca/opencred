@@ -207,11 +207,9 @@ const checkStatus = async () => {
     return;
   }
 
-  // Check if exchange TTL has expired and show appropriate error if so
-  const ttlDate = new Date(
-    new Date(context.value.exchangeData.createdAt).getTime() +
-      context.value.exchangeData.ttl * 1000);
-  if(ttlDate < new Date()) {
+  // Check client-side whether exchange has expired before polling
+  const expiresStr = context.value.exchangeData.expires;
+  if(expiresStr && Date.now() >= new Date(expiresStr).getTime()) {
     handleError({
       title: t('exchangeErrorTitle'),
       subtitle: t('exchangeErrorSubtitle'),

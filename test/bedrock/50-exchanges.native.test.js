@@ -190,12 +190,13 @@ describe('Exchanges (Native)', async () => {
         // because it will be the smaller of the default & db cache timeout
         expect(dbStub.lastCall?.args[0].ttl).to.be(16);
 
-        // RecordexpiresAt should be at least ttl
-        const recordExpiresAt = new Date(
-          dbStub.lastCall?.args[0].recordExpiresAt);
-        const createdAt = new Date(dbStub.lastCall?.args[0].createdAt);
+        const inserted = dbStub.lastCall?.args[0];
+        const recordExpiresAt = new Date(inserted.recordExpiresAt);
+        const createdAt = new Date(inserted.createdAt);
+        const expires = new Date(inserted.expires);
 
-        // Check that recordExpiresAt is as expected
+        expect(inserted).to.have.property('expires');
+        expect(expires.getTime()).to.equal(createdAt.getTime() + 16000);
         expect(recordExpiresAt.getTime()).to.equal(
           createdAt.getTime() + 60000 + 16000);
       }
@@ -880,6 +881,7 @@ describe('NativeWorkflowService getExchange', async () => {
       const ttl = 900; // 15 minutes in seconds
       const expiredCreatedAt = new Date(
         new Date().getTime() - (ttl + 100) * 1000); // 100 seconds past expiry
+      const expires = new Date(expiredCreatedAt.getTime() + ttl * 1000);
 
       const exchange = {
         id: exchangeId,
@@ -887,6 +889,7 @@ describe('NativeWorkflowService getExchange', async () => {
         step: 'default',
         ttl,
         createdAt: expiredCreatedAt,
+        expires,
         variables: {},
         workflowId: 'testworkflow',
         oidc: {code: null, state: 'test'},
@@ -917,6 +920,7 @@ describe('NativeWorkflowService getExchange', async () => {
       const ttl = 900; // 15 minutes in seconds
       const expiredCreatedAt = new Date(
         new Date().getTime() - (ttl + 100) * 1000); // 100 seconds past expiry
+      const expires = new Date(expiredCreatedAt.getTime() + ttl * 1000);
 
       const existingError = 'Some prior error occurred.';
       const exchange = {
@@ -925,6 +929,7 @@ describe('NativeWorkflowService getExchange', async () => {
         step: 'default',
         ttl,
         createdAt: expiredCreatedAt,
+        expires,
         variables: {
           results: {
             default: {
@@ -1615,4 +1620,62 @@ describe('OID4VP 1.0 vp_token string normalization', () => {
       }
     );
   });
+});
+
+describe('Native workflow TTL refresh on reset', () => {
+  let service;
+
+  before(() => {
+    service = new NativeWorkflowService();
+  });
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('resetExchangeMiddleware refreshes expires and recordExpiresAt',
+    async () => {
+      const ttl = 900;
+      const staleCreatedAt = new Date(Date.now() - 60_000); // 60s ago
+      const staleExpires =
+        new Date(staleCreatedAt.getTime() + ttl * 1000);
+      const staleRecordExpiresAt =
+        new Date(staleCreatedAt.getTime() + ttl * 1000 + 60_000);
+      const exchange = {
+        id: await createId(),
+        state: 'active',
+        step: 'default',
+        ttl,
+        createdAt: staleCreatedAt,
+        expires: staleExpires,
+        recordExpiresAt: staleRecordExpiresAt,
+        workflowId: workflow.clientId,
+        variables: {results: {default: {foo: 'bar'}}},
+        oidc: {code: null, state: 'test'},
+        accessToken: await createId()
+      };
+
+      const replaceOneStub = sinon.stub(
+        database.collections.Exchanges, 'replaceOne').resolves();
+      const req = {exchange, workflow};
+      const res = {send: sinon.stub()};
+
+      await service.resetExchangeMiddleware(req, res);
+
+      expect(replaceOneStub.calledOnce).to.be(true);
+      const persisted = replaceOneStub.firstCall.args[1];
+      const now = Date.now();
+      expect(persisted.createdAt.getTime()).to.be(staleCreatedAt.getTime());
+      expect(persisted.expires).to.be.a(Date);
+      expect(Math.abs(persisted.expires.getTime() - (now + ttl * 1000)))
+        .to.be.lessThan(5_000);
+      expect(persisted.recordExpiresAt).to.be.a(Date);
+      expect(persisted.recordExpiresAt.getTime())
+        .to.be.greaterThan(staleRecordExpiresAt.getTime());
+      // Reset semantics preserved.
+      expect(persisted.state).to.be('pending');
+      expect(persisted.step).to.be('default');
+      expect(persisted.variables.results).to.eql({});
+      expect(persisted.variables.authorizationRequest).to.be(null);
+    });
 });

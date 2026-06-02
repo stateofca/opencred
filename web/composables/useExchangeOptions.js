@@ -53,5 +53,9 @@ export function useExchangeOptions() {
     });
   });
 
-  return {exchangeOptions};
+  const exchangeTtlDisplayThresholdSeconds = computed(() =>
+    context?.value?.options?.exchangeTtlDisplayThresholdSeconds ?? 60
+  );
+
+  return {exchangeOptions, exchangeTtlDisplayThresholdSeconds};
 }

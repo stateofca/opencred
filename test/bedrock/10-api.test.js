@@ -617,18 +617,16 @@ describe('OpenCred API - Native Workflow', function() {
   it('should 404 on POST to exchange endpoint if expired', async function() {
     const exchange = await createExchangeWithAuthRequest({
       workflow: testWorkflow});
-    // Set createdAt to be far enough in the past that it's clearly expired
-    // Default ttl is 900 seconds, so set createdAt to 2000 seconds ago
-    // This ensures expiry = createdAt + ttl = (now - 2000) + 900 =
-    // now - 1100 seconds (expired)
+    // Expiry is determined by `expires`, not createdAt + (deprecated) ttl.
     const expiredCreatedAt = new Date(new Date().getTime() - 2000 * 1000);
-    // Ensure ttl is set (default is 900 seconds)
     const ttl = exchange.ttl || 900;
+    const expiredExpires = new Date(expiredCreatedAt.getTime() + ttl * 1000);
     const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
       .resolves({
         ...exchange,
         createdAt: expiredCreatedAt,
-        ttl // Explicitly set ttl to ensure expiration check works
+        ttl,
+        expires: expiredExpires
       });
     let result;
     let err;
@@ -1252,11 +1250,15 @@ describe('OpenCred API - Microsoft Entra Verified ID Workflow',
 
     it('should handle expired exchange when getting status',
       async function() {
+        const createdAt = new Date('2023-11-14');
+        const ttlSec = entraExchange.ttl || 900;
+        const expires = new Date(createdAt.getTime() + ttlSec * 1000);
         const findStub = sinon.stub(database.collections.Exchanges, 'findOne')
           .resolves({
             ...entraExchange,
-            createdAt: new Date('2023-11-14'),
-            recordExpiresAt: new Date('2023-11-15')
+            createdAt,
+            recordExpiresAt: new Date('2023-11-15'),
+            expires // status GET uses expires-only gate
           });
         const getExchangeStub = sinon.stub(
           BaseWorkflowService.prototype,

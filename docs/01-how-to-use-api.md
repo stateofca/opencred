@@ -141,6 +141,11 @@ The response will include the state of the exchange, which can be `pending`,
 found in the `exchange.variables.results.default.verifiablePresentation` where
 `default` is the name of the step being completed.
 
+Use `exchange.expires` (ISO 8601 dateTimeStamp with UTC `Z` suffix) to
+determine when the exchange expires. The `ttl` field is deprecated; prefer
+`expires` for remaining lifetime. When activity refreshes the exchange TTL,
+`expires` is updated; `createdAt` does not change.
+
 **Example Response**:
 ```json
 {
@@ -149,6 +154,7 @@ found in the `exchange.variables.results.default.verifiablePresentation` where
     "workflowId": "z1A32xJZGqBeAEcMq56avmw2L",
     "sequence": 1,
     "ttl": 900,
+    "expires": "2024-05-24T22:07:12.280Z",
     "state": "complete",
     "variables": {
       "results": {

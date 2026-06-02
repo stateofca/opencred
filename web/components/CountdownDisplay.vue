@@ -1,5 +1,8 @@
 <template>
-  <span>
+  <p
+    v-if="showCountdown"
+    :class="['text-gray-900 mt-4', wrapperClass]">
+    {{$t('exchangeActiveExpiryMessage')}}
     <template v-if="remainingSeconds > 89">
       {{Math.round(remainingSeconds / 60)}}
       minutes
@@ -7,45 +10,50 @@
     <template v-else>
       {{remainingSeconds}} seconds
     </template>
-  </span>
+  </p>
 </template>
 
 <script setup>
-import {onMounted, onUnmounted, ref} from 'vue';
+import {computed, onMounted, onUnmounted, ref} from 'vue';
+import {getSecondsUntilExpires} from '../utils/exchange-expiry.js';
+import {useI18n} from 'vue-i18n';
 
-// Props
+useI18n({useScope: 'global'});
+
 const props = defineProps({
-  createdAt: {
+  expires: {
     type: String,
-    required: true
+    default: null
   },
-  ttl: {
+  displayThreshold: {
     type: Number,
-    required: true
+    default: 60
+  },
+  wrapperClass: {
+    type: String,
+    default: ''
   }
 });
 
-// Refs for time tracking
-const remainingSeconds = ref(0);
+const now = ref(Date.now());
 let intervalId = null;
 
-// Helper function to calculate remaining time
-function updateRemaining(createdAt, ttl) {
-  const createdTime = new Date(createdAt).getTime();
-  const now = Date.now();
-  const elapsed = Math.floor((now - createdTime) / 1000);
-  remainingSeconds.value = Math.max(ttl - elapsed, 0);
-}
+const remainingSeconds = computed(() =>
+  getSecondsUntilExpires({expires: props.expires, now: now.value})
+);
 
-// Initialize and update every second
+const showCountdown = computed(() =>
+  remainingSeconds.value !== null &&
+  remainingSeconds.value > 0 &&
+  remainingSeconds.value < props.displayThreshold
+);
+
 onMounted(() => {
-  updateRemaining(props.createdAt, props.ttl);
   intervalId = setInterval(() => {
-    updateRemaining(props.createdAt, props.ttl);
+    now.value = Date.now();
   }, 1000);
 });
 
-// Clean up on unmount
 onUnmounted(() => {
   if(intervalId) {
     clearInterval(intervalId);
