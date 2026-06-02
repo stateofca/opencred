@@ -1,5 +1,11 @@
 # opencred-platform Changelog
 
+## 10.1.0 - 2026-06-XX
+
+### Added
+- Workflows may configure multiple OIDC `redirectUri` values (string or array).
+  requested `redirect_uri` is bound to the exchange.
+
 ## 10.0.9 - 2026-05-28
 
 ### Fixed

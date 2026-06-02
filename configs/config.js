@@ -10,6 +10,7 @@ import {applyWorkflowDefaults, OpenCredConfigSchema} from './config-utils.js';
 import {combineTranslations} from './translation.js';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
+import {getRegisteredRedirectUris} from '../lib/redirect-uri.js';
 import {isDcApiAvailable} from '../common/dcapi.js';
 import {logger} from '../lib/logger.js';
 import path from 'node:path';
@@ -172,7 +173,7 @@ export function validateWorkflowIdentifiers(opencredConfig) {
  */
 function checkOidcKeyConfiguration(opencredConfig) {
   const hasOidcWorkflow = opencredConfig.workflows?.some(
-    w => w.oidc?.redirectUri || w.oidc?.claims
+    w => getRegisteredRedirectUris({workflow: w}).length > 0 || w.oidc?.claims
   );
 
   const hasIdTokenKey = opencredConfig.signingKeys?.some(

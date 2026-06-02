@@ -83,6 +83,24 @@ workflows:
           - jwt_vc_json
 ```
 
+#### Redirect URIs
+
+When a relying party uses more than one callback URL, set `redirectUri` to a list of URLs. Each entry must be a valid URL.
+
+```yaml
+    oidc:
+      redirectUri:
+        - http://localhost:8080/oidc/callback
+        - https://app.example.com/oidc/callback
+      claims:
+        - name: email
+          path: credentialSubject.email
+```
+
+On `GET /context/login`, the `redirect_uri` query parameter must match one of
+these values. OpenCred stores that URI on the exchange and redirects the user
+back to it after a successful wallet presentation.
+
 #### Legacy Workflow Identifier (Deprecated)
 
 If you are migrating from an earlier version of OpenCred where API clients

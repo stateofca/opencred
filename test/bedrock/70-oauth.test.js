@@ -26,7 +26,7 @@ const exampleWorkflow = {
     type: ['VerifiableCredential']
   }],
   oidc: {
-    redirectUri: 'https://example.com',
+    redirectUri: ['https://example.com', 'https://example.org'],
     idTokenExpirySeconds: 3600,
     claims: [
       {
@@ -140,6 +140,29 @@ describe('OAuth Login Workflow', function() {
     result.status.should.be.equal(200);
     result.data.exchangeData.OID4VP.should.have.string('openid4vp://?');
     result.data.exchangeData.id.should.be.a('string');
+
+    dbStub.restore();
+  });
+
+  it('should accept an alternate whitelisted redirect_uri', async function() {
+    const dbStub = sinon.stub(database.collections.Exchanges, 'insertOne');
+    dbStub.resolves({insertedId: 'test'});
+
+    let result;
+    let err;
+    try {
+      result = await client.get(`${baseUrl}/context/login?client_id=test` +
+        '&redirect_uri=https%3A%2F%2Fexample.org&scope=openid');
+    } catch(e) {
+      err = e;
+    }
+
+    should.not.exist(err);
+    result.status.should.be.equal(200);
+    const insertArg = dbStub.firstCall.args[0];
+    insertArg.oidc.redirectUri.should.equal('https://example.org');
+    result.data.workflow.oidc.redirectUri
+      .should.equal('https://example.org');
 
     dbStub.restore();
   });

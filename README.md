@@ -242,7 +242,7 @@ Each signing key entry may list one or more `purpose` values:
 
 - **`authorization_request`**: Signs OID4VP authorization request JARs. Required for many verifier flows. For `x509_san_dns`, the key must include `certificatePem` trusted by wallets.
 - **`access_token`**: Signs exchange result tokens (`exchange_token`) returned to the browser or wallet after a successful presentation so the UI can load exchange results. If omitted, OpenCred generates a key at startup and logs a warning (problematic behind load balancers unless you configure a stable key).
-- **`id_token`**: Signs OIDC `id_token` JWTs for OpenID Connect login / token endpoint flows. Required only for workflows with `oidc.redirectUri` (and related OIDC settings).
+- **`id_token`**: Signs OIDC `id_token` JWTs for OpenID Connect login / token endpoint flows. Required only for workflows with `oidc.redirectUri` (a URL string or list of allowed callback URLs; related OIDC settings).
 
 You can combine purposes on one key (e.g. `authorization_request` + `access_token` on the same ES256 key with a certificate) or use separate key entries.
 
@@ -339,6 +339,10 @@ workflows:
         - name: email
           path: userEmail
 ```
+
+`redirectUri` may be a single URL string or a list of URLs when multiple
+callback URLs are allowed; the `redirect_uri` on `/context/login` must match one
+entry.
 
 This configuration will place an `email` claim in the JWT, and the value of that
 claim will be drawn from `credentialSubject.userEmail` path in the credential

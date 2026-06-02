@@ -479,7 +479,9 @@ function renderHomePage({workflow, loginUrl, redirectUri, baseUri}) {
     OpenCred: <strong>${escapeHtml(baseUri)}</strong><br>
     Redirect URI: <strong>${escapeHtml(redirectUri)}</strong>
   </p>
-  <p><a class="button" href="${escapeHtml(loginUrl)}">Sign in with mDL</a></p>
+  <p>
+    <a class="button" href="${escapeHtml(loginUrl)}">Log in with OpenCred</a>
+  </p>
   <p class="meta">After wallet presentation, OpenCred redirects back here
     with an authorization code.</p>`;
   return renderPage({title: 'OpenCred OIDC Test RP', bodyHtml});

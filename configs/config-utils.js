@@ -58,8 +58,16 @@ export const BrandSchema = z.object({
   showQuerySummary: z.boolean().default(true)
 });
 
+const redirectUriSchema = z.union([
+  z.url(),
+  z.array(z.url()).min(1)
+]).transform(uri => {
+  const list = Array.isArray(uri) ? uri : [uri];
+  return [...new Set(list)];
+});
+
 const OpenIdConnectSchema = z.object({
-  redirectUri: z.url(),
+  redirectUri: redirectUriSchema,
   claims: z.array(z.object({
     name: z.string(),
     path: z.string(),

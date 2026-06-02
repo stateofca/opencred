@@ -88,7 +88,9 @@ app:
             provider: youtube
           backgroundImage: "https://placekitten.com/800/200"
         oidc:
-          redirectUri: "http://localhost:3000"
+          redirectUri:
+            - "http://localhost:3000"
+            - "http://127.0.0.1:3000"
           idTokenExpirySeconds: 3600
           claims:
             - name: "dl_number"
