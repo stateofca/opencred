@@ -143,8 +143,9 @@ found in the `exchange.variables.results.default.verifiablePresentation` where
 
 Use `exchange.expires` (ISO 8601 dateTimeStamp with UTC `Z` suffix) to
 determine when the exchange expires. The `ttl` field is deprecated; prefer
-`expires` for remaining lifetime. When activity refreshes the exchange TTL,
-`expires` is updated; `createdAt` does not change.
+`expires` for remaining lifetime. Exchanges may be reset in case of error or
+expiry, some clients may require the user to re-start, others may accept a
+reset exchange after the original expiry.
 
 **Example Response**:
 ```json
