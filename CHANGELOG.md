@@ -20,6 +20,12 @@
   inactivity; polling continues until the exchange completes, becomes
   invalid, or expires.
 
+### Security
+- Updated dependencies to address OSV/npm audit findings: `fast-uri`,
+  `qs`, `@babel/plugin-transform-modules-systemjs`, `diff`,
+  `serialize-javascript`, `unhead`/`@unhead/vue`, and `uuid` (via
+  `@digitalbazaar/ezcap` and `@azure/msal-node` upgrades).
+
 ## 10.0.9 - 2026-05-28
 
 ### Fixed

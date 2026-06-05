@@ -13,7 +13,7 @@ import {config, extend} from '@bedrock/web';
 import {createRouter, createWebHistory} from 'vue-router';
 import App from './App.vue';
 import AuditPresentation from './views/AuditPresentation.vue';
-import {createHead} from 'unhead';
+import {createHead} from '@unhead/vue/client';
 import {createI18n} from 'vue-i18n';
 import ErrorView from './components/ErrorView.vue';
 import HomeView from './views/HomeView.vue';
@@ -104,7 +104,8 @@ brVue.initialize({
         typeof v == 'string'));
     await brQuasar.theme({brand: brandColors});
 
-    createHead();
+    const head = createHead();
+    app.use(head);
     // create root Vue component
     return App;
   }

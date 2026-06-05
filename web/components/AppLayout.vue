@@ -114,7 +114,7 @@ import {CadmvHeader} from '@digitalbazaar/cadmv-ui';
 import {config} from '@bedrock/web';
 import {useExchange} from './../composables/useExchange.js';
 import {useExchangeSettings} from './../composables/useExchangeSettings.js';
-import {useHead} from 'unhead';
+import {useHead} from '@unhead/vue';
 import {useI18n} from 'vue-i18n';
 import {useRoute} from 'vue-router';
 import {useToggle} from '@vueuse/core';
