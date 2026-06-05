@@ -101,27 +101,12 @@ SPDX-License-Identifier: BSD-3-Clause
     </div>
 
     <DebugDisplay />
-
-    <!-- Status Dialog -->
-    <CadmvDialog
-      v-if="context.exchangeData?.state !== 'complete' &&
-        state.statusCheckCount > 20"
-      :actions="statusDialogActions"
-      @action="handleStatusDialogAction">
-      <template #body>
-        <p class="text-sm text-center">
-          <span class="text-bold">
-            {{t('statusDialog_areYouStillThere')}} </span>
-          {{t('statusDialog_statusPaused')}}
-        </p>
-      </template>
-    </CadmvDialog>
   </CadmvMainCard>
 </template>
 
 <script setup>
-import {CadmvDialog, CadmvMainCard} from '@digitalbazaar/cadmv-ui';
 import {onMounted, onUnmounted, reactive, ref} from 'vue';
+import {CadmvMainCard} from '@digitalbazaar/cadmv-ui';
 import CredentialQuerySummary from './CredentialQuerySummary.vue';
 import DebugDisplay from './DebugDisplay.vue';
 import ErrorView from './ErrorView.vue';
@@ -168,19 +153,6 @@ const state = reactive({
 const showInteractionPicker = ref(false);
 const showVideo = ref(false);
 
-const statusDialogActions = [
-  {
-    actionId: 'resume',
-    variant: 'primary',
-    label: t('statusDialog_resumeChecking')
-  },
-  {
-    actionId: 'reset',
-    variant: 'flat',
-    label: t('statusDialog_resetSession')
-  }
-];
-
 /**
  * Set state.error to the given error object, with defaults applied.
  *
@@ -223,10 +195,6 @@ const checkStatus = async () => {
     return;
   }
 
-  if(state.statusCheckCount > 20) {
-    state.intervalId = clearInterval(state.intervalId);
-  }
-
   try {
     let exchange = {};
     ({
@@ -249,8 +217,6 @@ const checkStatus = async () => {
       return;
     }
     if(context.value.exchangeData?.state != exchange.state) {
-      // if the exchange has just changed state, it is pretty active
-      // so reset the status check count to avoid bothering the user soon.
       state.statusCheckCount = 0;
     }
     updateExchange(exchange);
@@ -283,15 +249,12 @@ const checkStatus = async () => {
   state.statusCheckCount++;
 };
 
-const startStatusCheck = (hurry = false) => {
+const startStatusCheck = () => {
   state.statusCheckCount = 0;
   if(state.intervalId) {
     state.intervalId = clearInterval(state.intervalId);
   }
   state.intervalId = setInterval(checkStatus, 5000);
-  if(hurry) {
-    checkStatus();
-  }
 };
 
 const handleResetExchange = async () => {
@@ -326,14 +289,6 @@ const handleResetExchange = async () => {
   }
 
   state.active = false;
-};
-
-const handleStatusDialogAction = action => {
-  if(action === 'resume') {
-    startStatusCheck(true);
-  } else if(action === 'reset') {
-    handleResetExchange();
-  }
 };
 
 onMounted(async () => {

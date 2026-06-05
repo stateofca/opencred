@@ -16,6 +16,9 @@
 - Native workflow: the exchange `expires`/TTL is reset by the reset
   endpoint (without mutating `createdAt`). Ordinary activity no longer
   extends an exchange's expiry.
+- Exchange status polling no longer pauses after ~100 seconds of
+  inactivity; polling continues until the exchange completes, becomes
+  invalid, or expires.
 
 ## 10.0.9 - 2026-05-28
 
