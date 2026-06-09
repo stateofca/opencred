@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.1.0 - 2026-06-XX
+## 10.1.0 - 2026-06-09
 
 ### Added
 - Workflows may configure multiple OIDC `redirectUri` values (string or array).
