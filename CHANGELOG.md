@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.1.1 - 2026-06-XX
+## 10.1.1 - 2026-06-17
 
 ### Fixed
 - Upgrade `credential-handler-polyfill` to `4.0.3` to fix browser restriction in
