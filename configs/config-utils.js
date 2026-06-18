@@ -332,7 +332,16 @@ export const OptionsSchema = z.object({
     'OID4VP-draft18', 'OID4VP-combined', 'OID4VP-1.0'
   ]).default('OID4VP-combined'),
   workflowListingEnabled: z.boolean().default(false),
-  debug: z.boolean().default(false)
+  debug: z.boolean().default(false),
+
+  // Experimental request-shaping knobs for the google-wallet (x509_hash)
+  // profile, used to debug Google Wallet DC API rejection. Defaults
+  // preserve the encrypted dc_api.jwt behavior.
+  googleWalletRequest: z.object({
+    omitState: z.boolean().default(false),
+    omitCredentialSets: z.boolean().default(false),
+    responseMode: z.enum(['dc_api.jwt', 'dc_api']).default('dc_api.jwt')
+  }).default({})
 }).transform(data => {
   // exchangeTtlSeconds cannot exceed recordExpiresDurationMs
   const maxExchangeTtl = Math.min(900, data.recordExpiresDurationMs / 1000);

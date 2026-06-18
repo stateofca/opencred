@@ -131,7 +131,8 @@ describe('profile=google-wallet end-to-end', function() {
       // Verify JWT payload
       const payload = decodeJwt(jwt);
       expect(payload.client_id).to.match(/^x509_hash:/);
-      expect(payload.client_id_scheme).to.equal('x509_hash');
+      // OID4VP 1.0 omits client_id_scheme (scheme is the client_id prefix).
+      expect(payload.client_id_scheme).to.be(undefined);
       expect(payload.response_mode).to.equal('dc_api.jwt');
       expect(payload.response_type).to.equal('vp_token');
       expect(payload.expected_origins).to.eql(

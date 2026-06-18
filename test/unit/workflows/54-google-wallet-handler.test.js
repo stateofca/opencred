@@ -69,8 +69,8 @@ describe('native-google-wallet generateAuthorizationRequest', () => {
       const {authorizationRequest} = result;
       expect(authorizationRequest.client_id).to.match(
         /^x509_hash:/);
-      expect(authorizationRequest.client_id_scheme).to.equal(
-        'x509_hash');
+      // OID4VP 1.0 omits client_id_scheme (scheme is the client_id prefix).
+      expect(authorizationRequest.client_id_scheme).to.be(undefined);
       expect(authorizationRequest.response_mode).to.equal(
         'dc_api.jwt');
       expect(authorizationRequest.response_type).to.equal(
