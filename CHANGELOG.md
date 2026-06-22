@@ -3,7 +3,7 @@
 ## 10.1.2 - 2026-06-dd
 
 ### Changed
-- Update label for `apple-wallet`.
+- Update label for `apple-wallet` and `cadmv-android`.
 
 ## 10.1.1 - 2026-06-17
 
