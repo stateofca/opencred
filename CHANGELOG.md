@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.1.2 - 2026-06-dd
+## 10.1.2 - 2026-06-22
 
 ### Changed
 - Update label for `apple-wallet` and `cadmv-android`.
