@@ -7,6 +7,8 @@
 
 import * as obCtx from '@digitalcredentials/open-badges-context';
 import * as sinon from 'sinon';
+import {encode as base58Encode} from 'base58-universal';
+import {canonicalize} from 'json-canonicalize';
 import expect from 'expect.js';
 import {getDocumentLoader} from '../../common/documentLoader.js';
 import {httpClient} from '@digitalbazaar/http-client';
@@ -15,6 +17,28 @@ const documentLoader = getDocumentLoader().build();
 
 const exampleDidKeyId =
   'did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH';
+
+// Build a did:key z2dm (jwk_jcs-pub, multicodec 0xeb51 -> varint d1 d6 03)
+// identifier from a P-256 public JWK, mirroring how EUDI Wallet encodes the
+// `iss` of its credentials. This is the inverse of the decode path added in
+// common/documentLoader.js, so resolving it round-trips through fromJwk().
+const JWK_JCS_PUB_MULTICODEC_HEADER = [0xd1, 0xd6, 0x03];
+const encodeZ2dmDidKey = jwk => {
+  const jwkBytes = new TextEncoder().encode(canonicalize(jwk));
+  const bytes = new Uint8Array(
+    JWK_JCS_PUB_MULTICODEC_HEADER.length + jwkBytes.length);
+  bytes.set(JWK_JCS_PUB_MULTICODEC_HEADER, 0);
+  bytes.set(jwkBytes, JWK_JCS_PUB_MULTICODEC_HEADER.length);
+  return `did:key:z${base58Encode(bytes)}`;
+};
+
+// sample P-256 public JWK
+const exampleP256Jwk = {
+  crv: 'P-256',
+  kty: 'EC',
+  x: 'Di16iGSpSZ860BY4Igv_psd-y2R0tq4v4_vxVoUqPW0',
+  y: 'v6QvWfgBfSV1xOxHmVjTPyiAcfjTaufzt7tiP6XoF6U'
+};
 
 describe('Document Loader', async () => {
   it('load did:key document', async function() {
@@ -29,6 +53,54 @@ describe('Document Loader', async () => {
     expect(didKeyData.document).property('capabilityInvocation');
     expect(didKeyData.document).property('keyAgreement');
     expect(didKeyData.document.id).equal(didKeyData.documentUrl);
+  });
+
+  it('load did:key z2dm (jwk_jcs-pub P-256) document', async function() {
+    const z2dmDidKeyId = encodeZ2dmDidKey(exampleP256Jwk);
+    const didKeyData = await documentLoader(z2dmDidKeyId);
+    expect(didKeyData).property('document');
+    expect(didKeyData).property('documentUrl');
+    expect(didKeyData.document).property('id');
+    expect(didKeyData.document).property('verificationMethod');
+    expect(didKeyData.document).property('authentication');
+    expect(didKeyData.document).property('assertionMethod');
+    expect(didKeyData.document).property('capabilityDelegation');
+    expect(didKeyData.document).property('capabilityInvocation');
+    expect(didKeyData.document.id).equal(didKeyData.documentUrl);
+    // resolves to a P-256 verification method; the document id is the canonical
+    // p256-pub (zDna) form, since jwk_jcs-pub is normalized and routed there
+    expect(didKeyData.document.verificationMethod[0])
+      .property('publicKeyMultibase');
+  });
+
+  // z8DK / zYqN: same P-256 key, but a coordinate carries a leading sign byte
+  // (33 bytes), shifting the base58 prefix. Multicodec routing + coordinate
+  // normalization must resolve them to the same key as z2dm.
+  it('load did:key jwk_jcs-pub with 33-byte coordinates', async function() {
+    const pad33 = b64u => Buffer.concat(
+      [Buffer.from([0]), Buffer.from(b64u, 'base64url')]).toString('base64url');
+    const z2dm = encodeZ2dmDidKey(exampleP256Jwk);
+    const z8dk = encodeZ2dmDidKey({
+      ...exampleP256Jwk, y: pad33(exampleP256Jwk.y)});
+    const zyqn = encodeZ2dmDidKey({
+      ...exampleP256Jwk,
+      x: pad33(exampleP256Jwk.x),
+      y: pad33(exampleP256Jwk.y)
+    });
+    // the three encodings really do have different multibase prefixes
+    expect(z8dk.slice(0, 12)).not.equal(z2dm.slice(0, 12));
+    expect(zyqn.slice(0, 12)).not.equal(z2dm.slice(0, 12));
+    const ids = [];
+    for(const did of [z2dm, z8dk, zyqn]) {
+      const data = await documentLoader(did);
+      expect(data.document).property('verificationMethod');
+      expect(data.document.verificationMethod[0])
+        .property('publicKeyMultibase');
+      ids.push(data.document.id);
+    }
+    // all variants normalize to the same canonical key / document id
+    expect(ids[0]).equal(ids[1]);
+    expect(ids[1]).equal(ids[2]);
   });
 
   it('load did:jwk document', async function() {
