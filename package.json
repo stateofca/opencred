@@ -77,6 +77,7 @@
     "@unhead/vue": "^2.1.15",
     "@vueuse/core": "^14.3.0",
     "autoprefixer": "^10.4.24",
+    "base58-universal": "^2.0.0",
     "base64url": "^3.0.1",
     "base64url-universal": "^2.0.0",
     "bnid": "^3.0.0",
