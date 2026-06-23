@@ -20,10 +20,14 @@ import {
   checkStatus as checkStatusBitstring
 } from '@digitalbazaar/vc-bitstring-status-list';
 import {ConfidentialClientApplication} from '@azure/msal-node';
-import {decodeJwt} from 'jose';
+import {agent} from '@bedrock/https-agent';
+import {
+  decodeJwt, decodeProtectedHeader, importJWK, jwtVerify
+} from 'jose';
 import {didResolver} from './documentLoader.js';
 import {expandTypes} from '../lib/workflows/common/type-expansion.js';
 import {generateId} from 'bnid';
+import {gunzipSync} from 'node:zlib';
 import {httpClient} from '@digitalbazaar/http-client';
 import {JSONPath} from 'jsonpath-plus';
 import {logger} from '../lib/logger.js';
@@ -170,9 +174,113 @@ export const unenvelopeJwtVp = vpToken => {
 
 // Verify Utilities
 
+const STATUS_LIST_2021_ENTRY_TYPE = 'StatusList2021Entry';
 const SUPPORTED_STATUS_ENTRY_TYPES = [
-  'BitstringStatusListEntry'
+  'BitstringStatusListEntry',
+  STATUS_LIST_2021_ENTRY_TYPE
 ];
+
+// MSB-first bit lookup within a decoded StatusList2021 bitstring (per spec).
+const _getStatusBit = (bytes, index) =>
+  (bytes[index >> 3] >> (7 - (index % 8))) & 1;
+
+// Verifies the signature of a TWDIW status list JWT. The issuer signs status
+// lists with a key published at the JWT `jku` (its JWKS endpoint), NOT the key
+// embedded in its `iss` did:key, so we cannot verify via the did resolver.
+// Trust is bounded by: (1) the status list must be issued by the same issuer
+// as the credential, and (2) the `jku` must be same-origin as the VC-attested
+// statusListCredential URL (signing key fetched from the issuer's own infra
+// over TLS).
+const _verifyStatusListSignature = async ({listJwt, url, issuerId}) => {
+  const header = decodeProtectedHeader(listJwt);
+  const payload = decodeJwt(listJwt);
+  if(issuerId && payload.iss !== issuerId) {
+    throw new Error('status list issuer does not match credential issuer');
+  }
+  if(!header.jku || new URL(header.jku).origin !== new URL(url).origin) {
+    throw new Error('status list signing keys (jku) are not same-origin');
+  }
+  const {data: jwks} = await httpClient.get(header.jku, {agent});
+  const keys = Array.isArray(jwks?.keys) ? jwks.keys :
+    (Array.isArray(jwks) ? jwks : []);
+  const jwk = keys.find(k => k.kid === header.kid) ?? keys[0];
+  if(!jwk) {
+    throw new Error('no matching status list signing key at jku');
+  }
+  await jwtVerify(listJwt, await importJWK({...jwk, alg: 'ES256'}, 'ES256'));
+  return payload;
+};
+
+/**
+ * Verifies a `StatusList2021Entry` credentialStatus (used by TWDIW VCs).
+ *
+ * The status list endpoint returns a non-standard envelope
+ * `{"statusList": "<JWT>"}` whose inner JWT is a `StatusList2021Credential`.
+ * `encodedList` is base64url(gzip(bitstring)); a set bit at `statusListIndex`
+ * (MSB-first) means the credential is revoked/suspended.
+ *
+ * @param {object} options - Options.
+ * @param {object} options.credential - The credential being checked.
+ * @returns {Promise<object>} A `{verified, errors}` status result.
+ */
+const checkStatusList2021 = async ({credential}) => {
+  const issuerId = typeof credential?.issuer === 'string' ?
+    credential.issuer : credential?.issuer?.id;
+  const entries = arrayOf(credential?.credentialStatus)
+    .filter(s => arrayOf(s.type).includes(STATUS_LIST_2021_ENTRY_TYPE));
+  for(const entry of entries) {
+    const url = entry.statusListCredential;
+    if(!url) {
+      return {verified: false, errors: ['Missing statusListCredential URL']};
+    }
+    // fetch and unwrap the non-standard {"statusList": "<JWT>"} envelope
+    let listJwt;
+    try {
+      const {data} = await httpClient.get(url, {agent});
+      listJwt = typeof data?.statusList === 'string' ? data.statusList :
+        (typeof data === 'string' ? data : null);
+    } catch(e) {
+      return {
+        verified: false,
+        errors: [`Unable to fetch status list (${url}): ${e.message}`]
+      };
+    }
+    if(!listJwt) {
+      return {verified: false, errors: [`Unexpected status list at ${url}`]};
+    }
+    // verify the status list's signature (jku-published key; see helper)
+    let payload;
+    try {
+      payload = await _verifyStatusListSignature({listJwt, url, issuerId});
+    } catch(e) {
+      return {
+        verified: false,
+        errors: [`Status list signature invalid: ${e.message}`]
+      };
+    }
+    // decode the bitstring and check this credential's index
+    const cs = payload?.vc?.credentialSubject ?? {};
+    let bytes;
+    try {
+      bytes = gunzipSync(Buffer.from(cs.encodedList ?? '', 'base64url'));
+    } catch(e) {
+      return {
+        verified: false,
+        errors: [`Unable to decode status list: ${e.message}`]
+      };
+    }
+    if(_getStatusBit(bytes, Number(entry.statusListIndex))) {
+      const purpose = cs.statusPurpose ?? entry.statusPurpose;
+      return {
+        verified: false,
+        errors: [purpose === 'suspension' ?
+          'The credential has been suspended.' :
+          'The credential has been revoked.']
+      };
+    }
+  }
+  return {verified: true};
+};
 
 const checkStatus = async options => {
   const {credential} = options;
@@ -185,15 +293,18 @@ const checkStatus = async options => {
   const statusEntryTypes = statuses.map(
     status => arrayOf(status.type)
   ).flat();
-  if(statusEntryTypes.find(tt => !SUPPORTED_STATUS_ENTRY_TYPES.includes(tt))) {
+  const unsupported = statusEntryTypes.filter(
+    tt => !SUPPORTED_STATUS_ENTRY_TYPES.includes(tt));
+  if(unsupported.length) {
     return {
       verified: false,
-      errors: [
-        `Unsupported status entry type(s): ${
-          statusEntryTypes
-            .filter(tt => !SUPPORTED_STATUS_ENTRY_TYPES.includes(tt))
-            .join(', ')}`]
+      errors: [`Unsupported status entry type(s): ${unsupported.join(', ')}`]
     };
+  }
+
+  // route StatusList2021Entry to its dedicated handler
+  if(statusEntryTypes.includes(STATUS_LIST_2021_ENTRY_TYPE)) {
+    return checkStatusList2021(options);
   }
 
   return checkStatusBitstring(options);
