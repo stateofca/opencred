@@ -49,7 +49,18 @@ const _getVpTokenMetadataJwt = vpToken => {
       const issuerDidJwt = vcJwtPayload?.iss;
       const issuerDidVc = typeof vcJwtPayload?.vc?.issuer === 'string' ?
         vcJwtPayload.vc.issuer : vcJwtPayload?.vc?.issuer?.id;
-      if(!issuerDidJwt || !issuerDidVc || issuerDidJwt !== issuerDidVc) {
+      // Per the W3C VC Data Model JWT encoding, the `iss` claim represents the
+      // issuer and `vc.issuer` MAY be omitted. Treat `iss` as authoritative;
+      // only fail when `iss` is absent, or when `vc.issuer` is present and
+      // disagrees with `iss`.
+      if(!issuerDidJwt) {
+        return {
+          valid: false,
+          error: 'Each vc token must have an issuer (JWT "iss")',
+          issuerDids
+        };
+      }
+      if(issuerDidVc && issuerDidVc !== issuerDidJwt) {
         return {
           valid: false,
           error: 'Each vc token issuer must match the issuer ' +
