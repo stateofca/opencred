@@ -148,7 +148,8 @@ ${toYamlMultiline(certificatePem, pemIndent)}
       workflowListingEnabled: false
       debug: false
       wallets:
-        - cadmv-wallet
+        - cadmv-android
+        - cadmv-ios
         - lcw
         - vcalm-interaction
     defaultBrand:

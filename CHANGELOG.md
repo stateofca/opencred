@@ -1,5 +1,12 @@
 # opencred-platform Changelog
 
+## 10.1.3 - 2026-07-dd
+
+### Fixed
+- Fix `generate:config` emitting the removed `cadmv-wallet` option, which caused
+  the generated config to fail schema validation on startup. Emit the current
+  `cadmv-android` and `cadmv-ios` wallet options instead.
+
 ## 10.1.2 - 2026-06-22
 
 ### Changed
