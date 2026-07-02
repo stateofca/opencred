@@ -30,7 +30,7 @@ SPDX-License-Identifier: BSD-3-Clause
             </span>
             <span
               v-if="isCurrentEntry(entry)"
-              class="text-sm text-primary">
+              class="text-sm text-primary pl-3 whitespace-nowrap">
               {{$t('interactionPicker_current')}}
             </span>
           </div>

@@ -1,5 +1,11 @@
 # opencred-platform Changelog
 
+## 10.1.4 - 2026-07-dd
+
+### Fixed
+- Add left padding to the "Current" badge in the interaction picker so it is no
+  longer flush against the method label next to it.
+
 ## 10.1.3 - 2026-07-03
 
 ### Fixed
