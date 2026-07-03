@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.1.3 - 2026-07-dd
+## 10.1.3 - 2026-07-03
 
 ### Fixed
 - Fix `generate:config` emitting the removed `cadmv-wallet` option, which caused
