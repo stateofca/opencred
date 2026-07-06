@@ -82,14 +82,15 @@ describe('client-metadata', () => {
       expect(md).to.not.have.key('vp_formats_supported');
     });
 
-    it('cadmv-android: vp_formats with legacy alg, no vp_formats_supported',
+    it('cadmv-android: OID4VP 1.0 vp_formats_supported, no legacy vp_formats',
       () => {
         const md = buildClientMetadata({profile: 'cadmv-android'});
         expect(Object.isFrozen(md)).to.be(true);
-        expect(md.vp_formats.mso_mdoc.alg).to.eql(['ES256']);
-        expect(md.vp_formats.mso_mdoc).to.not.have.key(
-          'issuerauth_alg_values');
-        expect(md).to.not.have.key('vp_formats_supported');
+        expect(md.vp_formats_supported.mso_mdoc.issuerauth_alg_values).to.eql(
+          [-7]);
+        expect(md.vp_formats_supported.mso_mdoc.deviceauth_alg_values).to.eql(
+          [-7]);
+        expect(md).to.not.have.key('vp_formats');
       });
 
     it('sets client_name when clientName is a string', () => {
