@@ -4,14 +4,14 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-
-import {getVpTokenMetadata} from '../../common/audit.js';
 import expect from 'expect.js';
+import {getVpTokenMetadata} from '../../common/audit.js';
 
 // Encode a payload as an (unsigned) JWT. getVpTokenMetadata uses decodeJwt,
 // which does not verify the signature, so a placeholder signature suffices.
 const b64u = obj => Buffer.from(JSON.stringify(obj)).toString('base64url');
-const jwt = payload => `${b64u({alg: 'ES256', typ: 'JWT'})}.${b64u(payload)}.AAAA`;
+const jwt = payload => `${
+  b64u({alg: 'ES256', typ: 'JWT'})}.${b64u(payload)}.AAAA`;
 // Build a VP-JWT whose `vp.verifiableCredential` holds the given VC payloads,
 // each itself encoded as a VC-JWT.
 const vpToken = vcPayloads =>

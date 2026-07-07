@@ -97,6 +97,10 @@
   instead of the generic exchange-failure title and "The following error was
   encountered:" subtitle. New translation keys `exchangeErrorTtlExpiredTitle`
   and `exchangeErrorTtlExpiredSubtitle` are overridable per workflow.
+## 10.1.4 - 2026-07-XX
+
+### Changed
+- Accept JWT `iss` if `issuer` is missing from JWT token, as long as value matches.
 
 ## 10.1.3 - 2026-07-03
 
