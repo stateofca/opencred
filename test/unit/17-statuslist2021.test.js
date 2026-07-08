@@ -33,12 +33,13 @@ const buildStatusList = async ({privateKey, statusPurpose}) => {
     .sign(privateKey);
 };
 
-const credentialWithStatus = statusListIndex => ({
+const credentialWithStatus = (statusListIndex, statusPurpose) => ({
   issuer: ISSUER,
   credentialStatus: {
     type: 'StatusList2021Entry',
     statusListCredential: STATUS_URL,
-    statusListIndex
+    statusListIndex,
+    ...(statusPurpose ? {statusPurpose} : {})
   }
 });
 
@@ -122,4 +123,143 @@ describe('StatusList2021Entry credential status', () => {
       expect(result.verified).to.be(false);
       expect(result.errors[0]).to.contain('issuer');
     });
+
+  it('fails when the statusListCredential URL is missing', async () => {
+    const credential = {
+      issuer: ISSUER,
+      credentialStatus: {
+        type: 'StatusList2021Entry', statusListIndex: REVOKED_INDEX}
+    };
+    const result = await verifyUtils.checkStatus({credential});
+    expect(result.verified).to.be(false);
+    expect(result.errors[0]).to.contain('Missing statusListCredential');
+  });
+
+  it('fails when the status list URL is not https', async () => {
+    const credential = {
+      issuer: ISSUER,
+      credentialStatus: {
+        type: 'StatusList2021Entry',
+        statusListCredential: 'http://issuer.example/status/1',
+        statusListIndex: REVOKED_INDEX
+      }
+    };
+    const result = await verifyUtils.checkStatus({credential});
+    expect(result.verified).to.be(false);
+    expect(result.errors[0]).to.contain('https');
+  });
+
+  it('fails when the status list fetch errors', async () => {
+    getStub = sinon.stub(httpClient, 'get');
+    getStub.withArgs(STATUS_URL).rejects(new Error('boom'));
+    const result = await verifyUtils.checkStatus(
+      {credential: credentialWithStatus(REVOKED_INDEX)});
+    expect(result.verified).to.be(false);
+    expect(result.errors[0]).to.contain('Unable to fetch');
+    expect(result.errors[0]).to.contain('boom');
+  });
+
+  it('fails on a malformed status list envelope', async () => {
+    getStub = sinon.stub(httpClient, 'get');
+    getStub.withArgs(STATUS_URL).resolves({data: {nope: 1}});
+    const result = await verifyUtils.checkStatus(
+      {credential: credentialWithStatus(REVOKED_INDEX)});
+    expect(result.verified).to.be(false);
+    expect(result.errors[0]).to.contain('Unexpected status list');
+  });
+
+  it('fails when the status list JWT has no jku header', async () => {
+    const {privateKey} = await generateKeyPair('ES256');
+    const bytes = new Uint8Array(16);
+    bytes[REVOKED_INDEX >> 3] |= 1 << (7 - (REVOKED_INDEX % 8));
+    const encodedList = Buffer.from(gzipSync(Buffer.from(bytes)))
+      .toString('base64url');
+    const listJwt =
+      await new SignJWT({vc: {credentialSubject: {encodedList}}})
+        .setProtectedHeader({alg: 'ES256', kid: 'key-2'})
+        .setIssuer(ISSUER)
+        .sign(privateKey);
+    getStub = sinon.stub(httpClient, 'get');
+    getStub.withArgs(STATUS_URL).resolves({data: {statusList: listJwt}});
+    const result = await verifyUtils.checkStatus(
+      {credential: credentialWithStatus(REVOKED_INDEX)});
+    expect(result.verified).to.be(false);
+    expect(result.errors[0]).to.contain('jku');
+  });
+
+  it('fails when no JWKS key matches the JWT kid', async () => {
+    const {publicKey, privateKey} = await generateKeyPair('ES256');
+    const publicJwk = {
+      ...await exportJWK(publicKey), kid: 'other-kid', alg: 'ES256'};
+    const listJwt = await buildStatusList({privateKey});
+    getStub = sinon.stub(httpClient, 'get');
+    getStub.withArgs(STATUS_URL).resolves({data: {statusList: listJwt}});
+    getStub.withArgs(JKU).resolves({data: {keys: [publicJwk]}});
+    const result = await verifyUtils.checkStatus(
+      {credential: credentialWithStatus(REVOKED_INDEX)});
+    expect(result.verified).to.be(false);
+    expect(result.errors[0]).to.contain('kid');
+  });
+
+  it('fails when the status list signature is tampered', async () => {
+    const {publicKey, privateKey} = await generateKeyPair('ES256');
+    const publicJwk = {
+      ...await exportJWK(publicKey), kid: 'key-2', alg: 'ES256'};
+    const listJwt = await buildStatusList({privateKey});
+    const [header, body, sig] = listJwt.split('.');
+    const flipped = (sig[0] === 'A' ? 'B' : 'A') + sig.slice(1);
+    const tampered = `${header}.${body}.${flipped}`;
+    getStub = sinon.stub(httpClient, 'get');
+    getStub.withArgs(STATUS_URL).resolves({data: {statusList: tampered}});
+    getStub.withArgs(JKU).resolves({data: {keys: [publicJwk]}});
+    const result = await verifyUtils.checkStatus(
+      {credential: credentialWithStatus(REVOKED_INDEX)});
+    expect(result.verified).to.be(false);
+    expect(result.errors[0]).to.contain('signature');
+  });
+
+  it('fails closed on an out-of-range statusListIndex', async () => {
+    await stubEndpoints();
+    const result = await verifyUtils.checkStatus(
+      {credential: credentialWithStatus(100000)});
+    expect(result.verified).to.be(false);
+    expect(result.errors[0]).to.contain('out of range');
+  });
+
+  it('fails closed on a non-integer statusListIndex', async () => {
+    await stubEndpoints();
+    const result = await verifyUtils.checkStatus(
+      {credential: credentialWithStatus('not-a-number')});
+    expect(result.verified).to.be(false);
+  });
+
+  it('handles an array-form credentialStatus (revoked)', async () => {
+    await stubEndpoints();
+    const credential = {
+      issuer: ISSUER,
+      credentialStatus: [{
+        type: 'StatusList2021Entry',
+        statusListCredential: STATUS_URL,
+        statusListIndex: REVOKED_INDEX
+      }]
+    };
+    const result = await verifyUtils.checkStatus({credential});
+    expect(result.verified).to.be(false);
+  });
+
+  it('fails when the entry purpose does not match the list purpose',
+    async () => {
+      await stubEndpoints({statusPurpose: 'suspension'});
+      const result = await verifyUtils.checkStatus(
+        {credential: credentialWithStatus(CLEAR_INDEX, 'revocation')});
+      expect(result.verified).to.be(false);
+      expect(result.errors[0]).to.contain('purpose');
+    });
+
+  it('verifies a suspension-list credential whose bit is clear', async () => {
+    await stubEndpoints({statusPurpose: 'suspension'});
+    const result = await verifyUtils.checkStatus(
+      {credential: credentialWithStatus(CLEAR_INDEX)});
+    expect(result.verified).to.be(true);
+  });
 });

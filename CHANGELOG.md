@@ -103,6 +103,17 @@
 - Accept JWT `iss` if `issuer` is missing from JWT token, as long as value matches.
 - Accept nested `.vp` in `path_nested` for OID4VP-draft18 submissions to handle
   wallets that inject an extra `.vp` wrapper in their query.
+- Moved credential status checking into a dedicated `lib/credential-status/`
+  module (`StatusList2021Entry` handler plus the `checkStatus` router);
+  `verifyUtils.checkStatus` behavior is unchanged.
+- Hardened `StatusList2021Entry` credential status checks: fail closed on an
+  invalid or out-of-range `statusListIndex` (previously read as "not
+  revoked"), cap status-list decompression to guard against gzip bombs, pin
+  `ES256` when verifying the status-list JWT, require an exact signing-key
+  `kid` match, require an `https` status-list URL and an `https` same-origin
+  `jku`, require a credential issuer for the status-list issuer binding, and
+  assert the status list's purpose matches the credential status entry's
+  purpose.
 
 ## 10.1.3 - 2026-07-03
 
