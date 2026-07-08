@@ -101,6 +101,8 @@
 
 ### Changed
 - Accept JWT `iss` if `issuer` is missing from JWT token, as long as value matches.
+- Accept nested `.vp` in `path_nested` for OID4VP-draft18 submissions to handle
+  wallets that inject an extra `.vp` wrapper in their query.
 
 ## 10.1.3 - 2026-07-03
 
