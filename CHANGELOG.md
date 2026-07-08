@@ -114,6 +114,10 @@
   `jku`, require a credential issuer for the status-list issuer binding, and
   assert the status list's purpose matches the credential status entry's
   purpose.
+- Added `jwk_jcs-pub` `did:key` resolution (including multicodec `0xeb51` P-256
+  support) to support EBSI/EUDI identifiers into a dedicated `lib/did/` module.
+  Hardened `jwk_jcs-pub` resolution: a `jwk_jcs-pub` `did:key` is accepted only
+  only in canonical form. 
 
 ## 10.1.3 - 2026-07-03
 

@@ -19,7 +19,7 @@ const exampleDidKeyId =
   'did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH';
 
 // Build a did:key z2dm (jwk_jcs-pub, multicodec 0xeb51 -> varint d1 d6 03)
-// identifier from a P-256 public JWK, mirroring how EUDI Wallet encodes the
+// identifier from a P-256 public JWK, mirroring how an EUDI Wallet encodes the
 // `iss` of its credentials. This is the inverse of the decode path added in
 // common/documentLoader.js, so resolving it round-trips through fromJwk().
 const JWK_JCS_PUB_MULTICODEC_HEADER = [0xd1, 0xd6, 0x03];
@@ -67,19 +67,24 @@ describe('Document Loader', async () => {
     expect(didKeyData.document).property('capabilityDelegation');
     expect(didKeyData.document).property('capabilityInvocation');
     expect(didKeyData.document.id).equal(didKeyData.documentUrl);
-    // resolves to a P-256 verification method; the document id is the canonical
-    // p256-pub (zDna) form, since jwk_jcs-pub is normalized and routed there
-    expect(didKeyData.document.verificationMethod[0])
-      .property('publicKeyMultibase');
+    // the document is keyed to the requested (canonical) jwk_jcs-pub DID, not
+    // aliased to the p256-pub (zDna) form
+    expect(didKeyData.document.id).equal(z2dmDidKeyId);
+    const [vm] = didKeyData.document.verificationMethod;
+    const multibase = z2dmDidKeyId.slice('did:key:'.length);
+    expect(vm.type).equal('JsonWebKey2020');
+    expect(vm.controller).equal(z2dmDidKeyId);
+    expect(vm.id).equal(`${z2dmDidKeyId}#${multibase}`);
+    expect(vm.publicKeyJwk).eql(exampleP256Jwk);
   });
 
-  // z8DK / zYqN: same P-256 key, but a coordinate carries a leading sign byte
-  // (33 bytes), shifting the base58 prefix. Multicodec routing + coordinate
-  // normalization must resolve them to the same key as z2dm.
-  it('load did:key jwk_jcs-pub with 33-byte coordinates', async function() {
+  // z8DK / zYqN: same key, but a coordinate carries a leading sign byte (33
+  // bytes) — a non-canonical encoding. Because OpenCred is a verifier, a
+  // jwk_jcs-pub DID must be the canonical commitment to the key, so these are
+  // rejected rather than normalized to the same key.
+  it('rejects did:key jwk_jcs-pub with 33-byte coordinates', async function() {
     const pad33 = b64u => Buffer.concat(
       [Buffer.from([0]), Buffer.from(b64u, 'base64url')]).toString('base64url');
-    const z2dm = encodeZ2dmDidKey(exampleP256Jwk);
     const z8dk = encodeZ2dmDidKey({
       ...exampleP256Jwk, y: pad33(exampleP256Jwk.y)});
     const zyqn = encodeZ2dmDidKey({
@@ -87,20 +92,28 @@ describe('Document Loader', async () => {
       x: pad33(exampleP256Jwk.x),
       y: pad33(exampleP256Jwk.y)
     });
-    // the three encodings really do have different multibase prefixes
-    expect(z8dk.slice(0, 12)).not.equal(z2dm.slice(0, 12));
-    expect(zyqn.slice(0, 12)).not.equal(z2dm.slice(0, 12));
-    const ids = [];
-    for(const did of [z2dm, z8dk, zyqn]) {
-      const data = await documentLoader(did);
-      expect(data.document).property('verificationMethod');
-      expect(data.document.verificationMethod[0])
-        .property('publicKeyMultibase');
-      ids.push(data.document.id);
+    for(const did of [z8dk, zyqn]) {
+      let error;
+      try {
+        await documentLoader(did);
+      } catch(e) {
+        error = e;
+      }
+      expect(error).to.be.an(Error);
     }
-    // all variants normalize to the same canonical key / document id
-    expect(ids[0]).equal(ids[1]);
-    expect(ids[1]).equal(ids[2]);
+  });
+
+  // Extra JWK members (use/kid/alg) change the identifier for the same key;
+  // accepting them would let one key have many DIDs (aliasing). Reject.
+  it('rejects did:key jwk_jcs-pub with extra JWK members', async function() {
+    const withExtras = encodeZ2dmDidKey({...exampleP256Jwk, use: 'sig'});
+    let error;
+    try {
+      await documentLoader(withExtras);
+    } catch(e) {
+      error = e;
+    }
+    expect(error).to.be.an(Error);
   });
 
   it('load did:jwk document', async function() {
