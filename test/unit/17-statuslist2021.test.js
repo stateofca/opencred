@@ -6,7 +6,7 @@
  */
 
 import * as sinon from 'sinon';
-import {SignJWT, exportJWK, generateKeyPair} from 'jose';
+import {exportJWK, generateKeyPair, SignJWT} from 'jose';
 import expect from 'expect.js';
 import {gzipSync} from 'node:zlib';
 import {httpClient} from '@digitalbazaar/http-client';
@@ -18,10 +18,10 @@ const JKU = 'https://issuer.example/.well-known/jwks.json';
 const REVOKED_INDEX = 5;
 const CLEAR_INDEX = 9;
 
-// Build a StatusList2021 bitstring with REVOKED_INDEX set (MSB-first, per spec),
-// gzip + base64url it, and sign the wrapping status-list JWT with an ES256 key
-// published at `jku` (TWDIW signs status lists with a jku key, not the iss
-// did:key).
+// Build a StatusList2021 bitstring with REVOKED_INDEX set (MSB-first, per
+// spec), gzip + base64url it, and sign the wrapping status-list JWT with an
+// ES256 key published at `jku` (TWDIW signs status lists with a jku key, not
+// the iss did:key).
 const buildStatusList = async ({privateKey, statusPurpose}) => {
   const bytes = new Uint8Array(16);
   bytes[REVOKED_INDEX >> 3] |= 1 << (7 - (REVOKED_INDEX % 8));
@@ -47,7 +47,8 @@ describe('StatusList2021Entry credential status', () => {
 
   const stubEndpoints = async ({statusPurpose = 'revocation'} = {}) => {
     const {publicKey, privateKey} = await generateKeyPair('ES256');
-    const publicJwk = {...await exportJWK(publicKey), kid: 'key-2', alg: 'ES256'};
+    const publicJwk = {
+      ...await exportJWK(publicKey), kid: 'key-2', alg: 'ES256'};
     const listJwt = await buildStatusList({privateKey, statusPurpose});
     getStub = sinon.stub(httpClient, 'get');
     getStub.withArgs(STATUS_URL).resolves({data: {statusList: listJwt}});
