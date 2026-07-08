@@ -280,13 +280,10 @@ app:
           - did:web:example.com
         public: true
       - name: "EUDI Wallet / TWDIW VC"
-        # Verifies a VC-JWT issued by an EUDI-Wallet / TWDIW-style issuer and
-        # presented over OpenID4VP. The issuer key is a did:key encoded as a
-        # JCS-normalized JWK (jwk_jcs-pub, multicodec 0xeb51; the multibase
-        # prefix shifts with the JWK length: z2dm/z8DK/zYqN...) and is resolved
-        # automatically. The VC-JWT issuer is the JWT `iss` claim (`vc.issuer`
-        # may be omitted), and the wallet's $.vp-rooted presentation_submission
-        # path_nested is handled automatically.
+        # Verifies a VC-JWT issued by an EUDI-Wallet or Taiwan Digital Identity
+        # Wallet-style issuer and presented over OID4VP. The issuer key is a
+        # did:key encoded as a JCS-normalized JWK (jwk_jcs-pub, multicodec
+        # 0xeb51 VCs issued as JWT.
         clientId: "eudi-vc"
         clientSecret: "<set-a-strong-secret>"
         type: native
