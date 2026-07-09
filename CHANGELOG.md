@@ -1,6 +1,20 @@
 # opencred-platform Changelog
 
-## 10.1.4 - 2026-07-dd
+## 10.2.0 - 2026-07-dd
+
+### Added
+- Presentation log events include `browser` and `deviceType` fields classified
+  from the User-Agent of the triggering request. Only coarse buckets are
+  logged, never the raw User-Agent string.
+
+### Changed
+- Samsung Internet is restricted to the CA DMV Wallet over OID4VP draft 18.
+  Its Digital Credentials API implementation is not interoperable, so the DC
+  API is treated as unavailable there and other interaction options are
+  hidden.
+- Callback failures are logged with their cause: OAuth token refresh failures
+  are distinguished from callback POST failures, and POST failures report an
+  HTTP status vs. a network-level error.
 
 ### Fixed
 - Restore `opencred.authorization` after config schema validation. Since
