@@ -23,6 +23,10 @@
   at the top level of the body.
 - `redirectVariableAllowList` appends allowlisted exchange variables to the
   post verification redirect as query parameters.
+- Add `walletCertificates[].google.rpMetadataBytes` config and emit it as
+  `client_metadata.gw_rp_metadata_bytes` in google-wallet authorization
+  requests. Startup validation warns when a google-wallet certificate has
+  no (or an invalid) `rpMetadataBytes`.
 
 ### Changed
 - The DC API flow now aborts `navigator.credentials.get` after 30 seconds

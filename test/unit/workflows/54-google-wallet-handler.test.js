@@ -119,6 +119,40 @@ describe('native-google-wallet generateAuthorizationRequest', () => {
       ).to.be.ok();
     });
 
+  it('emits client_metadata.gw_rp_metadata_bytes when configured',
+    async () => {
+      config.opencred = {
+        ...config.opencred,
+        walletCertificates: [{
+          ...googleWalletTestEntry,
+          google: {rpMetadataBytes: 'AbC-_123'}
+        }]
+      };
+
+      const result = await generateAuthorizationRequest({
+        workflow: testWorkflow,
+        exchange: {id: 'ex-1', variables: {}},
+        profile: 'google-wallet',
+        responseMode: 'dc_api.jwt'
+      });
+
+      expect(
+        result.authorizationRequest.client_metadata.gw_rp_metadata_bytes
+      ).to.equal('AbC-_123');
+    });
+
+  it('omits gw_rp_metadata_bytes when not configured', async () => {
+    const result = await generateAuthorizationRequest({
+      workflow: testWorkflow,
+      exchange: {id: 'ex-1', variables: {}},
+      profile: 'google-wallet',
+      responseMode: 'dc_api.jwt'
+    });
+
+    expect(result.authorizationRequest.client_metadata).to.not.have.key(
+      'gw_rp_metadata_bytes');
+  });
+
   it('throws ReaderAuthConfigError when no google-wallet certs',
     async () => {
       config.opencred = {...config.opencred, walletCertificates: []};

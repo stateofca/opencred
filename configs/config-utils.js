@@ -475,7 +475,12 @@ export const AppleWalletCertificateSchema = WalletCertificateBase.extend({
 
 export const GoogleWalletCertificateSchema = WalletCertificateBase.extend({
   wallet: z.literal('google-wallet'),
-  google: z.object({}).optional()
+  // Google-Wallet-specific settings. `rpMetadataBytes` is the
+  // Base64URL-encoded CBOR relying-party metadata Google requires in
+  // client_metadata.gw_rp_metadata_bytes (stored verbatim).
+  google: z.object({
+    rpMetadataBytes: z.string().optional()
+  }).optional()
 });
 
 export const WalletCertificateSchema = z.discriminatedUnion('wallet', [
@@ -788,5 +793,35 @@ export function validateWalletCertificates(entries, {logger: log}) {
         `key from privateKeyPem: ${err.message}`
       );
     }
+
+    // Google Wallet requires relying-party branding metadata in the
+    // authorization request (client_metadata.gw_rp_metadata_bytes).
+    // Warn-only: a missing/invalid value should not block startup.
+    if(entry.wallet === 'google-wallet') {
+      const rpMetadataBytes = entry.google?.rpMetadataBytes;
+      if(!rpMetadataBytes) {
+        log.warn(
+          `walletCertificates[${entry.id}]: google.rpMetadataBytes is ` +
+          `not set; Google Wallet requires client_metadata.` +
+          `gw_rp_metadata_bytes and may reject requests without it`
+        );
+      } else if(!_isBase64Url(rpMetadataBytes)) {
+        log.warn(
+          `walletCertificates[${entry.id}]: google.rpMetadataBytes is ` +
+          `not valid Base64URL; Google Wallet will reject the request`
+        );
+      }
+    }
   }
+}
+
+/**
+ * Lightweight Base64URL check (no padding). Does not decode CBOR.
+ *
+ * @param {string} value - Candidate Base64URL string.
+ * @returns {boolean} True when the value is a non-empty Base64URL string.
+ */
+function _isBase64Url(value) {
+  return typeof value === 'string' && value.length > 0 &&
+    /^[A-Za-z0-9_-]+$/.test(value);
 }

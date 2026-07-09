@@ -392,12 +392,21 @@ opencred:
         -----BEGIN CERTIFICATE-----
         ...your registered certificate...
         -----END CERTIFICATE-----
+      google:
+        rpMetadataBytes: <base64url-encoded RP metadata from Google>
 ```
 
 Only one `wallet: google-wallet` entry is used at a time (the first
 matching entry in config array order). Multiple entries are allowed
 for rotation — add the new entry, verify it works, then remove the
 old one.
+
+Google Wallet requires relying-party branding metadata in every
+authorization request. Provide the Base64URL-encoded CBOR value Google
+supplies under `google.rpMetadataBytes`; OpenCred emits it verbatim as
+`client_metadata.gw_rp_metadata_bytes`. If `google.rpMetadataBytes` is
+omitted, OpenCred logs a startup warning and sends the request without
+the field; Google Wallet may reject it.
 
 ### Request flow
 
@@ -411,9 +420,12 @@ OpenCred responds with a `dcApiRequest` envelope containing a signed
 JWT (protocol `openid4vp-v1-signed`). The JWT includes:
 
 - `client_id` set to `x509_hash:<SHA-256 fingerprint of your cert>`
-- `client_id_scheme: "x509_hash"`
+  (the `x509_hash` scheme is conveyed by this prefix; OID4VP 1.0 does
+  not carry a separate `client_id_scheme` claim)
 - `response_mode: "dc_api.jwt"` (encrypted response)
 - `client_metadata.jwks.keys[]` with an ephemeral encryption key
+- `client_metadata.gw_rp_metadata_bytes` with your registered RP
+  branding metadata (when `google.rpMetadataBytes` is configured)
 - `x5c` in the JWT header containing your certificate chain
 
 The response from Google Wallet is an encrypted JWE, which OpenCred

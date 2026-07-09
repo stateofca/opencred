@@ -67,6 +67,10 @@ app:
     #     -----BEGIN CERTIFICATE-----
     #     ...your registered certificate...
     #     -----END CERTIFICATE-----
+    #   # Base64URL-encoded CBOR relying-party metadata provided by
+    #   # Google/DMV; emitted as client_metadata.gw_rp_metadata_bytes.
+    #   google:
+    #     rpMetadataBytes: <base64url-encoded RP metadata from Google>
     workflows:
       - name: "Test Workflow (Native)"
         clientId: "rp1"

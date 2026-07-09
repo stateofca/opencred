@@ -93,6 +93,31 @@ describe('client-metadata', () => {
         expect(md).to.not.have.key('vp_formats');
       });
 
+    it('google-wallet: emits gw_rp_metadata_bytes when supplied', () => {
+      const md = buildClientMetadata({
+        profile: 'google-wallet',
+        rpMetadataBytes: 'AbC-_123'
+      });
+      expect(Object.isFrozen(md)).to.be(true);
+      expect(md.gw_rp_metadata_bytes).to.equal('AbC-_123');
+    });
+
+    it('google-wallet: omits gw_rp_metadata_bytes when not supplied', () => {
+      const md = buildClientMetadata({profile: 'google-wallet'});
+      expect(md).to.not.have.key('gw_rp_metadata_bytes');
+    });
+
+    it('google-wallet: emits both jwks and gw_rp_metadata_bytes', () => {
+      const jwk = {kty: 'EC', crv: 'P-256', x: 'abc', y: 'def'};
+      const md = buildClientMetadata({
+        profile: 'google-wallet',
+        encryptionJwks: jwk,
+        rpMetadataBytes: 'AbC-_123'
+      });
+      expect(md.jwks.keys).to.eql([jwk]);
+      expect(md.gw_rp_metadata_bytes).to.equal('AbC-_123');
+    });
+
     it('sets client_name when clientName is a string', () => {
       const md = buildClientMetadata({
         profile: '18013-7-Annex-D',
