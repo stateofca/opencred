@@ -27,6 +27,10 @@
   `client_metadata.gw_rp_metadata_bytes` in google-wallet authorization
   requests. Startup validation warns when a google-wallet certificate has
   no (or an invalid) `rpMetadataBytes`.
+- Startup validation warns when a google-wallet certificate's
+  `google.rpMetadataBytes` does not match the leaf certificate's Google
+  binding extension `1.3.6.1.4.1.11129.10.1` (SHA-256), or when that
+  extension is absent.
 
 ### Changed
 - The DC API flow now aborts `navigator.credentials.get` after 30 seconds

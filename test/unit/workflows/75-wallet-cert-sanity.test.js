@@ -12,7 +12,10 @@ import {
 import {Crypto} from '@peculiar/webcrypto';
 import expect from 'expect.js';
 
-import {appleWalletTestEntry} from '../../fixtures/wallet-certificates.js';
+import {
+  appleWalletTestEntry,
+  googleWalletMetadataBoundEntry
+} from '../../fixtures/wallet-certificates.js';
 import {validateWalletCertificates} from
   '../../../lib/workflows/common/wallet-cert-sanity.js';
 
@@ -192,5 +195,59 @@ describe('wallet-cert-sanity', () => {
       expect(ok).to.be(true);
       expect(results[0].baseUriMatch).to.be(true);
     });
+  });
+
+  describe('google-wallet metadata binding', () => {
+    const oid = '1.3.6.1.4.1.11129.10.1';
+
+    it('does not warn when rpMetadataBytes matches the cert binding',
+      () => {
+        const {results} = validateWalletCertificates({
+          entries: [googleWalletMetadataBoundEntry],
+          baseUri: 'https://example.com'
+        });
+        const warnings = results[0].warnings;
+        expect(warnings.some(w => w.includes(oid))).to.be(false);
+      });
+
+    it('warns when rpMetadataBytes does not match the cert binding',
+      () => {
+        const entry = {
+          ...googleWalletMetadataBoundEntry,
+          google: {rpMetadataBytes: 'AAAA'}
+        };
+        const {results} = validateWalletCertificates({
+          entries: [entry],
+          baseUri: 'https://example.com'
+        });
+        expect(results[0].warnings.some(w =>
+          w.includes('does not match the leaf cert binding') &&
+          w.includes('SHA-256 mismatch'))).to.be(true);
+      });
+
+    it('warns when the leaf cert lacks the binding extension',
+      async () => {
+        const certificatePem = await mintLeafPem({
+          sanHosts: ['example.com']
+        });
+        const entry = {...googleWalletMetadataBoundEntry, certificatePem};
+        const {results} = validateWalletCertificates({
+          entries: [entry],
+          baseUri: 'https://example.com'
+        });
+        expect(results[0].warnings.some(w =>
+          w.includes(`leaf cert has no ${oid} binding extension`))).
+          to.be(true);
+      });
+
+    it('skips the binding check when rpMetadataBytes is absent',
+      () => {
+        const entry = {...googleWalletMetadataBoundEntry, google: {}};
+        const {results} = validateWalletCertificates({
+          entries: [entry],
+          baseUri: 'https://example.com'
+        });
+        expect(results[0].warnings.some(w => w.includes(oid))).to.be(false);
+      });
   });
 });

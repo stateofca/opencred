@@ -408,6 +408,14 @@ supplies under `google.rpMetadataBytes`; OpenCred emits it verbatim as
 omitted, OpenCred logs a startup warning and sends the request without
 the field; Google Wallet may reject it.
 
+On startup OpenCred also verifies that `google.rpMetadataBytes` matches
+the leaf certificate: it compares the `SHA-256` of the (Base64URL-decoded)
+metadata against the value in the certificate's Google Verifier Registrar
+extension `1.3.6.1.4.1.11129.10.1`. A mismatch, or a leaf certificate
+that lacks the extension, produces a startup warning (it does not block
+startup). Certificates issued through Google's Verifier Registrar
+onboarding embed this extension.
+
 ### Request flow
 
 Set the request's `profile` query parameter to `google-wallet`:

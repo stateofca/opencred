@@ -51,3 +51,41 @@ export const googleWalletTestEntry = {
   certificatePem: appleWalletTestEntry.certificatePem,
   displayName: 'Google Wallet test cert'
 };
+
+// Google Wallet fixture whose leaf cert carries the Verifier Registrar
+// binding extension 1.3.6.1.4.1.11129.10.1 for the rpMetadataBytes
+// below. Self-signed, test-only. DO NOT USE IN PRODUCTION.
+export const googleWalletMetadataBoundEntry = {
+  wallet: 'google-wallet',
+  id: 'google-metadata-bound-2026',
+  type: 'ES256',
+  displayName: 'Google Wallet metadata-bound test cert',
+  privateKeyPem:
+`-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIBJgxOLfklmQJL/X66k46437uT5zaMpYZh8i4tuc5VHKoAoGCCqGSM49
+AwEHoUQDQgAEN+lqLhWMGyQPEd+U+PqdyZgM9yBjuwJhDmx5dCLfANNdDZ3B9eY5
+b8C3W0sEoN03TsVR+WuUeMY7Z1csXI8CyA==
+-----END EC PRIVATE KEY-----
+`,
+  certificatePem:
+`-----BEGIN CERTIFICATE-----
+MIIBkDCCATWgAwIBAgIUQW/JFyN9UKhJMvPTzIQZTybPvQQwCgYIKoZIzj0EAwIw
+HjEcMBoGA1UEAwwTR1cgUlAgTWV0YWRhdGEgVGVzdDAeFw0yNjA3MDkxOTQ3MDBa
+Fw0yNjA4MDgxOTQ3MDBaMB4xHDAaBgNVBAMME0dXIFJQIE1ldGFkYXRhIFRlc3Qw
+WTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQ36WouFYwbJA8R35T4+p3JmAz3IGO7
+AmEObHl0It8A010NncH15jlvwLdbSwSg3TdOxVH5a5R4xjtnVyxcjwLIo1EwTzAM
+BgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIHgDAvBgkrBgEEAdZ5CgEEIgQgKRHy
+bhlattcjImvYr1RqayR4R+V5DaT6aXp5FRCOhgAwCgYIKoZIzj0EAwIDSQAwRgIh
+AKu3oQuR6/X+sLqR39zVkTBhxJw825toqhzYG7WOtK9UAiEA5JcYIvR5NYvHqMn4
+7QwvfwpmUMVdOqGDZyyWYsNKvp0=
+-----END CERTIFICATE-----
+`,
+  google: {
+    rpMetadataBytes:
+      '2BhYyqJuc2NoZW1hX3ZlcnNpb25idjFnZGlzcGxheaNsZGlzcGxheV9uYW1l' +
+      'dERCLUNhRE1WIFFBIFZlcmlmaWVyaGxvZ29fdXJpeEdodHRwczovL3d3dy5k' +
+      'aWdpdGFsYmF6YWFyLmNvbS9hc3NldHMvaW1hZ2VzL2RpZ2l0YWwtYmF6YWFy' +
+      'LWxvZ290eXBlLnN2Z3Jwcml2YWN5X3BvbGljeV91cml4JWh0dHBzOi8vd3d3' +
+      'LmRpZ2l0YWxiYXphYXIuY29tL3ByaXZhY3k'
+  }
+};

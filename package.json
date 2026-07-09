@@ -16,6 +16,7 @@
     "tunnel": "lt -p 22080",
     "audit-dc-api": "node ./scripts/audit-dc-api-request.js",
     "audit-vp": "node ./test/utils/auditVpToken.js",
+    "extract-wallet-log": "node ./scripts/extract-wallet-log.js",
     "oidc-rp": "node ./scripts/sample-oidc-rp.js",
     "lint": "eslint",
     "preview": "vite preview",
