@@ -384,7 +384,9 @@ describe('dc-api-envelope', () => {
         clientId: 'cid',
         exchangeId: 'xid',
         error: undefined,
-        metadata: {observedProtocol: 'openid4vp', source: 'unit'}
+        metadata: {observedProtocol: 'openid4vp', source: 'unit'},
+        browser: 'unknown',
+        deviceType: 'unknown'
       });
     });
   });

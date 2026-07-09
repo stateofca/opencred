@@ -19,3 +19,44 @@ export function isSamsungBrowser(userAgent) {
   }
   return /SamsungBrowser/i.test(userAgent);
 }
+
+/**
+ * Classifies a User-Agent string into coarse analytics buckets. Only the
+ * buckets are intended for logging — never the raw string, which can be
+ * fingerprint-adjacent (device model, exact versions).
+ *
+ * Detection order matters: Samsung Internet and Edge UAs also contain
+ * `Chrome/`, and Chrome UAs also contain `Safari/`.
+ *
+ * @param {string} userAgent - The User-Agent string to classify.
+ * @returns {{browser: string, deviceType: string}} Coarse buckets;
+ *   `browser` is one of samsung-internet, edge, firefox, chrome, safari,
+ *   other, unknown; `deviceType` is mobile, desktop, or unknown
+ *   (wallet HTTP clients like okhttp carry no device markers).
+ */
+export function classifyUserAgent(userAgent) {
+  if(typeof userAgent !== 'string' || userAgent.length === 0) {
+    return {browser: 'unknown', deviceType: 'unknown'};
+  }
+
+  let browser = 'other';
+  if(/SamsungBrowser/i.test(userAgent)) {
+    browser = 'samsung-internet';
+  } else if(/\bEdgiOS\/|\bEdgA\/|\bEdge?\//.test(userAgent)) {
+    browser = 'edge';
+  } else if(/\bFirefox\/|\bFxiOS\//.test(userAgent)) {
+    browser = 'firefox';
+  } else if(/\bChrome\/|\bCriOS\//.test(userAgent)) {
+    browser = 'chrome';
+  } else if(/\bVersion\/[\d.]+.*\bSafari\//.test(userAgent)) {
+    browser = 'safari';
+  }
+
+  let deviceType = 'unknown';
+  if(/Android|iPhone|iPad|iPod|Mobile/i.test(userAgent)) {
+    deviceType = 'mobile';
+  } else if(/Windows NT|Macintosh|X11|CrOS/.test(userAgent)) {
+    deviceType = 'desktop';
+  }
+  return {browser, deviceType};
+}
