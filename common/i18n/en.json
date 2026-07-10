@@ -13,6 +13,8 @@
   "exchangeErrorTitle": "The exchange failed.",
   "exchangeErrorSubtitle": "The following error was encountered:",
   "exchangeErrorTtlExpired": "The exchange has expired.",
+  "exchangeErrorTtlExpiredTitle": "Timer expired.",
+  "exchangeErrorTtlExpiredSubtitle": "Please try again.",
   "exchangeInitError": "Unable to initialize exchange",
   "exchangePageExplain": "Please present a matching credential from your digital wallet.",
   "exchangeResetTitle": "You may try again.",

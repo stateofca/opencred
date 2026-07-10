@@ -183,8 +183,8 @@ const checkStatus = async () => {
   const expiresStr = context.value.exchangeData.expires;
   if(expiresStr && Date.now() >= new Date(expiresStr).getTime()) {
     handleError({
-      title: t('exchangeErrorTitle'),
-      subtitle: t('exchangeErrorSubtitle'),
+      title: t('exchangeErrorTtlExpiredTitle'),
+      subtitle: t('exchangeErrorTtlExpiredSubtitle'),
       message: t('exchangeErrorTtlExpired'),
       resettable: true
     });

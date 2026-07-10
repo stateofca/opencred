@@ -25,6 +25,10 @@
   issuer entry now produces a clear error instead of a `TypeError`.
 - Add left padding to the "Current" badge in the interaction picker so it is no
   longer flush against the method label next to it.
+- Show a specific "Timer expired." message when the exchange TTL elapses,
+  instead of the generic exchange-failure title and "The following error was
+  encountered:" subtitle. New translation keys `exchangeErrorTtlExpiredTitle`
+  and `exchangeErrorTtlExpiredSubtitle` are overridable per workflow.
 
 ## 10.1.3 - 2026-07-03
 
