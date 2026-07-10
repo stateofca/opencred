@@ -85,4 +85,71 @@ describe('buildAuthorizationConfig', () => {
   it('should return an empty array for no workflows', () => {
     expect(buildAuthorizationConfig({workflows: []})).to.eql([]);
   });
+
+  // The tests below document the current contract for edge cases raised in
+  // review. The builder performs no validation or deduplication; the
+  // consumer (lib/callback.js) resolves an issuer to the FIRST matching
+  // entry in workflow order. Stricter handling (startup validation) is
+  // deliberately deferred to a follow-up.
+
+  it('should emit duplicate issuers in workflow order (first wins)', () => {
+    const sameIssuerOther = {
+      clientId: 'rp-same-issuer',
+      callback: {
+        url: 'https://other.example.com/result',
+        oauth: {
+          ...oauthCallbackWorkflow.callback.oauth,
+          clientId: 'other-client-id',
+          clientSecret: 'other-client-secret'
+        }
+      }
+    };
+    const authorization = buildAuthorizationConfig({
+      workflows: [oauthCallbackWorkflow, sameIssuerOther]
+    });
+    expect(authorization.length).to.be(2);
+    expect(authorization[0].issuer).to.be(authorization[1].issuer);
+    // the consumer's `.find()` by issuer resolves to the first entry
+    const resolved = authorization.find(
+      a => a.issuer === oauthCallbackWorkflow.callback.oauth.issuer);
+    expect(resolved.client_id).to.be('oauth-client-id');
+  });
+
+  it('should emit an entry even when oauth has no issuer', () => {
+    const noIssuer = {
+      clientId: 'rp-no-issuer',
+      callback: {
+        url: 'https://gateway.example.com/result',
+        oauth: {
+          tokenUrl: 'https://login.example.com/tenant-id/oauth2/v2.0/token',
+          clientId: 'oauth-client-id',
+          clientSecret: 'oauth-client-secret',
+          scope: ['.default']
+        }
+      }
+    };
+    const authorization = buildAuthorizationConfig({workflows: [noIssuer]});
+    expect(authorization.length).to.be(1);
+    expect(authorization[0].issuer).to.be(undefined);
+  });
+
+  it('should pass through partial oauth blocks without validation', () => {
+    const partial = {
+      clientId: 'rp-partial',
+      callback: {
+        url: 'https://gateway.example.com/result',
+        oauth: {
+          issuer: 'https://login.example.com/tenant-id/v2.0'
+        }
+      }
+    };
+    const authorization = buildAuthorizationConfig({workflows: [partial]});
+    expect(authorization.length).to.be(1);
+    expect(authorization[0].issuer).to.be(
+      'https://login.example.com/tenant-id/v2.0');
+    expect(authorization[0].client_id).to.be(undefined);
+    expect(authorization[0].client_secret).to.be(undefined);
+    expect(authorization[0].token_endpoint).to.be(undefined);
+    expect(authorization[0].scope).to.be(undefined);
+  });
 });
