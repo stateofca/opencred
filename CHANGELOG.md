@@ -3,6 +3,13 @@
 ## 10.1.4 - 2026-07-dd
 
 ### Fixed
+- Restore `opencred.authorization` after config schema validation. Since
+  v10.0.0, validation replaced `config.opencred` with a new object, orphaning
+  the computed `authorization` entries derived from workflow `callback.oauth`
+  blocks. Every OAuth-authenticated callback then failed with a `TypeError`
+  before requesting a token, logging `Callback failed to send.` The derived
+  entries are now attached explicitly during `bedrock.init`, and a missing
+  issuer entry now produces a clear error instead of a `TypeError`.
 - Add left padding to the "Current" badge in the interaction picker so it is no
   longer flush against the method label next to it.
 
