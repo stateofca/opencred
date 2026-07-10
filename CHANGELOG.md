@@ -25,6 +25,9 @@
   issuer entry now produces a clear error instead of a `TypeError`.
 - Add left padding to the "Current" badge in the interaction picker so it is no
   longer flush against the method label next to it.
+- Hide the wallet deep-link launch button on the QR-and-link fallback screen
+  for desktop browsers, where the wallet app link cannot be handled; desktop
+  users now only see the QR code.
 - Show a specific "Timer expired." message when the exchange TTL elapses,
   instead of the generic exchange-failure title and "The following error was
   encountered:" subtitle. New translation keys `exchangeErrorTtlExpiredTitle`
