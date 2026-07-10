@@ -117,13 +117,13 @@
   },
   "devDependencies": {
     "@bedrock/test": "^9.0.0",
-    "@digitalbazaar/eslint-config": "^8.0.1",
+    "@digitalbazaar/eslint-config": "^9.0.0",
     "@peculiar/webcrypto": "^1.5.0",
     "asn1js": "^3.0.7",
     "baseline-browser-mapping": "^2.10.16",
     "cross-env": "^10.1.0",
     "env-cmd": "^11.0.0",
-    "eslint": "^9.39.4",
+    "eslint": "^10.7.0",
     "expect.js": "^0.3.1",
     "klona": "^2.0.6",
     "sinon": "^21.0.3"

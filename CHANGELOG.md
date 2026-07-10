@@ -1,12 +1,13 @@
 # opencred-platform Changelog
 
-## 10.4.2 - 2026-08-dd
+## 10.5.0 - 2026-xx.xx
 
 ### Added
 - Startup warning when a signing key's private or public key does not match its
   `certificatePem` (wallet certificates already carried this check).
 
 ### Changed
+- Update dev dependencies.
 - `publicKeyPem` is now optional for a signing key or wallet certificate that
   supplies a `certificatePem`; it is derived from the certificate when omitted.
 
@@ -34,7 +35,7 @@
   `docs/00-configure-workflow.md`.
 
 ### Changed
-- Make `oid4vpProfile` an inheritable OID4VP workflow override 
+- Make `oid4vpProfile` an inheritable OID4VP workflow override
 
 ### Fixed
 - A non-DC-API (draft-18) fallback served on an exchange with a failed DC API
@@ -293,7 +294,7 @@
 - Added `jwk_jcs-pub` `did:key` resolution (including multicodec `0xeb51` P-256
   support) to support EBSI/EUDI identifiers into a dedicated `lib/did/` module.
   Hardened `jwk_jcs-pub` resolution: a `jwk_jcs-pub` `did:key` is accepted only
-  only in canonical form. 
+  only in canonical form.
 
 ## 10.1.3 - 2026-07-03
 
