@@ -8,10 +8,9 @@
   logged, never the raw User-Agent string.
 
 ### Changed
-- Samsung Internet is restricted to the CA DMV Wallet over OID4VP draft 18.
-  Its Digital Credentials API implementation is not interoperable, so the DC
-  API is treated as unavailable there and other interaction options are
-  hidden.
+- The DC API is treated as unavailable on Samsung Internet, whose Digital
+  Credentials API implementation is not interoperable. Interaction falls back
+  to the configured OID4VP default presented over QR/link.
 - Callback failures are logged with their cause: OAuth token refresh failures
   are distinguished from callback POST failures, and POST failures report an
   HTTP status vs. a network-level error.

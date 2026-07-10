@@ -27,10 +27,6 @@ const DC_API_AGGREGATOR_PROFILES = [
   'google-wallet', 'apple-wallet'
 ];
 
-// Samsung Internet restriction (see `_restrictForSamsung`)
-const SAMSUNG_ALLOWED_PROFILE = 'OID4VP-draft18';
-const SAMSUNG_ALLOWED_WALLET_GROUP = 'cadmv-wallet';
-
 /**
  * Compute the unified set of options for the current exchange.
  *
@@ -49,8 +45,7 @@ const SAMSUNG_ALLOWED_WALLET_GROUP = 'cadmv-wallet';
  * @param {object} input.platform
  *   `{isIOS, isAndroid, isMobile, isSamsungBrowser}`. When
  *   `isSamsungBrowser` is true, the DC API is treated as unavailable
- *   and options are restricted to the CA DMV Wallet over
- *   OID4VP-draft18.
+ *   and interaction falls back to QR/link options.
  * @param {boolean} [input.dcApiSystemAvailable=false] - Whether
  *   the DC API is available in the browser.
  * @param {object} [input.registry=WALLETS_REGISTRY] - Wallet
@@ -74,13 +69,10 @@ export function computeExchangeOptions(input) {
     registry = WALLETS_REGISTRY
   } = input;
   // Samsung Internet's DC API support is not interoperable; treat the
-  // DC API as unavailable there and restrict options to the CA DMV
-  // Wallet over OID4VP-draft18 (see the end of this function).
-  const isSamsung = platform.isSamsungBrowser === true;
-  const dcApiSystemAvailable = isSamsung ?
+  // DC API as unavailable there so interaction falls back to the
+  // configured OID4VP default over QR/link.
+  const dcApiSystemAvailable = platform.isSamsungBrowser === true ?
     false : (input.dcApiSystemAvailable ?? false);
-  const oid4vpDefault = isSamsung ?
-    SAMSUNG_ALLOWED_PROFILE : oid4vpDefaultProfile;
 
   const formats = extractCredentialFormats(workflow);
   const availableProfiles = Object.keys(exchange?.protocols ?? {});
@@ -121,19 +113,19 @@ export function computeExchangeOptions(input) {
   const defaultProfiles = [];
   const defaultProfileSet = new Set();
 
-  if(oid4vpDefault) {
+  if(oid4vpDefaultProfile) {
     const compat = _profileCompat({
-      profile: oid4vpDefault, formats, availableProfiles,
+      profile: oid4vpDefaultProfile, formats, availableProfiles,
       platform, dcApiSystemAvailable
     });
     if(compat.compatible) {
       defaultProfiles.push({
-        profile: oid4vpDefault,
-        nameKey: `profiles_${oid4vpDefault}_name`,
+        profile: oid4vpDefaultProfile,
+        nameKey: `profiles_${oid4vpDefaultProfile}_name`,
         supportedMethods: compat.methods,
-        walletIds: _walletsForProfile(oid4vpDefault, registry)
+        walletIds: _walletsForProfile(oid4vpDefaultProfile, registry)
       });
-      defaultProfileSet.add(oid4vpDefault);
+      defaultProfileSet.add(oid4vpDefaultProfile);
     }
   }
 
@@ -194,40 +186,14 @@ export function computeExchangeOptions(input) {
     formats, exchange, dcApiOk, registry
   });
 
-  const options = {
+  return {
     defaultWallets, extraWallets, defaultProfiles, extraProfiles, pickerEntries
   };
-  return isSamsung ? _restrictForSamsung({options, registry}) : options;
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function _restrictForSamsung({options, registry}) {
-  const isAllowedWallet = walletId =>
-    registry[walletId]?.groupId === SAMSUNG_ALLOWED_WALLET_GROUP ||
-    walletId.startsWith('cadmv-');
-  const restrictProfile = p => ({
-    ...p, walletIds: p.walletIds.filter(isAllowedWallet)
-  });
-  return {
-    defaultWallets: options.defaultWallets.filter(
-      w => isAllowedWallet(w.walletId)),
-    extraWallets: options.extraWallets.filter(
-      w => isAllowedWallet(w.walletId)),
-    defaultProfiles: options.defaultProfiles
-      .filter(p => p.profile === SAMSUNG_ALLOWED_PROFILE)
-      .map(restrictProfile),
-    extraProfiles: options.extraProfiles
-      .filter(p => p.profile === SAMSUNG_ALLOWED_PROFILE)
-      .map(restrictProfile),
-    pickerEntries: options.pickerEntries
-      .filter(e => e.profile === SAMSUNG_ALLOWED_PROFILE &&
-        e.method === 'qr-and-link')
-      .map(e => ({...e, walletIds: e.walletIds.filter(isAllowedWallet)}))
-  };
-}
 
 function _walletCompat({
   wallet, formats, availableProfiles, platform, dcApiSystemAvailable

@@ -77,16 +77,19 @@ describe('computeExchangeOptions on Samsung Internet', () => {
     expect(methods).to.not.contain('dcapi');
   });
 
-  it('should only offer the CA DMV wallet over OID4VP-draft18', () => {
-    const result = computeExchangeOptions(samsungInput);
-    expect(result.pickerEntries.length).to.be(1);
-    const [entry] = result.pickerEntries;
-    expect(entry.method).to.be('qr-and-link');
-    expect(entry.profile).to.be('OID4VP-draft18');
-    expect(entry.walletIds).to.eql(['cadmv-android']);
-  });
+  it('should fall back to the configured OID4VP default over qr-and-link',
+    () => {
+      const result = computeExchangeOptions(samsungInput);
+      expect(result.pickerEntries.length).to.be(1);
+      const [entry] = result.pickerEntries;
+      expect(entry.method).to.be('qr-and-link');
+      expect(entry.profile).to.be('OID4VP-1.0');
+      expect(entry.walletIds).to.eql(['cadmv-android']);
+    });
 
-  it('should restrict wallet lists to the CA DMV wallet', () => {
+  it('should exclude DC-API-only wallets', () => {
+    // google-wallet supports only dcapi methods, so it drops out when
+    // the DC API is unavailable; cadmv-android keeps its qr/link support
     const result = computeExchangeOptions(samsungInput);
     const allWalletIds = [
       ...result.defaultWallets, ...result.extraWallets
@@ -94,12 +97,13 @@ describe('computeExchangeOptions on Samsung Internet', () => {
     expect(allWalletIds).to.eql(['cadmv-android']);
   });
 
-  it('should restrict profile lists to OID4VP-draft18', () => {
+  it('should exclude DC-API-only profiles', () => {
     const result = computeExchangeOptions(samsungInput);
     const allProfiles = [
       ...result.defaultProfiles, ...result.extraProfiles
     ].map(p => p.profile);
-    expect(allProfiles).to.eql(['OID4VP-draft18']);
+    expect(allProfiles).to.not.contain('18013-7-Annex-D');
+    expect(allProfiles).to.contain('OID4VP-1.0');
   });
 
   it('should not restrict options when not Samsung Internet', () => {
