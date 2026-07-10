@@ -15,6 +15,7 @@ SPDX-License-Identifier: BSD-3-Clause
       v-else-if="state.error">
       <ErrorView
         :title="state.error.title"
+        :subtitle="state.error.subtitle"
         :message="state.error.message"
         :resettable="state.error.resettable"
         @reset="handleResetExchange" />
