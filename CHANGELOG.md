@@ -37,6 +37,13 @@
   when no wallet/credential provider responds, replacing an indefinite
   loading state with a clear "Your wallet app did not respond" message.
 
+### Fixed
+- Compute the DC API session-transcript JWK thumbprint per RFC 7638 (via
+  `jose`) instead of hashing a non-canonical JWK. The previous
+  implementation included `use`/`alg`/`kid` and relied on JSON key insertion
+  order, so Google Wallet `dc_api.jwt` (encrypted) responses failed device
+  signature verification (`DEVICE_SIGNATURE_VALIDITY`).
+
 ### Security
 - The new exchange `events` endpoint requires the exchange's bearer access
   token, matching the auth tier of the exchange reset and detail endpoints; a
