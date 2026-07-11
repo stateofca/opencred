@@ -27,7 +27,10 @@
   longer flush against the method label next to it.
 - Hide the wallet deep-link launch button on the QR-and-link fallback screen
   for desktop browsers, where the wallet app link cannot be handled; desktop
-  users now only see the QR code.
+  users now only see the QR code. A new
+  `opencred.options.oid4vpDisplayLinkOnDesktop` option (default `false`)
+  restores the button as a debugging affordance for copying the
+  `openid4vp://` request URL.
 - Show a specific "Timer expired." message when the exchange TTL elapses,
   instead of the generic exchange-failure title and "The following error was
   encountered:" subtitle. New translation keys `exchangeErrorTtlExpiredTitle`

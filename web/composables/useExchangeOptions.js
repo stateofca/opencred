@@ -57,5 +57,13 @@ export function useExchangeOptions() {
     context?.value?.options?.exchangeTtlDisplayThresholdSeconds ?? 60
   );
 
-  return {exchangeOptions, exchangeTtlDisplayThresholdSeconds};
+  const oid4vpDisplayLinkOnDesktop = computed(() =>
+    context?.value?.options?.oid4vpDisplayLinkOnDesktop ?? false
+  );
+
+  return {
+    exchangeOptions,
+    exchangeTtlDisplayThresholdSeconds,
+    oid4vpDisplayLinkOnDesktop
+  };
 }

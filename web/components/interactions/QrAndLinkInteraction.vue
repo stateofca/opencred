@@ -37,7 +37,8 @@ SPDX-License-Identifier: BSD-3-Clause
       v-if="compatibleWallets.length > 0"
       class="flex flex-col gap-3 w-full max-w-md mx-auto my-6">
       <a
-        v-if="isMobile && selectedWalletForLaunch"
+        v-if="(isMobile || oid4vpDisplayLinkOnDesktop) &&
+          selectedWalletForLaunch"
         :href="getWalletDeepLinkUrl(selectedWalletForLaunch.walletId,
                                     selectedWalletForLaunch.profile)"
         target="_blank"
@@ -149,7 +150,10 @@ const props = defineProps({
 const emit = defineEmits(['launch']);
 
 const {t, te} = useReactiveI18n();
-const {exchangeTtlDisplayThresholdSeconds} = useExchangeOptions();
+const {
+  exchangeTtlDisplayThresholdSeconds,
+  oid4vpDisplayLinkOnDesktop
+} = useExchangeOptions();
 const $q = useQuasar();
 const isMobile = computed(() =>
   ($q.platform?.is?.ios ?? false) || ($q.platform?.is?.android ?? false)

@@ -302,6 +302,12 @@ export const OptionsSchema = z.object({
   // only via the advanced-settings.
   interactEnabled: z.boolean().default(true),
 
+  // Show the wallet launch button on desktop qr-and-link screens. Default
+  // false: desktop users only see the QR code. Enable as a debugging
+  // affordance — the launch link exposes the openid4vp:// request URL via
+  // right-click / copy link.
+  oid4vpDisplayLinkOnDesktop: z.boolean().default(false),
+
   OID4VPdefault: z.enum([
     'OID4VP-draft18', 'OID4VP-combined', 'OID4VP-1.0'
   ]).default('OID4VP-combined'),
