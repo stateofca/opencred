@@ -21,22 +21,9 @@ SPDX-License-Identifier: BSD-3-Clause
     <cadmv-button
       variant="primary"
       :disabled="disabled"
-      :class="[
-        noFullWidth ? '' : 'w-full',
-        'justify-start'
-      ]">
+      :class="noFullWidth ? '' : 'w-full'">
       <div class="flex items-center gap-3 flex-grow min-w-0 overflow-hidden">
-        <img
-          v-if="wallet?.icon"
-          :src="wallet.icon"
-          :alt="wallet?.nameKey ? $t(wallet.nameKey) : (wallet?.name || '')"
-          class="w-8 h-8 rounded-sm flex-shrink-0">
-        <q-icon
-          v-else
-          name="account_balance_wallet"
-          size="32px"
-          class="flex-shrink-0 text-current" />
-        <span class="font-medium text-left truncate min-w-0">
+        <span class="font-medium text-center truncate min-w-0 flex-grow">
           {{label || (wallet?.nameKey ? $t(wallet.nameKey)
             : (wallet?.name || walletId))}}
         </span>
@@ -44,7 +31,7 @@ SPDX-License-Identifier: BSD-3-Clause
           v-if="copyOnly"
           name="content_copy"
           size="24px"
-          class="flex-shrink-0 ml-auto text-current" />
+          class="flex-shrink-0 text-current" />
       </div>
     </cadmv-button>
   </a>
@@ -56,22 +43,11 @@ SPDX-License-Identifier: BSD-3-Clause
     :disabled="disabled"
     :class="[
       noFullWidth ? '' : 'w-full',
-      'justify-start',
       noFullWidth ? '' : 'mx-auto'
     ]"
     @click="handleClick">
     <div class="flex items-center gap-3 flex-grow min-w-0 overflow-hidden">
-      <img
-        v-if="wallet?.icon"
-        :src="wallet.icon"
-        :alt="wallet?.nameKey ? $t(wallet.nameKey) : (wallet?.name || '')"
-        class="w-8 h-8 rounded-sm flex-shrink-0">
-      <q-icon
-        v-else
-        name="account_balance_wallet"
-        size="32px"
-        class="flex-shrink-0 text-current" />
-      <span class="font-medium text-left truncate min-w-0">
+      <span class="font-medium text-center truncate min-w-0 flex-grow">
         {{label || (wallet?.nameKey ? $t(wallet.nameKey)
           : (wallet?.name || walletId))}}
       </span>
@@ -79,7 +55,7 @@ SPDX-License-Identifier: BSD-3-Clause
         v-if="copyOnly"
         name="content_copy"
         size="24px"
-        class="flex-shrink-0 ml-auto text-current" />
+        class="flex-shrink-0 text-current" />
     </div>
   </cadmv-button>
 </template>
