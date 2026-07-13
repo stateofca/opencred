@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.2.0 - 2026-07-dd
+## 10.2.0 - 2026-07-13
 
 ### Added
 - Presentation log events include `browser` and `deviceType` fields classified
