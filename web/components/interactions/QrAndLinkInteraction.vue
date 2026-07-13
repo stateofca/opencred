@@ -37,8 +37,7 @@ SPDX-License-Identifier: BSD-3-Clause
       v-if="compatibleWallets.length > 0"
       class="flex flex-col gap-3 w-full max-w-md mx-auto my-6">
       <a
-        v-if="(isMobile || oid4vpDisplayLinkOnDesktop) &&
-          selectedWalletForLaunch"
+        v-if="showWalletLaunchLink"
         :href="getWalletDeepLinkUrl(selectedWalletForLaunch.walletId,
                                     selectedWalletForLaunch.profile)"
         target="_blank"
@@ -198,6 +197,11 @@ const walletNames = computed(() => {
 });
 
 const isLaunchLoading = computed(() => loadingWalletId.value !== null);
+
+const showWalletLaunchLink = computed(() =>
+  (isMobile.value || oid4vpDisplayLinkOnDesktop.value) &&
+  !!selectedWalletForLaunch.value
+);
 
 const getWalletQrUrl = async (walletId, profile) => {
   if(!walletId || !profile || !props.workflow) {
