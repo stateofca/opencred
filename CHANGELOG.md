@@ -6,6 +6,16 @@
 - Presentation log events include `browser` and `deviceType` fields classified
   from the User-Agent of the triggering request. Only coarse buckets are
   logged, never the raw User-Agent string.
+- Three new presentation-funnel log events: `presentation_initiated`
+  (exchange created, QR/link about to display), `presentation_request_served`
+  (authorization request generated and sent to the wallet, with `profile`,
+  `responseMode`, and `wire` fields), and `presentation_response_received`
+  (wallet POSTed a response, before verification). Together with the existing
+  events these make each funnel gap unambiguous, distinguishing user drop-off
+  from wallet-side failure.
+- `presentation_success` and `presentation_error` events include the resolved
+  OID4VP `profile` where available, so terminal events no longer require a
+  join back to `presentation_start`.
 
 ### Changed
 - The DC API is treated as unavailable on Samsung Internet, whose Digital
