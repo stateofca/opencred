@@ -79,6 +79,12 @@ const OpenIdConnectSchema = z.object({
 export const CallbackSchema = z.object({
   url: z.url(),
   headersVariable: z.string().optional(),
+  // static headers sent with callback, none if unset
+  headers: z.record(z.string(), z.string()).optional(),
+  // exchange vars to send in the callback, empty sends all
+  variableAllowList: z.array(z.string()).default([]),
+  // store callback response under this exchange var, dropped if unset
+  responseVariable: z.string().optional(),
   oauth: z.object({
     issuer: z.string(),
     tokenUrl: z.url(),
@@ -182,6 +188,8 @@ export const BaseWorkflowSchema = z.object({
     .optional(), // Override default text labels in the UI
   trustedCredentialIssuers: z.array(z.string()).optional(),
   untrustedVariableAllowList: z.array(z.string()).default([]),
+  // exchange vars appended to the redirect as query params, none if unset
+  redirectVariableAllowList: z.array(z.string()).default([]),
   public: z.boolean().default(false)
 });
 
@@ -498,6 +506,7 @@ export const INHERITABLE_FIELDS = [
   'translations',
   'trustedCredentialIssuers',
   'untrustedVariableAllowList',
+  'redirectVariableAllowList',
   'public',
   'clientSecret'
 ];

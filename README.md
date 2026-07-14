@@ -373,6 +373,20 @@ workflows:
       - color
 ```
 
+While configuring a workflow a `redirectVariableAllowList` property contains a
+list of variables that are appended to the post verification redirect as query
+parameters. Keep the list small, as large values can exceed URL length limits
+and inhibit the ability to follow the redirect.
+
+```yaml
+workflows:
+  - clientId: example
+    clientSecret: example
+    type: native
+    redirectVariableAllowList:
+      - caseId
+```
+
 #### Configuring a Workflow Step
 
 A workflow step configures the specifics of how a presentation is requested.
@@ -398,6 +412,26 @@ callback:
     client_id: exampleClientId
     scope:
       - default
+```
+
+The callback can be further customized with optional properties, each of which
+is a no op when unset. `headers` sends static headers with the request, useful
+for values that should not live in an exchange variable, such as an API key.
+`variableAllowList` restricts the callback payload to the listed `variables`
+for data minimization; any variable not listed, including the verified
+presentation in `results` (with its `vpToken`) and other standard exchange fields
+would be omitted if not listed. `responseVariable` stores the callback response
+under an exchange variable.
+
+```yaml
+callback:
+  url: http://localhost:9000/callback
+  headers:
+    callbackHeader: callbackValue
+  variableAllowList:
+    - caseId
+    - color
+  responseVariable: callbackResponse
 ```
 
 #### Configuring Exchange UX Methods

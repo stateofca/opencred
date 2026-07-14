@@ -1,5 +1,16 @@
 # opencred-platform Changelog
 
+## Unreleased
+
+### Added
+- `callback.variableAllowList` limits which exchange variables are sent in the
+  callback POST body (empty or unset sends all).
+- `callback.headers` sends static headers with the callback request.
+- `callback.responseVariable` stores the callback response under an exchange
+  variable.
+- `redirectVariableAllowList` appends allowlisted exchange variables to the
+  post verification redirect as query parameters.
+
 ## 10.1.2 - 2026-06-22
 
 ### Changed
