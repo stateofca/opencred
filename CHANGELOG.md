@@ -20,6 +20,8 @@
 ### Changed
 - Wallet launch buttons no longer display a wallet icon (or the generic
   wallet glyph fallback); the label is now centered in the button.
+- The iOS wallet registry entry is named "CA DMV Wallet on iOS", matching
+  the "CA DMV Wallet on Android" naming pattern.
 - The DC API is treated as unavailable on Samsung Internet, whose Digital
   Credentials API implementation is not interoperable. Interaction falls back
   to the configured OID4VP default presented over QR/link.
