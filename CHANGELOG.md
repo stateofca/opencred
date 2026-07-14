@@ -12,6 +12,13 @@
   rejection other than cancellation, carrying the DOMException `name`), and
   `presentation_dc_api_timeout` (the picker never responded within a 30s
   client-side window).
+- `callback.variableAllowList` limits which exchange variables are sent in the
+  callback POST body (empty or unset sends all).
+- `callback.headers` sends static headers with the callback request.
+- `callback.responseVariable` stores the callback response under an exchange
+  variable.
+- `redirectVariableAllowList` appends allowlisted exchange variables to the
+  post verification redirect as query parameters.
 
 ### Changed
 - The DC API flow now aborts `navigator.credentials.get` after 30 seconds
