@@ -50,6 +50,7 @@
 - The DC API flow now aborts `navigator.credentials.get` after 30 seconds
   when no wallet/credential provider responds, replacing an indefinite
   loading state with a clear "Your wallet app did not respond" message.
+- Bump `@digitalbazaar/cadmv-ui` to `^2.7.0`. Site-wide typography was updated.
 
 ### Fixed
 - Compute the DC API session-transcript JWK thumbprint per RFC 7638 (via
