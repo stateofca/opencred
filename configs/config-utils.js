@@ -513,6 +513,19 @@ export const WalletCertificateSchema = z.discriminatedUnion('wallet', [
   GoogleWalletCertificateSchema
 ]);
 
+const FontSourceSchema = z.object({
+  woff: z.url(),
+  woff2: z.url()
+});
+
+const FontUrlsSchema = z.object({
+  regular: FontSourceSchema,
+  italic: FontSourceSchema,
+  bold: FontSourceSchema,
+  boldItalic: FontSourceSchema,
+  extraBoldItalic: FontSourceSchema
+});
+
 // Main OpenCred configuration schema
 export const OpenCredConfigSchema = z.object({
   options: OptionsSchema.optional(),
@@ -522,6 +535,7 @@ export const OpenCredConfigSchema = z.object({
     .optional(),
   customTranslateScript: z.string().optional(),
   defaultBrand: BrandSchema.default(DEFAULT_BRAND),
+  fontUrls: FontUrlsSchema.optional(),
   didWeb: DidWebSchema.default({mainEnabled: true, linkageEnabled: false}),
   signingKeys: z.array(SigningKeySchema).default([]),
   trustedCredentialIssuers: z.array(z.string()).optional(),

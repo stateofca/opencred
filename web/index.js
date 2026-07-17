@@ -8,7 +8,8 @@
 import * as brQuasar from '@bedrock/quasar';
 import * as brVue from '@bedrock/vue';
 import * as polyfill from 'credential-handler-polyfill';
-import {applyTheme, setupFavicon} from '@digitalbazaar/cadmv-ui';
+import {
+  applyTheme, loadTTCommonsFonts, setupFavicon} from '@digitalbazaar/cadmv-ui';
 import {config, extend} from '@bedrock/web';
 import {createRouter, createWebHistory} from 'vue-router';
 import App from './App.vue';
@@ -95,6 +96,9 @@ brVue.initialize({
         Notify
       }
     }});
+    if(appConfig.fontUrls) {
+      loadTTCommonsFonts({fonts: appConfig.fontUrls});
+    }
     applyTheme(); // set baseline defaults.
 
     // Filter brand object to only string properties to set as CSS variables
