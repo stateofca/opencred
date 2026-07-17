@@ -46,7 +46,7 @@
     "@bedrock/vue": "^5.1.0",
     "@bedrock/web": "^3.1.0",
     "@bedrock/webpack": "^11.6.0",
-    "@digitalbazaar/cadmv-ui": "^2.4.0",
+    "@digitalbazaar/cadmv-ui": "^2.7.0",
     "@digitalbazaar/citizenship-context": "^4.1.0",
     "@digitalbazaar/credentials-context": "^3.2.0",
     "@digitalbazaar/data-integrity": "^2.5.0",
