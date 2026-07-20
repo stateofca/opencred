@@ -9,7 +9,7 @@ import * as brQuasar from '@bedrock/quasar';
 import * as brVue from '@bedrock/vue';
 import * as polyfill from 'credential-handler-polyfill';
 import {
-  applyTheme, loadTTCommonsFonts, setupFavicon} from '@digitalbazaar/cadmv-ui';
+  applyTheme, loadHeaderFonts, setupFavicon} from '@digitalbazaar/cadmv-ui';
 import {config, extend} from '@bedrock/web';
 import {createRouter, createWebHistory} from 'vue-router';
 import App from './App.vue';
@@ -97,7 +97,7 @@ brVue.initialize({
       }
     }});
     if(appConfig.fontUrls) {
-      loadTTCommonsFonts({fonts: appConfig.fontUrls});
+      loadHeaderFonts({fonts: appConfig.fontUrls});
     }
     applyTheme(); // set baseline defaults.
 
