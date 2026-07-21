@@ -1,5 +1,29 @@
 # opencred-platform Changelog
 
+## 10.3.0 - 2026-07-dd
+
+### Added
+- Three new DC API presentation log events, reported by the browser via a new
+  best-effort `POST /workflows/:workflowId/exchanges/:exchangeId/dc-api-event`
+  beacon: `presentation_dc_api_cancelled` (user dismissed the OS wallet
+  picker), `presentation_dc_api_error` (a `navigator.credentials.get`
+  rejection other than cancellation, carrying the DOMException `name`), and
+  `presentation_dc_api_timeout` (the picker never responded within a 30s
+  client-side window). These make same-device DC API drop-off visible in the
+  funnel, distinguishing user cancellation, wallet/browser error, and a
+  non-responsive environment — previously all indistinguishable server-side
+  silence after `presentation_request_served`.
+
+### Changed
+- The DC API flow now aborts `navigator.credentials.get` after 30 seconds
+  when no wallet/credential provider responds, replacing an indefinite
+  loading state with a clear "Your wallet app did not respond" message.
+
+### Security
+- The new `dc-api-event` endpoint requires the exchange's bearer access token,
+  matching the auth tier of the exchange reset and detail endpoints; a request
+  without the correct token is rejected before any event is logged.
+
 ## 10.2.0 - 2026-07-13
 
 ### Added

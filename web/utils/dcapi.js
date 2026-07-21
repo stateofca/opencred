@@ -5,6 +5,54 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+// How long to wait for `navigator.credentials.get` to settle before
+// treating it as a non-responsive environment (no wallet/credential
+// provider ever answered) rather than an in-progress user interaction.
+const DC_API_TIMEOUT_MS = 30000;
+
+/**
+ * Best-effort, non-blocking report of a DC API outcome that never reaches
+ * the server through any other route (`navigator.credentials.get`
+ * cancellation, error, or client-side timeout). A beacon failure must never
+ * throw or otherwise change the user-facing error already surfaced from the
+ * calling catch block.
+ *
+ * @param {object} options - Options for the beacon.
+ * @param {object} options.exchangeData - The exchange data object.
+ * @param {object} options.httpClient - HTTP client instance.
+ * @param {string} options.selectedProtocol - The selected protocol ID.
+ * @param {Error} options.error - The error thrown by
+ *   `navigator.credentials.get`.
+ * @param {boolean} [options.timedOut] - True if this rejection was caused
+ *   by our own timeout-triggered `controller.abort()`, not a genuine
+ *   browser/OS-level cancellation or error.
+ * @returns {Promise<void>}
+ */
+async function reportDcApiOutcome({
+  exchangeData, httpClient, selectedProtocol, error, timedOut
+}) {
+  try {
+    const url =
+      `/workflows/${exchangeData.workflowId}` +
+      `/exchanges/${exchangeData.id}` +
+      `/dc-api-event`;
+    const type = timedOut ? 'timeout' :
+      error.name === 'NotAllowedError' ? 'cancelled' : 'error';
+    await httpClient.post(url, {
+      json: {
+        type,
+        profile: selectedProtocol,
+        ...(timedOut ? {timeoutMs: DC_API_TIMEOUT_MS} : {errorName: error.name})
+      },
+      headers: {
+        Authorization: `Bearer ${exchangeData.accessToken}`
+      }
+    });
+  } catch {
+    // best-effort telemetry; never surface a beacon failure to the user
+  }
+}
+
 /**
  * Starts the DC API flow by fetching a ready-to-use OID4VP wire envelope
  * from the verifier server, dispatching it to the wallet via
@@ -17,6 +65,11 @@
  * `{ dcApiRequest: { protocol, data } }` — the exact envelope the W3C
  * Digital Credentials API expects — and the wallet response is forwarded
  * back unaltered for the server to unwrap.
+ *
+ * If `navigator.credentials.get` rejects (user cancelled or a wallet/browser
+ * error), that outcome is reported to the server via a best-effort beacon
+ * (`POST .../dc-api-event`) before re-throwing, since otherwise it would
+ * never reach the server through any other route.
  *
  * @param {object} options - Options for the DC API flow.
  * @param {object} options.exchangeData - The exchange data object.
@@ -77,14 +130,33 @@ export async function startDCApiFlow({
     }
 
     const controller = new AbortController();
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, DC_API_TIMEOUT_MS);
 
-    const credentialResponse = await navigator.credentials.get({
-      signal: controller.signal,
-      mediation: 'required',
-      digital: {
-        requests: [dcApiRequest]
+    let credentialResponse;
+    try {
+      credentialResponse = await navigator.credentials.get({
+        signal: controller.signal,
+        mediation: 'required',
+        digital: {
+          requests: [dcApiRequest]
+        }
+      });
+    } catch(navigatorError) {
+      await reportDcApiOutcome({
+        exchangeData, httpClient, selectedProtocol, error: navigatorError,
+        timedOut
+      });
+      if(timedOut) {
+        navigatorError.isDcApiTimeout = true;
       }
-    });
+      throw navigatorError;
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if(!credentialResponse) {
       throw new Error('No credential was provided');
@@ -108,7 +180,11 @@ export async function startDCApiFlow({
 
     return result;
   } catch(error) {
-    if(error.name === 'NotAllowedError') {
+    if(error.isDcApiTimeout) {
+      throw new Error(
+        'Your wallet app did not respond. Try again or use another ' +
+        'connection method.');
+    } else if(error.name === 'NotAllowedError') {
       throw new Error('The credential request was denied or cancelled.');
     } else if(error.name === 'AbortError') {
       throw new Error('The credential request was aborted.');
