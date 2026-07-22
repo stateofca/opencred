@@ -70,8 +70,8 @@ describe('startDCApiFlow', () => {
     expect(httpClient.post.calledOnce).to.be(true);
     const [url, opts] = httpClient.post.firstCall.args;
     expect(url).to.equal(
-      '/workflows/workflow-1/exchanges/exchange-1/dc-api-event');
-    expect(opts.json.type).to.equal('cancelled');
+      '/workflows/workflow-1/exchanges/exchange-1/events');
+    expect(opts.json.type).to.equal('dcapi_cancelled');
     expect(opts.json.profile).to.equal('OID4VP-1.0');
   });
 
@@ -94,8 +94,8 @@ describe('startDCApiFlow', () => {
     expect(httpClient.post.calledOnce).to.be(true);
     const [url, opts] = httpClient.post.firstCall.args;
     expect(url).to.equal(
-      '/workflows/workflow-1/exchanges/exchange-1/dc-api-event');
-    expect(opts.json.type).to.equal('error');
+      '/workflows/workflow-1/exchanges/exchange-1/events');
+    expect(opts.json.type).to.equal('dcapi_error');
     expect(opts.json.errorName).to.equal('AbortError');
   });
 
@@ -216,8 +216,8 @@ describe('startDCApiFlow', () => {
       expect(httpClient.post.calledOnce).to.be(true);
       const [url, opts] = httpClient.post.firstCall.args;
       expect(url).to.equal(
-        '/workflows/workflow-1/exchanges/exchange-1/dc-api-event');
-      expect(opts.json.type).to.equal('timeout');
+        '/workflows/workflow-1/exchanges/exchange-1/events');
+      expect(opts.json.type).to.equal('dcapi_timeout');
       expect(opts.json.timeoutMs).to.equal(30000);
     });
 
@@ -241,7 +241,7 @@ describe('startDCApiFlow', () => {
       expect(thrown.message).to.equal(
         'The credential request was aborted.');
       const [, opts] = httpClient.post.firstCall.args;
-      expect(opts.json.type).to.equal('error');
+      expect(opts.json.type).to.equal('dcapi_error');
     });
 
     it('clears the timeout on successful completion (no stray abort)',

@@ -35,9 +35,9 @@ async function reportDcApiOutcome({
     const url =
       `/workflows/${exchangeData.workflowId}` +
       `/exchanges/${exchangeData.id}` +
-      `/dc-api-event`;
-    const type = timedOut ? 'timeout' :
-      error.name === 'NotAllowedError' ? 'cancelled' : 'error';
+      `/events`;
+    const type = timedOut ? 'dcapi_timeout' :
+      error.name === 'NotAllowedError' ? 'dcapi_cancelled' : 'dcapi_error';
     await httpClient.post(url, {
       json: {
         type,
@@ -68,7 +68,7 @@ async function reportDcApiOutcome({
  *
  * If `navigator.credentials.get` rejects (user cancelled or a wallet/browser
  * error), that outcome is reported to the server via a best-effort beacon
- * (`POST .../dc-api-event`) before re-throwing, since otherwise it would
+ * (`POST .../events`) before re-throwing, since otherwise it would
  * never reach the server through any other route.
  *
  * @param {object} options - Options for the DC API flow.

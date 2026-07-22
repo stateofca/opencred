@@ -9,7 +9,7 @@ import * as sinon from 'sinon';
 import expect from 'expect.js';
 
 import {database} from '../../lib/database.js';
-import {dcApiEventMiddleware} from '../../lib/http.js';
+import {exchangeEventMiddleware} from '../../lib/http.js';
 import {getAuthFunction} from '../../lib/auth.js';
 import {logger} from '../../lib/logger.js';
 import {withStubs} from '../utils/withStubs.js';
@@ -52,7 +52,7 @@ function findEvent(loggerInfoStub, type) {
   );
 }
 
-describe('POST /workflows/:workflowId/exchanges/:exchangeId/dc-api-event',
+describe('POST /workflows/:workflowId/exchanges/:exchangeId/events',
   () => {
     let loggerInfoStub;
 
@@ -64,16 +64,16 @@ describe('POST /workflows/:workflowId/exchanges/:exchangeId/dc-api-event',
       loggerInfoStub.restore();
     });
 
-    it('logs presentation_dc_api_cancelled for type "cancelled"', () => {
+    it('logs presentation_dc_api_cancelled for type "dcapi_cancelled"', () => {
       const req = {
         workflow,
         exchange,
-        body: {type: 'cancelled', profile: 'OID4VP-1.0'},
+        body: {type: 'dcapi_cancelled', profile: 'OID4VP-1.0'},
         headers: {'user-agent': 'test-agent'}
       };
       const res = mockRes();
 
-      dcApiEventMiddleware(req, res);
+      exchangeEventMiddleware(req, res);
 
       const cancelled = findEvent(
         loggerInfoStub, 'presentation_dc_api_cancelled');
@@ -84,16 +84,18 @@ describe('POST /workflows/:workflowId/exchanges/:exchangeId/dc-api-event',
       expect(res.statusCode).to.equal(204);
     });
 
-    it('logs presentation_dc_api_error for type "error"', () => {
+    it('logs presentation_dc_api_error for type "dcapi_error"', () => {
       const req = {
         workflow,
         exchange,
-        body: {type: 'error', profile: 'OID4VP-1.0', errorName: 'AbortError'},
+        body: {
+          type: 'dcapi_error', profile: 'OID4VP-1.0', errorName: 'AbortError'
+        },
         headers: {'user-agent': 'test-agent'}
       };
       const res = mockRes();
 
-      dcApiEventMiddleware(req, res);
+      exchangeEventMiddleware(req, res);
 
       const errored = findEvent(loggerInfoStub, 'presentation_dc_api_error');
       expect(errored).to.be.ok();
@@ -103,16 +105,16 @@ describe('POST /workflows/:workflowId/exchanges/:exchangeId/dc-api-event',
       expect(res.statusCode).to.equal(204);
     });
 
-    it('logs presentation_dc_api_timeout for type "timeout"', () => {
+    it('logs presentation_dc_api_timeout for type "dcapi_timeout"', () => {
       const req = {
         workflow,
         exchange,
-        body: {type: 'timeout', profile: 'OID4VP-1.0', timeoutMs: 30000},
+        body: {type: 'dcapi_timeout', profile: 'OID4VP-1.0', timeoutMs: 30000},
         headers: {'user-agent': 'test-agent'}
       };
       const res = mockRes();
 
-      dcApiEventMiddleware(req, res);
+      exchangeEventMiddleware(req, res);
 
       const timedOut = findEvent(
         loggerInfoStub, 'presentation_dc_api_timeout');
@@ -132,7 +134,7 @@ describe('POST /workflows/:workflowId/exchanges/:exchangeId/dc-api-event',
       };
       const res = mockRes();
 
-      dcApiEventMiddleware(req, res);
+      exchangeEventMiddleware(req, res);
 
       expect(res.statusCode).to.equal(400);
       expect(loggerInfoStub.called).to.be(false);
@@ -142,12 +144,12 @@ describe('POST /workflows/:workflowId/exchanges/:exchangeId/dc-api-event',
       const req = {
         workflow,
         exchange: {...exchange, state: 'complete'},
-        body: {type: 'cancelled'},
+        body: {type: 'dcapi_cancelled'},
         headers: {'user-agent': 'test-agent'}
       };
       const res = mockRes();
 
-      dcApiEventMiddleware(req, res);
+      exchangeEventMiddleware(req, res);
 
       expect(res.statusCode).to.equal(204);
       const cancelled = findEvent(
@@ -156,7 +158,7 @@ describe('POST /workflows/:workflowId/exchanges/:exchangeId/dc-api-event',
     });
   });
 
-describe('dc-api-event route auth (getAuthFunction bearer)', () => {
+describe('exchange events route auth (getAuthFunction bearer)', () => {
   const authMiddleware = getAuthFunction(
     {basic: false, bearer: true, body: false});
 
