@@ -14,7 +14,8 @@ import expect from 'expect.js';
 
 import {
   appleWalletTestEntry,
-  googleWalletMetadataBoundEntry
+  googleWalletMetadataBoundEntry,
+  googleWalletTestEntry
 } from '../../fixtures/wallet-certificates.js';
 import {validateWalletCertificates} from
   '../../../lib/workflows/common/wallet-cert-sanity.js';
@@ -195,6 +196,20 @@ describe('wallet-cert-sanity', () => {
       expect(ok).to.be(true);
       expect(results[0].baseUriMatch).to.be(true);
     });
+
+    it('skips the SAN/baseUri check for non-apple-wallet entries',
+      async () => {
+        const certificatePem = await mintLeafPem({
+          sanHosts: ['other.example.com']
+        });
+        const {results} = validateWalletCertificates({
+          entries: [{...googleWalletTestEntry, certificatePem}],
+          baseUri: 'https://example.com'
+        });
+        expect(results[0].baseUriMatch).to.be(null);
+        expect(results[0].warnings.some(w =>
+          w.includes('SAN DNS'))).to.be(false);
+      });
   });
 
   describe('google-wallet metadata binding', () => {

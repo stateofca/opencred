@@ -739,14 +739,14 @@ export function validateWalletCertificates(entries, {logger: log}) {
         type: 'spki', format: 'der'
       });
       if(!certSpkiDer.equals(providedSpkiDer)) {
-        log.warn(
+        log.warning(
           `walletCertificates[${entry.id}]: leaf cert SPKI does not ` +
           `match publicKeyPem; wallets that verify the signature ` +
           `against the cert public key will reject signed requests`
         );
       }
     } catch(err) {
-      log.warn(
+      log.warning(
         `walletCertificates[${entry.id}]: unable to compare SPKI ` +
         `vs publicKeyPem: ${err.message}`
       );
@@ -757,13 +757,13 @@ export function validateWalletCertificates(entries, {logger: log}) {
     const notBefore = Date.parse(cert.validFrom);
     const notAfter = Date.parse(cert.validTo);
     if(Number.isFinite(notBefore) && notBefore > now) {
-      log.warn(
+      log.warning(
         `walletCertificates[${entry.id}]: notBefore ` +
         `${cert.validFrom} is in the future`
       );
     }
     if(Number.isFinite(notAfter) && notAfter < now) {
-      log.warn(
+      log.warning(
         `walletCertificates[${entry.id}]: notAfter ` +
         `${cert.validTo} is in the past; wallet will reject the cert`
       );
@@ -781,14 +781,14 @@ export function validateWalletCertificates(entries, {logger: log}) {
         {type: 'spki', format: 'der'}
       );
       if(!derivedPublicDer.equals(certPublicDer)) {
-        log.warn(
+        log.warning(
           `walletCertificates[${entry.id}]: privateKeyPem does not ` +
           `correspond to the leaf cert's public key; ReaderAuth ` +
           `signatures produced with this entry will not verify`
         );
       }
     } catch(err) {
-      log.warn(
+      log.warning(
         `walletCertificates[${entry.id}]: unable to derive public ` +
         `key from privateKeyPem: ${err.message}`
       );
@@ -800,13 +800,13 @@ export function validateWalletCertificates(entries, {logger: log}) {
     if(entry.wallet === 'google-wallet') {
       const rpMetadataBytes = entry.google?.rpMetadataBytes;
       if(!rpMetadataBytes) {
-        log.warn(
+        log.warning(
           `walletCertificates[${entry.id}]: google.rpMetadataBytes is ` +
           `not set; Google Wallet requires client_metadata.` +
           `gw_rp_metadata_bytes and may reject requests without it`
         );
       } else if(!_isBase64Url(rpMetadataBytes)) {
-        log.warn(
+        log.warning(
           `walletCertificates[${entry.id}]: google.rpMetadataBytes is ` +
           `not valid Base64URL; Google Wallet will reject the request`
         );

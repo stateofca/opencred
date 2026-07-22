@@ -43,6 +43,7 @@
   implementation included `use`/`alg`/`kid` and relied on JSON key insertion
   order, so Google Wallet `dc_api.jwt` (encrypted) responses failed device
   signature verification (`DEVICE_SIGNATURE_VALIDITY`).
+- Only check SAN DNS names for Apple Wallet reader auth.
 
 ### Security
 - The new exchange `events` endpoint requires the exchange's bearer access
