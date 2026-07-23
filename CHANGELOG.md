@@ -56,6 +56,7 @@
   extension is absent.
 
 ### Changed
+- **NOTE**: Testing and support dropped for Node.js 20.x.
 - The DC API flow now aborts `navigator.credentials.get` after 30 seconds
   when no wallet/credential provider responds, replacing an indefinite
   loading state with a clear "Your wallet app did not respond" message.
