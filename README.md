@@ -417,21 +417,36 @@ callback:
 The callback can be further customized with optional properties, each of which
 is a no op when unset. `headers` sends static headers with the request, useful
 for values that should not live in an exchange variable, such as an API key.
-`variableAllowList` restricts the callback payload to the listed `variables`
-for data minimization; any variable not listed, including the verified
-presentation in `results` (with its `vpToken`) and other standard exchange fields
-would be omitted if not listed. `responseVariable` stores the callback response
-under an exchange variable.
+
+By default (when `body` is unset) the callback POST body is
+`{id, variables, step}`, where `variables` is the full set of exchange
+variables (including the verified presentation under `results`). To curate the
+body for data minimization, add a `body` block. When `body` is present:
+
+- `variables` is an allowlist of exchange variable names to include. If it is
+  omitted or empty, no plain exchange variables are sent.
+- `vpToken` includes the raw submitted `vp_token` at the top level of the body.
+- `verifiablePresentation` includes the verified presentation object at the top
+  level of the body.
+- `verifiableCredential` includes the credential(s) extracted from the verified
+  presentation at the top level of the body.
+
+The presentation artifacts (`vpToken`, `verifiablePresentation`,
+`verifiableCredential`) are only added when their flag is `true`, so a callback
+configurator receives exactly what they opt into.
 
 ```yaml
 callback:
   url: http://localhost:9000/callback
   headers:
     callbackHeader: callbackValue
-  variableAllowList:
-    - caseId
-    - color
-  responseVariable: callbackResponse
+  body:
+    variables:
+      - caseId
+      - color
+    vpToken: false
+    verifiablePresentation: true
+    verifiableCredential: true
 ```
 
 #### Configuring Exchange UX Methods
