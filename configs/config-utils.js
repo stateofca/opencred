@@ -1209,6 +1209,7 @@ export function validateWalletCertificates(entries) {
     try {
       privateKeyObj = crypto.createPrivateKey(entry.privateKeyPem);
     } catch(err) {
+      // eslint-disable-next-line preserve-caught-error
       throw new Error(
         `walletCertificates[${entry.id}]: invalid privateKeyPem: ` +
         err.message
@@ -1219,6 +1220,7 @@ export function validateWalletCertificates(entries) {
     try {
       cert = new crypto.X509Certificate(entry.certificatePem);
     } catch(err) {
+      // eslint-disable-next-line preserve-caught-error
       throw new Error(
         `walletCertificates[${entry.id}]: invalid certificatePem: ` +
         err.message

@@ -333,6 +333,7 @@ async function exchangeCodeForToken({
     });
     text = await response.text();
   } catch(err) {
+    // eslint-disable-next-line preserve-caught-error
     throw new Error(
       `Token exchange network error for ${tokenUrl}: ${err.message}`);
   }

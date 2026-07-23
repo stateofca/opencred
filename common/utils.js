@@ -835,6 +835,7 @@ const getMsalClient = workflow => {
   try {
     return new ConfidentialClientApplication(msalConfig);
   } catch(error) {
+    // eslint-disable-next-line preserve-caught-error
     throw new Error(
       'Error creating MSAL client:\n' +
       error.message
@@ -849,6 +850,7 @@ const acquireAccessToken = async msalClient => {
   try {
     return msalClient.acquireTokenByClientCredential(tokenRequest);
   } catch(error) {
+    // eslint-disable-next-line preserve-caught-error
     throw new Error(
       'Error acquiring MSAL access token:\n' +
       error.message
@@ -865,6 +867,7 @@ const makeHttpPostRequest = async ({msalClient, url, data}) => {
       url, {json: data}
     );
   } catch(error) {
+    // eslint-disable-next-line preserve-caught-error
     throw new Error(
       'Error making MSAL authenticated HTTP POST request:\n' +
       error.message

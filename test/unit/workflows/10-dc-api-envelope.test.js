@@ -36,6 +36,7 @@ describe('dc-api-envelope', () => {
           try {
             result = buildDcApiRequest({protocol, data: sampleData});
           } catch(e) {
+            // eslint-disable-next-line preserve-caught-error
             throw new Error(
               `buildDcApiRequest threw for protocol "${protocol}": ` +
               e.message);

@@ -281,16 +281,20 @@ export async function startDcApiFlow({
     return result;
   } catch(error) {
     if(error.isDcApiTimeout) {
+      // eslint-disable-next-line preserve-caught-error
       throw new Error(
         'Your wallet app did not respond. Try again or use another ' +
         'connection method.');
     } else if(error.name === 'NotAllowedError') {
+      // eslint-disable-next-line preserve-caught-error
       throw new Error('The credential request was denied or cancelled.');
     } else if(error.name === 'AbortError') {
+      // eslint-disable-next-line preserve-caught-error
       throw new Error('The credential request was aborted.');
     } else if(error.message) {
       throw error;
     } else {
+      // eslint-disable-next-line preserve-caught-error
       throw new Error(
         'An error occurred during credential presentation.'
       );
