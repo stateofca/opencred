@@ -15,8 +15,12 @@
 - `callback.variableAllowList` limits which exchange variables are sent in the
   callback POST body (empty or unset sends all).
 - `callback.headers` sends static headers with the callback request.
-- `callback.responseVariable` stores the callback response under an exchange
-  variable.
+- `callback.body` curates the callback POST body. When unset the full set of
+  exchange variables is sent (unchanged behavior). When set, `body.variables`
+  is an allowlist of exchange variables to include (omitted or empty sends
+  none), and `body.vpToken`, `body.verifiablePresentation`, and
+  `body.verifiableCredential` opt in to including those presentation artifacts
+  at the top level of the body.
 - `redirectVariableAllowList` appends allowlisted exchange variables to the
   post verification redirect as query parameters.
 

@@ -76,15 +76,27 @@ const OpenIdConnectSchema = z.object({
   idTokenExpirySeconds: z.number().default(3600)
 });
 
+// Curates the callback request body. When unset on the callback, the legacy
+// payload (full exchange variables) is sent for backwards compatibility.
+export const CallbackBodySchema = z.object({
+  // allowlist of exchange variable names to include in the callback body;
+  // omitted or [] => no plain variables are sent
+  variables: z.array(z.string()).default([]),
+  // include the raw submitted vp_token at the top level of the payload
+  vpToken: z.boolean().default(false),
+  // include the verified verifiablePresentation object at the top level
+  verifiablePresentation: z.boolean().default(false),
+  // include the credential(s) extracted from the presentation at the top level
+  verifiableCredential: z.boolean().default(false)
+});
+
 export const CallbackSchema = z.object({
   url: z.url(),
   headersVariable: z.string().optional(),
   // static headers sent with callback, none if unset
   headers: z.record(z.string(), z.string()).optional(),
-  // exchange vars to send in the callback, empty sends all
-  variableAllowList: z.array(z.string()).default([]),
-  // store callback response under this exchange var, dropped if unset
-  responseVariable: z.string().optional(),
+  // curate the callback request body; unset => legacy full-variables payload
+  body: CallbackBodySchema.optional(),
   oauth: z.object({
     issuer: z.string(),
     tokenUrl: z.url(),
