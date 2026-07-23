@@ -381,12 +381,6 @@ describe('fetchDcApiRequests', () => {
 });
 
 describe('requestDigitalCredential', () => {
-  let originalCredentials;
-
-  afterEach(() => {
-    globalThis.navigator.credentials = originalCredentials;
-  });
-
   // Every request goes to the platform at once; each wallet answers the one it
   // understands.
   it('passes all requests in a single digital.requests array', async () => {
