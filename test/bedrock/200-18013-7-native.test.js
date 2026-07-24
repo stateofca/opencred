@@ -33,6 +33,7 @@ import {exampleKey2} from '../fixtures/signingKeys.js';
 import expect from 'expect.js';
 import {httpClient} from '@digitalbazaar/http-client';
 import https from 'node:https';
+import {logger} from '../../lib/logger.js';
 import {OID4VP_AUTHZ_REQ_JWT_TYP} from '../../lib/workflows/common/oid4vp.js';
 
 const agent = new https.Agent({rejectUnauthorized: false});
@@ -280,12 +281,14 @@ e92OBdJ/f7VSqBFTmfG9jXEW46WAZ78jLnUBL0Q58lLuNHa1t2TwJTyCzc8XUkA3
   });
 
   describe('_getX5cFromSigningKey', function() {
-    let mockLogger;
+    let warnStub;
 
     beforeEach(function() {
-      mockLogger = {
-        warning: sinon.stub()
-      };
+      warnStub = sinon.stub(logger, 'warning');
+    });
+
+    afterEach(function() {
+      warnStub.restore();
     });
 
     it('should first use certificatePem from signing key', async function() {
@@ -335,12 +338,10 @@ e92OBdJ/f7VSqBFTmfG9jXEW46WAZ78jLnUBL0Q58lLuNHa1t2TwJTyCzc8XUkA3
           id: 'test-key'
         };
 
-        const result = _getX5cFromSigningKey(signingKey, {
-          logger: mockLogger
-        });
+        const result = _getX5cFromSigningKey(signingKey);
         expect(result).to.be.an('array');
         expect(result.length).to.equal(0);
-        expect(mockLogger.warning.called).to.be(true);
+        expect(warnStub.called).to.be(true);
       });
 
   });

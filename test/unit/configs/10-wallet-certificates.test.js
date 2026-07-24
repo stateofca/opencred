@@ -49,7 +49,7 @@ G1WP/DSpusNBbDvuE/u29lPr0d80kbSeq008IKTk
 describe('walletCertificates schema', () => {
   let warnStub;
   beforeEach(() => {
-    warnStub = sinon.stub(logger, 'warn');
+    warnStub = sinon.stub(logger, 'warning');
   });
   afterEach(() => {
     warnStub.restore();
