@@ -1,0 +1,140 @@
+# Copyright 2026 California Department of Motor Vehicles
+# Copyright 2026 Digital Bazaar, Inc.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# See README-ecr-pipeline.md before enabling. No values are hardcoded: the AWS
+# account, OIDC role, and ECR repo come from GitHub repo/environment variables
+# (Settings > Secrets and variables > Actions > Variables). This workflow is
+# intended to live on `stateofca/opencred-uat` (the UAT build source); it is
+# staged here in `digitalbazaar/opencred-platform` for review.
+#
+# Required `vars` (set on the `uat` environment):
+#   UAT_ACCOUNT_ID        e.g. 440744231944
+#   UAT_OIDC_BUILD_ROLE   e.g. opencred-uat-oidc-build
+#   UAT_ECR_REPO          e.g. opencred-platform
+#   AWS_REGION            e.g. us-west-2
+
+name: Image Push UAT
+description: 'Build and push Docker image to UAT ECR and create GitHub release'
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    environment: uat
+    permissions:
+      id-token: write # Needed for OIDC
+      contents: write # Needed for releases
+    outputs:
+      new_version: ${{ steps.extract-version.outputs.version }}
+      has_date: ${{ steps.extract-version.outputs.has_date }}
+      commit_hash: ${{ steps.extract-version.outputs.commit_hash }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Extracts `## X.Y.Z` and a `YYYY-MM-DD` release date from CHANGELOG.md.
+      # opencred-platform stamps the day as the `dd` placeholder until release
+      # (`## 10.3.0 - 2026-07-dd`), so `has_date` is false for unreleased
+      # builds — those push a bare-commit-hash image and skip the GH release.
+      - name: Extract Version and Check for Date
+        id: extract-version
+        run: |
+          VERSION=$(grep -oP '(?<=## )\d+\.\d+\.\d+' CHANGELOG.md | head -1)
+          DATE=$(grep -oP '(?<=## '"$VERSION"' - )\d{4}-\d{2}-\d{2}' CHANGELOG.md | head -1 || echo "")
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+
+          echo "Detected version: $VERSION"
+          echo "Release date: $DATE"
+          echo "Commit Hash: $COMMIT_HASH"
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "has_date=$([ -n "$DATE" ] && echo "true" || echo "false")" >> "$GITHUB_OUTPUT"
+          echo "commit_hash=$COMMIT_HASH" >> "$GITHUB_OUTPUT"
+
+  build-and-push-uat:
+    needs: check-version
+    runs-on: ubuntu-latest
+    environment: uat
+    permissions:
+      id-token: write # Needed for OIDC
+      contents: write # Needed for releases
+    outputs:
+      pushed_image: ${{ steps.push-image.outputs.image_uri }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials for OIDC
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.UAT_ACCOUNT_ID }}:role/${{ vars.UAT_OIDC_BUILD_ROLE }}
+          aws-region: ${{ vars.AWS_REGION }}
+          mask-aws-account-id: 'no'
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region "${{ vars.AWS_REGION }}" | docker login --username AWS --password-stdin "${{ vars.UAT_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com"
+
+      - name: Build and Push Docker Image
+        id: push-image
+        env:
+          IMAGE_TAG: ${{ needs.check-version.outputs.has_date == 'true' && format('v{0}-{1}', needs.check-version.outputs.new_version, needs.check-version.outputs.commit_hash) || needs.check-version.outputs.commit_hash }}
+          ECR_HOST: ${{ vars.UAT_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
+        run: |
+          IMAGE_URI="$ECR_HOST/${{ vars.UAT_ECR_REPO }}:$IMAGE_TAG"
+
+          docker build -t $IMAGE_URI .
+          docker push $IMAGE_URI
+
+          echo "✅ Image pushed: $IMAGE_URI"
+          echo "PUSHED_IMAGE=$IMAGE_URI" >> $GITHUB_ENV
+          echo "image_uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+
+      - name: Print Uploaded Docker Image
+        run: |
+          echo "🔹 Successfully uploaded Docker image:"
+          echo "- $PUSHED_IMAGE"
+
+  create-github-release:
+    needs:
+      - check-version
+      - build-and-push-uat
+    if: needs.check-version.outputs.has_date == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed for releases
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_VERSION="v${{ needs.check-version.outputs.new_version }}"
+          CHANGELOG_FILE="CHANGELOG.md"
+          IMAGE_URI="${{ needs.build-and-push-uat.outputs.pushed_image }}"
+
+          # Extract relevant changelog section
+          CHANGELOG_CONTENT=$(awk "/## ${{ needs.check-version.outputs.new_version }} / {flag=1; next} /^## / {flag=0} flag" $CHANGELOG_FILE)
+
+          if [[ -z "$CHANGELOG_CONTENT" ]]; then
+            CHANGELOG_CONTENT="🚀 No changelog entry found for this version."
+          fi
+
+          # Format release notes
+          RELEASE_NOTES=$(printf "### Changelog for $RELEASE_VERSION\n\n$CHANGELOG_CONTENT\n\n---\n\n**Docker Image:**\n\`\`\`\n$IMAGE_URI\n\`\`\`")
+
+          # Create GitHub release
+          gh release create "$RELEASE_VERSION" \
+            --title "$RELEASE_VERSION" \
+            --notes "$RELEASE_NOTES" \
+            --target ${{ github.sha }} \
+            --repo ${{ github.repository }}
