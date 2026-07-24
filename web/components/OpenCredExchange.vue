@@ -46,7 +46,7 @@ SPDX-License-Identifier: BSD-3-Clause
         <a
           href="#"
           class="text-sm underline"
-          @click.prevent="showInteractionPicker = true">
+          @click.prevent="openInteractionPicker">
           {{t('interactionPicker_otherWaysLink')}}
         </a>
       </div>
@@ -55,7 +55,7 @@ SPDX-License-Identifier: BSD-3-Clause
         :picker-entries="pickerEntries"
         :current-entry="activePickerEntry"
         :wallets-registry="WALLETS_REGISTRY"
-        @select="handlePickerSelect" />
+        @select="onPickerSelect" />
 
       <!-- Explainer Video Link -->
       <div class="mt-2">
@@ -106,7 +106,7 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
-import {onMounted, onUnmounted, reactive, ref} from 'vue';
+import {onMounted, onUnmounted, reactive, ref, watch} from 'vue';
 import {CadmvMainCard} from '@digitalbazaar/cadmv-ui';
 import CredentialQuerySummary from './CredentialQuerySummary.vue';
 import DebugDisplay from './DebugDisplay.vue';
@@ -114,8 +114,10 @@ import ErrorView from './ErrorView.vue';
 import {httpClient} from '@digitalbazaar/http-client';
 import InteractionPickerModal from './InteractionPickerModal.vue';
 import QRCode from 'qrcode';
+import {reportExchangeEvent} from '../utils/events.js';
 import SuggestedApps from './SuggestedApps.vue';
 import {useExchange} from '../composables/useExchange.js';
+import {usePickerReporting} from '../composables/usePickerReporting.js';
 import {useReactiveI18n} from '../composables/useReactiveI18n.js';
 import {useWalletInteraction} from '../composables/useWalletInteraction.js';
 import WalletInteraction from './WalletInteraction.vue';
@@ -144,6 +146,21 @@ const {
   pickerEntries, activePickerEntry, handlePickerSelect
 } = useWalletInteraction();
 
+/**
+ * Best-effort report of an interaction-picker funnel event. Reads the
+ * exchange identifiers/token from the reactive exchange context.
+ *
+ * @param {string} type - Event type recognized by the server.
+ * @param {object} [payload] - Non-personal fields (e.g. `{method}`).
+ */
+const reportInteractionEvent = (type, payload) => {
+  const exchangeData = context.value?.exchangeData;
+  if(!exchangeData) {
+    return;
+  }
+  reportExchangeEvent({exchangeData, httpClient, type, payload});
+};
+
 const state = reactive({
   active: false,
   error: null,
@@ -153,6 +170,41 @@ const state = reactive({
 
 const showInteractionPicker = ref(false);
 const showVideo = ref(false);
+
+// Interaction-picker funnel reporting with the dismiss/select de-dup guard.
+// Reads the currently-active method at call time; posts via the shared
+// best-effort reporter.
+const pickerReporting = usePickerReporting({
+  reportEvent: reportInteractionEvent,
+  getCurrentMethod: () => activePickerEntry.value?.method
+});
+
+/**
+ * Open the interaction picker ("Other ways to connect").
+ */
+const openInteractionPicker = () => {
+  pickerReporting.onOpen();
+  showInteractionPicker.value = true;
+};
+
+/**
+ * Handle a picker selection: report the transition (before the active entry
+ * flips), then delegate to the interaction composable.
+ *
+ * @param {object} entry - The selected picker entry.
+ */
+const onPickerSelect = entry => {
+  pickerReporting.onSelect(entry);
+  handlePickerSelect(entry);
+};
+
+// A dismissal (backdrop/ESC) also closes the picker; the composable
+// suppresses the dismiss report when the close followed a selection.
+watch(showInteractionPicker, (isOpen, wasOpen) => {
+  if(wasOpen && !isOpen) {
+    pickerReporting.onClose();
+  }
+});
 
 /**
  * Set state.error to the given error object, with defaults applied.

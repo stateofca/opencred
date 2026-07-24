@@ -125,6 +125,74 @@ describe('POST /workflows/:workflowId/exchanges/:exchangeId/events',
       expect(res.statusCode).to.equal(204);
     });
 
+    it('logs presentation_interaction_picker_opened for type ' +
+      '"interaction_picker_opened"', () => {
+      const req = {
+        workflow,
+        exchange,
+        body: {type: 'interaction_picker_opened', method: 'dcapi'},
+        headers: {'user-agent': 'test-agent'}
+      };
+      const res = mockRes();
+
+      exchangeEventMiddleware(req, res);
+
+      const opened = findEvent(
+        loggerInfoStub, 'presentation_interaction_picker_opened');
+      expect(opened).to.be.ok();
+      expect(opened[1].clientId).to.equal(workflow.clientId);
+      expect(opened[1].exchangeId).to.equal(exchange.id);
+      expect(opened[1].method).to.equal('dcapi');
+      expect(res.statusCode).to.equal(204);
+    });
+
+    it('logs presentation_interaction_method_selected for type ' +
+      '"interaction_method_selected"', () => {
+      const req = {
+        workflow,
+        exchange,
+        body: {
+          type: 'interaction_method_selected',
+          fromMethod: 'dcapi',
+          toMethod: 'qr-and-link'
+        },
+        headers: {'user-agent': 'test-agent'}
+      };
+      const res = mockRes();
+
+      exchangeEventMiddleware(req, res);
+
+      const selected = findEvent(
+        loggerInfoStub, 'presentation_interaction_method_selected');
+      expect(selected).to.be.ok();
+      expect(selected[1].clientId).to.equal(workflow.clientId);
+      expect(selected[1].exchangeId).to.equal(exchange.id);
+      expect(selected[1].fromMethod).to.equal('dcapi');
+      expect(selected[1].toMethod).to.equal('qr-and-link');
+      expect(res.statusCode).to.equal(204);
+    });
+
+    it('logs presentation_interaction_picker_dismissed for type ' +
+      '"interaction_picker_dismissed"', () => {
+      const req = {
+        workflow,
+        exchange,
+        body: {type: 'interaction_picker_dismissed', method: 'qr-and-link'},
+        headers: {'user-agent': 'test-agent'}
+      };
+      const res = mockRes();
+
+      exchangeEventMiddleware(req, res);
+
+      const dismissed = findEvent(
+        loggerInfoStub, 'presentation_interaction_picker_dismissed');
+      expect(dismissed).to.be.ok();
+      expect(dismissed[1].clientId).to.equal(workflow.clientId);
+      expect(dismissed[1].exchangeId).to.equal(exchange.id);
+      expect(dismissed[1].method).to.equal('qr-and-link');
+      expect(res.statusCode).to.equal(204);
+    });
+
     it('returns 400 for an unrecognized type', () => {
       const req = {
         workflow,

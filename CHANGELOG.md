@@ -3,6 +3,15 @@
 ## 10.3.0 - 2026-07-dd
 
 ### Added
+- Report "Other ways to connect" interaction-picker funnel events via the
+  exchange event endpoint. The browser posts `interaction_picker_opened`,
+  `interaction_method_selected` (carrying `fromMethod`/`toMethod` so an actual
+  method switch is distinguishable from re-selecting the current one), and
+  `interaction_picker_dismissed` (picker abandoned without selecting), mapping
+  to the log events `presentation_interaction_picker_opened`,
+  `presentation_interaction_method_selected`, and
+  `presentation_interaction_picker_dismissed`. The interaction method is a
+  UI-choice enum, not personal data.
 - Report DC API errors caught in the browser via a new
   exchange event endpoint `POST /workflows/:workflowId/exchanges/:exchangeId/events`
   beacon. The browser posts `dcapi_cancelled` / `dcapi_timeout` /
