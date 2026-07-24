@@ -210,8 +210,18 @@ export const BaseWorkflowSchema = z.object({
     .optional(), // Override default text labels in the UI
   trustedCredentialIssuers: z.array(z.string()).optional(),
   untrustedVariableAllowList: z.array(z.string()).default([]),
-  // exchange vars appended to the redirect as query params, none if unset
-  redirectVariableAllowList: z.array(z.string()).default([]),
+  // Values pulled from exchange variables (e.g. a callback response) to display
+  // on the success view. `path` is a JSONPath into exchange.variables. Provide
+  // a literal `label` and/or an i18n `labelKey` (at least one). The frontend
+  // prefers `labelKey` when it resolves in the current locale, else `label`.
+  // Present-only: unresolved paths are skipped.
+  successViewFields: z.array(z.object({
+    path: z.string(),
+    label: z.string().optional(),
+    labelKey: z.string().optional()
+  }).refine(f => f.label !== undefined || f.labelKey !== undefined, {
+    message: 'each successViewFields entry requires a label or labelKey'
+  })).default([]),
   public: z.boolean().default(false)
 });
 
@@ -553,7 +563,7 @@ export const INHERITABLE_FIELDS = [
   'translations',
   'trustedCredentialIssuers',
   'untrustedVariableAllowList',
-  'redirectVariableAllowList',
+  'successViewFields',
   'public',
   'clientSecret'
 ];

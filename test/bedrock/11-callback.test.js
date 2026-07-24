@@ -327,4 +327,44 @@ describe('Callback - sendCallback', function() {
       expect(result).to.be(false);
     });
   });
+
+  describe('response storage', function() {
+    it('stores the response body under variables.callbackResponse',
+      async function() {
+        const workflow = {...baseWorkflow, callback: {url: CALLBACK_URL}};
+        const responseBody = {
+          status: 'resolved',
+          message: 'Parking verified',
+          zone: {name: 'Lot 19'}
+        };
+        postStub.withArgs(CALLBACK_URL, sinon.match.any)
+          .resolves({data: responseBody});
+        const exchange = makeExchange();
+        const result = await sendCallback(workflow, exchange);
+        expect(result).to.be(true);
+        expect(exchange.variables.callbackResponse).to.eql(responseBody);
+      });
+
+    it('does not store when the callback returns no body', async function() {
+      const workflow = {...baseWorkflow, callback: {url: CALLBACK_URL}};
+      postStub.withArgs(CALLBACK_URL, sinon.match.any).resolves({data: ''});
+      const exchange = makeExchange();
+      const result = await sendCallback(workflow, exchange);
+      expect(result).to.be(true);
+      expect(exchange.variables).to.not.have.property('callbackResponse');
+    });
+
+    it('does not store when the callback request fails', async function() {
+      const workflow = {...baseWorkflow, callback: {url: CALLBACK_URL}};
+      postStub.withArgs(CALLBACK_URL, sinon.match.any).rejects({
+        status: 500,
+        name: 'NetworkError',
+        message: 'boom'
+      });
+      const exchange = makeExchange();
+      const result = await sendCallback(workflow, exchange);
+      expect(result).to.be(false);
+      expect(exchange.variables).to.not.have.property('callbackResponse');
+    });
+  });
 });

@@ -74,6 +74,7 @@
   "loginRedirectManualHint": "If you are not redirected automatically, {continue}",
   "verificationTitle": "Verification Details",
   "verificationSuccess": "Success! Your credential has been shared.",
+  "verificationSuccessMessage": "",
   "verificationSuccessNextStep": "You may now close this tab.",
   "verificationDetails": "Press the button below to close this tab.",
   "verificationCloseBtn": "Close this tab",

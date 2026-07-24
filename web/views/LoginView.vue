@@ -24,6 +24,8 @@ SPDX-License-Identifier: BSD-3-Clause
             color="green" />
           {{$t("verificationSuccess")}}
         </div>
+        <SuccessDetails
+          :fields="context.exchangeData?.successViewFields || []" />
         <i18n-t
           v-if="showLoginContinue"
           keypath="loginRedirectManualHint"
@@ -50,6 +52,7 @@ import {computed, nextTick, onBeforeUnmount, ref, watch} from 'vue';
 import {CadmvButton} from '@digitalbazaar/cadmv-ui';
 import OpenCredExchange from '../components/OpenCredExchange.vue';
 import {QIcon} from 'quasar';
+import SuccessDetails from '../components/SuccessDetails.vue';
 import {useExchangeContext} from '../composables/useExchangeContext.js';
 
 const {context} = useExchangeContext();

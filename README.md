@@ -373,20 +373,6 @@ workflows:
       - color
 ```
 
-While configuring a workflow a `redirectVariableAllowList` property contains a
-list of variables that are appended to the post verification redirect as query
-parameters. Keep the list small, as large values can exceed URL length limits
-and inhibit the ability to follow the redirect.
-
-```yaml
-workflows:
-  - clientId: example
-    clientSecret: example
-    type: native
-    redirectVariableAllowList:
-      - caseId
-```
-
 #### Configuring a Workflow Step
 
 A workflow step configures the specifics of how a presentation is requested.
@@ -447,6 +433,43 @@ callback:
     vpToken: false
     verifiablePresentation: true
     verifiableCredential: true
+```
+
+When the callback returns a JSON response body, it is stored on the exchange
+under `variables.callbackResponse` (the whole response object, no configuration
+required). This makes the response available to later steps and to the success
+view.
+
+##### Displaying values on the success view
+
+`successViewFields` renders selected exchange-variable values on the
+`/verification` and `/login` success screens (present-only: a field is shown
+only when its path resolves). Each entry has a `path` (a JSONPath into the
+exchange variables, e.g. into the stored `callbackResponse`) and a label:
+provide a literal `label` (simplest, for a single language) and/or an i18n
+`labelKey` (at least one is required). The view prefers `labelKey` when it
+resolves in the current locale, otherwise the literal `label`.
+
+The general success message shown above the fields is the `verificationSuccessMessage`
+translation (empty by default, so it only appears when set). Both it and any
+field label keys are customizable through the workflow `translations`.
+
+```yaml
+workflows:
+  - clientId: example
+    clientSecret: example
+    type: native
+    successViewFields:
+      # single language: a literal label
+      - path: $.callbackResponse.message
+        label: Status
+      # multi-language: a key resolved via translations
+      - path: $.callbackResponse.zone.name
+        labelKey: successField_zone
+    translations:
+      en:
+        verificationSuccessMessage: "Parking verified."
+        successField_zone: "Zone"
 ```
 
 #### Configuring Exchange UX Methods

@@ -21,8 +21,6 @@
   rejection other than cancellation, carrying the DOMException `name`), and
   `presentation_dc_api_timeout` (the picker never responded within a 30s
   client-side window).
-- `callback.variableAllowList` limits which exchange variables are sent in the
-  callback POST body (empty or unset sends all).
 - `callback.headers` sends static headers with the callback request.
 - `callback.body` curates the callback POST body. When unset the full set of
   exchange variables is sent (unchanged behavior). When set, `body.variables`
@@ -30,8 +28,15 @@
   none), and `body.vpToken`, `body.verifiablePresentation`, and
   `body.verifiableCredential` opt in to including those presentation artifacts
   at the top level of the body.
-- `redirectVariableAllowList` appends allowlisted exchange variables to the
-  post verification redirect as query parameters.
+- A JSON callback response body is stored on the exchange under
+  `variables.callbackResponse`, making it available to later steps and the
+  success view.
+- `successViewFields` renders selected exchange-variable values (e.g. from the
+  stored `callbackResponse`) on the `/verification` and `/login` success views.
+  Each entry has a JSONPath `path` and a literal `label` and/or i18n `labelKey`
+  (present-only rendering). The general success message
+  (`verificationSuccessMessage`) and field labels are customizable via
+  `translations`.
 - Add `walletCertificates[].google.rpMetadataBytes` config and emit it as
   `client_metadata.gw_rp_metadata_bytes` in google-wallet authorization
   requests. Startup validation warns when a google-wallet certificate has

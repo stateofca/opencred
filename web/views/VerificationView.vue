@@ -32,6 +32,8 @@ SPDX-License-Identifier: BSD-3-Clause
             class="q-mb-sm" />
           {{t("verificationSuccess")}}
         </div>
+        <SuccessDetails
+          :fields="context.exchangeData?.successViewFields || []" />
         <p v-if="isPopupWindow">
           {{t("verificationDetails")}}
         </p>
@@ -53,6 +55,7 @@ import {CadmvButton, CadmvMainCard} from '@digitalbazaar/cadmv-ui';
 import ErrorView from '../components/ErrorView.vue';
 import OpenCredExchange from '../components/OpenCredExchange.vue';
 import {QIcon} from 'quasar';
+import SuccessDetails from '../components/SuccessDetails.vue';
 import {useExchangeContext} from '../composables/useExchangeContext.js';
 import {useReactiveI18n} from '../composables/useReactiveI18n.js';
 import {useWindowPopup} from '../composables/useWindowPopup.js';
