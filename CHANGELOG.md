@@ -99,7 +99,12 @@
   and `exchangeErrorTtlExpiredSubtitle` are overridable per workflow.
 ## 10.1.4 - 2026-07-XX
 
-### Changed
+### Added
+- Added a `twdiwStatusList2021Enabled` option (global `opencred.options` and
+  per-workflow override, default `false`) that gates the non-standard,
+  deprecated TWDIW `StatusList2021Entry` credential-status handler. With it off,
+  a `StatusList2021Entry` is rejected as an unsupported status entry type
+  (fail-closed), protecting standard flows from the TWDIW-specific trust model.
 - Accept JWT `iss` if `issuer` is missing from JWT token, as long as value matches.
 - Accept nested `.vp` in `path_nested` for OID4VP-draft18 submissions to handle
   wallets that inject an extra `.vp` wrapper in their query.

@@ -298,9 +298,12 @@ app:
           # accepted, so pin the issuer DID(s) the wallet puts in the VC-JWT
           # `iss` claim (a jwk_jcs-pub did:key, e.g. z2dm...).
           - "did:key:z2dm...<issuer-public-key>"
-        # Revocation: if the credential carries a StatusList2021Entry and its
-        # issuer is trusted, OpenCred verifies the status list automatically;
-        # no extra workflow configuration is required.
+        # Revocation: TWDIW StatusList2021 is a non-standard, deprecated status
+        # format and is OFF by default. Enable it for this workflow (or
+        # globally via options.twdiwStatusList2021Enabled) so a JWT variant of a
+        # StatusList2021Entry is verified instead of rejected as an unsupported
+        # status type.
+        twdiwStatusList2021Enabled: true
         public: true
     options:
       exchangeProtocols:
@@ -315,6 +318,10 @@ app:
       # presentation_definition (OID4VP draft 18) rather than DCQL; set
       # "OID4VP-draft18" for those wallets. Default: "OID4VP-combined".
       # OID4VPdefault: "OID4VP-draft18"
+      # twdiwStatusList2021Enabled: false  # Global switch for the deprecated,
+      #   non-standard TWDIW StatusList2021 handler. Off by default so a
+      #   StatusList2021Entry is rejected as an unsupported status type unless a
+      #   workflow opts in. Prefer enabling it per-workflow instead.
     defaultBrand:
       cta: "#0B669D"
       primary: "#045199"

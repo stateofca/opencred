@@ -180,19 +180,29 @@ export const availableWallets = [
 export const BaseWorkflowSchema = z.object({
   clientId: z.string(), // Used to identify the workflow
   clientSecret: z.string(), // To authenticate exchange API requests
+
   // Legacy fallback identifier for URL-path resolution
   workflowId: z.string().regex(/^[a-zA-Z0-9_-]+$/).optional(),
+
   configFrom: z.string().optional(), // Used to reference a different workflow
   name: z.string().optional(),
   description: z.string().optional(),
   brand: BrandSchema.optional(),
   caStore: z.boolean().default(true), // If false, cert/x5c checks are skipped
-  // By default,experimental DC API is disabled
+
+  // By default, experimental DC API is disabled
   dcApiEnabled: z.boolean().default(false),
+
   // Whether the Interaction URL (qr-and-copy) profile is a default
   // (locked-on) picker option. When undefined here, inherits from
   // options.interactEnabled (global default: true).
   interactEnabled: z.boolean().optional(),
+
+  // Per-workflow override for the deprecated TWDIW StatusList2021 handler.
+  // When undefined, inherits options.twdiwStatusList2021Enabled (global
+  // default: false). Set true only on workflows that consume TWDIW VCs.
+  twdiwStatusList2021Enabled: z.boolean().optional(),
+
   wallets: z.array(z.enum(availableWallets)).optional(),
   oidc: OpenIdConnectSchema.optional(),
   callback: CallbackSchema.optional(),
@@ -332,6 +342,11 @@ export const OptionsSchema = z.object({
     'OID4VP-draft18', 'OID4VP-combined', 'OID4VP-1.0'
   ]).default('OID4VP-combined'),
   workflowListingEnabled: z.boolean().default(false),
+  // Enables the non-standard, deprecated TWDIW StatusList2021 credential-
+  // status handler (a JWT status-list envelope verified against a jku-
+  // published key). Off by default; standard flows reject a
+  // StatusList2021Entry as an unsupported status type.
+  twdiwStatusList2021Enabled: z.boolean().default(false),
   debug: z.boolean().default(false),
 
   // Experimental request-shaping knobs for the google-wallet (x509_hash)

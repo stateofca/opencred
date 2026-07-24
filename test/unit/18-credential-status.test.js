@@ -6,8 +6,9 @@
  */
 import * as sinon from 'sinon';
 import {
-  checkStatusList2021, decodeStatusList, MAX_STATUS_LIST_BYTES, readStatusBit
-} from '../../lib/credential-status/status-list-2021.js';
+  checkTwdiwStatusList2021, decodeStatusList, MAX_STATUS_LIST_BYTES,
+  readStatusBit
+} from '../../lib/credential-status/twdiw-status-list-2021.js';
 import {exportJWK, generateKeyPair, SignJWT} from 'jose';
 import {gunzipSync, gzipSync} from 'node:zlib';
 import {checkStatus} from '../../lib/credential-status/index.js';
@@ -51,7 +52,7 @@ const credentialWithStatus = (statusListIndex, statusPurpose) => ({
   }
 });
 
-describe('credential-status: status-list-2021 module', () => {
+describe('credential-status: twdiw-status-list-2021 module', () => {
   afterEach(() => {
     sinon.restore();
   });
@@ -116,7 +117,7 @@ describe('credential-status: status-list-2021 module', () => {
     });
   });
 
-  describe('checkStatusList2021', () => {
+  describe('checkTwdiwStatusList2021', () => {
     const stubEndpoints = async ({
       statusPurpose = 'revocation', issuer = ISSUER, jku = JKU,
       encodedList = buildEncodedList()
@@ -134,7 +135,7 @@ describe('credential-status: status-list-2021 module', () => {
 
     it('reports a revoked credential as not verified', async () => {
       await stubEndpoints();
-      const result = await checkStatusList2021(
+      const result = await checkTwdiwStatusList2021(
         {credential: credentialWithStatus(REVOKED_INDEX)});
       expect(result.verified).to.be(false);
       expect(result.errors[0]).to.contain('revoked');
@@ -142,7 +143,7 @@ describe('credential-status: status-list-2021 module', () => {
 
     it('reports a suspended credential as not verified', async () => {
       await stubEndpoints({statusPurpose: 'suspension'});
-      const result = await checkStatusList2021(
+      const result = await checkTwdiwStatusList2021(
         {credential: credentialWithStatus(REVOKED_INDEX)});
       expect(result.verified).to.be(false);
       expect(result.errors[0]).to.contain('suspended');
@@ -150,14 +151,14 @@ describe('credential-status: status-list-2021 module', () => {
 
     it('verifies a credential whose index bit is clear', async () => {
       await stubEndpoints();
-      const result = await checkStatusList2021(
+      const result = await checkTwdiwStatusList2021(
         {credential: credentialWithStatus(CLEAR_INDEX)});
       expect(result.verified).to.be(true);
     });
 
     it('fails closed on an out-of-range index', async () => {
       await stubEndpoints();
-      const result = await checkStatusList2021(
+      const result = await checkTwdiwStatusList2021(
         {credential: credentialWithStatus(OUT_OF_RANGE_INDEX)});
       expect(result.verified).to.be(false);
       expect(result.errors[0]).to.contain('out of range');
@@ -167,14 +168,14 @@ describe('credential-status: status-list-2021 module', () => {
       await stubEndpoints();
       const credential = credentialWithStatus(REVOKED_INDEX);
       delete credential.issuer;
-      const result = await checkStatusList2021({credential});
+      const result = await checkTwdiwStatusList2021({credential});
       expect(result.verified).to.be(false);
       expect(result.errors[0]).to.contain('issuer');
     });
 
     it('fails when the jku is not same-origin as the list URL', async () => {
       await stubEndpoints({jku: 'https://evil.example/jwks'});
-      const result = await checkStatusList2021(
+      const result = await checkTwdiwStatusList2021(
         {credential: credentialWithStatus(REVOKED_INDEX)});
       expect(result.verified).to.be(false);
       expect(result.errors[0]).to.contain('same-origin');
@@ -182,7 +183,7 @@ describe('credential-status: status-list-2021 module', () => {
 
     it('fails when the iss does not match the credential issuer', async () => {
       await stubEndpoints({issuer: 'did:key:zSomeOtherIssuer'});
-      const result = await checkStatusList2021(
+      const result = await checkTwdiwStatusList2021(
         {credential: credentialWithStatus(REVOKED_INDEX)});
       expect(result.verified).to.be(false);
       expect(result.errors[0]).to.contain('issuer');
@@ -197,7 +198,7 @@ describe('credential-status: status-list-2021 module', () => {
         const getStub = sinon.stub(httpClient, 'get');
         getStub.withArgs(STATUS_URL).resolves({data: {statusList: listJwt}});
         getStub.withArgs(JKU).resolves({data: {keys: [publicJwk]}});
-        const result = await checkStatusList2021(
+        const result = await checkTwdiwStatusList2021(
           {credential: credentialWithStatus(REVOKED_INDEX)});
         expect(result.verified).to.be(false);
         expect(result.errors[0]).to.contain('kid');
@@ -206,7 +207,7 @@ describe('credential-status: status-list-2021 module', () => {
     it('fails when the list purpose does not match the entry purpose',
       async () => {
         await stubEndpoints({statusPurpose: 'revocation'});
-        const result = await checkStatusList2021(
+        const result = await checkTwdiwStatusList2021(
           {credential: credentialWithStatus(CLEAR_INDEX, 'suspension')});
         expect(result.verified).to.be(false);
         expect(result.errors[0]).to.contain('does not match');
@@ -254,6 +255,52 @@ describe('credential-status: status-list-2021 module', () => {
         expect(result.error).to.be.an(Error);
         expect(result.error.message).to.contain('documentLoader');
         expect(result.errors).to.be(undefined);
+      });
+  });
+
+  describe('checkStatus router: twdiwStatusList2021Enabled gate', () => {
+    const stubTwdiwEndpoints = async () => {
+      const {publicKey, privateKey} = await generateKeyPair('ES256');
+      const publicJwk = {
+        ...await exportJWK(publicKey), kid: 'key-2', alg: 'ES256'};
+      const listJwt = await buildStatusList({privateKey});
+      const getStub = sinon.stub(httpClient, 'get');
+      getStub.withArgs(STATUS_URL).resolves({data: {statusList: listJwt}});
+      getStub.withArgs(JKU).resolves({data: {keys: [publicJwk]}});
+      return getStub;
+    };
+
+    it('rejects StatusList2021Entry as unsupported when the flag is off',
+      async () => {
+        const getStub = sinon.stub(httpClient, 'get');
+        const result = await checkStatus(
+          {credential: credentialWithStatus(REVOKED_INDEX)});
+        expect(result.verified).to.be(false);
+        expect(result.errors[0]).to.contain('Unsupported status entry');
+        expect(result.errors[0]).to.contain('StatusList2021Entry');
+        // fail-closed: the TWDIW handler is never entered, so no fetch occurs
+        expect(getStub.called).to.be(false);
+      });
+
+    it('routes StatusList2021Entry to the TWDIW handler when enabled (revoked)',
+      async () => {
+        await stubTwdiwEndpoints();
+        const result = await checkStatus({
+          credential: credentialWithStatus(REVOKED_INDEX),
+          twdiwStatusList2021Enabled: true
+        });
+        expect(result.verified).to.be(false);
+        expect(result.errors[0]).to.contain('revoked');
+      });
+
+    it('routes to the TWDIW handler when enabled (clear bit verifies)',
+      async () => {
+        await stubTwdiwEndpoints();
+        const result = await checkStatus({
+          credential: credentialWithStatus(CLEAR_INDEX),
+          twdiwStatusList2021Enabled: true
+        });
+        expect(result.verified).to.be(true);
       });
   });
 

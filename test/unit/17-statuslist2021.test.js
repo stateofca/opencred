@@ -43,6 +43,11 @@ const credentialWithStatus = (statusListIndex, statusPurpose) => ({
   }
 });
 
+// The TWDIW StatusList2021 handler is gated behind twdiwStatusList2021Enabled;
+// every test here exercises that handler, so enable it on the router call.
+const checkStatus = options =>
+  verifyUtils.checkStatus({...options, twdiwStatusList2021Enabled: true});
+
 describe('StatusList2021Entry credential status', () => {
   let getStub;
 
@@ -62,7 +67,7 @@ describe('StatusList2021Entry credential status', () => {
 
   it('reports a revoked credential as not verified', async () => {
     await stubEndpoints();
-    const result = await verifyUtils.checkStatus(
+    const result = await checkStatus(
       {credential: credentialWithStatus(REVOKED_INDEX)});
     expect(result.verified).to.be(false);
     expect(result.errors[0]).to.contain('revoked');
@@ -70,7 +75,7 @@ describe('StatusList2021Entry credential status', () => {
 
   it('reports a suspended credential as not verified', async () => {
     await stubEndpoints({statusPurpose: 'suspension'});
-    const result = await verifyUtils.checkStatus(
+    const result = await checkStatus(
       {credential: credentialWithStatus(REVOKED_INDEX)});
     expect(result.verified).to.be(false);
     expect(result.errors[0]).to.contain('suspended');
@@ -78,7 +83,7 @@ describe('StatusList2021Entry credential status', () => {
 
   it('verifies a credential whose index bit is clear', async () => {
     await stubEndpoints();
-    const result = await verifyUtils.checkStatus(
+    const result = await checkStatus(
       {credential: credentialWithStatus(CLEAR_INDEX)});
     expect(result.verified).to.be(true);
   });
@@ -99,7 +104,7 @@ describe('StatusList2021Entry credential status', () => {
       getStub.withArgs(STATUS_URL).resolves({data: {statusList: listJwt}});
       getStub.withArgs('https://evil.example/jwks')
         .resolves({data: {keys: [publicJwk]}});
-      const result = await verifyUtils.checkStatus(
+      const result = await checkStatus(
         {credential: credentialWithStatus(REVOKED_INDEX)});
       expect(result.verified).to.be(false);
       expect(result.errors[0]).to.contain('same-origin');
@@ -118,7 +123,7 @@ describe('StatusList2021Entry credential status', () => {
       getStub = sinon.stub(httpClient, 'get');
       getStub.withArgs(STATUS_URL).resolves({data: {statusList: listJwt}});
       getStub.withArgs(JKU).resolves({data: {keys: [publicJwk]}});
-      const result = await verifyUtils.checkStatus(
+      const result = await checkStatus(
         {credential: credentialWithStatus(REVOKED_INDEX)});
       expect(result.verified).to.be(false);
       expect(result.errors[0]).to.contain('issuer');
@@ -130,7 +135,7 @@ describe('StatusList2021Entry credential status', () => {
       credentialStatus: {
         type: 'StatusList2021Entry', statusListIndex: REVOKED_INDEX}
     };
-    const result = await verifyUtils.checkStatus({credential});
+    const result = await checkStatus({credential});
     expect(result.verified).to.be(false);
     expect(result.errors[0]).to.contain('Missing statusListCredential');
   });
@@ -144,7 +149,7 @@ describe('StatusList2021Entry credential status', () => {
         statusListIndex: REVOKED_INDEX
       }
     };
-    const result = await verifyUtils.checkStatus({credential});
+    const result = await checkStatus({credential});
     expect(result.verified).to.be(false);
     expect(result.errors[0]).to.contain('https');
   });
@@ -152,7 +157,7 @@ describe('StatusList2021Entry credential status', () => {
   it('fails when the status list fetch errors', async () => {
     getStub = sinon.stub(httpClient, 'get');
     getStub.withArgs(STATUS_URL).rejects(new Error('boom'));
-    const result = await verifyUtils.checkStatus(
+    const result = await checkStatus(
       {credential: credentialWithStatus(REVOKED_INDEX)});
     expect(result.verified).to.be(false);
     expect(result.errors[0]).to.contain('Unable to fetch');
@@ -162,7 +167,7 @@ describe('StatusList2021Entry credential status', () => {
   it('fails on a malformed status list envelope', async () => {
     getStub = sinon.stub(httpClient, 'get');
     getStub.withArgs(STATUS_URL).resolves({data: {nope: 1}});
-    const result = await verifyUtils.checkStatus(
+    const result = await checkStatus(
       {credential: credentialWithStatus(REVOKED_INDEX)});
     expect(result.verified).to.be(false);
     expect(result.errors[0]).to.contain('Unexpected status list');
@@ -181,7 +186,7 @@ describe('StatusList2021Entry credential status', () => {
         .sign(privateKey);
     getStub = sinon.stub(httpClient, 'get');
     getStub.withArgs(STATUS_URL).resolves({data: {statusList: listJwt}});
-    const result = await verifyUtils.checkStatus(
+    const result = await checkStatus(
       {credential: credentialWithStatus(REVOKED_INDEX)});
     expect(result.verified).to.be(false);
     expect(result.errors[0]).to.contain('jku');
@@ -195,7 +200,7 @@ describe('StatusList2021Entry credential status', () => {
     getStub = sinon.stub(httpClient, 'get');
     getStub.withArgs(STATUS_URL).resolves({data: {statusList: listJwt}});
     getStub.withArgs(JKU).resolves({data: {keys: [publicJwk]}});
-    const result = await verifyUtils.checkStatus(
+    const result = await checkStatus(
       {credential: credentialWithStatus(REVOKED_INDEX)});
     expect(result.verified).to.be(false);
     expect(result.errors[0]).to.contain('kid');
@@ -212,7 +217,7 @@ describe('StatusList2021Entry credential status', () => {
     getStub = sinon.stub(httpClient, 'get');
     getStub.withArgs(STATUS_URL).resolves({data: {statusList: tampered}});
     getStub.withArgs(JKU).resolves({data: {keys: [publicJwk]}});
-    const result = await verifyUtils.checkStatus(
+    const result = await checkStatus(
       {credential: credentialWithStatus(REVOKED_INDEX)});
     expect(result.verified).to.be(false);
     expect(result.errors[0]).to.contain('signature');
@@ -220,7 +225,7 @@ describe('StatusList2021Entry credential status', () => {
 
   it('fails closed on an out-of-range statusListIndex', async () => {
     await stubEndpoints();
-    const result = await verifyUtils.checkStatus(
+    const result = await checkStatus(
       {credential: credentialWithStatus(100000)});
     expect(result.verified).to.be(false);
     expect(result.errors[0]).to.contain('out of range');
@@ -228,7 +233,7 @@ describe('StatusList2021Entry credential status', () => {
 
   it('fails closed on a non-integer statusListIndex', async () => {
     await stubEndpoints();
-    const result = await verifyUtils.checkStatus(
+    const result = await checkStatus(
       {credential: credentialWithStatus('not-a-number')});
     expect(result.verified).to.be(false);
   });
@@ -243,14 +248,14 @@ describe('StatusList2021Entry credential status', () => {
         statusListIndex: REVOKED_INDEX
       }]
     };
-    const result = await verifyUtils.checkStatus({credential});
+    const result = await checkStatus({credential});
     expect(result.verified).to.be(false);
   });
 
   it('fails when the entry purpose does not match the list purpose',
     async () => {
       await stubEndpoints({statusPurpose: 'suspension'});
-      const result = await verifyUtils.checkStatus(
+      const result = await checkStatus(
         {credential: credentialWithStatus(CLEAR_INDEX, 'revocation')});
       expect(result.verified).to.be(false);
       expect(result.errors[0]).to.contain('purpose');
@@ -258,7 +263,7 @@ describe('StatusList2021Entry credential status', () => {
 
   it('verifies a suspension-list credential whose bit is clear', async () => {
     await stubEndpoints({statusPurpose: 'suspension'});
-    const result = await verifyUtils.checkStatus(
+    const result = await checkStatus(
       {credential: credentialWithStatus(CLEAR_INDEX)});
     expect(result.verified).to.be(true);
   });
