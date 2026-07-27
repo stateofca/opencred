@@ -18,7 +18,9 @@
 name: Image Push UAT
 
 on:
-  # Manual only
+  push:
+    branches:
+      - main
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
