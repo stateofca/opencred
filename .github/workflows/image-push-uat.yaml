@@ -55,6 +55,18 @@ jobs:
           echo "has_date=$([ -n "$DATE" ] && echo "true" || echo "false")" >> "$GITHUB_OUTPUT"
           echo "commit_hash=$COMMIT_HASH" >> "$GITHUB_OUTPUT"
 
+      # Every build from this repo is a release, so an unstamped CHANGELOG date
+      # means `pubrelease` was never run. Fail loudly rather than silently
+      # taking the unreleased path (bare-hash image, no GitHub release).
+      - name: Require a stamped CHANGELOG date
+        if: steps.extract-version.outputs.has_date != 'true'
+        run: |
+          echo "::error::CHANGELOG top entry is not dated (found the 'dd' placeholder)."
+          echo "Every build from this repo is a release."
+          echo "Run 'pubrelease' on digitalbazaar/opencred-platform to stamp the"
+          echo "date, bump the version, and create the tag — then push main here."
+          exit 1
+
   build-and-push-uat:
     needs: check-version
     runs-on: ubuntu-latest
