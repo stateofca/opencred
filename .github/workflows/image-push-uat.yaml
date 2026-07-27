@@ -16,12 +16,9 @@
 #   AWS_REGION            e.g. us-west-2
 
 name: Image Push UAT
-description: 'Build and push Docker image to UAT ECR and create GitHub release'
 
 on:
-  push:
-    branches:
-      - main
+  # Manual only
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
@@ -37,7 +34,7 @@ jobs:
       commit_hash: ${{ steps.extract-version.outputs.commit_hash }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Extracts `## X.Y.Z` and a `YYYY-MM-DD` release date from CHANGELOG.md.
       # opencred-platform stamps the day as the `dd` placeholder until release
@@ -69,10 +66,10 @@ jobs:
       pushed_image: ${{ steps.push-image.outputs.image_uri }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Configure AWS Credentials for OIDC
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ vars.UAT_ACCOUNT_ID }}:role/${{ vars.UAT_OIDC_BUILD_ROLE }}
           aws-region: ${{ vars.AWS_REGION }}
@@ -112,7 +109,7 @@ jobs:
       contents: write # Needed for releases
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Create GitHub Release
         env:
