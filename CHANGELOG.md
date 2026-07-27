@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.3.0 - 2026-07-dd
+## 10.3.0 - 2026-07-27
 
 ### Added
 - Report "Other ways to connect" interaction-picker funnel events via the
