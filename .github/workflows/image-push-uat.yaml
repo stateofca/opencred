@@ -10,10 +10,10 @@
 # staged here in `digitalbazaar/opencred-platform` for review.
 #
 # Required `vars` (set on the `uat` environment):
-#   UAT_ACCOUNT_ID        946495772753
-#   UAT_OIDC_BUILD_ROLE   e.g. opencred-uat-oidc-build (to be provisioned)
-#   UAT_ECR_REPO          opencred
-#   AWS_REGION            us-west-2
+#   UAT_ACCOUNT_ID        e.g. 440744231944
+#   UAT_OIDC_BUILD_ROLE   e.g. opencred-uat-oidc-build
+#   UAT_ECR_REPO          e.g. opencred-platform
+#   AWS_REGION            e.g. us-west-2
 
 name: Image Push UAT
 
