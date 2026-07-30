@@ -32,7 +32,7 @@
   "dependencies": {
     "@auth0/mdl": "^3.0.1",
     "@azure/msal-node": "^5.2.2",
-    "@bedrock/config-yaml": "^4.3.3",
+    "@bedrock/config-yaml": "^4.5.0",
     "@bedrock/core": "^6.3.0",
     "@bedrock/express": "^8.7.0",
     "@bedrock/express-browser-fixes": "^3.1.0",

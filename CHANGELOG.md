@@ -1,5 +1,14 @@
 # opencred-platform Changelog
 
+## 10.3.1 - 2026-07-dd
+
+### Changed
+- Update `@bedrock/config-yaml` to `^4.5.0`, which adds support for loading the
+  config from a `BEDROCK_CONFIG_GZIP` environment variable holding
+  base64-encoded gzipped YAML. This is a prerequisite for moving the deployed
+  config to a compressed secret; deployments that do not set the new variable
+  are unaffected and continue to read `BEDROCK_CONFIG` as before.
+
 ## 10.3.0 - 2026-07-27
 
 ### Added
