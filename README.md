@@ -146,6 +146,22 @@ file. The environment variable may be set with the following command:
 export BEDROCK_CONFIG=$(cat combined.yaml | base64)
 ```
 
+The config may also be supplied compressed, via `BEDROCK_CONFIG_GZIP`, whose
+value is the YAML config gzipped and then Base64 encoded:
+```
+export BEDROCK_CONFIG_GZIP=$(gzip -c combined.yaml | base64)
+```
+This is useful when the config is stored somewhere with a size limit, such as
+an AWS Secrets Manager secret, which caps a stored value at 64 KB; YAML and PEM
+text typically compress by roughly 3-4x. To inspect a compressed value:
+```
+echo "$BEDROCK_CONFIG_GZIP" | base64 -d | gunzip
+```
+
+Set **exactly one** of the two variables. Setting both is ambiguous and fails
+at startup. A `BEDROCK_CONFIG_GZIP` value that is not valid gzip also fails at
+startup rather than falling back to `BEDROCK_CONFIG`.
+
 #### Configuring a Native workflow
 
 Update the `workflows` section of the config file to include a relying
