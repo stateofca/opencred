@@ -1,5 +1,22 @@
 # opencred-platform Changelog
 
+## 10.3.2 - 2026-08-dd
+
+### Changed
+- Report client-observed exchange expiry via the exchange event endpoint. When
+  the browser's status-check timer sees the exchange TTL has elapsed and shows
+  the expiry notice, it posts an `exchange_expired` event `type` that maps to
+  the log event `exchange_expired`. Expiry previously produced no log entry at
+  all, leaving an expired exchange indistinguishable from an abandoned one.
+  Client-reported and therefore best-effort: an exchange that expires after the
+  user closes the tab produces no event. Named `exchange_expired` rather than
+  taking the `presentation_` prefix of the surrounding events, since what
+  expired is the exchange and no presentation was involved.
+
+### Fixed
+- Return immediately after handling client-side exchange expiry in the status
+  check, rather than relying on a later guard to stop the poll.
+
 ## 10.3.1 - 2026-07-dd
 
 ### Changed

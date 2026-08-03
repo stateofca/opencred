@@ -193,6 +193,43 @@ describe('POST /workflows/:workflowId/exchanges/:exchangeId/events',
       expect(res.statusCode).to.equal(204);
     });
 
+    it('logs exchange_expired for type "exchange_expired"', () => {
+      const req = {
+        workflow,
+        exchange,
+        body: {type: 'exchange_expired'},
+        headers: {'user-agent': 'test-agent'}
+      };
+      const res = mockRes();
+
+      exchangeEventMiddleware(req, res);
+
+      const expired = findEvent(loggerInfoStub, 'exchange_expired');
+      expect(expired).to.be.ok();
+      expect(expired[1].clientId).to.equal(workflow.clientId);
+      expect(expired[1].exchangeId).to.equal(exchange.id);
+      expect(res.statusCode).to.equal(204);
+    });
+
+    it('does not record a profile or ttl on exchange_expired', () => {
+      // The browser reports neither: no profile is involved in an expiry,
+      // and ttl is a deployment-wide setting rather than per-event data.
+      const req = {
+        workflow,
+        exchange,
+        body: {type: 'exchange_expired', profile: 'OID4VP-1.0', ttl: 900},
+        headers: {'user-agent': 'test-agent'}
+      };
+      const res = mockRes();
+
+      exchangeEventMiddleware(req, res);
+
+      const expired = findEvent(loggerInfoStub, 'exchange_expired');
+      expect(expired).to.be.ok();
+      expect(expired[1].profile).to.be(undefined);
+      expect(expired[1].ttl).to.be(undefined);
+    });
+
     it('returns 400 for an unrecognized type', () => {
       const req = {
         workflow,

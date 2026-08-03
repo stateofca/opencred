@@ -232,15 +232,19 @@ const checkStatus = async () => {
     return;
   }
 
-  // Check client-side whether exchange has expired before polling
+  // Check client-side whether exchange has expired before polling.
+  // `handleError` clears the polling interval, so this reports once per
+  // exchange rather than on every tick.
   const expiresStr = context.value.exchangeData.expires;
   if(expiresStr && Date.now() >= new Date(expiresStr).getTime()) {
+    reportInteractionEvent('exchange_expired');
     handleError({
       title: t('exchangeErrorTtlExpiredTitle'),
       subtitle: t('exchangeErrorTtlExpiredSubtitle'),
       message: t('exchangeErrorTtlExpired'),
       resettable: true
     });
+    return;
   }
 
   if(state.error && state.intervalId) {
