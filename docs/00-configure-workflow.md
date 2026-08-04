@@ -165,9 +165,9 @@ workflows:
 ```
 
 **Inherited fields:** `name`, `description`, `brand`, `caStore`, `dcApiEnabled`,
-`interactEnabled`, `wallets`, `oidc`, `callback`, `translations`,
-`trustedCredentialIssuers`, `untrustedVariableAllowList`, `public`,
-`clientSecret`.
+`interactEnabled`, `wallets`, `dcApiButtons`, `oidc`, `callback`,
+`translations`, `trustedCredentialIssuers`, `untrustedVariableAllowList`,
+`public`, `clientSecret`.
 
 **Deep-merge behavior:**
 
@@ -481,6 +481,78 @@ workflows:
     dcApiEnabled: false # Disable DC API for this workflow
     # ... other config
 ```
+
+#### Wallet buttons for the DC API (`dcApiButtons`)
+
+**This is optional.** With no `dcApiButtons` configured, the DC API screen shows
+one button per enabled, compatible wallet, labeled with that wallet's own name.
+That is the default behavior and nothing needs to be set to get it.
+
+Configure `dcApiButtons` when you want **one button to reach wallets that read
+different credential formats**. A button requests all of its `profiles` together
+in a single browser Digital Credentials API call, and each wallet answers the
+request it understands:
+
+```yaml
+workflows:
+  - clientId: my-workflow
+    type: native
+    dcApiButtons:
+      - id: mdl
+        label: Present your mobile ID
+        profiles:
+          - apple-wallet
+          - google-wallet
+```
+
+Apple Wallet answers the `apple-wallet` request (an ISO 18013-7 Annex C mdoc
+device request), Google Wallet answers the `google-wallet` request (a signed
+OID4VP 1.0 request), and the CA DMV wallet — which reads either format — may
+answer either. One button, no device or wallet detection needed.
+
+Each entry takes:
+
+- **`id`** (required) — unique within the workflow; `[a-zA-Z0-9_-]` only.
+- **`profiles`** (required) — at least one profile. **Order is significant:** it
+  is the order of the requests handed to the browser, which can determine which
+  handler the operating system offers first, and which format a wallet that
+  reads several will answer with.
+- **`label`** and/or **`labelKey`** (at least one required) — the button text.
+  `labelKey` is preferred where the text needs translating, because it resolves
+  through the same `translations` mechanism as the rest of the UI (including
+  per-workflow overrides); define the key under `translations` and reference it
+  here. A literal `label` is the quick option. When both are given, `labelKey`
+  wins wherever it resolves in the active locale, otherwise `label` is used.
+
+When `dcApiButtons` is set, it **replaces** the derived per-wallet buttons for
+that workflow, so the DC API screen shows exactly the buttons configured.
+
+**Two profiles that use the same wire format cannot share a button.** Config
+loading rejects it with, for example:
+
+```text
+dcApiButtons["mdl"]: profiles "google-wallet" and "18013-7-Annex-D" both use
+DC API protocol "openid4vp-v1-signed". A button must not request the same wire
+format twice — one request already reaches every wallet that reads that format.
+```
+
+This is not an arbitrary restriction. Both of those profiles produce an
+identical kind of request, so sending both would ask twice for the same thing,
+and it would leave the response ambiguous: a wallet's reply identifies which
+request it answered only by that format identifier. Pick one.
+
+**Prerequisites.** A button's profiles must actually be on offer for the
+exchange, or they are silently skipped (and the button disappears if none
+remain):
+
+- `dcApiEnabled` must not be false for the workflow (see below).
+- The query must include the `mso_mdoc` format.
+- `google-wallet` and `apple-wallet` each additionally require a matching
+  `walletCertificates` entry — see
+  [Configure Google Wallet](#configure-google-wallet-oid4vp-10-x509_hash) and
+  [Apple Wallet reader authentication](#apple-wallet-reader-authentication-annex-c)
+  above. Without the certificate, the profile is not published for the exchange
+  at all.
 
 ### 8. Run OpenCred
 

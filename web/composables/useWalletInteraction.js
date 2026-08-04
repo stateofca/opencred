@@ -8,8 +8,9 @@
 import {computed, reactive} from 'vue';
 import {useExchangeOptions} from './useExchangeOptions.js';
 
+// DC API launch errors live in `useDcApiLaunch` alongside the launch that
+// produces them; this holds only picker selection state.
 const interactionState = reactive({
-  dcApiError: null,
   activeOverride: false,
   activePickerEntryOverride: null
 });
@@ -51,11 +52,9 @@ export function useWalletInteraction() {
       }
     }
     interactionState.activeOverride = true;
-    interactionState.dcApiError = null;
   };
 
   const handleDcApiRetry = () => {
-    interactionState.dcApiError = null;
     interactionState.activeOverride = true;
   };
 

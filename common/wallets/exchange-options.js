@@ -32,7 +32,8 @@ const DC_API_AGGREGATOR_PROFILES = [
  *
  * @param {object} input - Input parameters.
  * @param {object} input.workflow - Workflow configuration
- *   (used for `query`/`dcql_query` to derive formats).
+ *   (used for `query`/`dcql_query` to derive formats, and for
+ *   `dcApiButtons` to build DC API launch options).
  * @param {object} input.exchange - Exchange object;
  *   `exchange.protocols` keys are profile IDs.
  * @param {Array<string>} input.systemWallets - Wallet IDs
@@ -56,7 +57,8 @@ const DC_API_AGGREGATOR_PROFILES = [
  *   defaultProfiles: Array<object>,
  *   extraProfiles: Array<object>,
  *   pickerEntries: Array<object>
- * }} The computed exchange options.
+ * }} The computed exchange options. Each `dcapi` picker entry carries a
+ *   `buttons` array of launch-option descriptors; see `_handledBy`.
  */
 export function computeExchangeOptions(input) {
   const {
@@ -183,7 +185,8 @@ export function computeExchangeOptions(input) {
   const dcApiOk = dcApiSystemAvailable && workflow?.dcApiEnabled !== false;
   const pickerEntries = _buildPickerEntries({
     enabledWalletIds, enabledProfileIds, availableProfiles,
-    formats, exchange, dcApiOk, registry
+    formats, exchange, dcApiOk, registry,
+    dcApiButtons: workflow?.dcApiButtons
   });
 
   return {
@@ -287,23 +290,229 @@ function _walletsForProfile(profile, registry) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// DC API launch-option descriptors
+// ---------------------------------------------------------------------------
+
+/*
+ * A launch-option descriptor is the single unit of DC API interaction: one
+ * button, and every profile it requests together in one
+ * `navigator.credentials.get()` call.
+ *
+ * Descriptors are deliberately self-describing for rendering — they carry
+ * resolved label and "handled by" inputs rather than wallet ids to look up — so
+ * that no component re-derives anything from the wallet registry. That is what
+ * lets `DcApiInteraction.vue` be a single `v-for` instead of the two divergent
+ * derivation paths it had.
+ *
+ *   {
+ *     id,               // stable v-for key and telemetry handle
+ *     profiles: [...],  // ORDER SIGNIFICANT - the DC API `requests` order
+ *     labelKey, label,  // label inputs; see precedence below
+ *     walletBranded,    // true when the label names one specific wallet
+ *     handledBy: [{walletId, nameKey?, name?}]
+ *   }
+ *
+ * Label precedence, mirroring `successViewFields`: `labelKey` when it resolves
+ * in the current locale, else literal `label`, else a generic fallback. The
+ * component does the i18n; this module only supplies the inputs.
+ *
+ * `handledBy` drives the "may be handled by ..." hint, shown for descriptors
+ * that are not wallet-branded — which covers both the pre-existing
+ * single-profile button and a configured multi-wallet button, where naming the
+ * wallets is exactly what a user needs.
+ */
+
+/**
+ * Build the `handledBy` entries for a set of wallets.
+ *
+ * @param {object} options - Options.
+ * @param {Array<string>} options.walletIds - Wallets to describe.
+ * @param {object} options.registry - Wallet registry.
+ * @returns {Array<object>} `handledBy` entries.
+ */
+function _handledBy({walletIds, registry}) {
+  return (walletIds ?? [])
+    .filter(walletId => registry[walletId])
+    .map(walletId => {
+      const wallet = registry[walletId];
+      return {
+        walletId,
+        ...(wallet.nameKey && {nameKey: wallet.nameKey}),
+        ...(wallet.name && {name: wallet.name})
+      };
+    });
+}
+
+/**
+ * The first DC-API-capable profile a wallet declares that this exchange
+ * actually offers.
+ *
+ * Registry declaration order is meaningful: `google-wallet` lists its own
+ * `google-wallet` profile before `18013-7-Annex-D`, so the more specific
+ * profile wins when both are available.
+ *
+ * @param {object} options - Options.
+ * @param {object} options.wallet - Registry entry.
+ * @param {Array<string>} options.availableProfiles - `exchange.protocols` keys.
+ * @returns {string|null} Profile id, or null when the wallet has none here.
+ */
+function _firstDcApiProfile({wallet, availableProfiles}) {
+  for(const [profile, profileConfig] of
+    Object.entries(wallet?.supportedProfiles ?? {})) {
+    if(!profileConfig?.dcapi) {
+      continue;
+    }
+    if(availableProfiles.includes(profile)) {
+      return profile;
+    }
+  }
+  return null;
+}
+
+/**
+ * Descriptors for the default, unconfigured case: one button per enabled
+ * compatible wallet, labeled with that wallet's own name.
+ *
+ * This is what keeps `workflow.dcApiButtons` optional: an unconfigured
+ * workflow renders exactly what it rendered before multi-profile support
+ * existed.
+ *
+ * @param {object} options - Options.
+ * @param {Array<string>} options.walletIds - The aggregator entry's wallets.
+ * @param {Array<string>} options.availableProfiles - `exchange.protocols` keys.
+ * @param {object} options.registry - Wallet registry.
+ * @returns {Array<object>} One descriptor per wallet.
+ */
+function _perWalletDescriptors({walletIds, availableProfiles, registry}) {
+  const descriptors = [];
+  for(const walletId of walletIds) {
+    const wallet = registry[walletId];
+    if(!wallet) {
+      continue;
+    }
+    const profile = _firstDcApiProfile({wallet, availableProfiles});
+    if(!profile) {
+      continue;
+    }
+    descriptors.push({
+      id: walletId,
+      profiles: [profile],
+      ...(wallet.nameKey && {labelKey: wallet.nameKey}),
+      ...(wallet.name && {label: wallet.name}),
+      walletBranded: true,
+      handledBy: _handledBy({walletIds: [walletId], registry})
+    });
+  }
+  return descriptors;
+}
+
+/**
+ * The descriptor for a per-profile DC API entry: one button requesting that one
+ * profile, generically labeled, with the hint naming the wallets that may
+ * handle it. Reproduces the pre-existing single-profile button.
+ *
+ * @param {object} options - Options.
+ * @param {string} options.profile - The profile this entry is for.
+ * @param {Array<string>} options.walletIds - Wallets that may handle it.
+ * @param {object} options.registry - Wallet registry.
+ * @returns {object} The descriptor.
+ */
+function _singleProfileDescriptor({profile, walletIds, registry}) {
+  return {
+    id: profile,
+    profiles: [profile],
+    labelKey: 'dcApiSingleProfile_buttonLabel',
+    walletBranded: false,
+    handledBy: _handledBy({walletIds, registry})
+  };
+}
+
+/**
+ * Descriptors from `workflow.dcApiButtons`.
+ *
+ * Each button's profiles are filtered to those the exchange actually offers,
+ * and a button left with none is dropped: `getProtocols()` only publishes
+ * `google-wallet` / `apple-wallet` when the matching `walletCertificates` entry
+ * exists, so a button can legitimately lose profiles in a given deployment.
+ *
+ * @param {object} options - Options.
+ * @param {Array<object>} options.dcApiButtons - Configured buttons.
+ * @param {Array<string>} options.availableProfiles - `exchange.protocols` keys.
+ * @param {object} options.registry - Wallet registry.
+ * @returns {Array<object>} Descriptors, in configured order.
+ */
+function _configuredDescriptors({dcApiButtons, availableProfiles, registry}) {
+  const descriptors = [];
+  for(const button of dcApiButtons) {
+    const profiles = (button.profiles ?? [])
+      .filter(profile => availableProfiles.includes(profile));
+    if(profiles.length === 0) {
+      continue;
+    }
+    // Every wallet that declares a DC API method for any requested profile,
+    // deduplicated and in registry order.
+    const walletIds = Object.keys(registry).filter(walletId =>
+      profiles.some(
+        profile => registry[walletId]?.supportedProfiles?.[profile]?.dcapi));
+    descriptors.push({
+      id: button.id,
+      profiles,
+      ...(button.labelKey && {labelKey: button.labelKey}),
+      ...(button.label && {label: button.label}),
+      walletBranded: false,
+      handledBy: _handledBy({walletIds, registry})
+    });
+  }
+  return descriptors;
+}
+
 function _buildPickerEntries({
   enabledWalletIds, enabledProfileIds, availableProfiles,
-  formats, exchange, dcApiOk, registry
+  formats, exchange, dcApiOk, registry, dcApiButtons
 }) {
   const entries = [];
 
+  // Configured DC API buttons REPLACE the derived entries below, so a workflow
+  // that configures them gets exactly the buttons it asked for. One entry
+  // carrying every descriptor, rather than one entry per button, because the
+  // picker offers a choice of *connection method* and these are all the same
+  // method.
+  const configured = Array.isArray(dcApiButtons) && dcApiButtons.length > 0 ?
+    _configuredDescriptors({dcApiButtons, availableProfiles, registry}) : null;
+  if(dcApiOk && configured && configured.length > 0) {
+    entries.push({
+      method: 'dcapi',
+      profile: null,
+      walletIds: [...new Set(
+        configured.flatMap(d => d.handledBy.map(h => h.walletId)))],
+      buttons: configured
+    });
+  }
+
+  // Configured buttons replace every derived DC API entry — the aggregator
+  // below and the per-profile ones further down — so a workflow gets exactly
+  // the DC API buttons it asked for. Non-DC-API entries are untouched.
+  const derivedDcApiOk = dcApiOk && !configured;
+
   // DC API all-wallets aggregator
-  if(dcApiOk) {
+  if(derivedDcApiOk) {
     const wallets = _dcApiAggregatorWallets({
       enabledWalletIds, availableProfiles, formats, registry
     });
     if(wallets.length > 0) {
-      entries.push({method: 'dcapi', profile: null, walletIds: wallets});
+      entries.push({
+        method: 'dcapi',
+        profile: null,
+        walletIds: wallets,
+        buttons: _perWalletDescriptors({
+          walletIds: wallets, availableProfiles, registry
+        })
+      });
     }
   }
 
-  // Per-enabled-profile entries
+  // Per-enabled-profile entries.
   for(const profile of enabledProfileIds) {
     if(profile === 'vcapi' || !availableProfiles.includes(profile)) {
       continue;
@@ -316,22 +525,32 @@ function _buildPickerEntries({
           formats, exchange, registry
         })
       });
-      if(dcApiOk) {
+      if(derivedDcApiOk) {
         const dcApiWallets = _matchingWallets({
           enabledWalletIds, profile, methods: ['dcapi'],
           formats, exchange, registry
         });
         if(dcApiWallets.length > 0) {
-          entries.push({method: 'dcapi', profile, walletIds: dcApiWallets});
+          entries.push({
+            method: 'dcapi', profile, walletIds: dcApiWallets,
+            buttons: [_singleProfileDescriptor({
+              profile, walletIds: dcApiWallets, registry
+            })]
+          });
         }
       }
-    } else if(DC_API_ONLY_PROFILES.includes(profile) && dcApiOk) {
+    } else if(DC_API_ONLY_PROFILES.includes(profile) && derivedDcApiOk) {
       const dcApiWallets = _matchingWallets({
         enabledWalletIds, profile, methods: ['dcapi'],
         formats, exchange, registry
       });
       if(dcApiWallets.length > 0) {
-        entries.push({method: 'dcapi', profile, walletIds: dcApiWallets});
+        entries.push({
+          method: 'dcapi', profile, walletIds: dcApiWallets,
+          buttons: [_singleProfileDescriptor({
+            profile, walletIds: dcApiWallets, registry
+          })]
+        });
       }
     } else if(profile === 'interact') {
       entries.push({

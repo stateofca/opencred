@@ -63,6 +63,14 @@ find the DC API request, inspect the request body, and copy the `deviceRequest`
 string (and optionally `encryptionInfo`). Pass those strings directly to the
 CLI — no files or running server required.
 
+If the button requests several profiles at once (see `dcApiButtons` in
+`00-configure-workflow.md`), the authorization request response is
+`{dcApiRequests: [{profile, dcApiRequest}, ...]}` rather than a single envelope.
+Pick the entry whose `profile` is the Annex C one — `apple-wallet`, `cadmv-ios`,
+or `18013-7-Annex-C` — and read `dcApiRequest.data` for the `deviceRequest` and
+`encryptionInfo` values. The other entries carry a different wire format and are
+not what this tool audits.
+
 Do not commit captured production requests into the repository.
 
 ## Output structure

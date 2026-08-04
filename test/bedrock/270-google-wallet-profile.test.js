@@ -178,22 +178,42 @@ describe('profile=google-wallet end-to-end', function() {
       const expectedClientId = computeX509HashClientId(ders[0]);
       expect(payload.client_id).to.equal(expectedClientId);
 
-      // Verify exchange was persisted with correct variables
+      // Verify exchange was persisted with correct variables. Request state
+      // lives in `variables.dcApiRequests` rather than a flat slot, so that one
+      // exchange can hold a pending request per profile when a button requests
+      // several at once; the per-profile key material is unchanged, just
+      // namespaced under its own entry.
       expect(replaceOneStub.calledOnce).to.be(true);
       const savedExchange = replaceOneStub.firstCall.args[1];
       expect(savedExchange.state).to.equal('active');
+      expect(savedExchange.variables.dcApiRequests).to.be.an('array');
+      expect(savedExchange.variables.dcApiRequests.length).to.equal(1);
+      const [pending] = savedExchange.variables.dcApiRequests;
+      expect(pending.profile).to.equal('google-wallet');
+      expect(pending.protocol).to.equal('openid4vp-v1-signed');
+      expect(pending.requestGroupId).to.be.a('string');
+      expect(pending.authorizationRequest).to.be.an('object');
       expect(
-        savedExchange.variables.authorizationRequest
+        pending.material.ephemeralKeyAgreementPrivateKey
       ).to.be.an('object');
       expect(
-        savedExchange.variables.ephemeralKeyAgreementPrivateKey
+        pending.material.ephemeralKeyAgreementPublicKey
       ).to.be.an('object');
+      expect(pending.material.encodedSessionTranscript).to.be.ok();
+      // The ephemeral encryption key's per-request `kid` is lifted onto the
+      // entry so response routing can cross-check a JWE header without
+      // knowing which profile stores its key under which name.
+      expect(pending.kid).to.equal(
+        pending.material.ephemeralKeyAgreementPrivateKey.kid);
+      // This request's authorization request went only into its own entry: the
+      // flat slot is deliberately no longer written, so it still holds whatever
+      // the fixture seeded (a `did` / direct_post request) rather than this
+      // google-wallet one.
       expect(
-        savedExchange.variables.ephemeralKeyAgreementPublicKey
-      ).to.be.an('object');
-      expect(
-        savedExchange.variables.encodedSessionTranscript
-      ).to.be.ok();
+        savedExchange.variables.authorizationRequest?.client_id_scheme
+      ).to.not.equal('x509_hash');
+      expect(savedExchange.variables.authorizationRequest)
+        .to.not.eql(pending.authorizationRequest);
     });
   });
 

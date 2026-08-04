@@ -173,6 +173,13 @@ export function summarizeInteractionState(
       value: interactionState.dcApiError
     });
   }
+  if(interactionState.activeDescriptorId !== undefined &&
+    interactionState.activeDescriptorId !== null) {
+    rows.push({
+      label: 'activeDescriptorId',
+      value: interactionState.activeDescriptorId
+    });
+  }
   if(interactionState.activeOverride !== undefined) {
     rows.push({
       label: 'activeOverride',

@@ -1,6 +1,41 @@
 # opencred-platform Changelog
 
-## 10.3.2 - 2026-08-dd
+## 10.4.0 - 2026-08-dd
+
+### Added
+- Multi-profile DC API wallet buttons. A workflow may configure
+  `dcApiButtons: [{id, label?, labelKey?, profiles: [...]}]` so that one button
+  requests several authorization-request profiles together in a single
+  `navigator.credentials.get()` call — Google Wallet answering the
+  `google-wallet` request, Apple Wallet the `apple-wallet` one, and the CA DMV
+  wallet (which reads either format) able to answer either. `dcApiButtons` is
+  optional: without it the UI still derives one button per enabled compatible
+  wallet, exactly as before. Profile order within a button is significant, since
+  it is the order the requests are offered to the platform. Config loading
+  rejects a button whose profiles emit the same DC API protocol identifier,
+  because such a button asks twice for the same wire format and would leave the
+  response ambiguous. See `docs/00-configure-workflow.md` and
+  `docs/adr/2026-07-29-multi-profile-dc-api-requests.md`.
+- The authorization request endpoint
+  `GET /workflows/:workflowId/exchanges/:exchangeId/openid/client/authorization/request`
+  accepts a repeated `profile` parameter and returns
+  `{dcApiRequests: [{profile, dcApiRequest}, ...]}`. A single-profile request
+  additionally returns the unchanged `{dcApiRequest}`, so existing clients are
+  unaffected. A multi-profile request must name only DC API profiles, and fails
+  as a whole if any of them cannot be served.
+- Exchanges now publish `dcApi.authorizationRequestUrl`, the DC API
+  authorization request endpoint. The browser previously recovered this by
+  parsing `request_uri` back out of an `openid4vp://` deep link, which cannot
+  express more than one profile.
+- DC API observability: a `requestGroupId` correlates the requests issued by one
+  button press with the response that answers one of them.
+  `presentation_response_received` now carries the response `protocol`;
+  `presentation_success` / `presentation_error` carry the profile that actually
+  answered. Outcomes with no answering wallet (`dcapi_cancelled`,
+  `dcapi_timeout`, `dcapi_error`) report `profiles`, the whole offered set,
+  rather than attributing the outcome to one profile. A new
+  `presentation_dc_api_unresolved` event covers a response that matches no
+  pending request, carrying the arriving protocol and the candidate profiles.
 
 ### Changed
 - **NOTE**: Node.js 26.x testing is temporarily disabled. Node 26's bundled
@@ -9,6 +44,15 @@
   that makes an HTTP request fails with `InvalidArgumentError: invalid onError
   method`. Re-enable once `http-client` depends on `undici@7`. Node.js 20.x
   remains unsupported.
+- **Data model:** pending DC API authorization requests are stored per profile
+  in `exchange.variables.dcApiRequests` rather than a single flat slot on
+  `exchange.variables`, so one exchange can hold a pending request per profile.
+  A wallet response is routed to its request by DC API protocol identifier and
+  restored into the shape the profile handlers expect, so profile
+  request/response handling is unchanged. Completed exchanges keep the same
+  document shape as before. Exchanges created before this release still
+  complete; the compatibility read is removable one release after rollout.
+  `variables.dcApiRequests` is scrubbed from any exchange returned to a client.
 - Report client-observed exchange expiry via the exchange event endpoint. When
   the browser's status-check timer sees the exchange TTL has elapsed and shows
   the expiry notice, it posts an `exchange_expired` event `type` that maps to
@@ -18,19 +62,15 @@
   user closes the tab produces no event. Named `exchange_expired` rather than
   taking the `presentation_` prefix of the surrounding events, since what
   expired is the exchange and no presentation was involved.
-
-### Fixed
-- Return immediately after handling client-side exchange expiry in the status
-  check, rather than relying on a later guard to stop the poll.
-
-## 10.3.1 - 2026-07-dd
-
-### Changed
 - Update `@bedrock/config-yaml` to `^4.5.0`, which adds support for loading the
   config from a `BEDROCK_CONFIG_GZIP` environment variable holding
   base64-encoded gzipped YAML. This is a prerequisite for moving the deployed
   config to a compressed secret; deployments that do not set the new variable
   are unaffected and continue to read `BEDROCK_CONFIG` as before.
+
+### Fixed
+- Return immediately after handling client-side exchange expiry in the status
+  check, rather than relying on a later guard to stop the poll.
 
 ## 10.3.0 - 2026-07-27
 

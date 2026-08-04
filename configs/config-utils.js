@@ -6,7 +6,12 @@
  */
 
 import * as z from 'zod';
+import {
+  dcApiProtocolForProfile,
+  PROFILE_DC_API_PROTOCOL
+} from '../lib/workflows/common/dc-api-envelope.js';
 import crypto from 'node:crypto';
+import {identifyProfile} from '../lib/workflows/common/identify-profile.js';
 import {logger} from '../lib/logger.js';
 
 // Preset configurations
@@ -204,6 +209,31 @@ export const BaseWorkflowSchema = z.object({
   twdiwStatusList2021Enabled: z.boolean().optional(),
 
   wallets: z.array(z.enum(availableWallets)).optional(),
+
+  // Wallet launch buttons for the DC API interaction method. Each button
+  // requests all of its `profiles` together in a single
+  // `navigator.credentials.get()` call, so that e.g. Google Wallet answers the
+  // `google-wallet` request while Apple Wallet answers `apple-wallet` and the
+  // CA DMV wallet — which reads either format — may answer either.
+  //
+  // OPTIONAL. When absent, the UI derives one button per enabled compatible
+  // wallet, which is the pre-existing behavior.
+  //
+  // Profile order is significant: it is the order of the DC API `requests`
+  // array, which may determine which handler the OS offers first and which
+  // format a wallet that reads several formats answers with.
+  //
+  // Two profiles that emit the same DC API protocol identifier may not share a
+  // button — see `validateDcApiButtons`.
+  dcApiButtons: z.array(z.object({
+    id: z.string().regex(/^[a-zA-Z0-9_-]+$/),
+    label: z.string().optional(),
+    labelKey: z.string().optional(),
+    profiles: z.array(z.string()).min(1)
+  }).refine(b => b.label !== undefined || b.labelKey !== undefined, {
+    message: 'dcApiButtons entry requires `label` or `labelKey`'
+  })).optional(),
+
   oidc: OpenIdConnectSchema.optional(),
   callback: CallbackSchema.optional(),
   translations: z.record(z.string(), z.record(z.string(), z.string()))
@@ -246,6 +276,100 @@ export const VcApiWorkflowSchema = z.object({
   verifiablePresentationRequest: z.string()
 });
 
+/**
+ * Validate a workflow's `dcApiButtons` against the DC API protocol map, adding
+ * issues to a zod refinement context.
+ *
+ * Two checks:
+ *
+ * 1. Every profile must be a DC API profile. A profile that produces a signed
+ *    JAR JWT rather than a DC API wire envelope cannot be one element of a
+ *    multi-profile request.
+ * 2. No two profiles in one button may emit the same DC API protocol
+ *    identifier. This is what makes response routing deterministic: a wallet
+ *    response identifies its request by protocol, so two pending requests
+ *    sharing a protocol would be ambiguous. Such a button is also redundant by
+ *    construction — one request already reaches every wallet that reads that
+ *    format.
+ *
+ * Profiles are resolved through `identifyProfile` **before** the protocol
+ * lookup, because `identifyProfile` redirects: `cadmv-android` and
+ * `18013-7-Annex-D` both become `18013-7-Annex-D-spruceid` when
+ * `dcApiNamespaceQuery` is set, and the Annex C lane likewise. Validating raw
+ * configured names would let a colliding pair through whenever a redirect
+ * collapses two distinct names onto one handler.
+ *
+ * Errors report the **configured** profile name, mentioning the resolved name
+ * only when it differs. `identifyProfile` silently falls back to the default
+ * OID4VP profile for an unrecognized profile, so a typo surfaces here as "not a
+ * DC API profile"; naming only the resolved profile would make that
+ * unintelligible.
+ *
+ * @param {object} options - Options.
+ * @param {object} options.workflow - Workflow config being validated; supplies
+ *   `dcApiButtons` and the `dcApiNamespaceQuery` that steers redirects.
+ * @param {object} options.ctx - Zod refinement context.
+ * @returns {void}
+ */
+export function validateDcApiButtons({workflow, ctx}) {
+  const buttons = workflow?.dcApiButtons;
+  if(!Array.isArray(buttons) || buttons.length === 0) {
+    return;
+  }
+
+  const seenIds = new Set();
+  buttons.forEach((button, index) => {
+    if(seenIds.has(button.id)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `dcApiButtons["${button.id}"]: duplicate id`,
+        path: ['dcApiButtons', index, 'id']
+      });
+    }
+    seenIds.add(button.id);
+
+    // profile -> the configured names that resolved to it
+    const byProtocol = new Map();
+    for(const configured of button.profiles) {
+      const {profile: resolved} = identifyProfile({
+        profile: configured,
+        workflow
+      });
+      const protocol = dcApiProtocolForProfile({profile: resolved});
+      const shown = resolved === configured ?
+        `"${configured}"` : `"${configured}" (resolved to "${resolved}")`;
+
+      if(protocol === null) {
+        ctx.addIssue({
+          code: 'custom',
+          message:
+            `dcApiButtons["${button.id}"]: profile ${shown} is not a DC API ` +
+            'profile, so it cannot be part of a DC API button. DC API ' +
+            'profiles are: ' +
+            `${Object.keys(PROFILE_DC_API_PROTOCOL).join(', ')}.`,
+          path: ['dcApiButtons', index, 'profiles']
+        });
+        continue;
+      }
+
+      const collision = byProtocol.get(protocol);
+      if(collision !== undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          message:
+            `dcApiButtons["${button.id}"]: profiles "${collision}" and ` +
+            `"${configured}" both use DC API protocol "${protocol}". A ` +
+            'button must not request the same wire format twice — one ' +
+            'request already reaches every wallet that reads that format.',
+          path: ['dcApiButtons', index, 'profiles']
+        });
+        continue;
+      }
+      byProtocol.set(protocol, configured);
+    }
+  });
+}
+
 // Native Workflow schema
 export const NativeWorkflowSchema = z.object({
   ...BaseWorkflowSchema.shape,
@@ -282,6 +406,12 @@ export const NativeWorkflowSchema = z.object({
 }, {
   message: 'query must have at least 1 element',
   path: ['query']
+}).superRefine((data, ctx) => {
+  // Validated here rather than on BaseWorkflowSchema because the profile
+  // redirects depend on `dcApiNamespaceQuery`, which is native-only. The DC API
+  // interaction itself is native-only too (see
+  // `NativeWorkflowService.authorizationRequestMiddleware`).
+  validateDcApiButtons({workflow: data, ctx});
 });
 
 // Entra Workflow schema
@@ -572,6 +702,7 @@ export const INHERITABLE_FIELDS = [
   'dcApiEnabled',
   'interactEnabled',
   'wallets',
+  'dcApiButtons',
   'oidc',
   'callback',
   'translations',

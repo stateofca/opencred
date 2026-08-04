@@ -73,9 +73,12 @@ const props = defineProps({
     type: String,
     default: null
   },
+  // Optional: a launch option may request several profiles together, in which
+  // case there is no single profile to name. The parent decides what a press
+  // means; this stays presentational.
   profile: {
     type: String,
-    required: true
+    default: null
   },
   label: {
     type: String,

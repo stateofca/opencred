@@ -507,6 +507,31 @@ options:
 If this section is omitted, both protocols (`openid4vp` and `chapi`)
 will be offered, with an OID4VP QR code offered to the user first.
 
+##### Wallet buttons for the DC API
+
+A workflow may configure `dcApiButtons` so that a single button requests several
+authorization-request profiles together in one browser Digital Credentials API
+call, letting one button reach wallets that read different credential formats.
+It is optional: without it, one button per enabled compatible wallet is shown,
+which is the pre-existing behavior.
+
+```yaml
+workflows:
+  - clientId: example
+    type: native
+    dcApiButtons:
+      - id: mdl
+        label: Present your mobile ID
+        profiles:
+          - apple-wallet
+          - google-wallet
+```
+
+Profile order is significant, and two profiles that produce the same DC API wire
+format may not share a button. See
+[docs/00-configure-workflow.md](docs/00-configure-workflow.md) for the full
+reference, prerequisites, and rationale.
+
 #### Public Workflow Listing
 
 By default, workflows in OpenCred are private and are accessed directly via their

@@ -12,13 +12,11 @@ SPDX-License-Identifier: BSD-3-Clause
       v-if="activePickerEntry?.method === 'dcapi'"
       :key="`dcapi:${activePickerEntry.profile || 'all'}`"
       :exchange-data="exchangeData"
-      :wallets-registry="WALLETS_REGISTRY"
-      :wallet-ids="activePickerEntry.walletIds || []"
-      :profile="activePickerEntry.profile || null"
-      :error="interactionState.dcApiError"
-      :active="isActive"
+      :descriptors="activePickerEntry.buttons || []"
+      :active-descriptor-id="launchState.activeDescriptorId"
+      :error="launchState.error"
       :fallback-entry="fallbackPickerEntry"
-      @launch="handleDcApiLaunch"
+      @launch="launch"
       @retry="handleDcApiRetry"
       @fallback="handleDcApiFallback" />
     <QrAndLinkInteraction
@@ -60,22 +58,25 @@ SPDX-License-Identifier: BSD-3-Clause
 import ChapiInteraction from './interactions/ChapiInteraction.vue';
 import {computed} from 'vue';
 import DcApiInteraction from './interactions/DcApiInteraction.vue';
-import {httpClient} from '@digitalbazaar/http-client';
 import QrAndCopyInteraction from './interactions/QrAndCopyInteraction.vue';
 import QrAndLinkInteraction from './interactions/QrAndLinkInteraction.vue';
-import {startDCApiFlow as startDCApiFlowUtil} from '../utils/dcapi.js';
+import {useDcApiLaunch} from '../composables/useDcApiLaunch.js';
 import {useExchange} from '../composables/useExchange.js';
 import {useWalletInteraction} from '../composables/useWalletInteraction.js';
 import {WALLETS_REGISTRY} from '../../common/wallets/index.js';
 
 const {
-  exchangeData, workflow, isActive, updateExchange
+  exchangeData, workflow, isActive
 } = useExchange();
 
 const {
-  activePickerEntry, interactionState, pickerEntries,
-  handleDcApiRetry, handlePickerSelect
+  activePickerEntry, pickerEntries,
+  handlePickerSelect, handleDcApiRetry: retryPickerEntry
 } = useWalletInteraction();
+
+// DC API launch state and the launch itself live in the composable, so this
+// component is left routing between interaction methods.
+const {launchState, launch, reset: resetDcApiLaunch} = useDcApiLaunch();
 
 const protocolUrl = computed(() => {
   const entry = activePickerEntry.value;
@@ -137,34 +138,20 @@ const handleDcApiFallback = () => {
   if(!next) {
     return;
   }
-  interactionState.dcApiError = null;
+  resetDcApiLaunch();
   handlePickerSelect(next);
 };
 
-const handleDcApiLaunch = async ({profile, walletId}) => {
-  if(!profile) {
-    throw new Error('Profile is required');
-  }
-  try {
-    await startDCApiFlowUtil({
-      exchangeData: exchangeData.value,
-      httpClient,
-      onExchangeUpdate: updatedExchange => {
-        updateExchange(updatedExchange);
-      },
-      selectedProtocol: profile
-    });
-  } catch(error) {
-    console.error('DC API flow error:', {walletId, profile}, error);
-    interactionState.dcApiError = {
-      message: error.message ||
-        'An error occurred while starting the DC API flow.'
-    };
-  }
+const handleDcApiRetry = () => {
+  resetDcApiLaunch();
+  retryPickerEntry();
 };
 
+// The QR/link screens offer a same-device launch, which runs the same DC API
+// flow for the single profile that screen is showing. Routed through the same
+// composable as a one-profile launch option, so there is one launch path.
 const handleSameDeviceLaunch = ({walletId, profile}) => {
-  handleDcApiLaunch({walletId, profile});
+  launch({id: walletId ?? profile, profiles: [profile]});
 };
 
 const handleChapiActivate = () => {
