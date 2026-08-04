@@ -3,17 +3,24 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
-# See README-ecr-pipeline.md before enabling. No values are hardcoded: the AWS
+# Builds the UAT image and pushes it to ECR. No values are hardcoded: the AWS
 # account, OIDC role, and ECR repo come from GitHub repo/environment variables
 # (Settings > Secrets and variables > Actions > Variables). This workflow is
-# intended to live on `stateofca/opencred-uat` (the UAT build source); it is
-# staged here in `digitalbazaar/opencred-platform` for review.
+# authored in `digitalbazaar/opencred-platform` and runs in
+# `stateofca/opencred-uat`, the UAT build source.
 #
-# Required `vars` (set on the `uat` environment):
-#   UAT_ACCOUNT_ID        946495772753
-#   UAT_OIDC_BUILD_ROLE   opencred-uat-oidc-build
-#   UAT_ECR_REPO          opencred
-#   AWS_REGION            us-west-2
+# Both jobs are gated on `vars.WORKFLOW_IMAGE_PUSH_UAT_ENABLED == 'true'`,
+# matching every other workflow in this repo. Set that variable only on the
+# remote that should build. Everywhere else the run skips cleanly instead of
+# failing partway through on credentials it was never given: `environment: uat`
+# silently creates an empty environment on a remote that has none, so
+# `UAT_ACCOUNT_ID` resolves to an empty string and the AWS OIDC step fails.
+#
+# Required `vars` (set on the `uat` environment of the building remote):
+#   UAT_ACCOUNT_ID        e.g. 123456789012
+#   UAT_OIDC_BUILD_ROLE   e.g. opencred-uat-oidc-build
+#   UAT_ECR_REPO          e.g. opencred
+#   AWS_REGION            e.g. us-west-2
 
 name: Image Push UAT
 
@@ -25,6 +32,7 @@ on:
 
 jobs:
   check-version:
+    if: ${{ vars.WORKFLOW_IMAGE_PUSH_UAT_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     environment: uat
     permissions:
@@ -70,6 +78,7 @@ jobs:
           exit 1
 
   build-and-push-uat:
+    if: ${{ vars.WORKFLOW_IMAGE_PUSH_UAT_ENABLED == 'true' }}
     needs: check-version
     runs-on: ubuntu-latest
     environment: uat
