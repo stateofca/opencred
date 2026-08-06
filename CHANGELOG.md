@@ -11,6 +11,8 @@
   `certificatePem` (wallet certificates already carried this check).
 
 ### Changed
+- **NOTE**: Testing and support added for Node.js 26.x. Node.js 20.x remains
+  unsupported.
 - Suppress the wallet-name label beside the store badges in the install
   invitation for the CA DMV wallets, where the invitation heading already names
   the wallet. Wallet definitions may set `hideProductName: true` to opt in; other
