@@ -3,6 +3,12 @@
 ## 10.3.2 - 2026-08-dd
 
 ### Changed
+- **NOTE**: Node.js 26.x testing is temporarily disabled. Node 26's bundled
+  undici rejects the dispatcher handler shape used by `undici@6`, which arrives
+  as a transitive dependency via `@digitalbazaar/http-client`, so every test
+  that makes an HTTP request fails with `InvalidArgumentError: invalid onError
+  method`. Re-enable once `http-client` depends on `undici@7`. Node.js 20.x
+  remains unsupported.
 - Report client-observed exchange expiry via the exchange event endpoint. When
   the browser's status-check timer sees the exchange TTL has elapsed and shows
   the expiry notice, it posts an `exchange_expired` event `type` that maps to
