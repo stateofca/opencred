@@ -25,7 +25,7 @@ describe('logger/events pure builders', () => {
     const {logName, event} = presentationStart({
       clientId: 'c1',
       exchangeId: 'e1',
-      profile: 'OID4VP-1.0'
+      profiles: ['OID4VP-1.0']
     });
     expect(logName).to.equal('presentation_event');
     expect(event).to.eql({
@@ -33,7 +33,7 @@ describe('logger/events pure builders', () => {
       clientId: 'c1',
       exchangeId: 'e1',
       error: undefined,
-      profile: 'OID4VP-1.0'
+      profiles: ['OID4VP-1.0']
     });
   });
 

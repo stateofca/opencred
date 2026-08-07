@@ -53,6 +53,8 @@
   document shape as before. Exchanges created before this release still
   complete; the compatibility read is removable one release after rollout.
   `variables.dcApiRequests` is scrubbed from any exchange returned to a client.
+- `presentation_start` always carries the `profiles` collection (empty when
+  none), never a singular `profile`; the Entra workflow reports `['entra']`.
 - Report client-observed exchange expiry via the exchange event endpoint. When
   the browser's status-check timer sees the exchange TTL has elapsed and shows
   the expiry notice, it posts an `exchange_expired` event `type` that maps to

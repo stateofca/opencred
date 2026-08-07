@@ -45,23 +45,38 @@ describe('multi-profile presentation events', () => {
       const {event} = presentationStart({
         clientId: 'c1',
         exchangeId: 'e1',
-        profile: ['apple-wallet', 'google-wallet'],
+        profiles: ['apple-wallet', 'google-wallet'],
         requestGroupId: 'g1'
       });
       expect(event.type).to.equal('presentation_start');
       expect(event.profiles).to.eql(['apple-wallet', 'google-wallet']);
       expect(event.requestGroupId).to.equal('g1');
-      // Singular omitted: no one profile is the subject.
+      // Never a singular key: the event carries the collection only.
       expect(event).to.not.have.property('profile');
       expectNoForbiddenFields(event);
     });
 
-    it('keeps the singular profile for a single-profile call', () => {
+    it('carries a single-element collection for a single-profile call', () => {
       const {event} = presentationStart({
-        clientId: 'c1', exchangeId: 'e1', profile: 'OID4VP-1.0'
+        clientId: 'c1', exchangeId: 'e1', profiles: ['OID4VP-1.0']
       });
-      expect(event.profile).to.equal('OID4VP-1.0');
-      expect(event).to.not.have.property('profiles');
+      expect(event.profiles).to.eql(['OID4VP-1.0']);
+      expect(event).to.not.have.property('profile');
+    });
+
+    it('names entra for the Entra workflow', () => {
+      const {event} = presentationStart({
+        clientId: 'c1', exchangeId: 'e1', profiles: ['entra']
+      });
+      expect(event.profiles).to.eql(['entra']);
+      expect(event).to.not.have.property('profile');
+    });
+
+    it('emits an empty collection when no profile is given', () => {
+      const {event} = presentationStart({clientId: 'c1', exchangeId: 'e1'});
+      // Empty, not absent: an empty set is a signal, not a suppressed key.
+      expect(event.profiles).to.eql([]);
+      expect(event).to.not.have.property('profile');
     });
   });
 

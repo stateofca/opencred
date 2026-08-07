@@ -37,9 +37,9 @@ describe('logUtils user agent fields', () => {
   });
 
   it('presentationStart includes browser and deviceType', () => {
-    logUtils.presentationStart('c1', 'e1', 'OID4VP-1.0', SAMSUNG_INTERNET_UA);
+    logUtils.presentationStart('c1', 'e1', ['OID4VP-1.0'], SAMSUNG_INTERNET_UA);
     expect(logged[0].event.type).to.be('presentation_start');
-    expect(logged[0].event.profile).to.be('OID4VP-1.0');
+    expect(logged[0].event.profiles).to.eql(['OID4VP-1.0']);
     expect(logged[0].event.browser).to.be('samsung-internet');
     expect(logged[0].event.deviceType).to.be('mobile');
   });
