@@ -53,10 +53,11 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import {computed, ref} from 'vue';
+import {resolveProductName, WALLETS_REGISTRY}
+  from '../../common/wallets/index.js';
 import {useExchangeOptions} from '../composables/useExchangeOptions.js';
 import {usePlatform} from '../composables/usePlatform.js';
 import {useReactiveI18n} from '../composables/useReactiveI18n.js';
-import {WALLETS_REGISTRY} from '../../common/wallets/index.js';
 
 const {t} = useReactiveI18n();
 const {exchangeOptions} = useExchangeOptions();
@@ -95,7 +96,9 @@ const walletRows = computed(() => {
     entries.push({
       walletId: wallet.walletId,
       groupId: reg.groupId || reg.id,
-      name: reg.name || wallet.walletId,
+      productName: resolveProductName({
+        wallet: reg, t, fallbackId: wallet.walletId
+      }),
       icon: reg.icon || null,
       storefronts: filtered
     });
@@ -118,7 +121,7 @@ const walletRows = computed(() => {
     } else {
       groupIndex.set(key, groups.length);
       groups.push({
-        displayName: entry.name.replace(/\s*\((?:Android|iOS)\)\s*$/, ''),
+        displayName: entry.productName,
         icon: entry.icon,
         storefronts: [...entry.storefronts]
       });

@@ -36,8 +36,13 @@
   rather than attributing the outcome to one profile. A new
   `presentation_dc_api_unresolved` event covers a response that matches no
   pending request, carrying the arriving protocol and the candidate profiles.
+- Wallet registry entries may declare a `productName` (and `productNameKey`)
+  distinct from the launch-surface `name`/`nameKey`. The product name is the
+  wallet's app-store identity, shown by the install invitation and the
+  app-settings wallet list. Override in i18n.
 
 ### Changed
+- Restore Apple Wallet's registry `name` to its canonical vendor name.
 - **NOTE**: Node.js 26.x testing is temporarily disabled. Node 26's bundled
   undici rejects the dispatcher handler shape used by `undici@6`, which arrives
   as a transitive dependency via `@digitalbazaar/http-client`, so every test
@@ -71,6 +76,11 @@
   are unaffected and continue to read `BEDROCK_CONFIG` as before.
 
 ### Fixed
+- The install invitation now renders the wallet's product name directly instead
+  of stripping a parenthesised platform suffix ("(Android)"/"(iOS)") off the
+  launch name. That workaround was the direct cause of the install row showing
+  the wrong string; the `groupId` that collapses the two CA DMV platform entries
+  into one install row is retained and now dedupes on a shared product name.
 - Return immediately after handling client-side exchange expiry in the status
   check, rather than relying on a later guard to stop the poll.
 

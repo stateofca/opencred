@@ -749,4 +749,58 @@ describe('computeExchangeOptions', () => {
       expect(dcapi).to.be.an('object');
     });
   });
+
+  describe('name projection into wallet entries', () => {
+    const namedRegistry = {
+      'cadmv-android': {
+        id: 'cadmv-android',
+        name: 'CA DMV Wallet on Android',
+        productName: 'CA DMV Wallet',
+        platform: ['android'],
+        supportedFormats: ['mso_mdoc'],
+        supportedProfiles: {'cadmv-android': {dcapi: {formats: ['mso_mdoc']}}}
+      }
+    };
+    const namedInput = {
+      workflow: {query: [{format: ['mso_mdoc']}]},
+      exchange: {protocols: {'cadmv-android': 'https://x'}},
+      systemWallets: ['cadmv-android'],
+      userSettings: {enabledWallets: [], enabledProfiles: []},
+      platform: {isAndroid: true},
+      dcApiSystemAvailable: true,
+      registry: namedRegistry
+    };
+
+    it('projects both device-context name and product name onto entries',
+      () => {
+        const result = computeExchangeOptions(namedInput);
+        const entry = result.defaultWallets.find(
+          w => w.walletId === 'cadmv-android');
+        expect(entry.name).to.be('CA DMV Wallet on Android');
+        expect(entry.productName).to.be('CA DMV Wallet');
+      });
+
+    it('omits productName when the wallet declares none', () => {
+      const result = computeExchangeOptions({
+        ...namedInput,
+        registry: {
+          'google-wallet': {
+            id: 'google-wallet',
+            name: 'Google Wallet',
+            platform: ['android'],
+            supportedFormats: ['mso_mdoc'],
+            supportedProfiles: {
+              'google-wallet': {dcapi: {formats: ['mso_mdoc']}}
+            }
+          }
+        },
+        exchange: {protocols: {'google-wallet': 'https://x'}},
+        systemWallets: ['google-wallet']
+      });
+      const entry = result.defaultWallets.find(
+        w => w.walletId === 'google-wallet');
+      expect(entry.name).to.be('Google Wallet');
+      expect(entry).to.not.have.property('productName');
+    });
+  });
 });

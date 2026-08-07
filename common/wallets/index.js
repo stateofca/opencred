@@ -379,6 +379,60 @@ export function selectInitialProtocolInteraction({
 }
 
 /**
+ * Resolve a wallet's device-context name — what it is called on the surface
+ * where it is launched. Key-first with a literal fallback, then the wallet id,
+ * matching the precedence the launch surfaces already use.
+ *
+ * @param {object} options - Options object.
+ * @param {object} options.wallet - Wallet definition or exchange-option entry
+ *   carrying `name`/`nameKey`.
+ * @param {Function} [options.t] - The i18n translate function; a key with no
+ *   translation resolves to itself and is treated as absent.
+ * @param {string} [options.fallbackId] - Last-resort label, usually the
+ *   wallet id.
+ * @returns {string} The resolved device-context name.
+ */
+export function resolveDeviceContextName({wallet, t, fallbackId} = {}) {
+  const key = wallet?.nameKey;
+  if(key && typeof t === 'function') {
+    const translated = t(key);
+    if(translated && translated !== key) {
+      return translated;
+    }
+  }
+  return wallet?.name || fallbackId;
+}
+
+/**
+ * Resolve a wallet's product name — its app-store identity, shown where the
+ * user is invited to install an app. Key-first with a literal fallback, then
+ * falls back to the device-context name, so only a wallet that genuinely
+ * differs between the two needs to declare both.
+ *
+ * @param {object} options - Options object.
+ * @param {object} options.wallet - Wallet definition or exchange-option entry
+ *   carrying `productName`/`productNameKey` and `name`/`nameKey`.
+ * @param {Function} [options.t] - The i18n translate function; a key with no
+ *   translation resolves to itself and is treated as absent.
+ * @param {string} [options.fallbackId] - Last-resort label, usually the
+ *   wallet id.
+ * @returns {string} The resolved product name.
+ */
+export function resolveProductName({wallet, t, fallbackId} = {}) {
+  const key = wallet?.productNameKey;
+  if(key && typeof t === 'function') {
+    const translated = t(key);
+    if(translated && translated !== key) {
+      return translated;
+    }
+  }
+  if(wallet?.productName) {
+    return wallet.productName;
+  }
+  return resolveDeviceContextName({wallet, t, fallbackId});
+}
+
+/**
  * Expand legacy wallet ID aliases to their current equivalents.
  * E.g., 'cadmv-wallet' → ['cadmv-android', 'cadmv-ios'].
  *

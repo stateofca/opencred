@@ -7,7 +7,7 @@
 
 export const appleWallet = {
   id: 'apple-wallet',
-  name: 'Digital Wallet on Apple Device',
+  name: 'Apple Wallet',
   description: 'Apple Wallet for storing and presenting digital ' +
     'credentials on iOS devices.',
   icon: '/wallets/apple-wallet-icon.png',

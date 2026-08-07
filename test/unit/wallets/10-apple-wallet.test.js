@@ -24,7 +24,7 @@ describe('Apple Wallet Configuration', () => {
 
     it('should have correct id and name', () => {
       expect(appleWallet.id).to.be('apple-wallet');
-      expect(appleWallet.name).to.be('Digital Wallet on Apple Device');
+      expect(appleWallet.name).to.be('Apple Wallet');
     });
 
     it('should have description', () => {

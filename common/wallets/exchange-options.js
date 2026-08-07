@@ -98,6 +98,8 @@ export function computeExchangeOptions(input) {
       walletId,
       ...(wallet.name && {name: wallet.name}),
       ...(wallet.nameKey && {nameKey: wallet.nameKey}),
+      ...(wallet.productName && {productName: wallet.productName}),
+      ...(wallet.productNameKey && {productNameKey: wallet.productNameKey}),
       ...(wallet.icon && {icon: wallet.icon}),
       supportedMethods: compat.methods
     };

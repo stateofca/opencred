@@ -9,6 +9,7 @@ export const cadmvAndroidWallet = {
   id: 'cadmv-android',
   groupId: 'cadmv-wallet',
   name: 'CA DMV Wallet on Android',
+  productName: 'CA DMV Wallet',
   description: 'The CA DMV Wallet app is a free, secure, and convenient ' +
     'mobile application that allows California residents to store and ' +
     'present their mobile driver\'s license (mDL), identification card, ' +
