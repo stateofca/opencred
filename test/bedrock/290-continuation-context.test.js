@@ -196,6 +196,87 @@ describe('continuationContext', () => {
       }
     });
 
+  it('should carry connectionOptions into the workflow context',
+    async () => {
+      const exchangeId = 'ex-connection-options-test';
+      const optionsWorkflow = {
+        ...exampleWorkflow,
+        clientId: 'test-connection-options',
+        connectionOptions: [
+          {method: 'dcapi'},
+          {method: 'qr-and-link', profile: 'OID4VP-combined'}
+        ]
+      };
+      const optionsStub = sinon.stub(config.opencred, 'workflows')
+        .value([optionsWorkflow]);
+      try {
+        await database.collections.Exchanges.insertOne({
+          id: exchangeId,
+          workflowId: 'test-connection-options',
+          state: 'complete',
+          step: 'default',
+          sequence: 1,
+          ttl: 3600,
+          createdAt: new Date(),
+          variables: {procedurePath: 'verification'},
+          oidc: {code: 'code', state: 'state'}
+        });
+
+        const token = await buildExchangeResultToken({
+          exchangeId,
+          workflowId: 'test-connection-options',
+          procedurePath: 'verification'
+        });
+
+        const res = await client.get(
+          `${baseUrl}/context/continue?exchange_token=${
+            encodeURIComponent(token)}`
+        );
+
+        expect(res.status).to.equal(200);
+        expect(res.data.workflow.connectionOptions).to.eql([
+          {method: 'dcapi'},
+          {method: 'qr-and-link', profile: 'OID4VP-combined'}
+        ]);
+
+        await database.collections.Exchanges.deleteOne({id: exchangeId});
+      } finally {
+        optionsStub.restore();
+      }
+    });
+
+  it('should omit connectionOptions when the workflow declares none',
+    async () => {
+      const exchangeId = 'ex-no-connection-options-test';
+      await database.collections.Exchanges.insertOne({
+        id: exchangeId,
+        workflowId: 'test',
+        state: 'complete',
+        step: 'default',
+        sequence: 1,
+        ttl: 3600,
+        createdAt: new Date(),
+        variables: {procedurePath: 'verification'},
+        oidc: {code: 'code', state: 'state'}
+      });
+
+      const token = await buildExchangeResultToken({
+        exchangeId,
+        workflowId: 'test',
+        procedurePath: 'verification'
+      });
+
+      const res = await client.get(
+        `${baseUrl}/context/continue?exchange_token=${
+          encodeURIComponent(token)}`
+      );
+
+      expect(res.status).to.equal(200);
+      expect(res.data.workflow).to.not.have.property('connectionOptions');
+
+      await database.collections.Exchanges.deleteOne({id: exchangeId});
+    });
+
   it('should return context with autoRedirectToClient false when token valid',
     async () => {
       const exchangeId = 'ex-continuation-test';

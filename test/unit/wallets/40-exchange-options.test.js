@@ -803,4 +803,120 @@ describe('computeExchangeOptions', () => {
       expect(entry).to.not.have.property('productName');
     });
   });
+
+  describe('connectionOptions selection and ordering', () => {
+    // baseInput derives four picker entries, in this sorted order:
+    //   qr-and-link / OID4VP-draft18 (no wallets)
+    //   qr-and-link / vcapi          (lcw)
+    //   qr-and-copy / interact       (no wallets)
+    //   chapi       / chapi          (lcw)
+    it('leaves the derived order unchanged when nothing is declared', () => {
+      const result = computeExchangeOptions(baseInput);
+      const keys = result.pickerEntries.map(e => `${e.method}:${e.profile}`);
+      expect(keys).to.eql([
+        'qr-and-link:OID4VP-draft18',
+        'qr-and-link:vcapi',
+        'qr-and-copy:interact',
+        'chapi:chapi'
+      ]);
+    });
+
+    it('shows only the declared options, in the declared order', () => {
+      const result = computeExchangeOptions({
+        ...baseInput,
+        workflow: {
+          ...baseInput.workflow,
+          connectionOptions: [
+            {method: 'chapi', profile: 'chapi'},
+            {method: 'qr-and-link', profile: 'vcapi'}
+          ]
+        }
+      });
+      const keys = result.pickerEntries.map(e => `${e.method}:${e.profile}`);
+      expect(keys).to.eql(['chapi:chapi', 'qr-and-link:vcapi']);
+    });
+
+    it('excludes a derived option the declaration did not name', () => {
+      const result = computeExchangeOptions({
+        ...baseInput,
+        workflow: {
+          ...baseInput.workflow,
+          connectionOptions: [{method: 'chapi', profile: 'chapi'}]
+        }
+      });
+      const keys = result.pickerEntries.map(e => `${e.method}:${e.profile}`);
+      expect(keys).to.eql(['chapi:chapi']);
+    });
+
+    it('skips a declared option with no derived entry and promotes the next',
+      () => {
+        // dcapi is not viable here (dcApiSystemAvailable is false), so it
+        // has no derived entry; the next declared option takes its place.
+        const result = computeExchangeOptions({
+          ...baseInput,
+          workflow: {
+            ...baseInput.workflow,
+            connectionOptions: [
+              {method: 'dcapi'},
+              {method: 'chapi', profile: 'chapi'}
+            ]
+          }
+        });
+        const keys = result.pickerEntries.map(e => `${e.method}:${e.profile}`);
+        expect(keys).to.eql(['chapi:chapi']);
+      });
+
+    it('preserves derived wallets and buttons on a selected entry', () => {
+      const result = computeExchangeOptions({
+        ...baseInput,
+        workflow: {
+          ...baseInput.workflow,
+          connectionOptions: [{method: 'chapi', profile: 'chapi'}]
+        }
+      });
+      const [entry] = result.pickerEntries;
+      expect(entry.walletIds).to.eql(['lcw']);
+    });
+
+    it('carries declared label and destination-label overrides', () => {
+      const result = computeExchangeOptions({
+        ...baseInput,
+        workflow: {
+          ...baseInput.workflow,
+          connectionOptions: [{
+            method: 'chapi',
+            profile: 'chapi',
+            label: 'Web wallet',
+            labelKey: 'connect_chapi_label',
+            destinationLabel: 'a web wallet',
+            destinationLabelKey: 'switch_chapi_label'
+          }]
+        }
+      });
+      const [entry] = result.pickerEntries;
+      expect(entry.label).to.be('Web wallet');
+      expect(entry.labelKey).to.be('connect_chapi_label');
+      expect(entry.destinationLabel).to.be('a web wallet');
+      expect(entry.destinationLabelKey).to.be('switch_chapi_label');
+      // derivation's own shape is untouched
+      expect(entry.walletIds).to.eql(['lcw']);
+    });
+
+    it('selects the DC API aggregator when the entry omits a profile', () => {
+      const result = computeExchangeOptions({
+        ...baseInput,
+        workflow: {
+          query: [{format: ['mso_mdoc']}],
+          connectionOptions: [{method: 'dcapi'}]
+        },
+        exchange: {protocols: {'cadmv-android': 'https://x'}},
+        systemWallets: ['cadmv-android'],
+        platform: {isIOS: false, isAndroid: true, isMobile: true},
+        dcApiSystemAvailable: true
+      });
+      expect(result.pickerEntries.length).to.be(1);
+      expect(result.pickerEntries[0].method).to.be('dcapi');
+      expect(result.pickerEntries[0].profile).to.be(null);
+    });
+  });
 });

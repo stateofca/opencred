@@ -220,10 +220,17 @@ export function computeExchangeOptions(input) {
   ]);
 
   const dcApiOk = dcApiSystemAvailable && workflow?.dcApiEnabled !== false;
-  const pickerEntries = _buildPickerEntries({
+  const derivedEntries = _buildPickerEntries({
     enabledWalletIds, enabledProfileIds, availableProfiles,
     formats, exchange, dcApiOk, registry,
     dcApiButtons: workflow?.dcApiButtons
+  });
+
+  // A workflow's `connectionOptions` declaration selects and orders the derived
+  // entries; with none, derivation's own set and order stand unchanged.
+  const pickerEntries = _selectAndOrderPickerEntries({
+    entries: derivedEntries,
+    connectionOptions: workflow?.connectionOptions
   });
 
   return {
@@ -688,6 +695,62 @@ function _matchingWallets({
     }
   }
   return result;
+}
+
+/**
+ * Select and order the derived picker entries by a workflow's
+ * `connectionOptions` declaration.
+ *
+ * The declaration filters and orders; it never adds. Each declared entry is
+ * matched to the one derived entry keyed on the same `(method, profile)` pair
+ * — a `dcapi` entry with no `profile` selects the DC API aggregator, whose
+ * derived entry carries `profile: null`. A declared entry with no matching
+ * derived entry is non-viable on this device or exchange (or names an option
+ * nothing produced) and is simply skipped, so the next declared entry is
+ * promoted; there is no new "can't use this" state. A derived entry the
+ * declaration did not name is dropped. The result is the declared, ordered,
+ * filtered list that every consumer walks: the default active entry, the
+ * picker, and the "try another way" fallback.
+ *
+ * A matched entry carries any presentation overrides the declaration set —
+ * `label`/`labelKey` for the option itself and `destinationLabel`/
+ * `destinationLabelKey` for naming it as a switch-link destination — leaving
+ * everything derivation computed (wallets, launch descriptors) untouched.
+ *
+ * With no declaration, derivation's own set and order stand unchanged, so an
+ * unconfigured workflow behaves exactly as before.
+ *
+ * @param {object} options - Options.
+ * @param {Array<object>} options.entries - The derived, sorted picker entries.
+ * @param {Array<object>} [options.connectionOptions] - The workflow's declared
+ *   connection options, in order.
+ * @returns {Array<object>} The selected, ordered entries.
+ */
+function _selectAndOrderPickerEntries({entries, connectionOptions}) {
+  if(!Array.isArray(connectionOptions) || connectionOptions.length === 0) {
+    return entries;
+  }
+  const selected = [];
+  for(const option of connectionOptions) {
+    // A declared `dcapi` entry with no profile selects the aggregator, whose
+    // derived entry's profile is null; every other declared entry names one.
+    const wantProfile = option.profile ?? null;
+    const match = entries.find(
+      e => e.method === option.method && e.profile === wantProfile);
+    if(!match) {
+      continue;
+    }
+    selected.push({
+      ...match,
+      ...(option.label !== undefined && {label: option.label}),
+      ...(option.labelKey !== undefined && {labelKey: option.labelKey}),
+      ...(option.destinationLabel !== undefined &&
+        {destinationLabel: option.destinationLabel}),
+      ...(option.destinationLabelKey !== undefined &&
+        {destinationLabelKey: option.destinationLabelKey})
+    });
+  }
+  return selected;
 }
 
 function _sortEntries(entries) {
