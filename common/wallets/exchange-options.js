@@ -28,6 +28,41 @@ const DC_API_AGGREGATOR_PROFILES = [
 ];
 
 /**
+ * The interaction methods a profile can be reached by, independent of any
+ * exchange or device — the static half of `_profileCompat`'s method derivation
+ * with the runtime gates (`dcApiSystemAvailable`, platform) removed.
+ *
+ * "Static" means "could offer": `dcapi` is listed for OID4VP profiles even
+ * though whether it actually renders depends on the browser having a DC API.
+ * This is what config-load validation checks a declared connection option's
+ * method against — a method a profile can never offer is a static
+ * impossibility, while a method it offers only on some devices is derivation's
+ * concern.
+ *
+ * @param {string} profile - A picker-entry profile from `PROFILES_LIST`.
+ * @returns {Array<string>} UI-facing interaction methods, `[]` for an
+ *   unrecognized profile.
+ */
+export function staticInteractionMethodsForProfile(profile) {
+  if(DC_API_ONLY_PROFILES.includes(profile)) {
+    return ['dcapi'];
+  }
+  if(OID4VP_PROFILES.includes(profile)) {
+    return ['qr-and-link', 'dcapi'];
+  }
+  if(profile === 'interact') {
+    return ['qr-and-copy'];
+  }
+  if(profile === 'vcapi') {
+    return ['qr-and-link'];
+  }
+  if(profile === 'chapi') {
+    return ['chapi'];
+  }
+  return [];
+}
+
+/**
  * Compute the unified set of options for the current exchange.
  *
  * @param {object} input - Input parameters.

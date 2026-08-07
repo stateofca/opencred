@@ -165,9 +165,10 @@ workflows:
 ```
 
 **Inherited fields:** `name`, `description`, `brand`, `caStore`, `dcApiEnabled`,
-`interactEnabled`, `wallets`, `dcApiButtons`, `oidc`, `callback`,
-`translations`, `trustedCredentialIssuers`, `untrustedVariableAllowList`,
-`public`, `clientSecret`.
+`interactEnabled`, `wallets`, `dcApiButtons`, `connectionOptions`,
+`connectionPickerEnabled`, `oidc`,
+`callback`, `translations`, `trustedCredentialIssuers`,
+`untrustedVariableAllowList`, `public`, `clientSecret`.
 
 **Deep-merge behavior:**
 
@@ -553,6 +554,100 @@ remain):
   [Apple Wallet reader authentication](#apple-wallet-reader-authentication-annex-c)
   above. Without the certificate, the profile is not published for the exchange
   at all.
+
+#### Ordering the connection options (`connectionOptions`)
+
+**This is optional.** With nothing configured, OpenCred derives the connection
+options a user is offered — from the enabled wallets, the profiles the exchange
+offers, the interaction methods each profile supports, and what the device can
+do — and shows them in a fixed built-in order. That is the default and nothing
+needs to be set to get it.
+
+Configure `connectionOptions` when a workflow needs a **deterministic order** —
+for example, "offer the Digital Credentials API first, and fall back to a QR
+code for the default OID4VP profile." It is an ordered list; each entry names one
+connection option by its interaction `method` and, for most methods, its
+`profile`:
+
+```yaml
+workflows:
+  - clientId: my-workflow
+    type: native
+    connectionOptions:
+      - method: dcapi                      # DC API all-wallets option, first
+      - method: qr-and-link                # then QR-and-link…
+        profile: OID4VP-combined           # …for the default OID4VP profile
+```
+
+A declaration **selects and orders** the derived options; it does not replace
+them. Only the options you name are shown, in the order you name them. Everything
+about each option — which wallets are behind it, its launch buttons, whether it
+works on this device — stays exactly as OpenCred derives it. An option you do
+**not** name is not shown.
+
+A declared option that is not viable for the current device or exchange (say,
+`dcapi` on a browser with no Digital Credentials API) is simply absent, and the
+next declared option takes its place — no error, no special handling.
+
+Each entry takes:
+
+- **`method`** (required) — one of `dcapi`, `qr-and-link`, `qr-and-copy`,
+  `chapi`. These are the picker's interaction methods, not the lower-level
+  `qr`/`link`/`copy`.
+- **`profile`** (required, except for `dcapi`) — the profile this option is for
+  (e.g. `OID4VP-combined`, `18013-7-Annex-D`, `interact`). The `dcapi` method may
+  omit it to select the all-wallets DC API option; every other method must name a
+  profile.
+- **`label`** / **`labelKey`** (optional) — override the option's own label.
+- **`destinationLabel`** / **`destinationLabelKey`** (optional) — how this option
+  is named when it is the destination of the "switch connection method" link.
+
+Each `*Key` is preferred where it resolves in the active locale, otherwise the
+literal is used — the same precedence as `dcApiButtons` labels.
+
+**Validation.** Config loading rejects a declaration that could never match a
+derived option, so a typo fails fast rather than silently removing a connection
+option:
+
+- a `profile` that is not a known profile, and
+- a `method` the profile does not offer (for example, `qr-and-copy` on an OID4VP
+  profile, or `qr-and-link` on the DC-API-only `18013-7-Annex-D`).
+
+What is **not** a config error — matching the `dcApiButtons` prerequisites above
+— is a coherent `method`/`profile` pair the deployment cannot serve today (the
+query does not request that format, no wallet answers it, the device cannot run
+the method). Those are skipped at render time, and the next declared option is
+promoted.
+
+Declaring an order is deliberately independent of whether the connection-option
+*picker* (the control that lets a user browse every option) is offered: the two
+are separate knobs, set and reversed independently.
+
+#### Offering the connection-option picker (`connectionPickerEnabled`)
+
+**This is optional and defaults to `true`.** When a user is offered more than one
+connection option, OpenCred shows an entrypoint ("other ways to connect") that
+opens a picker of every option. `connectionPickerEnabled: false` suppresses that
+entrypoint: the user stays on the first option and is not offered the picker,
+even when more than one viable option exists. With nothing set, behaviour is
+exactly as before.
+
+This gate is independent of `connectionOptions`: a workflow may declare an order
+and still show the picker, or suppress the picker without declaring any order.
+Neither implies the other. It does **not** affect the error-recovery "try another
+way" fallback, which is a separate path.
+
+Like the other workflow options it inherits via `configFrom`, and it can be set
+globally under `options` or overridden per workflow:
+
+```yaml
+options:
+  connectionPickerEnabled: false # suppress the picker for every workflow
+workflows:
+  - clientId: my-workflow
+    type: native
+    connectionPickerEnabled: true # …but re-enable it for this one
+```
 
 ### 8. Run OpenCred
 

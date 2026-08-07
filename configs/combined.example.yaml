@@ -260,6 +260,23 @@ app:
             - document_number
         dcApiEnabled: true
         # interactEnabled: false  # Disable Interaction URL for this workflow
+        # connectionOptions selects and orders the connection options shown, and
+        # the order the "try another way" fallback walks. Optional: omit it and
+        # OpenCred derives every option in its built-in order. Here: offer the
+        # DC API first, then fall back to a QR code for the default OID4VP
+        # profile. An option not viable on the device is skipped, promoting the
+        # next. `method` is one of dcapi | qr-and-link | qr-and-copy | chapi;
+        # `profile` is required for every method except the `dcapi` aggregator.
+        connectionOptions:
+          - method: dcapi
+          - method: qr-and-link
+            profile: OID4VP-combined
+        # connectionPickerEnabled gates the "other ways to connect" picker
+        # entrypoint. Optional, defaults to true (picker shown whenever more than
+        # one option exists). Set false to keep the user on the first option;
+        # independent of connectionOptions and does not affect the "try another
+        # way" error-recovery fallback.
+        # connectionPickerEnabled: false
         public: true
       - name: "Driver's License Query"
         clientId: "query-dl"

@@ -41,7 +41,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
       <!-- "Other ways to connect" link + picker -->
       <div
-        v-if="pickerEntries.length > 1"
+        v-if="showInteractionPickerEntrypoint"
         class="column items-center mt-4 mx-auto text-center">
         <a
           href="#"
@@ -106,7 +106,7 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
-import {onMounted, onUnmounted, reactive, ref, watch} from 'vue';
+import {computed, onMounted, onUnmounted, reactive, ref, watch} from 'vue';
 import {CadmvMainCard} from '@digitalbazaar/cadmv-ui';
 import CredentialQuerySummary from './CredentialQuerySummary.vue';
 import DebugDisplay from './DebugDisplay.vue';
@@ -145,6 +145,16 @@ const {t, te} = useReactiveI18n();
 const {
   pickerEntries, activePickerEntry, handlePickerSelect
 } = useWalletInteraction();
+
+// The picker entrypoint ("other ways to connect") shows only when more than
+// one option exists AND the deployment has not disabled it. The flag defaults
+// to true (resolved in buildNewExchangeContextData), so an unconfigured
+// deployment behaves exactly as before. The error-recovery "try another way"
+// fallback is separate (WalletInteraction) and is unaffected by this gate.
+const showInteractionPickerEntrypoint = computed(() =>
+  pickerEntries.value.length > 1 &&
+  (context.value?.workflow?.connectionPickerEnabled ?? true)
+);
 
 /**
  * Best-effort report of an interaction-picker funnel event. Reads the

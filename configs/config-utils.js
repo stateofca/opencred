@@ -13,6 +13,10 @@ import {
 import crypto from 'node:crypto';
 import {identifyProfile} from '../lib/workflows/common/identify-profile.js';
 import {logger} from '../lib/logger.js';
+import {PROFILES_LIST} from '../common/profiles.js';
+import {
+  staticInteractionMethodsForProfile
+} from '../common/wallets/exchange-options.js';
 
 // Preset configurations
 import {
@@ -181,6 +185,14 @@ export const availableWallets = [
   'cadmv-android', 'cadmv-ios', 'lcw', 'google-wallet', 'apple-wallet',
   'vcalm-interaction'];
 
+// UI-facing interaction methods a connection option may name. These are the
+// picker-entry methods (`computeExchangeOptions` emits these on each entry's
+// `method`), not the lower-level `INTERACTION_METHODS_LIST` (`qr`/`link`/...):
+// a picker entry is keyed on `qr-and-link` / `qr-and-copy`, which is the pair a
+// declaration selects.
+export const CONNECTION_OPTION_METHODS = [
+  'dcapi', 'qr-and-link', 'qr-and-copy', 'chapi'];
+
 // Base Workflow schema
 export const BaseWorkflowSchema = z.object({
   clientId: z.string(), // Used to identify the workflow
@@ -202,6 +214,17 @@ export const BaseWorkflowSchema = z.object({
   // (locked-on) picker option. When undefined here, inherits from
   // options.interactEnabled (global default: true).
   interactEnabled: z.boolean().optional(),
+
+  // Whether the connection-option picker entrypoint (the "other ways to
+  // connect" control that lets a user browse and switch between connection
+  // options) is offered. When undefined here, inherits from
+  // options.connectionPickerEnabled (global default: true), which preserves
+  // today's behaviour: the entrypoint shows whenever more than one option
+  // exists. When false, the entrypoint is never offered even with several
+  // viable options; the user stays on the current option and the "try another
+  // way" error-recovery fallback is unaffected. Deliberately independent of
+  // `connectionOptions`: the two are set and reversed separately.
+  connectionPickerEnabled: z.boolean().optional(),
 
   // Per-workflow override for the deprecated TWDIW StatusList2021 handler.
   // When undefined, inherits options.twdiwStatusList2021Enabled (global
@@ -232,6 +255,32 @@ export const BaseWorkflowSchema = z.object({
     profiles: z.array(z.string()).min(1)
   }).refine(b => b.label !== undefined || b.labelKey !== undefined, {
     message: 'dcApiButtons entry requires `label` or `labelKey`'
+  })).optional(),
+
+  // Ordered declaration of the connection options offered for this workflow.
+  // Each entry names one picker entry by its interaction `method` and,
+  // optionally, its `profile` — the pair a picker entry is keyed on. It SELECTS
+  // AND ORDERS the derived options rather than replacing them: an unconfigured
+  // workflow derives exactly as before, and a declared entry that is not viable
+  // on the current device or exchange is simply absent, so the next declared
+  // entry is promoted. Nothing here changes what renders yet — that is the next
+  // issue; this delivers the config surface and its load-time validation.
+  //
+  // `profile` is omitted for a method's aggregate entry — notably the DC API
+  // all-wallets aggregator, whose derived entry carries `profile: null`; a
+  // non-`dcapi` method must name its profile. `label`/`labelKey` override the
+  // option's own label and `destinationLabel`/`destinationLabelKey` name it as
+  // a switch-link destination, each key-first with a literal fallback.
+  //
+  // Statically impossible entries fail config load — see
+  // `validateConnectionOptions`; wallet/format/device viability stays derived.
+  connectionOptions: z.array(z.object({
+    method: z.enum(CONNECTION_OPTION_METHODS),
+    profile: z.string().optional(),
+    label: z.string().optional(),
+    labelKey: z.string().optional(),
+    destinationLabel: z.string().optional(),
+    destinationLabelKey: z.string().optional()
   })).optional(),
 
   oidc: OpenIdConnectSchema.optional(),
@@ -370,6 +419,95 @@ export function validateDcApiButtons({workflow, ctx}) {
   });
 }
 
+/**
+ * Validate a workflow's `connectionOptions` against what it can statically
+ * offer, adding issues to a zod refinement context.
+ *
+ * Connection options SELECT AND ORDER the derived picker entries; they never
+ * replace derivation. So validation here catches only the static impossibility
+ * issue 003 settled on — the mistyped or incoherent declaration that could
+ * never match a derived option and would therefore silently vanish, the exact
+ * fallback-with-no-fallback failure this validation exists to prevent:
+ *
+ * 1. A profile the workflow does not enable — read as a profile the platform
+ *    does not know at all. A typo surfaces here rather than silently dropping
+ *    an option.
+ * 2. A method that profile does not offer, per
+ *    `staticInteractionMethodsForProfile`.
+ *
+ * What is NOT checked here is deliberately left to derivation (issue 003 §5),
+ * matching the same bargain the `dcApiButtons` validation struck: whether the
+ * workflow's query formats reach the profile, whether the exchange offers it,
+ * whether a wallet answers it, whether this device can run the method, whether
+ * a `walletCertificates` entry exists. A declared entry non-viable for any of
+ * those reasons is absent from what derivation produced and the next entry is
+ * promoted — no config error. Notably a coherent method/profile pair whose
+ * format the workflow's query does not request is a skip, not a failure,
+ * exactly as a `dcApiButtons` profile with no matching format is silently
+ * skipped.
+ *
+ * A `dcapi` entry may omit `profile` (it selects the DC API aggregator, whose
+ * derived entry carries `profile: null`); any other method must name one.
+ *
+ * @param {object} options - Options.
+ * @param {object} options.workflow - Workflow config being validated; supplies
+ *   `connectionOptions`.
+ * @param {object} options.ctx - Zod refinement context.
+ * @returns {void}
+ */
+export function validateConnectionOptions({workflow, ctx}) {
+  const options = workflow?.connectionOptions;
+  if(!Array.isArray(options) || options.length === 0) {
+    return;
+  }
+
+  options.forEach((option, index) => {
+    const {method, profile} = option;
+
+    // The DC API aggregator entry names no profile (its derived entry's
+    // `profile` is null). Every other method's picker entry is keyed on a
+    // profile, so it must name one.
+    if(profile === undefined) {
+      if(method !== 'dcapi') {
+        ctx.addIssue({
+          code: 'custom',
+          message:
+            `connectionOptions[${index}]: method "${method}" requires a ` +
+            '`profile`; only the `dcapi` aggregator entry may omit it.',
+          path: ['connectionOptions', index, 'profile']
+        });
+      }
+      return;
+    }
+
+    // 1. A profile no picker entry can ever key on — a typo or a profile the
+    // platform does not know.
+    if(!PROFILES_LIST.includes(profile)) {
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          `connectionOptions[${index}]: profile "${profile}" is not a known ` +
+          `profile. Known profiles are: ${PROFILES_LIST.join(', ')}.`,
+        path: ['connectionOptions', index, 'profile']
+      });
+      return;
+    }
+
+    // 2. A method the profile does not offer.
+    const methods = staticInteractionMethodsForProfile(profile);
+    if(!methods.includes(method)) {
+      const offered = methods.join(', ') || 'none';
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          `connectionOptions[${index}]: profile "${profile}" does not offer ` +
+          `the "${method}" interaction method. It offers: ${offered}.`,
+        path: ['connectionOptions', index, 'method']
+      });
+    }
+  });
+}
+
 // Native Workflow schema
 export const NativeWorkflowSchema = z.object({
   ...BaseWorkflowSchema.shape,
@@ -412,6 +550,12 @@ export const NativeWorkflowSchema = z.object({
   // interaction itself is native-only too (see
   // `NativeWorkflowService.authorizationRequestMiddleware`).
   validateDcApiButtons({workflow: data, ctx});
+  // Native-only too: the picker and its derived options — the thing a
+  // connection-options declaration selects and orders — are a native-workflow
+  // concern, and the `query` its format check reads is native-only. Validated
+  // after the transform above so a `dcApiNamespaceQuery`-derived query is in
+  // place.
+  validateConnectionOptions({workflow: data, ctx});
 });
 
 // Entra Workflow schema
@@ -471,6 +615,12 @@ export const OptionsSchema = z.object({
   // in the exchange picker. default true. When false, method is available
   // only via the advanced-settings.
   interactEnabled: z.boolean().default(true),
+
+  // Default for whether the connection-option picker entrypoint is offered.
+  // default true, which preserves today's behaviour (the entrypoint shows
+  // whenever more than one connection option exists). A workflow may override
+  // via its own `connectionPickerEnabled`.
+  connectionPickerEnabled: z.boolean().default(true),
 
   // Show the wallet launch button on desktop qr-and-link screens. Default
   // false: desktop users only see the QR code. Enable as a debugging
@@ -701,8 +851,10 @@ export const INHERITABLE_FIELDS = [
   'caStore',
   'dcApiEnabled',
   'interactEnabled',
+  'connectionPickerEnabled',
   'wallets',
   'dcApiButtons',
+  'connectionOptions',
   'oidc',
   'callback',
   'translations',

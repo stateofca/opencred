@@ -3,6 +3,16 @@
 ## 10.4.0 - 2026-08-dd
 
 ### Added
+- Workflow `connectionOptions`: an ordered, inheritable declaration that selects
+  and orders the connection options shown, each naming a `method` (`dcapi` |
+  `qr-and-link` | `qr-and-copy` | `chapi`) and, except for the `dcapi`
+  aggregator, a `profile`, with optional label and switch-link-destination
+  overrides. See `docs/00-configure-workflow.md`.
+- Workflow `connectionPickerEnabled`: an inheritable boolean (default `true`)
+  that gates the "other ways to connect" picker entrypoint. When `false`, the
+  entrypoint is not offered even with more than one viable option; independent of
+  `connectionOptions` and does not affect the error-recovery "try another way"
+  fallback. See `docs/00-configure-workflow.md`.
 - Multi-profile DC API wallet buttons. A workflow may configure
   `dcApiButtons: [{id, label?, labelKey?, profiles: [...]}]` so that one button
   requests several authorization-request profiles together in a single
