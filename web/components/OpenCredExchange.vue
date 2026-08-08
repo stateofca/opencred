@@ -39,18 +39,21 @@ SPDX-License-Identifier: BSD-3-Clause
       <!-- Interaction-specific info and exchange status -->
       <WalletInteraction />
 
-      <!-- "Other ways to connect" link + picker -->
+      <!-- Persistent switch control: opens the picker modal (generic label)
+           when the picker is visible, or switches directly to the next
+           connection option (destination label) when it is hidden. -->
       <div
-        v-if="showInteractionPickerEntrypoint"
+        v-if="showSwitchControl"
         class="column items-center mt-4 mx-auto text-center">
         <a
           href="#"
           class="text-sm underline"
-          @click.prevent="openInteractionPicker">
-          {{t('interactionPicker_otherWaysLink')}}
+          @click.prevent="onSwitchControlClick">
+          {{switchControlLabel}}
         </a>
       </div>
       <InteractionPickerModal
+        v-if="pickerVisible"
         v-model="showInteractionPicker"
         :picker-entries="pickerEntries"
         :current-entry="activePickerEntry"
@@ -107,6 +110,9 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import {computed, onMounted, onUnmounted, reactive, ref, watch} from 'vue';
+import {
+  nextPickerEntry, switchLinkDestinationLabel
+} from '../utils/switch-link.js';
 import {CadmvMainCard} from '@digitalbazaar/cadmv-ui';
 import CredentialQuerySummary from './CredentialQuerySummary.vue';
 import DebugDisplay from './DebugDisplay.vue';
@@ -146,14 +152,37 @@ const {
   pickerEntries, activePickerEntry, handlePickerSelect
 } = useWalletInteraction();
 
-// The picker entrypoint ("other ways to connect") shows only when more than
-// one option exists AND the deployment has not disabled it. The flag defaults
-// to true (resolved in buildNewExchangeContextData), so an unconfigured
-// deployment behaves exactly as before. The error-recovery "try another way"
-// fallback is separate (WalletInteraction) and is unaffected by this gate.
-const showInteractionPickerEntrypoint = computed(() =>
-  pickerEntries.value.length > 1 &&
-  (context.value?.workflow?.connectionPickerEnabled ?? true)
+// The picker is visible when the deployment has not disabled it. The flag
+// defaults to true (resolved in buildNewExchangeContextData), so an
+// unconfigured deployment behaves exactly as before.
+const pickerVisible = computed(() =>
+  context.value?.workflow?.connectionPickerEnabled ?? true
+);
+
+// In switch mode (picker hidden) the control points at the next option;
+// with fewer than two options it has no destination.
+const switchDestination = computed(() =>
+  nextPickerEntry(pickerEntries.value, activePickerEntry.value));
+
+// The single persistent switch control renders whenever there is somewhere to
+// go: with the picker visible, whenever more than one option exists (it opens
+// the modal); with the picker hidden, whenever a switch destination exists.
+// When only one option is viable there is no destination, so in switch mode the
+// control has nothing to be and does not render — this is a control with
+// nowhere to go, not count-based UI branching. The error-recovery "try another
+// way" fallback is separate (WalletInteraction) and unaffected by this control.
+const showSwitchControl = computed(() =>
+  pickerVisible.value ?
+    pickerEntries.value.length > 1 :
+    switchDestination.value !== null
+);
+
+// Generic label when the control opens the modal; the destination option's
+// label when it switches directly.
+const switchControlLabel = computed(() =>
+  pickerVisible.value ?
+    t('interactionPicker_otherWaysLink') :
+    switchLinkDestinationLabel({entry: switchDestination.value, t})
 );
 
 /**
@@ -190,14 +219,6 @@ const pickerReporting = usePickerReporting({
 });
 
 /**
- * Open the interaction picker ("Other ways to connect").
- */
-const openInteractionPicker = () => {
-  pickerReporting.onOpen();
-  showInteractionPicker.value = true;
-};
-
-/**
  * Handle a picker selection: report the transition (before the active entry
  * flips), then delegate to the interaction composable.
  *
@@ -206,6 +227,24 @@ const openInteractionPicker = () => {
 const onPickerSelect = entry => {
   pickerReporting.onSelect(entry);
   handlePickerSelect(entry);
+};
+
+/**
+ * Handle a click on the persistent switch control. With the picker visible it
+ * opens the modal (reporting the open); with the picker hidden it switches
+ * directly to the next option, reported as a method selection with the same
+ * from/to shape the picker emits.
+ */
+const onSwitchControlClick = () => {
+  if(pickerVisible.value) {
+    pickerReporting.onOpen();
+    showInteractionPicker.value = true;
+    return;
+  }
+  const destination = switchDestination.value;
+  if(destination) {
+    onPickerSelect(destination);
+  }
 };
 
 // A dismissal (backdrop/ESC) also closes the picker; the composable

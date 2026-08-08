@@ -271,12 +271,19 @@ app:
           - method: dcapi
           - method: qr-and-link
             profile: OID4VP-combined
-        # connectionPickerEnabled gates the "other ways to connect" picker
-        # entrypoint. Optional, defaults to true (picker shown whenever more than
-        # one option exists). Set false to keep the user on the first option;
-        # independent of connectionOptions and does not affect the "try another
-        # way" error-recovery fallback.
+        # connectionPickerEnabled selects the persistent switch control's
+        # behaviour. Optional, defaults to true (the control opens the "other
+        # ways to connect" picker modal). Set false and the same control instead
+        # switches directly to the next option, cycling with wraparound and
+        # labelled by its destination. Independent of connectionOptions; does not
+        # affect the "try another way" error-recovery fallback.
         # connectionPickerEnabled: false
+        # promotedWallets chooses which wallets the install invitation ("suggested
+        # apps") promotes. Optional: omit it and every enabled wallet with a
+        # storefront is promoted. Promotion is separate from enablement, so a
+        # preinstalled-but-enabled wallet can be left unadvertised. Blank the
+        # `appInstallExplain` translation key to drop the explanatory sentence.
+        # promotedWallets: [cadmv-ios, cadmv-android]
         public: true
       - name: "Driver's License Query"
         clientId: "query-dl"

@@ -58,7 +58,7 @@ SPDX-License-Identifier: BSD-3-Clause
         </p>
       </template>
       <p v-if="descriptors.length === 0">
-        No compatible wallet found.
+        {{$t('noCompatibleWalletMessage')}}
       </p>
     </div>
     <CountdownDisplay

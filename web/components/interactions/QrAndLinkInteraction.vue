@@ -106,7 +106,8 @@ import {computed, onUnmounted, ref, watch} from 'vue';
 import {copyToClipboard, useQuasar} from 'quasar';
 import {
   extractCredentialFormats,
-  getProtocolInteractionMethods
+  getProtocolInteractionMethods,
+  resolveDeviceContextName
 } from '../../../common/wallets/index.js';
 import {CadmvButton} from '@digitalbazaar/cadmv-ui';
 import CountdownDisplay from '../CountdownDisplay.vue';
@@ -192,7 +193,7 @@ const walletNames = computed(() => {
   }
   return props.compatibleWallets.map(({walletId}) => {
     const wallet = props.walletsRegistry[walletId];
-    return wallet?.nameKey ? t(wallet.nameKey) : (wallet?.name || walletId);
+    return resolveDeviceContextName({wallet, t, fallbackId: walletId});
   }).filter(Boolean).join(', ');
 });
 

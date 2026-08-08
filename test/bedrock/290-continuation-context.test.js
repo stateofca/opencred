@@ -277,6 +277,82 @@ describe('continuationContext', () => {
       await database.collections.Exchanges.deleteOne({id: exchangeId});
     });
 
+  it('should carry promotedWallets into the workflow context',
+    async () => {
+      const exchangeId = 'ex-promoted-wallets-test';
+      const promotedWorkflow = {
+        ...exampleWorkflow,
+        clientId: 'test-promoted-wallets',
+        promotedWallets: ['cadmv-ios', 'cadmv-android']
+      };
+      const promotedStub = sinon.stub(config.opencred, 'workflows')
+        .value([promotedWorkflow]);
+      try {
+        await database.collections.Exchanges.insertOne({
+          id: exchangeId,
+          workflowId: 'test-promoted-wallets',
+          state: 'complete',
+          step: 'default',
+          sequence: 1,
+          ttl: 3600,
+          createdAt: new Date(),
+          variables: {procedurePath: 'verification'},
+          oidc: {code: 'code', state: 'state'}
+        });
+
+        const token = await buildExchangeResultToken({
+          exchangeId,
+          workflowId: 'test-promoted-wallets',
+          procedurePath: 'verification'
+        });
+
+        const res = await client.get(
+          `${baseUrl}/context/continue?exchange_token=${
+            encodeURIComponent(token)}`
+        );
+
+        expect(res.status).to.equal(200);
+        expect(res.data.workflow.promotedWallets).to.eql(
+          ['cadmv-ios', 'cadmv-android']);
+
+        await database.collections.Exchanges.deleteOne({id: exchangeId});
+      } finally {
+        promotedStub.restore();
+      }
+    });
+
+  it('should omit promotedWallets when the workflow declares none',
+    async () => {
+      const exchangeId = 'ex-no-promoted-wallets-test';
+      await database.collections.Exchanges.insertOne({
+        id: exchangeId,
+        workflowId: 'test',
+        state: 'complete',
+        step: 'default',
+        sequence: 1,
+        ttl: 3600,
+        createdAt: new Date(),
+        variables: {procedurePath: 'verification'},
+        oidc: {code: 'code', state: 'state'}
+      });
+
+      const token = await buildExchangeResultToken({
+        exchangeId,
+        workflowId: 'test',
+        procedurePath: 'verification'
+      });
+
+      const res = await client.get(
+        `${baseUrl}/context/continue?exchange_token=${
+          encodeURIComponent(token)}`
+      );
+
+      expect(res.status).to.equal(200);
+      expect(res.data.workflow).to.not.have.property('promotedWallets');
+
+      await database.collections.Exchanges.deleteOne({id: exchangeId});
+    });
+
   it('should return context with autoRedirectToClient false when token valid',
     async () => {
       const exchangeId = 'ex-continuation-test';

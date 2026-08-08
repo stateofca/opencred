@@ -9,6 +9,7 @@ export const cadmvIosWallet = {
   id: 'cadmv-ios',
   groupId: 'cadmv-wallet',
   name: 'CA DMV Wallet on iOS',
+  nameKey: 'wallet_cadmv-ios_name',
   productName: 'CA DMV Wallet',
   description: 'The CA DMV Wallet app is a free, secure, and convenient ' +
     'mobile application that allows California residents to store and ' +

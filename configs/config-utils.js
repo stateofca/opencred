@@ -283,6 +283,17 @@ export const BaseWorkflowSchema = z.object({
     destinationLabelKey: z.string().optional()
   })).optional(),
 
+  // The wallets promoted by the install invitation (the "suggested apps" block
+  // at the bottom of the exchange page). PROMOTION IS SEPARATE FROM ENABLEMENT:
+  // a workflow may enable a wallet that ships preinstalled on the device and
+  // still not want to advertise it, so this is its own list rather than the
+  // enabled `wallets` set. When absent, the invitation promotes what it shows
+  // today — every enabled wallet with a storefront for the current platform.
+  // When present, only these wallet identifiers are promoted, still filtered to
+  // the platform's storefront. An identifier with no storefront for the current
+  // platform simply contributes no row.
+  promotedWallets: z.array(z.enum(availableWallets)).optional(),
+
   oidc: OpenIdConnectSchema.optional(),
   callback: CallbackSchema.optional(),
   translations: z.record(z.string(), z.record(z.string(), z.string()))
@@ -855,6 +866,7 @@ export const INHERITABLE_FIELDS = [
   'wallets',
   'dcApiButtons',
   'connectionOptions',
+  'promotedWallets',
   'oidc',
   'callback',
   'translations',

@@ -30,6 +30,11 @@ describe('CA DMV Android Wallet Configuration', () => {
       expect(cadmvAndroidWallet.name).to.be('CA DMV Wallet on Android');
       expect(cadmvAndroidWallet.productName).to.be('CA DMV Wallet');
     });
+
+    it('should carry a device-context nameKey hook for deployment ' +
+      'override', () => {
+      expect(cadmvAndroidWallet.nameKey).to.be('wallet_cadmv-android_name');
+    });
   });
 
   describe('supportedFormats', () => {
@@ -85,6 +90,11 @@ describe('CA DMV iOS Wallet Configuration', () => {
       'product name', () => {
       expect(cadmvIosWallet.name).to.be('CA DMV Wallet on iOS');
       expect(cadmvIosWallet.productName).to.be('CA DMV Wallet');
+    });
+
+    it('should carry a device-context nameKey hook for deployment ' +
+      'override', () => {
+      expect(cadmvIosWallet.nameKey).to.be('wallet_cadmv-ios_name');
     });
   });
 

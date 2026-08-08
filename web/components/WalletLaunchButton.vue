@@ -24,8 +24,7 @@ SPDX-License-Identifier: BSD-3-Clause
       :class="noFullWidth ? '' : 'w-full'">
       <div class="flex items-center gap-3 flex-grow min-w-0 overflow-hidden">
         <span class="font-medium text-center truncate min-w-0 flex-grow">
-          {{label || (wallet?.nameKey ? $t(wallet.nameKey)
-            : (wallet?.name || walletId))}}
+          {{label || displayName}}
         </span>
         <q-icon
           v-if="copyOnly"
@@ -62,6 +61,9 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import {CadmvButton} from '@digitalbazaar/cadmv-ui';
+import {computed} from 'vue';
+import {resolveDeviceContextName} from '../../common/wallets/index.js';
+import {useI18n} from 'vue-i18n';
 
 const props = defineProps({
   wallet: {
@@ -107,6 +109,15 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['launch', 'copy']);
+
+const {t} = useI18n({useScope: 'global'});
+
+// Device-context name, key-first with the wallet's literal name then its id as
+// fallbacks, so an unresolved `nameKey` never leaks the raw key into the
+// button.
+const displayName = computed(() => resolveDeviceContextName({
+  wallet: props.wallet, t, fallbackId: props.walletId
+}));
 
 const handleClick = () => {
   const payload = {

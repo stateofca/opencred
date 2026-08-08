@@ -46,9 +46,7 @@ SPDX-License-Identifier: BSD-3-Clause
       @error="handleChapiError" />
     <div v-else>
       <p class="text-left text-sm mb-2 text-gray-900">
-        No wallet interaction available. This may be a configuration error, or
-        your current device may not support a connection method that supports
-        any of the requested credential types.
+        {{$t('noInteractionAvailableMessage')}}
       </p>
     </div>
   </div>

@@ -623,19 +623,29 @@ Declaring an order is deliberately independent of whether the connection-option
 *picker* (the control that lets a user browse every option) is offered: the two
 are separate knobs, set and reversed independently.
 
-#### Offering the connection-option picker (`connectionPickerEnabled`)
+#### The switch control and the picker (`connectionPickerEnabled`)
 
-**This is optional and defaults to `true`.** When a user is offered more than one
-connection option, OpenCred shows an entrypoint ("other ways to connect") that
-opens a picker of every option. `connectionPickerEnabled: false` suppresses that
-entrypoint: the user stays on the first option and is not offered the picker,
-even when more than one viable option exists. With nothing set, behaviour is
-exactly as before.
+When a user is offered more than one connection option, OpenCred shows a single
+persistent link beneath the wallet interaction. `connectionPickerEnabled`
+(**optional, defaults to `true`**) selects what that one control does:
 
-This gate is independent of `connectionOptions`: a workflow may declare an order
-and still show the picker, or suppress the picker without declaring any order.
-Neither implies the other. It does **not** affect the error-recovery "try another
-way" fallback, which is a separate path.
+- **`true`** — the link reads "other ways to connect" and opens a **picker
+  modal** listing every option with its description and a marker on the current
+  one. This is the default and matches the prior behaviour.
+- **`false`** — the link **switches directly** to the next option, cycling
+  through the declared order and wrapping, so every option is reachable from
+  every other. It is labelled by its destination — "Scan a QR code instead",
+  "Open a wallet app instead" — from the per-option `destinationLabel` /
+  `destinationLabelKey` override, else a per-method default. With only one viable
+  option it has nowhere to go and does not render.
+
+The link is persistent — present before any error. It does **not** replace or
+affect the error-recovery "try another way" fallback, which is a separate path.
+
+This knob is independent of `connectionOptions`: a workflow may declare an order
+and still show the picker, or hide the picker without declaring any order.
+Neither implies the other. The declared order (or, with nothing declared, the
+derived order) is what the switch control cycles through.
 
 Like the other workflow options it inherits via `configFrom`, and it can be set
 globally under `options` or overridden per workflow:
@@ -648,6 +658,42 @@ workflows:
     type: native
     connectionPickerEnabled: true # …but re-enable it for this one
 ```
+
+#### Promoting wallets in the install invitation (`promotedWallets`)
+
+The block at the bottom of the exchange page — the "install invitation" —
+invites a user without a wallet to install one, showing a row per wallet with
+its **product name** and app-store badges (filtered to the current platform).
+
+**This is optional.** With nothing set, the invitation promotes what it always
+has: every enabled wallet that has a storefront for the user's platform.
+`promotedWallets` turns it from an explanation into a **promotion of a chosen
+subset** — only the listed wallet identifiers are shown:
+
+```yaml
+workflows:
+  - clientId: my-workflow
+    type: native
+    promotedWallets: [cadmv-ios, cadmv-android] # promote only the CA DMV wallet
+```
+
+Promotion is a separate question from enablement. A workflow may **enable** a
+wallet that ships preinstalled on the user's device without wanting to
+**advertise** it, so `promotedWallets` is its own list — neither the enabled
+`wallets` set nor a registry flag. A listed identifier still contributes a row
+only where it has a storefront for the current platform, so naming a wallet with
+no store presence there is a harmless no-op.
+
+To suppress the explanatory sentence above the rows while keeping the wallet
+promotion, blank its translation key — the copy renders only when non-empty:
+
+```yaml
+    translations:
+      en:
+        appInstallExplain: ""
+```
+
+Like the other workflow options, `promotedWallets` inherits via `configFrom`.
 
 ### 8. Run OpenCred
 

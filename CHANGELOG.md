@@ -3,16 +3,21 @@
 ## 10.4.0 - 2026-08-dd
 
 ### Added
+- Workflow `promotedWallets`: an inheritable list of wallet identifiers the
+  install invitation promotes, independent of the enabled `wallets` set — a
+  workflow may enable a preinstalled wallet without advertising it. Defaults to
+  promoting every enabled wallet with a storefront. See
+  `docs/00-configure-workflow.md`.
 - Workflow `connectionOptions`: an ordered, inheritable declaration that selects
   and orders the connection options shown, each naming a `method` (`dcapi` |
   `qr-and-link` | `qr-and-copy` | `chapi`) and, except for the `dcapi`
   aggregator, a `profile`, with optional label and switch-link-destination
   overrides. See `docs/00-configure-workflow.md`.
 - Workflow `connectionPickerEnabled`: an inheritable boolean (default `true`)
-  that gates the "other ways to connect" picker entrypoint. When `false`, the
-  entrypoint is not offered even with more than one viable option; independent of
-  `connectionOptions` and does not affect the error-recovery "try another way"
-  fallback. See `docs/00-configure-workflow.md`.
+  that selects the persistent switch control's behaviour — the picker modal when
+  `true`, direct switching when `false`. Independent of `connectionOptions` and
+  does not affect the error-recovery "try another way" fallback. See
+  `docs/00-configure-workflow.md`.
 - Multi-profile DC API wallet buttons. A workflow may configure
   `dcApiButtons: [{id, label?, labelKey?, profiles: [...]}]` so that one button
   requests several authorization-request profiles together in a single
@@ -53,6 +58,13 @@
 
 ### Changed
 - Restore Apple Wallet's registry `name` to its canonical vendor name.
+- Every launch surface now resolves a wallet's device-context name through
+  `resolveDeviceContextName` (key-first, then the literal `name`, then the id),
+  instead of an inline `nameKey ? t(key) : name` that rendered the raw key when a
+  `nameKey` was set but unresolved. The `cadmv-android`, `cadmv-ios`, and
+  `apple-wallet` registry entries carry a neutral `nameKey`
+  (`wallet_<id>_name`) with no shipped translation, so a deployment can override
+  the launch-surface name in i18n while the branded literal stays the default.
 - **NOTE**: Node.js 26.x testing is temporarily disabled. Node 26's bundled
   undici rejects the dispatcher handler shape used by `undici@6`, which arrives
   as a transitive dependency via `@digitalbazaar/http-client`, so every test
@@ -84,6 +96,13 @@
   base64-encoded gzipped YAML. This is a prerequisite for moving the deployed
   config to a compressed secret; deployments that do not set the new variable
   are unaffected and continue to read `BEDROCK_CONFIG` as before.
+- De-jargoned the main connection-flow copy defaults.
+- The former "other ways to connect" link is now a single persistent switch
+  control with two behaviours, selected by `connectionPickerEnabled`. With the
+  picker visible it opens the modal (generic label) as before; with the picker
+  hidden it switches directly to the next connection option.
+- The install invitation ("suggested apps") now promotes the wallets a workflow
+  names in `promotedWallets`.
 
 ### Fixed
 - The install invitation now renders the wallet's product name directly instead
