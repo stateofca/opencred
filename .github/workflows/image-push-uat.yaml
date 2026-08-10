@@ -9,18 +9,28 @@
 # authored in `digitalbazaar/opencred-platform` and runs in
 # `stateofca/opencred-uat`, the UAT build source.
 #
-# Both jobs are gated on `vars.WORKFLOW_IMAGE_PUSH_UAT_ENABLED == 'true'`,
+# The build is gated on `vars.WORKFLOW_IMAGE_PUSH_UAT_ENABLED == 'true'`,
 # matching every other workflow in this repo. Set that variable only on the
 # remote that should build. Everywhere else the run skips cleanly instead of
 # failing partway through on credentials it was never given: `environment: uat`
 # silently creates an empty environment on a remote that has none, so
 # `UAT_ACCOUNT_ID` resolves to an empty string and the AWS OIDC step fails.
 #
+# The gate lives on the `uat` environment (alongside the other UAT vars below),
+# so it is read in a `preflight` job that declares `environment: uat` and emits
+# an `enabled` output. A job-level `if:` CANNOT read environment-scoped
+# variables — the environment is not bound until the job starts, so the `if:`
+# sees only repo/org vars and every gated job skips silently. Reading the flag
+# in a step (where the environment IS bound) and gating downstream jobs on the
+# resulting output keeps all UAT config on the `uat` environment and makes the
+# flag actually work.
+#
 # Required `vars` (set on the `uat` environment of the building remote):
-#   UAT_ACCOUNT_ID        e.g. 123456789012
-#   UAT_OIDC_BUILD_ROLE   e.g. opencred-uat-oidc-build
-#   UAT_ECR_REPO          e.g. opencred
-#   AWS_REGION            e.g. us-west-2
+#   WORKFLOW_IMAGE_PUSH_UAT_ENABLED  'true' to build on this remote
+#   UAT_ACCOUNT_ID                   e.g. 123456789012
+#   UAT_OIDC_BUILD_ROLE              e.g. opencred-uat-oidc-build
+#   UAT_ECR_REPO                     e.g. opencred
+#   AWS_REGION                       e.g. us-west-2
 
 name: Image Push UAT
 
@@ -31,8 +41,22 @@ on:
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
+  # Reads the enable flag where the `uat` environment IS bound (a step),
+  # then exposes it as an output the gated jobs can test. See header comment
+  # for why a job-level `if:` on an environment-scoped var does not work.
+  preflight:
+    runs-on: ubuntu-latest
+    environment: uat
+    outputs:
+      enabled: ${{ steps.gate.outputs.enabled }}
+    steps:
+      - name: Resolve enable flag
+        id: gate
+        run: echo "enabled=${{ vars.WORKFLOW_IMAGE_PUSH_UAT_ENABLED == 'true' }}" >> "$GITHUB_OUTPUT"
+
   check-version:
-    if: ${{ vars.WORKFLOW_IMAGE_PUSH_UAT_ENABLED == 'true' }}
+    needs: preflight
+    if: ${{ needs.preflight.outputs.enabled == 'true' }}
     runs-on: ubuntu-latest
     environment: uat
     permissions:
@@ -78,8 +102,10 @@ jobs:
           exit 1
 
   build-and-push-uat:
-    if: ${{ vars.WORKFLOW_IMAGE_PUSH_UAT_ENABLED == 'true' }}
-    needs: check-version
+    needs:
+      - preflight
+      - check-version
+    if: ${{ needs.preflight.outputs.enabled == 'true' }}
     runs-on: ubuntu-latest
     environment: uat
     permissions:
