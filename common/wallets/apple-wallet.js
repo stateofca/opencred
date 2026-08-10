@@ -24,7 +24,7 @@ export const appleWallet = {
     },
     '18013-7-Annex-C': {
       dcapi: {
-        description: 'Request credentials from your wallet on iOS',
+        description: 'Request credentials from your digital wallet on iOS',
         formats: ['mso_mdoc']
       }
     }
