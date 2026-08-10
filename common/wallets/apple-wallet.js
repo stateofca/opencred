@@ -24,14 +24,13 @@ export const appleWallet = {
     },
     '18013-7-Annex-C': {
       dcapi: {
-        description: 'Click the button to request credentials from your ' +
-          'wallet (iOS devices)',
+        description: 'Request credentials from your wallet on iOS',
         formats: ['mso_mdoc']
       }
     }
   },
   storefronts: [{
     type: 'apple',
-    url: 'https://apps.apple.com/us/app/apple-wallet/id1160481993'
+    url: 'https://apps.apple.com/app/ca-dmv-wallet/id6449002508'
   }]
 };
