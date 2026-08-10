@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.4.0 - 2026-08-dd
+## 10.4.0 - 2026-08-10
 
 ### Added
 - Workflow `promotedWallets`: an inheritable list of wallet identifiers the
