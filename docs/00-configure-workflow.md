@@ -166,8 +166,8 @@ workflows:
 
 **Inherited fields:** `name`, `description`, `brand`, `caStore`, `dcApiEnabled`,
 `interactEnabled`, `wallets`, `dcApiButtons`, `connectionOptions`,
-`connectionPickerEnabled`, `oidc`,
-`callback`, `translations`, `trustedCredentialIssuers`,
+`connectionPickerEnabled`, `acceptNonCanonicalJwkJcsPub`, `oid4vpProfile`,
+`oidc`, `callback`, `translations`, `trustedCredentialIssuers`,
 `untrustedVariableAllowList`, `public`, `clientSecret`.
 
 **Deep-merge behavior:**
@@ -694,6 +694,62 @@ promotion, blank its translation key — the copy renders only when non-empty:
 ```
 
 Like the other workflow options, `promotedWallets` inherits via `configFrom`.
+
+#### Accepting a non-canonical JWK in a `did:key` (`acceptNonCanonicalJwkJcsPub`)
+
+A `jwk_jcs-pub` did:key encodes a P-256 key as a JCS-serialized JWK. OpenCred
+resolves these fail-closed: the embedded JWK members must be in canonical JCS
+order (`{crv, kty, x, y}`), so one key maps to exactly one DID. Some otherwise
+conformant wallets present a valid P-256 holder key whose members are in a
+different order (e.g. `{kty, x, y, crv}`); the default behaviour rejects such a
+presentation with `non-canonical jwk_jcs-pub did:key rejected`.
+
+`acceptNonCanonicalJwkJcsPub` lets a workflow opt into accepting such a key. When
+enabled, the holder's presentation-signing did:key is resolved from whatever
+member order it uses, **so long as the coordinates are valid canonical P-256
+coordinates** — a key with wrong-length, padded, or non-roundtripping
+coordinates is still rejected. It is off by default, keeping strict resolution
+for every deployment; enable it only on workflows that must interoperate with a
+lenient wallet:
+
+```yaml
+options:
+  acceptNonCanonicalJwkJcsPub: false # deployment-wide default (may be omitted)
+
+workflows:
+  - clientId: my-workflow
+    type: native
+    acceptNonCanonicalJwkJcsPub: true # opt this workflow in
+```
+
+The option can be set deployment-wide under `options` and overridden per
+workflow, a workflow inheriting the deployment-wide value when it leaves the
+field unset. It also inherits via `configFrom`. The leniency is scoped to the
+holder's self-asserted presentation-signing key; it does not affect credential
+issuer trust-matching.
+
+#### Selecting the OID4VP request profile (`oid4vpProfile`)
+
+The OID4VP request profile determines the shape of the authorization request a
+workflow builds — which of `presentation_definition`, `dcql_query`, `vp_formats`,
+and `vp_formats_supported` it carries. Deployment-wide it is set by
+`options.OID4VPdefault` (default `OID4VP-combined`); `oid4vpProfile` lets a
+single workflow override it without changing the deployment default:
+
+```yaml
+options:
+  OID4VPdefault: OID4VP-combined # deployment-wide default (may be omitted)
+
+workflows:
+  - clientId: my-workflow
+    type: native
+    oid4vpProfile: OID4VP-1.0 # this workflow builds 1.0 requests
+```
+
+It accepts the same values as `options.OID4VPdefault` — `OID4VP-draft18`,
+`OID4VP-combined`, `OID4VP-1.0` — and is honored everywhere the profile is read,
+both request building and classification. A workflow inherits the deployment-wide
+value when it leaves the field unset, and it also inherits via `configFrom`.
 
 ### 8. Run OpenCred
 

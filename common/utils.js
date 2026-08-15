@@ -25,6 +25,7 @@ import {generateId} from 'bnid';
 import {httpClient} from '@digitalbazaar/http-client';
 import {JSONPath} from 'jsonpath-plus';
 import {logger} from '../lib/logger.js';
+import {resolveJwkJcsPubDidKey} from '../lib/did/jwk-jcs-pub.js';
 import {VC_BASE_IRI} from '../lib/workflows/common/oid4vp.js';
 import {verifyChain} from './x509.js';
 
@@ -168,6 +169,35 @@ export const unenvelopeJwtVp = vpToken => {
 
 // Verify Utilities
 
+/**
+ * Resolve a presentation-signing (holder) DID for JWT VP verification.
+ *
+ * When `acceptNonCanonicalJwkJcsPub` is set, a jwk_jcs-pub did:key whose
+ * embedded JWK is in a non-canonical member order is resolved leniently
+ * instead of rejected — but ONLY here, on the holder's self-asserted key. This
+ * deliberately bypasses the shared cached `didResolver`: that resolver is a
+ * process-wide singleton keyed by DID string, so routing a lenient resolution
+ * through it could cache a relaxed document and serve it to a strict workflow.
+ * Every non-jwk_jcs-pub DID, and every DID when the option is off, still
+ * resolves through the cached resolver, fail-closed, unchanged.
+ *
+ * @param {object} options - Options.
+ * @param {string} options.did - The DID (or key-id URL) to resolve.
+ * @param {boolean} options.acceptNonCanonicalJwkJcsPub - Whether to accept a
+ *   non-canonically-ordered jwk_jcs-pub did:key.
+ * @returns {Promise<object>} The resolved DID document or verification method.
+ */
+const resolveHolderKey = async ({did, acceptNonCanonicalJwkJcsPub}) => {
+  if(acceptNonCanonicalJwkJcsPub) {
+    const resolved = await resolveJwkJcsPubDidKey({
+      id: did, acceptNonCanonical: true});
+    if(resolved) {
+      return resolved;
+    }
+  }
+  return didResolver.get({did, verificationMethodType: 'JsonWebKey2020'});
+};
+
 const verifyJWTVC = async (jwt, options = {}) => {
   const {
     checkStatus,
@@ -206,6 +236,7 @@ const verifyJWTVC = async (jwt, options = {}) => {
 const verifyJWTVP = async (jwt, options = {}) => {
   const {
     resolver,
+    acceptNonCanonicalJwkJcsPub = false,
     ...optionsWithoutResolver
   } = options;
   try {
@@ -213,8 +244,8 @@ const verifyJWTVP = async (jwt, options = {}) => {
       jwt,
       resolver ?
         {resolve: did => resolver.resolve(did)} :
-        {resolve: did => didResolver.get({
-          did, verificationMethodType: 'JsonWebKey2020'})},
+        {resolve: did => resolveHolderKey({
+          did, acceptNonCanonicalJwkJcsPub})},
       optionsWithoutResolver
     );
     return {...verification, errors: []};

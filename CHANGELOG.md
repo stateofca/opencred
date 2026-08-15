@@ -1,5 +1,19 @@
 # opencred-platform Changelog
 
+## 10.4.1 - 2026-08-dd
+
+### Added
+- Workflow `acceptNonCanonicalJwkJcsPub`: an inheritable boolean (global default
+  in `options`, default `false`) that lets a workflow accept a holder's
+  `jwk_jcs-pub` did:key whose embedded JWK is in a non-canonical member order,
+  resolving it from whatever order it uses while still requiring valid canonical
+  P-256 coordinates. Default stays strict (one key, one DID). Scoped to
+  holder-key resolution during presentation verification, not issuer trust. See
+  `docs/00-configure-workflow.md`.
+
+### Changed
+- Make `oid4vpProfile` an inheritable OID4VP workflow override 
+
 ## 10.4.0 - 2026-08-10
 
 ### Added

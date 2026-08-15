@@ -6,7 +6,7 @@
  */
 import {
   canonicalJwkJcsPubDid, decodeJwkJcsPubDidKey, MULTICODEC_JWK_JCS_PUB,
-  readVarint
+  readVarint, resolveJwkJcsPubDidKey
 } from '../../lib/did/jwk-jcs-pub.js';
 import {exportJWK, generateKeyPair, SignJWT} from 'jose';
 import {encode as base58Encode} from 'base58-universal';
@@ -23,6 +23,19 @@ const JWK_JCS_PUB_MULTICODEC_HEADER = [0xd1, 0xd6, 0x03];
 // construct non-canonical inputs.
 const encodeJwkJcsPubDidKey = jwk => {
   const jwkBytes = new TextEncoder().encode(canonicalize(jwk));
+  const bytes = new Uint8Array(
+    JWK_JCS_PUB_MULTICODEC_HEADER.length + jwkBytes.length);
+  bytes.set(JWK_JCS_PUB_MULTICODEC_HEADER, 0);
+  bytes.set(jwkBytes, JWK_JCS_PUB_MULTICODEC_HEADER.length);
+  return `did:key:z${base58Encode(bytes)}`;
+};
+
+// Encode a JWK preserving the given member order (JSON.stringify, not JCS), so
+// tests can construct a non-canonically-ordered did:key — the TWDIW wallet
+// serializes as {kty,x,y,crv}, which canonicalize() cannot reproduce because it
+// always sorts. Everything else matches the wire format (varint + base58btc).
+const encodeJwkJcsPubDidKeyRaw = jwk => {
+  const jwkBytes = new TextEncoder().encode(JSON.stringify(jwk));
   const bytes = new Uint8Array(
     JWK_JCS_PUB_MULTICODEC_HEADER.length + jwkBytes.length);
   bytes.set(JWK_JCS_PUB_MULTICODEC_HEADER, 0);
@@ -130,6 +143,45 @@ describe('did:key jwk_jcs-pub DID support module', () => {
     });
   });
 
+  describe('decodeJwkJcsPubDidKey (acceptNonCanonical)', () => {
+    // The TWDIW wallet serializes the holder JWK as {kty,x,y,crv} — a valid
+    // P-256 key in a non-canonical member order.
+    const reorderedJwk = {
+      kty: exampleP256Jwk.kty, x: exampleP256Jwk.x,
+      y: exampleP256Jwk.y, crv: exampleP256Jwk.crv
+    };
+
+    it('rejects a non-canonically-ordered did:key by default', async () => {
+      const did = encodeJwkJcsPubDidKeyRaw(reorderedJwk);
+      await rejects(decodeJwkJcsPubDidKey({did}));
+    });
+
+    it('accepts a non-canonically-ordered did:key when opted in', async () => {
+      const did = encodeJwkJcsPubDidKeyRaw(reorderedJwk);
+      const decoded = await decodeJwkJcsPubDidKey(
+        {did, acceptNonCanonical: true});
+      expect(decoded).to.be.an('object');
+      // Decoded to the canonical {crv,kty,x,y} JWK regardless of input order.
+      expect(decoded.jwk).eql(exampleP256Jwk);
+      // Keyed to the requested (non-canonical) DID, not the canonical one.
+      expect(decoded.multibase).equal(did.slice('did:key:'.length));
+    });
+
+    it('still rejects invalid coordinates even when opted in', async () => {
+      const did = encodeJwkJcsPubDidKeyRaw(
+        {...reorderedJwk, y: pad33(exampleP256Jwk.y)});
+      await rejects(decodeJwkJcsPubDidKey({did, acceptNonCanonical: true}));
+    });
+
+    it('still returns null for a non-jwk_jcs-pub did:key when opted in',
+      async () => {
+        const did =
+          'did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH';
+        expect(await decodeJwkJcsPubDidKey({did, acceptNonCanonical: true}))
+          .equal(null);
+      });
+  });
+
   describe('didKeyDriver.get (installed resolution)', () => {
     it('resolves a canonical jwk_jcs-pub DID to a requested-DID document',
       async () => {
@@ -195,5 +247,40 @@ describe('did:key jwk_jcs-pub DID support module', () => {
       expect(result.verified).equal(true);
       expect(result.issuer).equal(did);
     });
+
+    // A JWT whose `iss` is a non-canonically-ordered jwk_jcs-pub DID verifies
+    // when the holder-key resolver is opted into leniency — the presentation-
+    // signing case issue 027 addresses.
+    it('verifies a JWT issued by a non-canonical jwk_jcs-pub DID when opted in',
+      async () => {
+        const {publicKey, privateKey} = await generateKeyPair('ES256');
+        const exported = await exportJWK(publicKey);
+        // Serialize members in a non-canonical order, as the TWDIW wallet does.
+        const jwk = {
+          kty: 'EC', x: exported.x, y: exported.y, crv: 'P-256'
+        };
+        const jwkBytes = new TextEncoder().encode(JSON.stringify(jwk));
+        const bytes = new Uint8Array(
+          JWK_JCS_PUB_MULTICODEC_HEADER.length + jwkBytes.length);
+        bytes.set(JWK_JCS_PUB_MULTICODEC_HEADER, 0);
+        bytes.set(jwkBytes, JWK_JCS_PUB_MULTICODEC_HEADER.length);
+        const did = `did:key:z${base58Encode(bytes)}`;
+        const multibase = did.slice('did:key:'.length);
+        const jwt = await new SignJWT({sub: 'test'})
+          .setProtectedHeader({alg: 'ES256', kid: `${did}#${multibase}`})
+          .setIssuer(did)
+          .sign(privateKey);
+        const resolver = {
+          resolve: async didUrl => ({
+            didResolutionMetadata: {},
+            didDocument: await resolveJwkJcsPubDidKey(
+              {id: didUrl, acceptNonCanonical: true}),
+            didDocumentMetadata: {}
+          })
+        };
+        const result = await verifyJWT(jwt, {resolver});
+        expect(result.verified).equal(true);
+        expect(result.issuer).equal(did);
+      });
   });
 });

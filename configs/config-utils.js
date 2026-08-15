@@ -36,6 +36,13 @@ export const WorkflowType = {
 
 export const WorkFlowTypes = Object.values(WorkflowType);
 
+// The OID4VP request profiles a deployment or workflow may select. The global
+// `options.OID4VPdefault` and the per-workflow `oid4vpProfile` override share
+// this set so a workflow accepts exactly the profiles the deployment does.
+export const OID4VP_PROFILE_VALUES = [
+  'OID4VP-draft18', 'OID4VP-combined', 'OID4VP-1.0'
+];
+
 // Image schema
 export const ImgSchema = z.object({
   id: z.string(),
@@ -230,6 +237,22 @@ export const BaseWorkflowSchema = z.object({
   // When undefined, inherits options.twdiwStatusList2021Enabled (global
   // default: false). Set true only on workflows that consume TWDIW VCs.
   twdiwStatusList2021Enabled: z.boolean().optional(),
+
+  // Per-workflow override: accept a holder's jwk_jcs-pub did:key whose embedded
+  // JWK is in a non-canonical member order. When undefined, inherits
+  // options.acceptNonCanonicalJwkJcsPub (global default: false), which keeps
+  // strict one-key-one-DID resolution. Set true only on workflows that must
+  // interoperate with a wallet that serializes JWK members non-canonically;
+  // coordinate validity is still enforced. Scoped to holder-key resolution
+  // during presentation verification, not issuer trust.
+  acceptNonCanonicalJwkJcsPub: z.boolean().optional(),
+
+  // Per-workflow override for the OID4VP request profile OpenCred sends. When
+  // undefined, inherits options.OID4VPdefault (global default:
+  // 'OID4VP-combined'). Accepts the same set of profiles as the deployment-wide
+  // option. Lets several workflows serve wallets that require different
+  // profiles from one deployment.
+  oid4vpProfile: z.enum(OID4VP_PROFILE_VALUES).optional(),
 
   wallets: z.array(z.enum(availableWallets)).optional(),
 
@@ -639,15 +662,18 @@ export const OptionsSchema = z.object({
   // right-click / copy link.
   oid4vpDisplayLinkOnDesktop: z.boolean().default(false),
 
-  OID4VPdefault: z.enum([
-    'OID4VP-draft18', 'OID4VP-combined', 'OID4VP-1.0'
-  ]).default('OID4VP-combined'),
+  OID4VPdefault: z.enum(OID4VP_PROFILE_VALUES).default('OID4VP-combined'),
   workflowListingEnabled: z.boolean().default(false),
   // Enables the non-standard, deprecated TWDIW StatusList2021 credential-
   // status handler (a JWT status-list envelope verified against a jku-
   // published key). Off by default; standard flows reject a
   // StatusList2021Entry as an unsupported status type.
   twdiwStatusList2021Enabled: z.boolean().default(false),
+  // Deployment-wide default for accepting a holder's jwk_jcs-pub did:key whose
+  // embedded JWK is in a non-canonical member order. Off by default: strict
+  // one-key-one-DID resolution, so a non-canonically-ordered did:key is
+  // rejected. A workflow may opt in via its own acceptNonCanonicalJwkJcsPub.
+  acceptNonCanonicalJwkJcsPub: z.boolean().default(false),
   debug: z.boolean().default(false),
 
   // Experimental request-shaping knobs for the google-wallet (x509_hash)
@@ -863,6 +889,8 @@ export const INHERITABLE_FIELDS = [
   'dcApiEnabled',
   'interactEnabled',
   'connectionPickerEnabled',
+  'acceptNonCanonicalJwkJcsPub',
+  'oid4vpProfile',
   'wallets',
   'dcApiButtons',
   'connectionOptions',

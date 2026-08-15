@@ -132,5 +132,20 @@ describe('identify-profile', () => {
       expect(result.profile).to.equal('18013-7-Annex-B');
       expect(result.responseMode).to.equal('direct_post');
     });
+
+    it('uses workflow.oid4vpProfile when no profile is requested', () => {
+      const result = identifyProfile({
+        workflow: {oid4vpProfile: 'OID4VP-1.0'}
+      });
+      expect(result.profile).to.equal('OID4VP-1.0');
+    });
+
+    it('an explicit profile parameter overrides workflow.oid4vpProfile', () => {
+      const result = identifyProfile({
+        profile: 'OID4VP-draft18',
+        workflow: {oid4vpProfile: 'OID4VP-1.0'}
+      });
+      expect(result.profile).to.equal('OID4VP-draft18');
+    });
   });
 });
