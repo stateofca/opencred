@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.4.1 - 2026-08-dd
+## 10.4.1 - 2026-08-18
 
 ### Added
 - Workflow `acceptNonCanonicalJwkJcsPub`: an inheritable boolean (global default
