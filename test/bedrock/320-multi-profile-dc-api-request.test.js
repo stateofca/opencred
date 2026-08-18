@@ -60,7 +60,7 @@ describe('multi-profile DC API authorization request', function() {
     certStub.restore();
   });
 
-  async function requestProfiles(profiles, {certificates} = {}) {
+  async function requestProfiles(profiles, {certificates, seedVariables} = {}) {
     if(certificates) {
       certStub.restore();
       certStub = sinon.stub(config.opencred, 'walletCertificates')
@@ -68,6 +68,9 @@ describe('multi-profile DC API authorization request', function() {
     }
     const exchange = await createExchangeWithAuthRequest({
       workflow: mdocTestRP});
+    if(seedVariables) {
+      exchange.variables = {...exchange.variables, ...seedVariables};
+    }
     const findOneStub = sinon.stub(
       database.collections.Exchanges, 'findOne'
     ).resolves({...exchange, workflowId: mdocTestRP.clientId});
@@ -215,6 +218,49 @@ describe('multi-profile DC API authorization request', function() {
           .to.be.an('array');
       });
   });
+
+  // A DC API attempt was made on this exchange and abandoned, leaving its
+  // pending-request array behind. The wallet then falls back to the draft-18
+  // flow on the SAME exchange. Serving that non-DC-API request must supersede
+  // the abandoned DC API offer: the persisted exchange has to be left in the
+  // flat shape a non-DC-API exchange has always had, or a later `direct_post`
+  // response would be misrouted to a DC API handler against dead key material.
+  describe('non-DC-API request supersedes an abandoned DC API offer',
+    function() {
+      it('drops the stale pending-request array when persisting a draft-18 ' +
+        'request', async function() {
+        const {result, err, replaceOneStub} = await requestProfiles(
+          ['OID4VP-draft18'],
+          {
+            seedVariables: {
+              dcApiRequests: [{
+                profile: 'apple-wallet',
+                protocol: 'org-iso-mdoc',
+                requestGroupId: 'stale-group',
+                authorizationRequest: {nonce: 'stale-nonce'},
+                material: {
+                  hpkeRecipientPrivateKey: {
+                    kty: 'EC', crv: 'P-256', x: 'x', y: 'y', d: 'd'
+                  }
+                }
+              }]
+            }
+          });
+
+        expect(err).to.be(undefined);
+        expect(result.status).to.equal(200);
+
+        // The draft-18 request persists through the JAR-JWT path, and it must
+        // leave no `dcApiRequests` behind: the flat shape is exactly what a
+        // draft-18 response resolves against.
+        expect(replaceOneStub.calledOnce).to.be(true);
+        const saved = replaceOneStub.firstCall.args[1];
+        expect(saved.variables.dcApiRequests).to.be(undefined);
+        // The flat draft-18 request state is what remains.
+        expect(saved.variables.profile).to.equal('OID4VP-draft18');
+        expect(saved.variables.authorizationRequest).to.be.an('object');
+      });
+    });
 
   describe('validation', function() {
     it('rejects a multi-profile request containing a non-DC-API profile',

@@ -14,6 +14,12 @@
 ### Changed
 - Make `oid4vpProfile` an inheritable OID4VP workflow override 
 
+### Fixed
+- A non-DC-API (draft-18) fallback served on an exchange with a failed DC API
+  attempt now clears the stale pending-request array on persist, and a
+  `direct_post` response with no DC API protocol marker resolves against the
+  flat request state rather than a spent DC API offer.
+
 ## 10.4.0 - 2026-08-10
 
 ### Added

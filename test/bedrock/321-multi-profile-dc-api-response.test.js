@@ -296,4 +296,77 @@ describe('multi-profile DC API response routing', function() {
         expect(message).to.not.contain('Profile not found');
       });
   });
+
+  // A DC API attempt failed, and the wallet fell back to the draft-18 flow on
+  // the SAME exchange. The draft-18 request handler left its flat request state
+  // beside the abandoned DC API pending array (the request-side clear that
+  // removes it is exercised by 320; this proves the response side is robust
+  // even when the array is still present). A `direct_post` response carries no
+  // DC API protocol marker, so it must resolve against the flat state and reach
+  // the standard handler — never the first entry of the stale DC API array.
+  describe('non-DC-API fallback after a failed DC API attempt', function() {
+    async function respondFallback(responseBody) {
+      let res;
+      await withStubs(
+        () => [
+          sinon.stub(database.collections.Exchanges, 'replaceOne').resolves(),
+          sinon.stub(database.collections.Exchanges, 'updateOne').resolves()
+        ],
+        async () => {
+          const exchange = {
+            id: 'draft18-fallback-exchange',
+            workflowId: workflow.clientId,
+            state: 'active',
+            step: 'default',
+            variables: {
+              procedurePath: 'verification',
+              // Flat draft-18 request state, as the standard handler persists
+              // it: OID4VP-draft18 is not a DC API profile, so it routes to
+              // the standard response handler.
+              profile: 'OID4VP-draft18',
+              authorizationRequest: {
+                response_mode: 'direct_post',
+                nonce: 'draft18-nonce'
+              },
+              // The spent DC API offer, left behind by the failed attempt.
+              dcApiRequests: pendingRequests()
+            }
+          };
+          const req = {
+            workflow,
+            exchange,
+            body: responseBody,
+            query: {},
+            headers: {'user-agent': 'test-agent'},
+            originalUrl: `/workflows/${workflow.clientId}/exchanges/` +
+              `${exchange.id}/openid/client/authorization/response`
+          };
+          res = mockRes();
+          await service.authorizationResponseMiddleware(req, res, () => {});
+        }
+      );
+      return res;
+    }
+
+    it('routes a direct_post response to the standard handler, not the ' +
+      'stale DC API array', async function() {
+      // A direct_post body: a bare presentation submission with no `protocol`
+      // marker and (deliberately) no vp_token. The standard handler is the
+      // only handler that reports a missing vp_token; every DC API handler
+      // would first fail on its own missing key material, so those messages
+      // appearing here would mean the response was misrouted to the stale
+      // apple-wallet entry that sits first in the pending array.
+      const res = await respondFallback({presentation_submission: '{}'});
+
+      const message = res.body?.message ?? '';
+      expect(message).to.contain('vp_token not found');
+      expect(res.body?.error).to.not.equal('DC_API_RESPONSE_UNMATCHED');
+      expect(res.body?.error).to.not.equal('DC_API_RESPONSE_AMBIGUOUS');
+      expect(message).to.not.contain('EncryptionInfo not found');
+      expect(message).to.not.contain('HPKE recipient private key not found');
+      expect(message).to.not.contain('EncryptedResponse');
+      expect(message).to.not.contain('Authorization request not found');
+      expect(message).to.not.contain('Profile not found');
+    });
+  });
 });
