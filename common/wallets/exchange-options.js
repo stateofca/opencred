@@ -353,6 +353,7 @@ function _walletsForProfile(profile, registry) {
  *     id,               // stable v-for key and telemetry handle
  *     profiles: [...],  // ORDER SIGNIFICANT - the DC API `requests` order
  *     labelKey, label,  // label inputs; see precedence below
+ *     desktopLabelKey?, // optional desktop-only i18n label key (QR flow)
  *     walletBranded,    // true when the label names one specific wallet
  *     handledBy: [{walletId, nameKey?, name?}]
  *   }
@@ -503,6 +504,7 @@ function _configuredDescriptors({dcApiButtons, availableProfiles, registry}) {
       id: button.id,
       profiles,
       ...(button.labelKey && {labelKey: button.labelKey}),
+      ...(button.desktopLabelKey && {desktopLabelKey: button.desktopLabelKey}),
       ...(button.label && {label: button.label}),
       walletBranded: false,
       handledBy: _handledBy({walletIds, registry})

@@ -275,6 +275,12 @@ export const BaseWorkflowSchema = z.object({
     id: z.string().regex(/^[a-zA-Z0-9_-]+$/),
     label: z.string().optional(),
     labelKey: z.string().optional(),
+    // Optional desktop-specific i18n label key. On a desktop browser the DC API
+    // launch resolves to a cross-device QR flow, so a workflow can label the
+    // button accordingly (e.g. "Generate QR Code to Scan") while `labelKey`
+    // stays the mobile same-device label. When unset, the button uses
+    // `labelKey` on every device.
+    desktopLabelKey: z.string().optional(),
     profiles: z.array(z.string()).min(1)
   }).refine(b => b.label !== undefined || b.labelKey !== undefined, {
     message: 'dcApiButtons entry requires `label` or `labelKey`'

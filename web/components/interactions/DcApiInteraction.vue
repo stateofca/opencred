@@ -75,9 +75,17 @@ import CountdownDisplay from '../CountdownDisplay.vue';
 import {resolveDcApiErrorMessage} from '../../utils/dc-api-error-message.js';
 import {useExchangeOptions} from '../../composables/useExchangeOptions.js';
 import {useI18n} from 'vue-i18n';
+import {useQuasar} from 'quasar';
 import WalletLaunchButton from '../WalletLaunchButton.vue';
 
 const {t, te} = useI18n({useScope: 'global'});
+const $q = useQuasar();
+// On a desktop browser the DC API launch resolves to a cross-device QR flow,
+// so a button may carry a desktop-specific label (e.g. "Generate QR Code to
+// Scan"). Mobile keeps the same-device label.
+const isMobile = computed(() =>
+  ($q.platform?.is?.ios ?? false) || ($q.platform?.is?.android ?? false)
+);
 const {exchangeTtlDisplayThresholdSeconds} = useExchangeOptions();
 
 const props = defineProps({
@@ -130,9 +138,15 @@ watch(() => props.error, value => {
   }
 });
 
-// Label precedence, mirroring `successViewFields`: an i18n key when it resolves
-// in the current locale, then a literal label, then the generic fallback.
+// Label precedence, mirroring `successViewFields`: on a desktop browser a
+// resolving `desktopLabelKey` wins (the launch is a cross-device QR flow),
+// then the `labelKey` i18n key when it resolves in the current locale, then a
+// literal label, then the generic fallback.
 const resolveLabel = descriptor => {
+  if(!isMobile.value && descriptor.desktopLabelKey &&
+    te(descriptor.desktopLabelKey)) {
+    return t(descriptor.desktopLabelKey);
+  }
   if(descriptor.labelKey && te(descriptor.labelKey)) {
     return t(descriptor.labelKey);
   }

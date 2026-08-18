@@ -67,6 +67,27 @@ describe('workflow dcApiButtons', () => {
     }]).success).to.be(true);
   });
 
+  it('accepts an optional desktopLabelKey', () => {
+    const result = parse([{
+      id: 'mdl',
+      labelKey: 'walletButton_presentMdl',
+      desktopLabelKey: 'walletButton_generateQr',
+      profiles: ['apple-wallet', 'google-wallet']
+    }]);
+    expect(result.success).to.be(true);
+    expect(result.data.dcApiButtons[0].desktopLabelKey)
+      .to.be('walletButton_generateQr');
+  });
+
+  it('leaves desktopLabelKey undefined when unset', () => {
+    const result = parse([{
+      id: 'mdl', labelKey: 'walletButton_presentMdl',
+      profiles: ['apple-wallet']
+    }]);
+    expect(result.success).to.be(true);
+    expect(result.data.dcApiButtons[0].desktopLabelKey).to.be(undefined);
+  });
+
   it('rejects an entry with neither label nor labelKey', () => {
     const result = parse([{id: 'mdl', profiles: ['apple-wallet']}]);
     expect(result.success).to.be(false);

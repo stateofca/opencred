@@ -167,6 +167,25 @@ describe('DC API launch-option descriptors', () => {
       expect(button.walletBranded).to.be(false);
     });
 
+    it('carries a configured desktopLabelKey onto the descriptor', () => {
+      const withDesktop = {
+        ...workflowBase,
+        dcApiButtons: [{
+          id: 'mdl',
+          labelKey: 'walletButton_presentMdl',
+          desktopLabelKey: 'walletButton_generateQr',
+          profiles: ['apple-wallet', 'google-wallet']
+        }]
+      };
+      const [entry] = dcApiEntries(options({workflow: withDesktop}));
+      expect(entry.buttons[0].desktopLabelKey).to.be('walletButton_generateQr');
+    });
+
+    it('omits desktopLabelKey when the button does not configure one', () => {
+      const [entry] = dcApiEntries(options({workflow}));
+      expect(entry.buttons[0].desktopLabelKey).to.be(undefined);
+    });
+
     // A multi-wallet button is exactly the case where naming the wallets
     // matters, since the label cannot.
     it('lists every wallet that may handle any requested profile', () => {
