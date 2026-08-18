@@ -1,6 +1,6 @@
 {
   "name": "opencred-platform",
-  "version": "10.4.0",
+  "version": "10.4.1",
   "license": "BSD-3-Clause",
   "type": "module",
   "main": "./lib/index.js",
