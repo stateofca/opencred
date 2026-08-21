@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+// required polyfill for @peculiar/x509
+import 'reflect-metadata';
+
 import * as x509 from '@peculiar/x509';
 // import {Certificate, CertificateRevocationList} from 'pkijs';
 import {createPublicKey, X509Certificate} from 'node:crypto';
