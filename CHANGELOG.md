@@ -8,9 +8,11 @@
 
 ### Changed
 - Update dependencies.
+  - `@bedrock/express@8.8.0`
+  - `@bedrock/server@5.2.0`
+  - `@peculiar/x509@2.0.0`
   - `dotenv@17.4.2`
   - `json-canonicalize@3.0.0`
-  - `@peculiar/x509@2.0.0`
 - Update minor dependencies.
   - `@azure/msal-node@5.6.0`
   - `@bedrock/quasar@10.0.1`
