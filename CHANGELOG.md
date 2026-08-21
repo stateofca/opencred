@@ -7,6 +7,9 @@
   `certificatePem` (wallet certificates already carried this check).
 
 ### Changed
+- Update dependencies.
+  - `dotenv@17.4.2`
+  - `json-canonicalize@3.0.0`
 - Update minor dependencies.
   - `@azure/msal-node@5.6.0`
   - `@bedrock/quasar@10.0.1`
@@ -20,9 +23,7 @@
   - `autoprefixer@10.5.4`
   - `cbor-x@1.6.5`
   - `credential-handler-polyfill@4.1.0`
-  - `dotenv@16.6.1`
   - `jose@5.10.0`
-  - `json-canonicalize@1.2.0`
   - `pkijs@3.4.0`
   - `postcss@8.5.26`
   - `postcss-preset-env@9.6.0`
