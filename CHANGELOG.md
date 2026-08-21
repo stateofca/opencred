@@ -7,6 +7,34 @@
   `certificatePem` (wallet certificates already carried this check).
 
 ### Changed
+- Update minor dependencies.
+  - `@azure/msal-node@5.6.0`
+  - `@bedrock/quasar@10.0.1`
+  - `@bedrock/webpack@11.6.1`
+  - `@digitalbazaar/cadmv-ui@2.8.0`
+  - `@digitalbazaar/did-io@2.2.0`
+  - `@digitalbazaar/http-client@4.4.0`
+  - `@quasar/extras@1.18.0`
+  - `@unhead/vue@2.1.17`
+  - `@vueuse/core@14.4.0`
+  - `autoprefixer@10.5.4`
+  - `cbor-x@1.6.5`
+  - `credential-handler-polyfill@4.1.0`
+  - `dotenv@16.6.1`
+  - `jose@5.10.0`
+  - `json-canonicalize@1.2.0`
+  - `pkijs@3.4.0`
+  - `postcss@8.5.26`
+  - `postcss-preset-env@9.6.0`
+  - `qrcode@1.5.4`
+  - `swagger-jsdoc@6.3.0`
+  - `swagger-ui-express@5.0.1`
+  - `tailwindcss@3.4.19`
+  - `vue@3.5.41`
+  - `vue-cookies@1.8.6`
+  - `vue-i18n@9.14.5`
+  - `vue-json-pretty@2.6.0`
+  - `zod@4.4.3`
 - Update dev dependencies.
 - `publicKeyPem` is now optional for a signing key or wallet certificate that
   supplies a `certificatePem`; it is derived from the certificate when omitted.
