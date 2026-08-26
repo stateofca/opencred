@@ -297,7 +297,12 @@ header of the authorization request JWT.
 
 To configure a certificate, add the `certificatePem` field to your signing key
 configuration. The certificate chain should be provided in PEM format, with
-multiple certificates concatenated if you have an intermediate chain:
+multiple certificates concatenated if you have an intermediate chain.
+
+When a `certificatePem` is present, `publicKeyPem` is **optional**: omit it and
+OpenCred derives the public key from the certificate. This avoids pasting a
+public key that does not belong to the certificate. Supply `publicKeyPem`
+explicitly only when there is no certificate to derive it from:
 
 ```yaml
 signingKeys:
@@ -309,11 +314,6 @@ signingKeys:
       5awy7B3tHz0y+mckq/x2V8fWwrmhRANCAARkJ4rsoMcdayGPTcAbgLfKRdqwN57I
       n9CRsED9Yno+oC4R7xz6xXpT2CQAkioPDmou1DYYU+oMaV9lCjvw9vqs
       -----END PRIVATE KEY-----
-    publicKeyPem: |
-      -----BEGIN PUBLIC KEY-----
-      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZCeK7KDHHWshj03AG4C3ykXasDee
-      yJ/QkbBA/WJ6PqAuEe8c+sV6U9gkAJIqDw5qLtQ2GFPqDGlfZQo78Pb6rA==
-      -----END PUBLIC KEY-----
     certificatePem: |
       -----BEGIN CERTIFICATE-----
       MIICXjCCAcegAwIBAgIU... (leaf certificate)
@@ -328,8 +328,10 @@ signingKeys:
 **Important requirements:**
 
 - The domain name of the OpenCred server must be included in Subject
-  Alternative Names (SANs) in the certificate. The certificate's public key
-  must match the signing key's public key.
+  Alternative Names (SANs) in the certificate. If you supply `publicKeyPem`
+  explicitly, it must match the certificate's public key; OpenCred warns at
+  startup when a signing key or wallet certificate does not match its
+  certificate.
 
 - **Certificate trust**: Some wallets allow self-signed certificates, while
   others require leaf certificates from a particular trusted chain. The trust

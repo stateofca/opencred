@@ -1,5 +1,15 @@
 # opencred-platform Changelog
 
+## 10.4.2 - 2026-08-dd
+
+### Added
+- Startup warning when a signing key's private or public key does not match its
+  `certificatePem` (wallet certificates already carried this check).
+
+### Changed
+- `publicKeyPem` is now optional for a signing key or wallet certificate that
+  supplies a `certificatePem`; it is derived from the certificate when omitted.
+
 ## 10.4.1 - 2026-08-18
 
 ### Added

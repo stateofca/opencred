@@ -802,7 +802,10 @@ export const SigningKeySchema = z.object({
     message: 'Purpose must be an array of at least one string'
   }),
   privateKeyPem: z.string(),
-  publicKeyPem: z.string(),
+  // Optional: derived from certificatePem when omitted (see
+  // fillPublicKeysFromCertificates). Required only when no certificate is
+  // supplied, since there is then nothing to derive it from.
+  publicKeyPem: z.string().optional(),
   certificatePem: z.string().optional()
 });
 
@@ -811,7 +814,10 @@ const WalletCertificateBase = z.object({
   id: z.string().min(1),
   type: z.enum(['ES256']),
   privateKeyPem: z.string(),
-  publicKeyPem: z.string(),
+  // Optional: derived from certificatePem when omitted (see
+  // fillPublicKeysFromCertificates). certificatePem is always required here,
+  // so a wallet entry always has something to derive from.
+  publicKeyPem: z.string().optional(),
   certificatePem: z.string(),
   displayName: z.string().optional()
 });
@@ -871,6 +877,12 @@ export const OpenCredConfigSchema = z.object({
   }),
   audit: AuditSchema.default({enable: false})
 }).transform(data => {
+  // A certificate already embeds its public key, so publicKeyPem is optional:
+  // fill it in from certificatePem for any entry that omits it, before any
+  // downstream code (or validateWalletCertificates) reads it.
+  fillPublicKeysFromCertificates(data.signingKeys, 'signingKeys');
+  fillPublicKeysFromCertificates(data.walletCertificates, 'walletCertificates');
+  validateSigningKeys(data.signingKeys);
   validateWalletCertificates(data.walletCertificates);
   // Ensure options is populated with field-level defaults from OptionsSchema
   // Parse through OptionsSchema to apply defaults for any missing fields
@@ -1051,6 +1063,123 @@ export const applyWorkflowDefaults = ({opencred, workflows, workflow}) => {
     brand: mergedBrand
   };
 };
+
+/**
+ * Fill in publicKeyPem from certificatePem for any entry that omits it.
+ *
+ * A certificate already embeds its public key, so requiring the operator to
+ * paste publicKeyPem separately is redundant — and a redundant field can be
+ * filled with a value that does not belong to the certificate. When an entry
+ * supplies a certificatePem but no publicKeyPem, derive the latter from the
+ * former. An entry with neither has nothing to derive from and is a hard
+ * configuration error.
+ *
+ * An explicitly supplied publicKeyPem is left untouched, so existing
+ * configurations are unaffected.
+ *
+ * @param {Array} entries - SigningKeys or walletCertificates entries.
+ * @param {string} label - Config key name, for error messages.
+ */
+export function fillPublicKeysFromCertificates(entries, label) {
+  for(const entry of entries) {
+    if(entry.publicKeyPem) {
+      continue;
+    }
+    const id = entry.id ?? entry.type;
+    if(!entry.certificatePem) {
+      throw new Error(
+        `${label}[${id}]: publicKeyPem is required when no ` +
+        `certificatePem is provided`
+      );
+    }
+    try {
+      const cert = new crypto.X509Certificate(entry.certificatePem);
+      entry.publicKeyPem = cert.publicKey.export({type: 'spki', format: 'pem'});
+    } catch(err) {
+      throw new Error(
+        `${label}[${id}]: unable to derive publicKeyPem from ` +
+        `certificatePem: ${err.message}`
+      );
+    }
+  }
+}
+
+/**
+ * Warn when a signing key does not match its certificate.
+ *
+ * A signing key may carry a certificatePem (used in the x5c header of
+ * authorization-request JARs). When it does, the key must be the certificate's
+ * key pair: the private key — and the public key, whether the operator supplied
+ * it or it was derived — must equal the certificate's embedded public key. A
+ * mismatch means signatures produced with the key will not verify against the
+ * certificate the deployment presents, which is the shape of the production
+ * incident this check exists to catch.
+ *
+ * Warn-only (never throws): a key/certificate mismatch should surface loudly at
+ * startup but must not take a running deployment down. Signing keys with no
+ * certificatePem have nothing to check against and are skipped.
+ *
+ * @param {Array} entries - Parsed signingKeys entries.
+ */
+export function validateSigningKeys(entries) {
+  for(const entry of entries) {
+    if(!entry.certificatePem) {
+      continue;
+    }
+    const label = entry.id ?? entry.type;
+
+    let certPublicDer;
+    try {
+      const cert = new crypto.X509Certificate(entry.certificatePem);
+      certPublicDer = cert.publicKey.export({type: 'spki', format: 'der'});
+    } catch(err) {
+      logger.warning(
+        `signingKeys[${label}]: unable to parse certificatePem: ` +
+        err.message
+      );
+      continue;
+    }
+
+    // publicKeyPem ↔ cert (warn only). Trivially true when publicKeyPem was
+    // derived from the certificate; meaningful when the operator supplied it.
+    try {
+      const providedDer = crypto.createPublicKey(entry.publicKeyPem).export(
+        {type: 'spki', format: 'der'}
+      );
+      if(!certPublicDer.equals(providedDer)) {
+        logger.warning(
+          `signingKeys[${label}]: publicKeyPem does not match the ` +
+          `certificate's public key`
+        );
+      }
+    } catch(err) {
+      logger.warning(
+        `signingKeys[${label}]: unable to compare publicKeyPem to the ` +
+        `certificate: ${err.message}`
+      );
+    }
+
+    // privateKeyPem ↔ cert (warn only). Catches a private/public key pair that
+    // matches itself but does not belong to the certificate.
+    try {
+      const derivedDer = crypto.createPublicKey(
+        crypto.createPrivateKey(entry.privateKeyPem)
+      ).export({type: 'spki', format: 'der'});
+      if(!certPublicDer.equals(derivedDer)) {
+        logger.warning(
+          `signingKeys[${label}]: privateKeyPem does not correspond to the ` +
+          `certificate's public key; JARs signed with this key will not ` +
+          `verify against the certificate`
+        );
+      }
+    } catch(err) {
+      logger.warning(
+        `signingKeys[${label}]: unable to derive public key from ` +
+        `privateKeyPem: ${err.message}`
+      );
+    }
+  }
+}
 
 /**
  * Validate wallet-certificate entries post-zod-parse.
