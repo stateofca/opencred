@@ -1096,6 +1096,7 @@ export function fillPublicKeysFromCertificates(entries, label) {
       const cert = new crypto.X509Certificate(entry.certificatePem);
       entry.publicKeyPem = cert.publicKey.export({type: 'spki', format: 'pem'});
     } catch(err) {
+      // eslint-disable-next-line preserve-caught-error
       throw new Error(
         `${label}[${id}]: unable to derive publicKeyPem from ` +
         `certificatePem: ${err.message}`
