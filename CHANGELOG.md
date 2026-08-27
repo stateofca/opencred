@@ -65,6 +65,14 @@
   The image now ships npm 11, matching the resolver that generated
   `package-lock.json`, so `npm ci` no longer fails with `Missing: yaml@2.9.0
   from lock file`.
+- Fix DCQL `mso_mdoc` credential query generation when a query spans both the
+  base ISO namespace (`org.iso.18013.5.1`) and its AAMVA sub-namespace
+  (`org.iso.18013.5.1.aamva`). Emitting one credential per namespace produced a
+  duplicate `id: '0'` and a bogus `doctype_value` (e.g.
+  `org.iso.18013.5.1.aamva.mDL`) that wallets reject. All mso_mdoc namespaces
+  belong to the same mDL doctype, so the query now emits a single credential
+  whose claims span every requested namespace, with `doctype_value` derived from
+  the base namespace.
 
 ## 10.4.2 - 2026-08-dd
 
