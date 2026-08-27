@@ -10,6 +10,7 @@ import {_buildDcqlQueryForMdoc} from
 import expect from 'expect.js';
 
 const NS = 'org.iso.18013.5.1';
+const AAMVA_NS = `${NS}.aamva`;
 const exchange = {
   id: 'test-exchange',
   challenge: 'test-challenge',
@@ -110,5 +111,65 @@ describe('_buildDcqlQueryForMdoc', () => {
         path: [NS, 'given_name'],
         intent_to_retain: true
       }]);
+    });
+
+  it('merges base + AAMVA namespaces into a single mso_mdoc credential',
+    async () => {
+      const result = await _buildDcqlQueryForMdoc({
+        workflow: mdocWorkflow({
+          fields: {
+            [NS]: ['family_name', 'given_name'],
+            [AAMVA_NS]: ['organ_donor']
+          }
+        }),
+        exchange
+      });
+      // one merged credential, not one credential per namespace
+      expect(result.credentials.length).to.be(1);
+      const cred = result.credentials[0];
+      expect(cred.id).to.be('0');
+      expect(cred.format).to.be('mso_mdoc');
+      // base mDL doctype, not the bogus `<NS>.aamva.mDL`
+      expect(cred.meta.doctype_value).to.be(`${NS}.mDL`);
+      // claims span both namespaces
+      const byPath = claimsByPath(cred);
+      expect(cred.claims.length).to.be(3);
+      expect(byPath.has(`${NS}/family_name`)).to.be(true);
+      expect(byPath.has(`${NS}/given_name`)).to.be(true);
+      expect(byPath.has(`${AAMVA_NS}/organ_donor`)).to.be(true);
+      // a single credential id in credential_sets (no duplicate '0')
+      expect(result.credential_sets[0].options[0]).to.eql(['0']);
+    });
+
+  it('picks the base namespace doctype regardless of namespace order',
+    async () => {
+      const result = await _buildDcqlQueryForMdoc({
+        workflow: mdocWorkflow({
+          // AAMVA sub-namespace listed first
+          fields: {
+            [AAMVA_NS]: ['organ_donor'],
+            [NS]: ['given_name']
+          }
+        }),
+        exchange
+      });
+      expect(result.credentials.length).to.be(1);
+      expect(result.credentials[0].meta.doctype_value).to.be(`${NS}.mDL`);
+    });
+
+  it('stamps intent_to_retain per-namespace on the merged credential',
+    async () => {
+      const result = await _buildDcqlQueryForMdoc({
+        workflow: mdocWorkflow({
+          fields: {[NS]: ['given_name']},
+          fieldsToRetain: {[AAMVA_NS]: ['organ_donor']}
+        }),
+        exchange
+      });
+      expect(result.credentials.length).to.be(1);
+      const byPath = claimsByPath(result.credentials[0]);
+      expect(byPath.get(`${NS}/given_name`).intent_to_retain).to.be(false);
+      expect(byPath.get(`${AAMVA_NS}/organ_donor`).intent_to_retain)
+        .to.be(true);
     });
 });
