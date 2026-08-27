@@ -5,8 +5,11 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+import * as jose from 'jose';
+import {extractClaimsForIdToken, jwtFromExchange} from '../../common/oidc.js';
+import {config} from '@bedrock/core';
+import crypto from 'node:crypto';
 import expect from 'expect.js';
-import {extractClaimsForIdToken} from '../../common/oidc.js';
 
 describe('extractClaimsForIdToken', () => {
 
@@ -243,4 +246,78 @@ describe('extractClaimsForIdToken', () => {
     const result = extractClaimsForIdToken(credentials, claimsConfig);
     expect(result.given_name).to.equal('Test');
   });
+});
+
+describe('jwtFromExchange ES256 signature encoding', () => {
+  let publicKeyPem;
+  let savedOpencred;
+  let savedServer;
+
+  before(() => {
+    // Generate an ES256 (P-256) signing key for the test.
+    const {privateKey, publicKey} = crypto.generateKeyPairSync('ec', {
+      namedCurve: 'P-256'
+    });
+    const privateKeyPem = privateKey.export({type: 'pkcs8', format: 'pem'});
+    publicKeyPem = publicKey.export({type: 'spki', format: 'pem'});
+
+    savedOpencred = config.opencred;
+    savedServer = config.server;
+    config.opencred = {
+      ...config.opencred,
+      signingKeys: [{
+        id: 'test-es256-kid',
+        type: 'ES256',
+        purpose: ['id_token'],
+        privateKeyPem,
+        publicKeyPem
+      }]
+    };
+    config.server = {...config.server, baseUri: 'https://verifier.example'};
+  });
+
+  after(() => {
+    config.opencred = savedOpencred;
+    config.server = savedServer;
+  });
+
+  function exchangeWithSubject(sub) {
+    return {
+      step: 'default',
+      variables: {
+        results: {
+          default: {
+            verifiablePresentation: {
+              verifiableCredential: [{id: sub, credentialSubject: {id: sub}}]
+            }
+          }
+        }
+      }
+    };
+  }
+
+  it('signs id_tokens with a JWS-compliant (IEEE P1363) ES256 signature',
+    async () => {
+      const workflow = {clientId: 'test-client', oidc: {claims: []}};
+      const jwt = await jwtFromExchange(
+        exchangeWithSubject('did:example:subject'), workflow);
+      expect(jwt).to.be.a('string');
+
+      // A standards-compliant verifier (jose) accepts the token only if the
+      // ECDSA signature is raw r||s (IEEE P1363). A DER-encoded signature —
+      // Node's default — is rejected, so this fails without the fix.
+      const publicKey = await jose.importSPKI(publicKeyPem, 'ES256');
+      const {payload, protectedHeader} = await jose.jwtVerify(jwt, publicKey, {
+        algorithms: ['ES256']
+      });
+      expect(protectedHeader.alg).to.equal('ES256');
+      expect(payload.sub).to.equal('did:example:subject');
+      expect(payload.aud).to.equal('test-client');
+      expect(payload.iss).to.equal('https://verifier.example');
+
+      // A P-256 P1363 signature is exactly 64 bytes (two 32-byte integers);
+      // DER encoding is variable-length (typically 70-72 bytes).
+      const signatureBytes = Buffer.from(jwt.split('.')[2], 'base64url');
+      expect(signatureBytes.length).to.equal(64);
+    });
 });
