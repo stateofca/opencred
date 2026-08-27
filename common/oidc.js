@@ -40,7 +40,12 @@ export const jwtFromExchange = async (exchange, workflow) => {
     const sign = crypto.createSign(algorithm);
     sign.write(data);
     sign.end();
-    const sig = sign.sign(rehydratedKey, 'base64url');
+    // JWS requires ECDSA signatures in IEEE P1363 (raw r||s) format, not the
+    // ASN.1/DER encoding Node emits by default. Without this, ES256 id_tokens
+    // fail signature validation in standards-compliant RPs. `dsaEncoding` is
+    // ignored for RSA keys, so it is safe to pass unconditionally.
+    const sig = sign.sign(
+      {key: rehydratedKey, dsaEncoding: 'ieee-p1363'}, 'base64url');
     return sig;
   };
 
