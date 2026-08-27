@@ -30,7 +30,7 @@ SPDX-License-Identifier: BSD-3-Clause
             </span>
             <span
               v-if="isCurrentEntry(entry)"
-              class="text-sm text-primary">
+              class="text-body2 text-primary q-pl-sm text-no-wrap">
               {{$t('interactionPicker_current')}}
             </span>
           </div>
@@ -47,6 +47,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <script setup>
 import ModalDialog from './ModalDialog.vue';
+import {resolveDeviceContextName} from '../../common/wallets/index.js';
 import {useI18n} from 'vue-i18n';
 
 const props = defineProps({
@@ -85,6 +86,11 @@ const isCurrentEntry = entry => {
     (entry.profile || null) === (props.currentEntry.profile || null);
 };
 
+// The label says what the user DOES; the description line (getEntryDescription)
+// says which of their wallets it works with. So the label is the plain
+// interaction-method string and never composes in the technical profile name —
+// a per-option `labelKey` override or an explicit per-(method, profile) key can
+// still set it, but there is no `method (profile-name)` fallback.
 const getEntryLabel = entry => {
   if(entry.labelKey && t(entry.labelKey) !== entry.labelKey) {
     return t(entry.labelKey);
@@ -98,10 +104,6 @@ const getEntryLabel = entry => {
     if(t(composite) !== composite) {
       return t(composite);
     }
-    const profileName = `profiles_${entry.profile}_name`;
-    if(t(profileName) !== profileName) {
-      return `${t(`interactionMethod_${entry.method}`)} (${t(profileName)})`;
-    }
   }
   return t(`interactionMethod_${entry.method}`) || entry.method;
 };
@@ -113,7 +115,7 @@ const getWalletNames = walletIds => {
   }
   return walletIds.map(id => {
     const wallet = props.walletsRegistry[id];
-    return wallet?.nameKey ? t(wallet.nameKey) : (wallet?.name || id);
+    return resolveDeviceContextName({wallet, t, fallbackId: id});
   }).filter(Boolean).join(', ');
 };
 

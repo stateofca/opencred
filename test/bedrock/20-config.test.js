@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+import {config} from '@bedrock/core';
 import expect from 'expect.js';
 
 import {
@@ -814,5 +815,14 @@ describe('Config - mergeTranslations helper', function() {
 
     expect(parent).to.eql(parentCopy);
     expect(child).to.eql(childCopy);
+  });
+});
+
+describe('Config - authorization', function() {
+  it('should populate opencred.authorization after validation', function() {
+    // regression: schema validation replaces `config.opencred` with a new
+    // object, which must still carry the derived `authorization` entries
+    // used by callback OAuth token refresh (lib/callback.js)
+    expect(config.opencred.authorization).to.be.an('array');
   });
 });

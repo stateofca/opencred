@@ -6,7 +6,6 @@
  */
 
 import * as DidJwk from '@digitalbazaar/did-method-jwk';
-import * as DidKey from '@digitalbazaar/did-method-key';
 import * as DidWeb from '@digitalbazaar/did-method-web';
 import * as EcdsaMultikey from '@digitalbazaar/ecdsa-multikey';
 import {CachedResolver} from '@digitalbazaar/did-io';
@@ -52,17 +51,11 @@ import {
 
 import {agent} from '@bedrock/https-agent';
 import {contextFetch} from '../lib/logger/events/contextFetch.js';
+import {didKeyDriver} from '../lib/did/did-key.js';
 import {httpClient} from '@digitalbazaar/http-client';
 import {logger} from '../lib/logger.js';
 
 const didWebDriver = DidWeb.driver();
-const didKeyDriver = DidKey.driver();
-didKeyDriver.use({
-  name: 'Ed25519',
-  handler: Ed25519VerificationKey2020,
-  multibaseMultikeyHeader: 'z6Mk',
-  fromMultibase: DidKey.createFromMultibase(Ed25519VerificationKey2020)
-});
 const didJwkDriver = DidJwk.driver();
 didJwkDriver.use({
   algorithm: 'EdDSA',
@@ -71,10 +64,6 @@ didJwkDriver.use({
 didJwkDriver.use({
   algorithm: 'P-256',
   handler: EcdsaMultikey.from
-});
-didKeyDriver.use({
-  fromMultibase: EcdsaMultikey.from,
-  multibaseMultikeyHeader: 'zDna'
 });
 
 export const didResolver = new CachedResolver();

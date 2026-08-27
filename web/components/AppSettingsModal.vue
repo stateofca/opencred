@@ -186,6 +186,7 @@ import {
   saveUserSettings
 } from '../../common/wallets/canShowOption.js';
 import ModalDialog from './ModalDialog.vue';
+import {resolveProductName} from '../../common/wallets/index.js';
 import {useExchangeOptions} from '../composables/useExchangeOptions.js';
 import {useI18n} from 'vue-i18n';
 
@@ -255,12 +256,8 @@ const handleReset = () => {
   emit('update:modelValue', false);
 };
 
-const walletLabel = row => {
-  if(row.nameKey && t(row.nameKey) !== row.nameKey) {
-    return t(row.nameKey);
-  }
-  return row.name || row.walletId;
-};
+const walletLabel = row =>
+  resolveProductName({wallet: row, t, fallbackId: row.walletId});
 
 const profileLabel = row => {
   if(row.nameKey && t(row.nameKey) !== row.nameKey) {

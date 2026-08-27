@@ -32,21 +32,24 @@ SPDX-License-Identifier: BSD-3-Clause
         </cadmv-button>
       </template>
     </CadmvBanner>
-    <!-- Normal State: wallet-branded launch buttons -->
+    <!-- Normal State: one launch button per configured or derived option -->
     <div
       v-else
       class="flex flex-col gap-3 max-w-md mx-auto">
-      <template v-if="singleProfileMode">
+      <template
+        v-for="descriptor in descriptors"
+        :key="descriptor.id">
         <WalletLaunchButton
-          :profile="profile"
-          :label="$t('dcApiSingleProfile_buttonLabel')"
-          :loading="active"
-          :disabled="active"
-          @launch="handleLaunch" />
-        <p class="text-xs text-gray-600 text-center mb-0">
-          <template v-if="singleProfileHandlingWalletNames.length > 0">
+          :label="resolveLabel(descriptor)"
+          :loading="activeDescriptorId === descriptor.id"
+          :disabled="activeDescriptorId !== null"
+          @launch="handleLaunch(descriptor)" />
+        <p
+          v-if="!descriptor.walletBranded"
+          class="text-xs text-gray-600 text-center mb-0">
+          <template v-if="handlingWalletNames(descriptor).length > 0">
             {{$t('dcApiSingleProfile_handledBy', {
-              names: singleProfileHandlingWalletNames.join(', ')
+              names: handlingWalletNames(descriptor).join(', ')
             })}}
           </template>
           <template v-else>
@@ -54,20 +57,9 @@ SPDX-License-Identifier: BSD-3-Clause
           </template>
         </p>
       </template>
-      <template v-else>
-        <WalletLaunchButton
-          v-for="entry in dcApiWallets"
-          :key="entry.walletId"
-          :wallet="entry.wallet"
-          :wallet-id="entry.walletId"
-          :profile="entry.profile"
-          :loading="active"
-          :disabled="active"
-          @launch="handleLaunch" />
-        <p v-if="dcApiWallets.length === 0">
-          No compatible wallet found.
-        </p>
-      </template>
+      <p v-if="descriptors.length === 0">
+        {{$t('noCompatibleWalletMessage')}}
+      </p>
     </div>
     <CountdownDisplay
       :expires="exchangeData.expires"
@@ -83,9 +75,17 @@ import CountdownDisplay from '../CountdownDisplay.vue';
 import {resolveDcApiErrorMessage} from '../../utils/dc-api-error-message.js';
 import {useExchangeOptions} from '../../composables/useExchangeOptions.js';
 import {useI18n} from 'vue-i18n';
+import {useQuasar} from 'quasar';
 import WalletLaunchButton from '../WalletLaunchButton.vue';
 
-const {t} = useI18n({useScope: 'global'});
+const {t, te} = useI18n({useScope: 'global'});
+const $q = useQuasar();
+// On a desktop browser the DC API launch resolves to a cross-device QR flow,
+// so a button may carry a desktop-specific label (e.g. "Generate QR Code to
+// Scan"). Mobile keeps the same-device label.
+const isMobile = computed(() =>
+  ($q.platform?.is?.ios ?? false) || ($q.platform?.is?.android ?? false)
+);
 const {exchangeTtlDisplayThresholdSeconds} = useExchangeOptions();
 
 const props = defineProps({
@@ -93,25 +93,21 @@ const props = defineProps({
     type: Object,
     required: true
   },
-  walletsRegistry: {
-    type: Object,
-    default: () => ({})
-  },
-  // Allowlist of wallet IDs from the active picker entry. The picker
-  // entry already filters by `workflow.wallets`; we use it here so the
-  // launch buttons match the workflow's wallet configuration. Pass
-  // `null` to disable filtering.
-  walletIds: {
+  // Launch-option descriptors from the active picker entry, derived in
+  // `common/wallets/exchange-options.js`. Each is one button and every profile
+  // it requests together in a single `navigator.credentials.get()` call, so a
+  // configured Apple + Google button and a derived per-wallet button render
+  // through the same code path. Descriptors carry their own label and
+  // "handled by" inputs, so this component needs no wallet registry access.
+  descriptors: {
     type: Array,
-    default: null
+    default: () => []
   },
-  profile: {
+  // Which descriptor is currently in flight, so only the pressed button shows a
+  // loading state.
+  activeDescriptorId: {
     type: String,
     default: null
-  },
-  active: {
-    type: Boolean,
-    default: false
   },
   error: {
     type: [Object, String],
@@ -142,64 +138,33 @@ watch(() => props.error, value => {
   }
 });
 
-const allowedWalletIdSet = computed(() =>
-  props.walletIds === null ? null : new Set(props.walletIds));
-
-const dcApiWallets = computed(() => {
-  const protocols = props.exchangeData?.protocols;
-  if(!protocols || typeof protocols !== 'object') {
-    return [];
+// Label precedence, mirroring `successViewFields`: on a desktop browser a
+// resolving `desktopLabelKey` wins (the launch is a cross-device QR flow),
+// then the `labelKey` i18n key when it resolves in the current locale, then a
+// literal label, then the generic fallback.
+const resolveLabel = descriptor => {
+  if(!isMobile.value && descriptor.desktopLabelKey &&
+    te(descriptor.desktopLabelKey)) {
+    return t(descriptor.desktopLabelKey);
   }
-
-  const allowed = allowedWalletIdSet.value;
-  const entries = [];
-  for(const [walletId, wallet] of Object.entries(props.walletsRegistry)) {
-    if(allowed && !allowed.has(walletId)) {
-      continue;
-    }
-    if(!wallet?.supportedProfiles) {
-      continue;
-    }
-    for(const [profile, profileConfig] of Object.entries(
-      wallet.supportedProfiles)) {
-      if(!profileConfig?.dcapi) {
-        continue;
-      }
-      if(protocols[profile]) {
-        entries.push({walletId, profile, wallet});
-        break;
-      }
-    }
+  if(descriptor.labelKey && te(descriptor.labelKey)) {
+    return t(descriptor.labelKey);
   }
-  return entries;
-});
-
-const singleProfileMode = computed(() => !!props.profile);
-
-const singleProfileHandlingWalletNames = computed(() => {
-  if(!singleProfileMode.value) {
-    return [];
+  if(descriptor.label) {
+    return descriptor.label;
   }
-  const allowed = allowedWalletIdSet.value;
-  const names = [];
-  for(const [walletId, wallet] of
-    Object.entries(props.walletsRegistry)) {
-    if(allowed && !allowed.has(walletId)) {
-      continue;
-    }
-    const cfg = wallet?.supportedProfiles?.[props.profile];
-    if(!cfg?.dcapi) {
-      continue;
-    }
-    const name = wallet?.nameKey ?
-      t(wallet.nameKey) : (wallet?.name || walletId);
-    names.push(name);
-  }
-  return names;
-});
+  return t('dcApiSingleProfile_buttonLabel');
+};
 
-const handleLaunch = ({walletId, profile}) => {
-  emit('launch', {walletId, profile});
+// Names for the "may be handled by" hint. Shown only for descriptors that are
+// not wallet-branded, since a wallet-branded button already names its wallet.
+const handlingWalletNames = descriptor =>
+  (descriptor.handledBy ?? []).map(
+    handled => handled.nameKey && te(handled.nameKey) ?
+      t(handled.nameKey) : (handled.name || handled.walletId));
+
+const handleLaunch = descriptor => {
+  emit('launch', descriptor);
 };
 
 const handleRetry = () => {

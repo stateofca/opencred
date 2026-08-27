@@ -6,10 +6,13 @@
  */
 
 import {
+  appleWalletTestEntry,
+  googleWalletTestEntry
+} from '../../fixtures/wallet-certificates.js';
+import {
   OpenCredConfigSchema,
   WalletCertificateSchema
 } from '../../../configs/config-utils.js';
-import {appleWalletTestEntry} from '../../fixtures/wallet-certificates.js';
 import crypto from 'node:crypto';
 import {expect} from 'chai';
 import {logger} from '../../../lib/logger.js';
@@ -46,7 +49,7 @@ G1WP/DSpusNBbDvuE/u29lPr0d80kbSeq008IKTk
 describe('walletCertificates schema', () => {
   let warnStub;
   beforeEach(() => {
-    warnStub = sinon.stub(logger, 'warn');
+    warnStub = sinon.stub(logger, 'warning');
   });
   afterEach(() => {
     warnStub.restore();
@@ -158,5 +161,42 @@ describe('walletCertificates schema', () => {
     });
     expect(parsed.walletCertificates).to.deep.equal([]);
     expect(warnStub.called).to.equal(false);
+  });
+
+  it('warns when google.rpMetadataBytes is not set', () => {
+    OpenCredConfigSchema.parse({
+      workflows: [],
+      walletCertificates: [googleWalletTestEntry]
+    });
+    expect(warnStub.called).to.equal(true);
+    const combined = warnStub.getCalls().map(c => c.args[0]).join('\n');
+    expect(combined).to.include('google-test-2026');
+    expect(combined).to.include('gw_rp_metadata_bytes');
+  });
+
+  it('does not warn when google.rpMetadataBytes is valid Base64URL', () => {
+    OpenCredConfigSchema.parse({
+      workflows: [],
+      walletCertificates: [{
+        ...googleWalletTestEntry,
+        google: {rpMetadataBytes: 'abcDEF123_-'}
+      }]
+    });
+    const combined = warnStub.getCalls().map(c => c.args[0]).join('\n');
+    expect(combined).to.not.include('rpMetadataBytes');
+  });
+
+  it('warns when google.rpMetadataBytes is not valid Base64URL', () => {
+    OpenCredConfigSchema.parse({
+      workflows: [],
+      walletCertificates: [{
+        ...googleWalletTestEntry,
+        google: {rpMetadataBytes: 'not valid!!'}
+      }]
+    });
+    expect(warnStub.called).to.equal(true);
+    const combined = warnStub.getCalls().map(c => c.args[0]).join('\n');
+    expect(combined).to.include('google-test-2026');
+    expect(combined).to.include('Base64URL');
   });
 });

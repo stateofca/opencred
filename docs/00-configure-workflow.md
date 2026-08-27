@@ -165,9 +165,10 @@ workflows:
 ```
 
 **Inherited fields:** `name`, `description`, `brand`, `caStore`, `dcApiEnabled`,
-`interactEnabled`, `wallets`, `oidc`, `callback`, `translations`,
-`trustedCredentialIssuers`, `untrustedVariableAllowList`, `public`,
-`clientSecret`.
+`interactEnabled`, `wallets`, `dcApiButtons`, `connectionOptions`,
+`connectionPickerEnabled`, `acceptNonCanonicalJwkJcsPub`, `oid4vpProfile`,
+`oidc`, `callback`, `translations`, `trustedCredentialIssuers`,
+`untrustedVariableAllowList`, `public`, `clientSecret`.
 
 **Deep-merge behavior:**
 
@@ -392,12 +393,29 @@ opencred:
         -----BEGIN CERTIFICATE-----
         ...your registered certificate...
         -----END CERTIFICATE-----
+      google:
+        rpMetadataBytes: <base64url-encoded RP metadata from Google>
 ```
 
 Only one `wallet: google-wallet` entry is used at a time (the first
 matching entry in config array order). Multiple entries are allowed
 for rotation — add the new entry, verify it works, then remove the
 old one.
+
+Google Wallet requires relying-party branding metadata in every
+authorization request. Provide the Base64URL-encoded CBOR value Google
+supplies under `google.rpMetadataBytes`; OpenCred emits it verbatim as
+`client_metadata.gw_rp_metadata_bytes`. If `google.rpMetadataBytes` is
+omitted, OpenCred logs a startup warning and sends the request without
+the field; Google Wallet may reject it.
+
+On startup OpenCred also verifies that `google.rpMetadataBytes` matches
+the leaf certificate: it compares the `SHA-256` of the (Base64URL-decoded)
+metadata against the value in the certificate's Google Verifier Registrar
+extension `1.3.6.1.4.1.11129.10.1`. A mismatch, or a leaf certificate
+that lacks the extension, produces a startup warning (it does not block
+startup). Certificates issued through Google's Verifier Registrar
+onboarding embed this extension.
 
 ### Request flow
 
@@ -411,9 +429,12 @@ OpenCred responds with a `dcApiRequest` envelope containing a signed
 JWT (protocol `openid4vp-v1-signed`). The JWT includes:
 
 - `client_id` set to `x509_hash:<SHA-256 fingerprint of your cert>`
-- `client_id_scheme: "x509_hash"`
+  (the `x509_hash` scheme is conveyed by this prefix; OID4VP 1.0 does
+  not carry a separate `client_id_scheme` claim)
 - `response_mode: "dc_api.jwt"` (encrypted response)
 - `client_metadata.jwks.keys[]` with an ephemeral encryption key
+- `client_metadata.gw_rp_metadata_bytes` with your registered RP
+  branding metadata (when `google.rpMetadataBytes` is configured)
 - `x5c` in the JWT header containing your certificate chain
 
 The response from Google Wallet is an encrypted JWE, which OpenCred
@@ -461,6 +482,274 @@ workflows:
     dcApiEnabled: false # Disable DC API for this workflow
     # ... other config
 ```
+
+#### Wallet buttons for the DC API (`dcApiButtons`)
+
+**This is optional.** With no `dcApiButtons` configured, the DC API screen shows
+one button per enabled, compatible wallet, labeled with that wallet's own name.
+That is the default behavior and nothing needs to be set to get it.
+
+Configure `dcApiButtons` when you want **one button to reach wallets that read
+different credential formats**. A button requests all of its `profiles` together
+in a single browser Digital Credentials API call, and each wallet answers the
+request it understands:
+
+```yaml
+workflows:
+  - clientId: my-workflow
+    type: native
+    dcApiButtons:
+      - id: mdl
+        label: Present your mobile ID
+        profiles:
+          - apple-wallet
+          - google-wallet
+```
+
+Apple Wallet answers the `apple-wallet` request (an ISO 18013-7 Annex C mdoc
+device request), Google Wallet answers the `google-wallet` request (a signed
+OID4VP 1.0 request), and the CA DMV wallet — which reads either format — may
+answer either. One button, no device or wallet detection needed.
+
+Each entry takes:
+
+- **`id`** (required) — unique within the workflow; `[a-zA-Z0-9_-]` only.
+- **`profiles`** (required) — at least one profile. **Order is significant:** it
+  is the order of the requests handed to the browser, which can determine which
+  handler the operating system offers first, and which format a wallet that
+  reads several will answer with.
+- **`label`** and/or **`labelKey`** (at least one required) — the button text.
+  `labelKey` is preferred where the text needs translating, because it resolves
+  through the same `translations` mechanism as the rest of the UI (including
+  per-workflow overrides); define the key under `translations` and reference it
+  here. A literal `label` is the quick option. When both are given, `labelKey`
+  wins wherever it resolves in the active locale, otherwise `label` is used.
+
+When `dcApiButtons` is set, it **replaces** the derived per-wallet buttons for
+that workflow, so the DC API screen shows exactly the buttons configured.
+
+**Two profiles that use the same wire format cannot share a button.** Config
+loading rejects it with, for example:
+
+```text
+dcApiButtons["mdl"]: profiles "google-wallet" and "18013-7-Annex-D" both use
+DC API protocol "openid4vp-v1-signed". A button must not request the same wire
+format twice — one request already reaches every wallet that reads that format.
+```
+
+This is not an arbitrary restriction. Both of those profiles produce an
+identical kind of request, so sending both would ask twice for the same thing,
+and it would leave the response ambiguous: a wallet's reply identifies which
+request it answered only by that format identifier. Pick one.
+
+**Prerequisites.** A button's profiles must actually be on offer for the
+exchange, or they are silently skipped (and the button disappears if none
+remain):
+
+- `dcApiEnabled` must not be false for the workflow (see below).
+- The query must include the `mso_mdoc` format.
+- `google-wallet` and `apple-wallet` each additionally require a matching
+  `walletCertificates` entry — see
+  [Configure Google Wallet](#configure-google-wallet-oid4vp-10-x509_hash) and
+  [Apple Wallet reader authentication](#apple-wallet-reader-authentication-annex-c)
+  above. Without the certificate, the profile is not published for the exchange
+  at all.
+
+#### Ordering the connection options (`connectionOptions`)
+
+**This is optional.** With nothing configured, OpenCred derives the connection
+options a user is offered — from the enabled wallets, the profiles the exchange
+offers, the interaction methods each profile supports, and what the device can
+do — and shows them in a fixed built-in order. That is the default and nothing
+needs to be set to get it.
+
+Configure `connectionOptions` when a workflow needs a **deterministic order** —
+for example, "offer the Digital Credentials API first, and fall back to a QR
+code for the default OID4VP profile." It is an ordered list; each entry names one
+connection option by its interaction `method` and, for most methods, its
+`profile`:
+
+```yaml
+workflows:
+  - clientId: my-workflow
+    type: native
+    connectionOptions:
+      - method: dcapi                      # DC API all-wallets option, first
+      - method: qr-and-link                # then QR-and-link…
+        profile: OID4VP-combined           # …for the default OID4VP profile
+```
+
+A declaration **selects and orders** the derived options; it does not replace
+them. Only the options you name are shown, in the order you name them. Everything
+about each option — which wallets are behind it, its launch buttons, whether it
+works on this device — stays exactly as OpenCred derives it. An option you do
+**not** name is not shown.
+
+A declared option that is not viable for the current device or exchange (say,
+`dcapi` on a browser with no Digital Credentials API) is simply absent, and the
+next declared option takes its place — no error, no special handling.
+
+Each entry takes:
+
+- **`method`** (required) — one of `dcapi`, `qr-and-link`, `qr-and-copy`,
+  `chapi`. These are the picker's interaction methods, not the lower-level
+  `qr`/`link`/`copy`.
+- **`profile`** (required, except for `dcapi`) — the profile this option is for
+  (e.g. `OID4VP-combined`, `18013-7-Annex-D`, `interact`). The `dcapi` method may
+  omit it to select the all-wallets DC API option; every other method must name a
+  profile.
+- **`label`** / **`labelKey`** (optional) — override the option's own label.
+- **`destinationLabel`** / **`destinationLabelKey`** (optional) — how this option
+  is named when it is the destination of the "switch connection method" link.
+
+Each `*Key` is preferred where it resolves in the active locale, otherwise the
+literal is used — the same precedence as `dcApiButtons` labels.
+
+**Validation.** Config loading rejects a declaration that could never match a
+derived option, so a typo fails fast rather than silently removing a connection
+option:
+
+- a `profile` that is not a known profile, and
+- a `method` the profile does not offer (for example, `qr-and-copy` on an OID4VP
+  profile, or `qr-and-link` on the DC-API-only `18013-7-Annex-D`).
+
+What is **not** a config error — matching the `dcApiButtons` prerequisites above
+— is a coherent `method`/`profile` pair the deployment cannot serve today (the
+query does not request that format, no wallet answers it, the device cannot run
+the method). Those are skipped at render time, and the next declared option is
+promoted.
+
+Declaring an order is deliberately independent of whether the connection-option
+*picker* (the control that lets a user browse every option) is offered: the two
+are separate knobs, set and reversed independently.
+
+#### The switch control and the picker (`connectionPickerEnabled`)
+
+When a user is offered more than one connection option, OpenCred shows a single
+persistent link beneath the wallet interaction. `connectionPickerEnabled`
+(**optional, defaults to `true`**) selects what that one control does:
+
+- **`true`** — the link reads "other ways to connect" and opens a **picker
+  modal** listing every option with its description and a marker on the current
+  one. This is the default and matches the prior behaviour.
+- **`false`** — the link **switches directly** to the next option, cycling
+  through the declared order and wrapping, so every option is reachable from
+  every other. It is labelled by its destination — "Scan a QR code instead",
+  "Open a wallet app instead" — from the per-option `destinationLabel` /
+  `destinationLabelKey` override, else a per-method default. With only one viable
+  option it has nowhere to go and does not render.
+
+The link is persistent — present before any error. It does **not** replace or
+affect the error-recovery "try another way" fallback, which is a separate path.
+
+This knob is independent of `connectionOptions`: a workflow may declare an order
+and still show the picker, or hide the picker without declaring any order.
+Neither implies the other. The declared order (or, with nothing declared, the
+derived order) is what the switch control cycles through.
+
+Like the other workflow options it inherits via `configFrom`, and it can be set
+globally under `options` or overridden per workflow:
+
+```yaml
+options:
+  connectionPickerEnabled: false # suppress the picker for every workflow
+workflows:
+  - clientId: my-workflow
+    type: native
+    connectionPickerEnabled: true # …but re-enable it for this one
+```
+
+#### Promoting wallets in the install invitation (`promotedWallets`)
+
+The block at the bottom of the exchange page — the "install invitation" —
+invites a user without a wallet to install one, showing a row per wallet with
+its **product name** and app-store badges (filtered to the current platform).
+
+**This is optional.** With nothing set, the invitation promotes what it always
+has: every enabled wallet that has a storefront for the user's platform.
+`promotedWallets` turns it from an explanation into a **promotion of a chosen
+subset** — only the listed wallet identifiers are shown:
+
+```yaml
+workflows:
+  - clientId: my-workflow
+    type: native
+    promotedWallets: [cadmv-ios, cadmv-android] # promote only the CA DMV wallet
+```
+
+Promotion is a separate question from enablement. A workflow may **enable** a
+wallet that ships preinstalled on the user's device without wanting to
+**advertise** it, so `promotedWallets` is its own list — neither the enabled
+`wallets` set nor a registry flag. A listed identifier still contributes a row
+only where it has a storefront for the current platform, so naming a wallet with
+no store presence there is a harmless no-op.
+
+To suppress the explanatory sentence above the rows while keeping the wallet
+promotion, blank its translation key — the copy renders only when non-empty:
+
+```yaml
+    translations:
+      en:
+        appInstallExplain: ""
+```
+
+Like the other workflow options, `promotedWallets` inherits via `configFrom`.
+
+#### Accepting a non-canonical JWK in a `did:key` (`acceptNonCanonicalJwkJcsPub`)
+
+A `jwk_jcs-pub` did:key encodes a P-256 key as a JCS-serialized JWK. OpenCred
+resolves these fail-closed: the embedded JWK members must be in canonical JCS
+order (`{crv, kty, x, y}`), so one key maps to exactly one DID. Some otherwise
+conformant wallets present a valid P-256 holder key whose members are in a
+different order (e.g. `{kty, x, y, crv}`); the default behaviour rejects such a
+presentation with `non-canonical jwk_jcs-pub did:key rejected`.
+
+`acceptNonCanonicalJwkJcsPub` lets a workflow opt into accepting such a key. When
+enabled, the holder's presentation-signing did:key is resolved from whatever
+member order it uses, **so long as the coordinates are valid canonical P-256
+coordinates** — a key with wrong-length, padded, or non-roundtripping
+coordinates is still rejected. It is off by default, keeping strict resolution
+for every deployment; enable it only on workflows that must interoperate with a
+lenient wallet:
+
+```yaml
+options:
+  acceptNonCanonicalJwkJcsPub: false # deployment-wide default (may be omitted)
+
+workflows:
+  - clientId: my-workflow
+    type: native
+    acceptNonCanonicalJwkJcsPub: true # opt this workflow in
+```
+
+The option can be set deployment-wide under `options` and overridden per
+workflow, a workflow inheriting the deployment-wide value when it leaves the
+field unset. It also inherits via `configFrom`. The leniency is scoped to the
+holder's self-asserted presentation-signing key; it does not affect credential
+issuer trust-matching.
+
+#### Selecting the OID4VP request profile (`oid4vpProfile`)
+
+The OID4VP request profile determines the shape of the authorization request a
+workflow builds — which of `presentation_definition`, `dcql_query`, `vp_formats`,
+and `vp_formats_supported` it carries. Deployment-wide it is set by
+`options.OID4VPdefault` (default `OID4VP-combined`); `oid4vpProfile` lets a
+single workflow override it without changing the deployment default:
+
+```yaml
+options:
+  OID4VPdefault: OID4VP-combined # deployment-wide default (may be omitted)
+
+workflows:
+  - clientId: my-workflow
+    type: native
+    oid4vpProfile: OID4VP-1.0 # this workflow builds 1.0 requests
+```
+
+It accepts the same values as `options.OID4VPdefault` — `OID4VP-draft18`,
+`OID4VP-combined`, `OID4VP-1.0` — and is honored everywhere the profile is read,
+both request building and classification. A workflow inherits the deployment-wide
+value when it leaves the field unset, and it also inherits via `configFrom`.
 
 ### 8. Run OpenCred
 

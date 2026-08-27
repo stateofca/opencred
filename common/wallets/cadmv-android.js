@@ -8,7 +8,9 @@
 export const cadmvAndroidWallet = {
   id: 'cadmv-android',
   groupId: 'cadmv-wallet',
-  name: 'CA DMV Wallet (Android)',
+  name: 'CA DMV Wallet on Android',
+  nameKey: 'wallet_cadmv-android_name',
+  productName: 'CA DMV Wallet',
   description: 'The CA DMV Wallet app is a free, secure, and convenient ' +
     'mobile application that allows California residents to store and ' +
     'present their mobile driver\'s license (mDL), identification card, ' +
@@ -19,28 +21,27 @@ export const cadmvAndroidWallet = {
   supportedProfiles: {
     'cadmv-android': {
       dcapi: {
-        description: 'Click to request credentials from your CA DMV Wallet ' +
-          '(Android)',
+        description: 'Request credentials from your digital wallet on Android',
         formats: ['mso_mdoc']
       }
     },
     'OID4VP-1.0': {
       qr: {
-        description: 'Scan the QR code with your CA DMV Wallet (Android)',
+        description: 'Scan the QR code with your digital wallet on Android',
         formats: ['jwt_vc_json', 'ldp_vc']
       },
       link: {
-        description: 'Click to open your CA DMV Wallet (Android)',
+        description: 'Open your digital wallet on Android',
         formats: ['jwt_vc_json', 'ldp_vc']
       }
     },
     'OID4VP-draft18': {
       qr: {
-        description: 'Scan the QR code with your CA DMV Wallet (Android)',
+        description: 'Scan the QR code with your digital wallet on Android',
         formats: ['jwt_vc_json', 'ldp_vc']
       },
       link: {
-        description: 'Click to open your CA DMV Wallet (Android)',
+        description: 'Open your digital wallet on Android',
         formats: ['jwt_vc_json', 'ldp_vc']
       }
     }

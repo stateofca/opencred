@@ -13,6 +13,7 @@ import {
   summarizeWorkflow
 } from '../utils/debug-info.js';
 import {computed} from 'vue';
+import {useDcApiLaunch} from './useDcApiLaunch.js';
 import {useExchange} from './useExchange.js';
 import {useWalletInteraction} from
   './useWalletInteraction.js';
@@ -32,6 +33,7 @@ export function useDebugInfo() {
     activePickerEntry, activeInteractionType,
     pickerEntries, interactionState
   } = useWalletInteraction();
+  const {launchState} = useDcApiLaunch();
 
   const stateRows = computed(() => {
     const entry = activePickerEntry.value;
@@ -57,8 +59,16 @@ export function useDebugInfo() {
     ];
   });
 
+  // DC API launch state moved to `useDcApiLaunch`; merged back in here so the
+  // debug panel still shows the launch error and what is in flight.
   const interactionRows = computed(() =>
-    summarizeInteractionState({interactionState}));
+    summarizeInteractionState({
+      interactionState: {
+        ...interactionState,
+        dcApiError: launchState.error,
+        activeDescriptorId: launchState.activeDescriptorId
+      }
+    }));
 
   const workflowRows = computed(() =>
     summarizeWorkflow({workflow: workflow.value}));

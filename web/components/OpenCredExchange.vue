@@ -15,6 +15,7 @@ SPDX-License-Identifier: BSD-3-Clause
       v-else-if="state.error">
       <ErrorView
         :title="state.error.title"
+        :subtitle="state.error.subtitle"
         :message="state.error.message"
         :resettable="state.error.resettable"
         @reset="handleResetExchange" />
@@ -38,23 +39,26 @@ SPDX-License-Identifier: BSD-3-Clause
       <!-- Interaction-specific info and exchange status -->
       <WalletInteraction />
 
-      <!-- "Other ways to connect" link + picker -->
+      <!-- Persistent switch control: opens the picker modal (generic label)
+           when the picker is visible, or switches directly to the next
+           connection option (destination label) when it is hidden. -->
       <div
-        v-if="pickerEntries.length > 1"
+        v-if="showSwitchControl"
         class="column items-center mt-4 mx-auto text-center">
         <a
           href="#"
           class="text-sm underline"
-          @click.prevent="showInteractionPicker = true">
-          {{t('interactionPicker_otherWaysLink')}}
+          @click.prevent="onSwitchControlClick">
+          {{switchControlLabel}}
         </a>
       </div>
       <InteractionPickerModal
+        v-if="pickerVisible"
         v-model="showInteractionPicker"
         :picker-entries="pickerEntries"
         :current-entry="activePickerEntry"
         :wallets-registry="WALLETS_REGISTRY"
-        @select="handlePickerSelect" />
+        @select="onPickerSelect" />
 
       <!-- Explainer Video Link -->
       <div class="mt-2">
@@ -105,7 +109,10 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
-import {onMounted, onUnmounted, reactive, ref} from 'vue';
+import {computed, onMounted, onUnmounted, reactive, ref, watch} from 'vue';
+import {
+  nextPickerEntry, switchLinkDestinationLabel
+} from '../utils/switch-link.js';
 import {CadmvMainCard} from '@digitalbazaar/cadmv-ui';
 import CredentialQuerySummary from './CredentialQuerySummary.vue';
 import DebugDisplay from './DebugDisplay.vue';
@@ -113,8 +120,10 @@ import ErrorView from './ErrorView.vue';
 import {httpClient} from '@digitalbazaar/http-client';
 import InteractionPickerModal from './InteractionPickerModal.vue';
 import QRCode from 'qrcode';
+import {reportExchangeEvent} from '../utils/events.js';
 import SuggestedApps from './SuggestedApps.vue';
 import {useExchange} from '../composables/useExchange.js';
+import {usePickerReporting} from '../composables/usePickerReporting.js';
 import {useReactiveI18n} from '../composables/useReactiveI18n.js';
 import {useWalletInteraction} from '../composables/useWalletInteraction.js';
 import WalletInteraction from './WalletInteraction.vue';
@@ -143,6 +152,54 @@ const {
   pickerEntries, activePickerEntry, handlePickerSelect
 } = useWalletInteraction();
 
+// The picker is visible when the deployment has not disabled it. The flag
+// defaults to true (resolved in buildNewExchangeContextData), so an
+// unconfigured deployment behaves exactly as before.
+const pickerVisible = computed(() =>
+  context.value?.workflow?.connectionPickerEnabled ?? true
+);
+
+// In switch mode (picker hidden) the control points at the next option;
+// with fewer than two options it has no destination.
+const switchDestination = computed(() =>
+  nextPickerEntry(pickerEntries.value, activePickerEntry.value));
+
+// The single persistent switch control renders whenever there is somewhere to
+// go: with the picker visible, whenever more than one option exists (it opens
+// the modal); with the picker hidden, whenever a switch destination exists.
+// When only one option is viable there is no destination, so in switch mode the
+// control has nothing to be and does not render — this is a control with
+// nowhere to go, not count-based UI branching. The error-recovery "try another
+// way" fallback is separate (WalletInteraction) and unaffected by this control.
+const showSwitchControl = computed(() =>
+  pickerVisible.value ?
+    pickerEntries.value.length > 1 :
+    switchDestination.value !== null
+);
+
+// Generic label when the control opens the modal; the destination option's
+// label when it switches directly.
+const switchControlLabel = computed(() =>
+  pickerVisible.value ?
+    t('interactionPicker_otherWaysLink') :
+    switchLinkDestinationLabel({entry: switchDestination.value, t})
+);
+
+/**
+ * Best-effort report of an interaction-picker funnel event. Reads the
+ * exchange identifiers/token from the reactive exchange context.
+ *
+ * @param {string} type - Event type recognized by the server.
+ * @param {object} [payload] - Non-personal fields (e.g. `{method}`).
+ */
+const reportInteractionEvent = (type, payload) => {
+  const exchangeData = context.value?.exchangeData;
+  if(!exchangeData) {
+    return;
+  }
+  reportExchangeEvent({exchangeData, httpClient, type, payload});
+};
+
 const state = reactive({
   active: false,
   error: null,
@@ -152,6 +209,51 @@ const state = reactive({
 
 const showInteractionPicker = ref(false);
 const showVideo = ref(false);
+
+// Interaction-picker funnel reporting with the dismiss/select de-dup guard.
+// Reads the currently-active method at call time; posts via the shared
+// best-effort reporter.
+const pickerReporting = usePickerReporting({
+  reportEvent: reportInteractionEvent,
+  getCurrentMethod: () => activePickerEntry.value?.method
+});
+
+/**
+ * Handle a picker selection: report the transition (before the active entry
+ * flips), then delegate to the interaction composable.
+ *
+ * @param {object} entry - The selected picker entry.
+ */
+const onPickerSelect = entry => {
+  pickerReporting.onSelect(entry);
+  handlePickerSelect(entry);
+};
+
+/**
+ * Handle a click on the persistent switch control. With the picker visible it
+ * opens the modal (reporting the open); with the picker hidden it switches
+ * directly to the next option, reported as a method selection with the same
+ * from/to shape the picker emits.
+ */
+const onSwitchControlClick = () => {
+  if(pickerVisible.value) {
+    pickerReporting.onOpen();
+    showInteractionPicker.value = true;
+    return;
+  }
+  const destination = switchDestination.value;
+  if(destination) {
+    onPickerSelect(destination);
+  }
+};
+
+// A dismissal (backdrop/ESC) also closes the picker; the composable
+// suppresses the dismiss report when the close followed a selection.
+watch(showInteractionPicker, (isOpen, wasOpen) => {
+  if(wasOpen && !isOpen) {
+    pickerReporting.onClose();
+  }
+});
 
 /**
  * Set state.error to the given error object, with defaults applied.
@@ -179,15 +281,19 @@ const checkStatus = async () => {
     return;
   }
 
-  // Check client-side whether exchange has expired before polling
+  // Check client-side whether exchange has expired before polling.
+  // `handleError` clears the polling interval, so this reports once per
+  // exchange rather than on every tick.
   const expiresStr = context.value.exchangeData.expires;
   if(expiresStr && Date.now() >= new Date(expiresStr).getTime()) {
+    reportInteractionEvent('exchange_expired');
     handleError({
-      title: t('exchangeErrorTitle'),
-      subtitle: t('exchangeErrorSubtitle'),
+      title: t('exchangeErrorTtlExpiredTitle'),
+      subtitle: t('exchangeErrorTtlExpiredSubtitle'),
       message: t('exchangeErrorTtlExpired'),
       resettable: true
     });
+    return;
   }
 
   if(state.error && state.intervalId) {

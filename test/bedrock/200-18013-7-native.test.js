@@ -33,6 +33,7 @@ import {exampleKey2} from '../fixtures/signingKeys.js';
 import expect from 'expect.js';
 import {httpClient} from '@digitalbazaar/http-client';
 import https from 'node:https';
+import {logger} from '../../lib/logger.js';
 import {OID4VP_AUTHZ_REQ_JWT_TYP} from '../../lib/workflows/common/oid4vp.js';
 
 const agent = new https.Agent({rejectUnauthorized: false});
@@ -280,12 +281,14 @@ e92OBdJ/f7VSqBFTmfG9jXEW46WAZ78jLnUBL0Q58lLuNHa1t2TwJTyCzc8XUkA3
   });
 
   describe('_getX5cFromSigningKey', function() {
-    let mockLogger;
+    let warnStub;
 
     beforeEach(function() {
-      mockLogger = {
-        warning: sinon.stub()
-      };
+      warnStub = sinon.stub(logger, 'warning');
+    });
+
+    afterEach(function() {
+      warnStub.restore();
     });
 
     it('should first use certificatePem from signing key', async function() {
@@ -335,12 +338,10 @@ e92OBdJ/f7VSqBFTmfG9jXEW46WAZ78jLnUBL0Q58lLuNHa1t2TwJTyCzc8XUkA3
           id: 'test-key'
         };
 
-        const result = _getX5cFromSigningKey(signingKey, {
-          logger: mockLogger
-        });
+        const result = _getX5cFromSigningKey(signingKey);
         expect(result).to.be.an('array');
         expect(result.length).to.equal(0);
-        expect(mockLogger.warning.called).to.be(true);
+        expect(warnStub.called).to.be(true);
       });
 
   });
@@ -419,16 +420,19 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         });
 
         const authRequest = result.authorizationRequest;
-        // Native 18013-7 uses x509_san_dns client_id scheme
+        // Native 18013-7 uses x509_san_dns client_id scheme; OID4VP 1.0 omits
+        // the client_id_scheme parameter (scheme is the client_id prefix).
         expect(authRequest.client_id).to.equal('x509_san_dns:example.com');
-        expect(authRequest.client_id_scheme).to.equal('x509_san_dns');
+        expect(authRequest.client_id_scheme).to.be(undefined);
         expect(authRequest.response_type).to.equal('vp_token');
         // Annex D uses dc_api (unencrypted) response mode
         expect(authRequest.response_mode).to.equal('dc_api');
         expect(authRequest).to.have.property('expected_origins');
         expect(authRequest.expected_origins).to.eql(['https://example.com']);
         expect(authRequest).to.have.property('nonce');
-        expect(authRequest).to.have.property('state');
+        // Spec-clean: state is omitted to match the working Google Wallet
+        // request (OID4VP 1.0 makes it optional for the DC API flow).
+        expect(authRequest).to.not.have.property('state');
         expect(authRequest).to.have.property('dcql_query');
         expect(authRequest).to.have.property('client_metadata');
         // OID4VP 1.0: Annex D uses vp_formats_supported with
@@ -674,9 +678,10 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
         const header = decodeProtectedHeader(jwtText);
         expect(header.typ).to.equal(OID4VP_AUTHZ_REQ_JWT_TYP);
         const jwt = decodeJwt(jwtText);
-        // 18013-7-Annex-D profile uses x509_san_dns client_id scheme
+        // 18013-7-Annex-D profile uses x509_san_dns client_id scheme; OID4VP
+        // 1.0 omits the client_id_scheme parameter.
         expect(jwt.client_id).to.equal('x509_san_dns:example.com');
-        expect(jwt.client_id_scheme).to.equal('x509_san_dns');
+        expect(jwt.client_id_scheme).to.be(undefined);
         // Default response_mode for 18013-7-Annex-D is dc_api
         expect(jwt.response_mode).to.equal('dc_api');
         expect(jwt).to.have.property('dcql_query');
@@ -1151,6 +1156,10 @@ describe('Native 18013-7-Annex-D Workflow - Integration Tests', function() {
     describe('State validation', function() {
       it('should reject response with mismatched state for dc_api mode',
         async function() {
+          // The request no longer emits `state` (spec-clean to match the
+          // working Google Wallet request), but the handler still validates
+          // defensively when a state is present. Inject one to cover that path.
+          authorizationRequest.state = 'expected-state';
           const responseBody = {
             state: 'wrong-state-value',
             vp_token: {

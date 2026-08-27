@@ -5,10 +5,10 @@
     {{$t('exchangeActiveExpiryMessage')}}
     <template v-if="remainingSeconds > 89">
       {{Math.round(remainingSeconds / 60)}}
-      minutes
+      {{$t('exchangeActiveExpiryMinutes')}}
     </template>
     <template v-else>
-      {{remainingSeconds}} seconds
+      {{remainingSeconds}} {{$t('exchangeActiveExpirySeconds')}}
     </template>
   </p>
 </template>

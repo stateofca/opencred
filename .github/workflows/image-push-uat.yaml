@@ -1,0 +1,186 @@
+# Copyright 2026 California Department of Motor Vehicles
+# Copyright 2026 Digital Bazaar, Inc.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Builds the UAT image and pushes it to ECR. No values are hardcoded: the AWS
+# account, OIDC role, and ECR repo come from GitHub repo/environment variables
+# (Settings > Secrets and variables > Actions > Variables). This workflow is
+# authored in `digitalbazaar/opencred-platform` and runs in
+# `stateofca/opencred-uat`, the UAT build source.
+#
+# The build is gated on `vars.WORKFLOW_IMAGE_PUSH_UAT_ENABLED == 'true'`,
+# matching every other workflow in this repo. Set that variable only on the
+# remote that should build. Everywhere else the run skips cleanly instead of
+# failing partway through on credentials it was never given: `environment: uat`
+# silently creates an empty environment on a remote that has none, so
+# `UAT_ACCOUNT_ID` resolves to an empty string and the AWS OIDC step fails.
+#
+# The gate lives on the `uat` environment (alongside the other UAT vars below),
+# so it is read in a `preflight` job that declares `environment: uat` and emits
+# an `enabled` output. A job-level `if:` CANNOT read environment-scoped
+# variables — the environment is not bound until the job starts, so the `if:`
+# sees only repo/org vars and every gated job skips silently. Reading the flag
+# in a step (where the environment IS bound) and gating downstream jobs on the
+# resulting output keeps all UAT config on the `uat` environment and makes the
+# flag actually work.
+#
+# Required `vars` (set on the `uat` environment of the building remote):
+#   WORKFLOW_IMAGE_PUSH_UAT_ENABLED  'true' to build on this remote
+#   UAT_ACCOUNT_ID                   e.g. 123456789012
+#   UAT_OIDC_BUILD_ROLE              e.g. opencred-uat-oidc-build
+#   UAT_ECR_REPO                     e.g. opencred
+#   AWS_REGION                       e.g. us-west-2
+
+name: Image Push UAT
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  # Reads the enable flag where the `uat` environment IS bound (a step),
+  # then exposes it as an output the gated jobs can test. See header comment
+  # for why a job-level `if:` on an environment-scoped var does not work.
+  preflight:
+    runs-on: ubuntu-latest
+    environment: uat
+    outputs:
+      enabled: ${{ steps.gate.outputs.enabled }}
+    steps:
+      - name: Resolve enable flag
+        id: gate
+        run: echo "enabled=${{ vars.WORKFLOW_IMAGE_PUSH_UAT_ENABLED == 'true' }}" >> "$GITHUB_OUTPUT"
+
+  check-version:
+    needs: preflight
+    if: ${{ needs.preflight.outputs.enabled == 'true' }}
+    runs-on: ubuntu-latest
+    environment: uat
+    permissions:
+      id-token: write # Needed for OIDC
+      contents: write # Needed for releases
+    outputs:
+      new_version: ${{ steps.extract-version.outputs.version }}
+      has_date: ${{ steps.extract-version.outputs.has_date }}
+      commit_hash: ${{ steps.extract-version.outputs.commit_hash }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      # Extracts `## X.Y.Z` and a `YYYY-MM-DD` release date from CHANGELOG.md.
+      # opencred-platform stamps the day as the `dd` placeholder until release
+      # (`## 10.3.0 - 2026-07-dd`), so `has_date` is false for unreleased
+      # builds — those push a bare-commit-hash image and skip the GH release.
+      - name: Extract Version and Check for Date
+        id: extract-version
+        run: |
+          VERSION=$(grep -oP '(?<=## )\d+\.\d+\.\d+' CHANGELOG.md | head -1)
+          DATE=$(grep -oP '(?<=## '"$VERSION"' - )\d{4}-\d{2}-\d{2}' CHANGELOG.md | head -1 || echo "")
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+
+          echo "Detected version: $VERSION"
+          echo "Release date: $DATE"
+          echo "Commit Hash: $COMMIT_HASH"
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "has_date=$([ -n "$DATE" ] && echo "true" || echo "false")" >> "$GITHUB_OUTPUT"
+          echo "commit_hash=$COMMIT_HASH" >> "$GITHUB_OUTPUT"
+
+      # Every build from this repo is a release, so an unstamped CHANGELOG date
+      # means `pubrelease` was never run. Fail loudly rather than silently
+      # taking the unreleased path (bare-hash image, no GitHub release).
+      - name: Require a stamped CHANGELOG date
+        if: steps.extract-version.outputs.has_date != 'true'
+        run: |
+          echo "::error::CHANGELOG top entry is not dated (found the 'dd' placeholder)."
+          echo "Every build from this repo is a release."
+          echo "Run 'pubrelease' on digitalbazaar/opencred-platform to stamp the"
+          echo "date, bump the version, and create the tag — then push main here."
+          exit 1
+
+  build-and-push-uat:
+    needs:
+      - preflight
+      - check-version
+    if: ${{ needs.preflight.outputs.enabled == 'true' }}
+    runs-on: ubuntu-latest
+    environment: uat
+    permissions:
+      id-token: write # Needed for OIDC
+      contents: write # Needed for releases
+    outputs:
+      pushed_image: ${{ steps.push-image.outputs.image_uri }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials for OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.UAT_ACCOUNT_ID }}:role/${{ vars.UAT_OIDC_BUILD_ROLE }}
+          aws-region: ${{ vars.AWS_REGION }}
+          mask-aws-account-id: 'no'
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region "${{ vars.AWS_REGION }}" | docker login --username AWS --password-stdin "${{ vars.UAT_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com"
+
+      - name: Build and Push Docker Image
+        id: push-image
+        env:
+          IMAGE_TAG: ${{ needs.check-version.outputs.has_date == 'true' && format('v{0}-{1}', needs.check-version.outputs.new_version, needs.check-version.outputs.commit_hash) || needs.check-version.outputs.commit_hash }}
+          ECR_HOST: ${{ vars.UAT_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
+        run: |
+          IMAGE_URI="$ECR_HOST/${{ vars.UAT_ECR_REPO }}:$IMAGE_TAG"
+
+          docker build -t $IMAGE_URI .
+          docker push $IMAGE_URI
+
+          echo "✅ Image pushed: $IMAGE_URI"
+          echo "PUSHED_IMAGE=$IMAGE_URI" >> $GITHUB_ENV
+          echo "image_uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+
+      - name: Print Uploaded Docker Image
+        run: |
+          echo "🔹 Successfully uploaded Docker image:"
+          echo "- $PUSHED_IMAGE"
+
+  create-github-release:
+    needs:
+      - check-version
+      - build-and-push-uat
+    if: needs.check-version.outputs.has_date == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed for releases
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_VERSION="v${{ needs.check-version.outputs.new_version }}"
+          CHANGELOG_FILE="CHANGELOG.md"
+          IMAGE_URI="${{ needs.build-and-push-uat.outputs.pushed_image }}"
+
+          # Extract relevant changelog section
+          CHANGELOG_CONTENT=$(awk "/## ${{ needs.check-version.outputs.new_version }} / {flag=1; next} /^## / {flag=0} flag" $CHANGELOG_FILE)
+
+          if [[ -z "$CHANGELOG_CONTENT" ]]; then
+            CHANGELOG_CONTENT="🚀 No changelog entry found for this version."
+          fi
+
+          # Format release notes
+          RELEASE_NOTES=$(printf "### Changelog for $RELEASE_VERSION\n\n$CHANGELOG_CONTENT\n\n---\n\n**Docker Image:**\n\`\`\`\n$IMAGE_URI\n\`\`\`")
+
+          # Create GitHub release
+          gh release create "$RELEASE_VERSION" \
+            --title "$RELEASE_VERSION" \
+            --notes "$RELEASE_NOTES" \
+            --target ${{ github.sha }} \
+            --repo ${{ github.repository }}

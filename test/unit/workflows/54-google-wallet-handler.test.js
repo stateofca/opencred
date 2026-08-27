@@ -69,8 +69,8 @@ describe('native-google-wallet generateAuthorizationRequest', () => {
       const {authorizationRequest} = result;
       expect(authorizationRequest.client_id).to.match(
         /^x509_hash:/);
-      expect(authorizationRequest.client_id_scheme).to.equal(
-        'x509_hash');
+      // OID4VP 1.0 omits client_id_scheme (scheme is the client_id prefix).
+      expect(authorizationRequest.client_id_scheme).to.be(undefined);
       expect(authorizationRequest.response_mode).to.equal(
         'dc_api.jwt');
       expect(authorizationRequest.response_type).to.equal(
@@ -118,6 +118,40 @@ describe('native-google-wallet generateAuthorizationRequest', () => {
         result.updatedExchange.variables.encodedSessionTranscript
       ).to.be.ok();
     });
+
+  it('emits client_metadata.gw_rp_metadata_bytes when configured',
+    async () => {
+      config.opencred = {
+        ...config.opencred,
+        walletCertificates: [{
+          ...googleWalletTestEntry,
+          google: {rpMetadataBytes: 'AbC-_123'}
+        }]
+      };
+
+      const result = await generateAuthorizationRequest({
+        workflow: testWorkflow,
+        exchange: {id: 'ex-1', variables: {}},
+        profile: 'google-wallet',
+        responseMode: 'dc_api.jwt'
+      });
+
+      expect(
+        result.authorizationRequest.client_metadata.gw_rp_metadata_bytes
+      ).to.equal('AbC-_123');
+    });
+
+  it('omits gw_rp_metadata_bytes when not configured', async () => {
+    const result = await generateAuthorizationRequest({
+      workflow: testWorkflow,
+      exchange: {id: 'ex-1', variables: {}},
+      profile: 'google-wallet',
+      responseMode: 'dc_api.jwt'
+    });
+
+    expect(result.authorizationRequest.client_metadata).to.not.have.key(
+      'gw_rp_metadata_bytes');
+  });
 
   it('throws ReaderAuthConfigError when no google-wallet certs',
     async () => {

@@ -67,6 +67,10 @@ app:
     #     -----BEGIN CERTIFICATE-----
     #     ...your registered certificate...
     #     -----END CERTIFICATE-----
+    #   # Base64URL-encoded CBOR relying-party metadata provided by
+    #   # Google/DMV; emitted as client_metadata.gw_rp_metadata_bytes.
+    #   google:
+    #     rpMetadataBytes: <base64url-encoded RP metadata from Google>
     workflows:
       - name: "Test Workflow (Native)"
         clientId: "rp1"
@@ -256,6 +260,30 @@ app:
             - document_number
         dcApiEnabled: true
         # interactEnabled: false  # Disable Interaction URL for this workflow
+        # connectionOptions selects and orders the connection options shown, and
+        # the order the "try another way" fallback walks. Optional: omit it and
+        # OpenCred derives every option in its built-in order. Here: offer the
+        # DC API first, then fall back to a QR code for the default OID4VP
+        # profile. An option not viable on the device is skipped, promoting the
+        # next. `method` is one of dcapi | qr-and-link | qr-and-copy | chapi;
+        # `profile` is required for every method except the `dcapi` aggregator.
+        connectionOptions:
+          - method: dcapi
+          - method: qr-and-link
+            profile: OID4VP-combined
+        # connectionPickerEnabled selects the persistent switch control's
+        # behaviour. Optional, defaults to true (the control opens the "other
+        # ways to connect" picker modal). Set false and the same control instead
+        # switches directly to the next option, cycling with wraparound and
+        # labelled by its destination. Independent of connectionOptions; does not
+        # affect the "try another way" error-recovery fallback.
+        # connectionPickerEnabled: false
+        # promotedWallets chooses which wallets the install invitation ("suggested
+        # apps") promotes. Optional: omit it and every enabled wallet with a
+        # storefront is promoted. Promotion is separate from enablement, so a
+        # preinstalled-but-enabled wallet can be left unadvertised. Blank the
+        # `appInstallExplain` translation key to drop the explanatory sentence.
+        # promotedWallets: [cadmv-ios, cadmv-android]
         public: true
       - name: "Driver's License Query"
         clientId: "query-dl"
@@ -275,6 +303,32 @@ app:
           - did:jwk:eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6ImJSbGpTekVyS0lfQk5OME1LRVBIVVdHcVR1Um5fVm42eXJvQlRfR0RDbFUiLCJ4NWMiOlsiTUlJQ2VUQ0NBaCtnQXdJQkFnSVVOYjF2czlucklGTmt4Vy9BaDVSYnFTazVENXN3Q2dZSUtvWkl6ajBFQXdJd1VURUxNQWtHQTFVRUJoTUNWVk14RGpBTUJnTlZCQWdNQlZWVExVTkJNUTh3RFFZRFZRUUtEQVpEUVMxRVRWWXhJVEFmQmdOVkJBTU1HRU5oYkdsbWIzSnVhV0VnUkUxV0lFbEJRMEVnVW05dmREQWVGdzB5TmpBME1UQXhOVE14TWpGYUZ3MHlOekEzTURreE5UTXhNakZhTUZZeEN6QUpCZ05WQkFZVEFsVlRNUTR3REFZRFZRUUlEQVZWVXkxRFFURVBNQTBHQTFVRUNnd0dRMEV0UkUxV01TWXdKQVlEVlFRRERCMURZV3hwWm05eWJtbGhJRVJOVmlCSlFVTkJJRlpESUZOcFoyNWxjakJaTUJNR0J5cUdTTTQ5QWdFR0NDcUdTTTQ5QXdFSEEwSUFCRzBaWTBzeEt5aVB3VFRkRENoRHgxRmhxazdrWi8xWitzcTZBVS94Z3dwVkp5T0k4cVNYRHl6NFpPQTJtR21sSnlrUGtjdnRTRjRjUnJNQlhDRDRIVitqZ2M4d2djd3dIUVlEVlIwT0JCWUVGREdQUUxGRUhwaWp2b0ZYaUNpV2c1Z2VVeGpZTUI4R0ExVWRJd1FZTUJhQUZMdDlkV2VTZW0vUG4zSjd1QXIzTnkrY0RGQTJNQjBHQ1dDR1NBR0crRUlCRFFRUUZnNURZV3hwWm05eWJtbGhJRVJOVmpBT0JnTlZIUThCQWY4RUJBTUNCNEF3SVFZRFZSMFNCQm93R0lFV2FXRmpZUzF6YVdkdVpYSkFaRzEyTG1OaExtZHZkakE0QmdOVkhSOEVNVEF2TUMyZ0s2QXBoaWRvZEhSd2N6b3ZMMk55YkM1a2JYWXVZMkV1WjI5MkwybGhZMkV2YldSdll5MXphV2R1WlhJd0NnWUlLb1pJemowRUF3SURTQUF3UlFJZ01yaGlFQ005ZU1JeHRRTzFmK1daUFhuaGRxK0g0ZWlPcnA4a0xpUkFkc0VDSVFDZDI4MktSUEsyUTVtdkRPUGMrRGVrYzFhR3RaRnRhaHVreS9NeDZWQ2JsZz09Il0sInkiOiJKeU9JOHFTWER5ejRaT0EybUdtbEp5a1BrY3Z0U0Y0Y1JyTUJYQ0Q0SFY4In0
           - did:web:example.com
         public: true
+      - name: "EUDI Wallet / TWDIW VC"
+        # Verifies a VC-JWT issued by an EUDI-Wallet or Taiwan Digital Identity
+        # Wallet-style issuer and presented over OID4VP. The issuer key is a
+        # did:key encoded as a JCS-normalized JWK (jwk_jcs-pub, multicodec
+        # 0xeb51 VCs issued as JWT.
+        clientId: "eudi-vc"
+        clientSecret: "<set-a-strong-secret>"
+        type: native
+        query:
+          - type:
+              - "<your-credential-type>"
+            format:
+              - jwt_vc_json
+        trustedCredentialIssuers:
+          # did:key issuers are self-certifying: a valid signature only proves
+          # "this key signed it". Without an allowlist ANY did:key issuer is
+          # accepted, so pin the issuer DID(s) the wallet puts in the VC-JWT
+          # `iss` claim (a jwk_jcs-pub did:key, e.g. z2dm...).
+          - "did:key:z2dm...<issuer-public-key>"
+        # Revocation: TWDIW StatusList2021 is a non-standard, deprecated status
+        # format and is OFF by default. Enable it for this workflow (or
+        # globally via options.twdiwStatusList2021Enabled) so a JWT variant of a
+        # StatusList2021Entry is verified instead of rejected as an unsupported
+        # status type.
+        twdiwStatusList2021Enabled: true
+        public: true
     options:
       exchangeProtocols:
         - chapi
@@ -283,6 +337,15 @@ app:
       #                        # profile is enabled by default. Can be
       #                        # overridden per-workflow. Default: true.
       recordExpiresDurationMs: 86400000
+      # OID4VPdefault: the OID4VP profile used to build the QR / wallet launch
+      # URL and request object. EUDI Wallet / TWDIW wallets consume a
+      # presentation_definition (OID4VP draft 18) rather than DCQL; set
+      # "OID4VP-draft18" for those wallets. Default: "OID4VP-combined".
+      # OID4VPdefault: "OID4VP-draft18"
+      # twdiwStatusList2021Enabled: false  # Global switch for the deprecated,
+      #   non-standard TWDIW StatusList2021 handler. Off by default so a
+      #   StatusList2021Entry is rejected as an unsupported status type unless a
+      #   workflow opts in. Prefer enabling it per-workflow instead.
     defaultBrand:
       cta: "#0B669D"
       primary: "#045199"

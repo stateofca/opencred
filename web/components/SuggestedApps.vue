@@ -10,6 +10,7 @@ SPDX-License-Identifier: BSD-3-Clause
     v-if="walletRows.length > 0"
     class="suggested-apps q-pa-md">
     <p
+      v-if="te('appInstallExplain')"
       class="text-body2 text-center q-mb-md"
       v-html="t('appInstallExplain')" />
     <div class="wallet-rows column q-gutter-y-sm">
@@ -17,11 +18,6 @@ SPDX-License-Identifier: BSD-3-Clause
         v-for="(row, idx) in visibleRows"
         :key="idx"
         class="wallet-row row items-center q-gutter-x-sm">
-        <!-- <img
-          v-if="row.icon"
-          :src="row.icon"
-          :alt="row.displayName"
-          class="wallet-icon"> -->
         <span class="wallet-name text-body2 text-weight-medium">
           {{row.displayName}}
         </span>
@@ -45,41 +41,54 @@ SPDX-License-Identifier: BSD-3-Clause
       v-if="collapsedCount > 0 && !showAll"
       class="show-more-btn text-body2 q-mt-sm"
       @click="showAll = true">
-      Show {{collapsedCount}} more
-      {{collapsedCount === 1 ? 'wallet' : 'wallets'}}
+      {{t('appInstallShowMore', {count: collapsedCount}, collapsedCount)}}
     </button>
   </div>
 </template>
 
 <script setup>
 import {computed, ref} from 'vue';
+import {resolveProductName, WALLETS_REGISTRY}
+  from '../../common/wallets/index.js';
+import {useExchangeContext} from '../composables/useExchangeContext.js';
 import {useExchangeOptions} from '../composables/useExchangeOptions.js';
 import {usePlatform} from '../composables/usePlatform.js';
 import {useReactiveI18n} from '../composables/useReactiveI18n.js';
-import {WALLETS_REGISTRY} from '../../common/wallets/index.js';
 
-const {t} = useReactiveI18n();
+const {t, te} = useReactiveI18n();
 const {exchangeOptions} = useExchangeOptions();
+const {workflow} = useExchangeContext();
 const {platform} = usePlatform();
 
 const VISIBLE_THRESHOLD = 1;
 const showAll = ref(false);
 
-const walletRows = computed(() => {
+// The wallet identifiers the invitation promotes. When the workflow declares
+// `promotedWallets`, those are promoted verbatim — promotion is independent of
+// enablement, so a promoted wallet need not be an enabled one and vice versa.
+// When unset, the invitation promotes what it always has: every enabled wallet
+// (system defaults plus user-enabled extras). Storefront/platform filtering
+// below applies to both, so a named wallet with no storefront here is a no-op.
+const promotedWalletIds = computed(() => {
+  const declared = workflow.value?.promotedWallets;
+  if(Array.isArray(declared)) {
+    return declared;
+  }
   const opts = exchangeOptions.value;
   if(!opts) {
     return [];
   }
-
-  const enabledWallets = [
+  return [
     ...opts.defaultWallets,
     ...opts.extraWallets.filter(w => w.enabled)
-  ];
+  ].map(w => w.walletId);
+});
 
+const walletRows = computed(() => {
   const plat = platform.value || {};
   const entries = [];
-  for(const wallet of enabledWallets) {
-    const reg = WALLETS_REGISTRY[wallet.walletId];
+  for(const walletId of promotedWalletIds.value) {
+    const reg = WALLETS_REGISTRY[walletId];
     if(!reg?.storefronts?.length) {
       continue;
     }
@@ -93,10 +102,11 @@ const walletRows = computed(() => {
       continue;
     }
     entries.push({
-      walletId: wallet.walletId,
+      walletId,
       groupId: reg.groupId || reg.id,
-      name: reg.name || wallet.walletId,
-      icon: reg.icon || null,
+      productName: resolveProductName({
+        wallet: reg, t, fallbackId: walletId
+      }),
       storefronts: filtered
     });
   }
@@ -118,8 +128,7 @@ const walletRows = computed(() => {
     } else {
       groupIndex.set(key, groups.length);
       groups.push({
-        displayName: entry.name.replace(/\s*\((?:Android|iOS)\)\s*$/, ''),
-        icon: entry.icon,
+        displayName: entry.productName,
         storefronts: [...entry.storefronts]
       });
     }
@@ -171,13 +180,6 @@ function storeInfo(type) {
 
 .wallet-row {
   min-height: 40px;
-}
-
-.wallet-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  object-fit: contain;
 }
 
 .wallet-name {

@@ -6,8 +6,17 @@
  */
 
 import * as z from 'zod';
+import {
+  dcApiProtocolForProfile,
+  PROFILE_DC_API_PROTOCOL
+} from '../lib/workflows/common/dc-api-envelope.js';
 import crypto from 'node:crypto';
+import {identifyProfile} from '../lib/workflows/common/identify-profile.js';
 import {logger} from '../lib/logger.js';
+import {PROFILES_LIST} from '../common/profiles.js';
+import {
+  staticInteractionMethodsForProfile
+} from '../common/wallets/exchange-options.js';
 
 // Preset configurations
 import {
@@ -26,6 +35,13 @@ export const WorkflowType = {
 };
 
 export const WorkFlowTypes = Object.values(WorkflowType);
+
+// The OID4VP request profiles a deployment or workflow may select. The global
+// `options.OID4VPdefault` and the per-workflow `oid4vpProfile` override share
+// this set so a workflow accepts exactly the profiles the deployment does.
+export const OID4VP_PROFILE_VALUES = [
+  'OID4VP-draft18', 'OID4VP-combined', 'OID4VP-1.0'
+];
 
 // Image schema
 export const ImgSchema = z.object({
@@ -76,9 +92,27 @@ const OpenIdConnectSchema = z.object({
   idTokenExpirySeconds: z.number().default(3600)
 });
 
+// Curates the callback request body. When unset on the callback, the legacy
+// payload (full exchange variables) is sent for backwards compatibility.
+export const CallbackBodySchema = z.object({
+  // allowlist of exchange variable names to include in the callback body;
+  // omitted or [] => no plain variables are sent
+  variables: z.array(z.string()).default([]),
+  // include the raw submitted vp_token at the top level of the payload
+  vpToken: z.boolean().default(false),
+  // include the verified verifiablePresentation object at the top level
+  verifiablePresentation: z.boolean().default(false),
+  // include the credential(s) extracted from the presentation at the top level
+  verifiableCredential: z.boolean().default(false)
+});
+
 export const CallbackSchema = z.object({
   url: z.url(),
   headersVariable: z.string().optional(),
+  // static headers sent with callback, none if unset
+  headers: z.record(z.string(), z.string()).optional(),
+  // curate the callback request body; unset => legacy full-variables payload
+  body: CallbackBodySchema.optional(),
   oauth: z.object({
     issuer: z.string(),
     tokenUrl: z.url(),
@@ -158,30 +192,155 @@ export const availableWallets = [
   'cadmv-android', 'cadmv-ios', 'lcw', 'google-wallet', 'apple-wallet',
   'vcalm-interaction'];
 
+// UI-facing interaction methods a connection option may name. These are the
+// picker-entry methods (`computeExchangeOptions` emits these on each entry's
+// `method`), not the lower-level `INTERACTION_METHODS_LIST` (`qr`/`link`/...):
+// a picker entry is keyed on `qr-and-link` / `qr-and-copy`, which is the pair a
+// declaration selects.
+export const CONNECTION_OPTION_METHODS = [
+  'dcapi', 'qr-and-link', 'qr-and-copy', 'chapi'];
+
 // Base Workflow schema
 export const BaseWorkflowSchema = z.object({
   clientId: z.string(), // Used to identify the workflow
   clientSecret: z.string(), // To authenticate exchange API requests
+
   // Legacy fallback identifier for URL-path resolution
   workflowId: z.string().regex(/^[a-zA-Z0-9_-]+$/).optional(),
+
   configFrom: z.string().optional(), // Used to reference a different workflow
   name: z.string().optional(),
   description: z.string().optional(),
   brand: BrandSchema.optional(),
   caStore: z.boolean().default(true), // If false, cert/x5c checks are skipped
-  // By default,experimental DC API is disabled
+
+  // By default, experimental DC API is disabled
   dcApiEnabled: z.boolean().default(false),
+
   // Whether the Interaction URL (qr-and-copy) profile is a default
   // (locked-on) picker option. When undefined here, inherits from
   // options.interactEnabled (global default: true).
   interactEnabled: z.boolean().optional(),
+
+  // Whether the connection-option picker entrypoint (the "other ways to
+  // connect" control that lets a user browse and switch between connection
+  // options) is offered. When undefined here, inherits from
+  // options.connectionPickerEnabled (global default: true), which preserves
+  // today's behaviour: the entrypoint shows whenever more than one option
+  // exists. When false, the entrypoint is never offered even with several
+  // viable options; the user stays on the current option and the "try another
+  // way" error-recovery fallback is unaffected. Deliberately independent of
+  // `connectionOptions`: the two are set and reversed separately.
+  connectionPickerEnabled: z.boolean().optional(),
+
+  // Per-workflow override for the deprecated TWDIW StatusList2021 handler.
+  // When undefined, inherits options.twdiwStatusList2021Enabled (global
+  // default: false). Set true only on workflows that consume TWDIW VCs.
+  twdiwStatusList2021Enabled: z.boolean().optional(),
+
+  // Per-workflow override: accept a holder's jwk_jcs-pub did:key whose embedded
+  // JWK is in a non-canonical member order. When undefined, inherits
+  // options.acceptNonCanonicalJwkJcsPub (global default: false), which keeps
+  // strict one-key-one-DID resolution. Set true only on workflows that must
+  // interoperate with a wallet that serializes JWK members non-canonically;
+  // coordinate validity is still enforced. Scoped to holder-key resolution
+  // during presentation verification, not issuer trust.
+  acceptNonCanonicalJwkJcsPub: z.boolean().optional(),
+
+  // Per-workflow override for the OID4VP request profile OpenCred sends. When
+  // undefined, inherits options.OID4VPdefault (global default:
+  // 'OID4VP-combined'). Accepts the same set of profiles as the deployment-wide
+  // option. Lets several workflows serve wallets that require different
+  // profiles from one deployment.
+  oid4vpProfile: z.enum(OID4VP_PROFILE_VALUES).optional(),
+
   wallets: z.array(z.enum(availableWallets)).optional(),
+
+  // Wallet launch buttons for the DC API interaction method. Each button
+  // requests all of its `profiles` together in a single
+  // `navigator.credentials.get()` call, so that e.g. Google Wallet answers the
+  // `google-wallet` request while Apple Wallet answers `apple-wallet` and the
+  // CA DMV wallet — which reads either format — may answer either.
+  //
+  // OPTIONAL. When absent, the UI derives one button per enabled compatible
+  // wallet, which is the pre-existing behavior.
+  //
+  // Profile order is significant: it is the order of the DC API `requests`
+  // array, which may determine which handler the OS offers first and which
+  // format a wallet that reads several formats answers with.
+  //
+  // Two profiles that emit the same DC API protocol identifier may not share a
+  // button — see `validateDcApiButtons`.
+  dcApiButtons: z.array(z.object({
+    id: z.string().regex(/^[a-zA-Z0-9_-]+$/),
+    label: z.string().optional(),
+    labelKey: z.string().optional(),
+    // Optional desktop-specific i18n label key. On a desktop browser the DC API
+    // launch resolves to a cross-device QR flow, so a workflow can label the
+    // button accordingly (e.g. "Generate QR Code to Scan") while `labelKey`
+    // stays the mobile same-device label. When unset, the button uses
+    // `labelKey` on every device.
+    desktopLabelKey: z.string().optional(),
+    profiles: z.array(z.string()).min(1)
+  }).refine(b => b.label !== undefined || b.labelKey !== undefined, {
+    message: 'dcApiButtons entry requires `label` or `labelKey`'
+  })).optional(),
+
+  // Ordered declaration of the connection options offered for this workflow.
+  // Each entry names one picker entry by its interaction `method` and,
+  // optionally, its `profile` — the pair a picker entry is keyed on. It SELECTS
+  // AND ORDERS the derived options rather than replacing them: an unconfigured
+  // workflow derives exactly as before, and a declared entry that is not viable
+  // on the current device or exchange is simply absent, so the next declared
+  // entry is promoted. Nothing here changes what renders yet — that is the next
+  // issue; this delivers the config surface and its load-time validation.
+  //
+  // `profile` is omitted for a method's aggregate entry — notably the DC API
+  // all-wallets aggregator, whose derived entry carries `profile: null`; a
+  // non-`dcapi` method must name its profile. `label`/`labelKey` override the
+  // option's own label and `destinationLabel`/`destinationLabelKey` name it as
+  // a switch-link destination, each key-first with a literal fallback.
+  //
+  // Statically impossible entries fail config load — see
+  // `validateConnectionOptions`; wallet/format/device viability stays derived.
+  connectionOptions: z.array(z.object({
+    method: z.enum(CONNECTION_OPTION_METHODS),
+    profile: z.string().optional(),
+    label: z.string().optional(),
+    labelKey: z.string().optional(),
+    destinationLabel: z.string().optional(),
+    destinationLabelKey: z.string().optional()
+  })).optional(),
+
+  // The wallets promoted by the install invitation (the "suggested apps" block
+  // at the bottom of the exchange page). PROMOTION IS SEPARATE FROM ENABLEMENT:
+  // a workflow may enable a wallet that ships preinstalled on the device and
+  // still not want to advertise it, so this is its own list rather than the
+  // enabled `wallets` set. When absent, the invitation promotes what it shows
+  // today — every enabled wallet with a storefront for the current platform.
+  // When present, only these wallet identifiers are promoted, still filtered to
+  // the platform's storefront. An identifier with no storefront for the current
+  // platform simply contributes no row.
+  promotedWallets: z.array(z.enum(availableWallets)).optional(),
+
   oidc: OpenIdConnectSchema.optional(),
   callback: CallbackSchema.optional(),
   translations: z.record(z.string(), z.record(z.string(), z.string()))
     .optional(), // Override default text labels in the UI
   trustedCredentialIssuers: z.array(z.string()).optional(),
   untrustedVariableAllowList: z.array(z.string()).default([]),
+  // Values pulled from exchange variables (e.g. a callback response) to display
+  // on the success view. `path` is a JSONPath into exchange.variables. Provide
+  // a literal `label` and/or an i18n `labelKey` (at least one). The frontend
+  // prefers `labelKey` when it resolves in the current locale, else `label`.
+  // Present-only: unresolved paths are skipped.
+  successViewFields: z.array(z.object({
+    path: z.string(),
+    label: z.string().optional(),
+    labelKey: z.string().optional()
+  }).refine(f => f.label !== undefined || f.labelKey !== undefined, {
+    message: 'each successViewFields entry requires a label or labelKey'
+  })).default([]),
   public: z.boolean().default(false)
 });
 
@@ -205,6 +364,189 @@ export const VcApiWorkflowSchema = z.object({
   baseUrl: z.url().optional(), // May be included in capability
   verifiablePresentationRequest: z.string()
 });
+
+/**
+ * Validate a workflow's `dcApiButtons` against the DC API protocol map, adding
+ * issues to a zod refinement context.
+ *
+ * Two checks:
+ *
+ * 1. Every profile must be a DC API profile. A profile that produces a signed
+ *    JAR JWT rather than a DC API wire envelope cannot be one element of a
+ *    multi-profile request.
+ * 2. No two profiles in one button may emit the same DC API protocol
+ *    identifier. This is what makes response routing deterministic: a wallet
+ *    response identifies its request by protocol, so two pending requests
+ *    sharing a protocol would be ambiguous. Such a button is also redundant by
+ *    construction — one request already reaches every wallet that reads that
+ *    format.
+ *
+ * Profiles are resolved through `identifyProfile` **before** the protocol
+ * lookup, because `identifyProfile` redirects: `cadmv-android` and
+ * `18013-7-Annex-D` both become `18013-7-Annex-D-spruceid` when
+ * `dcApiNamespaceQuery` is set, and the Annex C lane likewise. Validating raw
+ * configured names would let a colliding pair through whenever a redirect
+ * collapses two distinct names onto one handler.
+ *
+ * Errors report the **configured** profile name, mentioning the resolved name
+ * only when it differs. `identifyProfile` silently falls back to the default
+ * OID4VP profile for an unrecognized profile, so a typo surfaces here as "not a
+ * DC API profile"; naming only the resolved profile would make that
+ * unintelligible.
+ *
+ * @param {object} options - Options.
+ * @param {object} options.workflow - Workflow config being validated; supplies
+ *   `dcApiButtons` and the `dcApiNamespaceQuery` that steers redirects.
+ * @param {object} options.ctx - Zod refinement context.
+ * @returns {void}
+ */
+export function validateDcApiButtons({workflow, ctx}) {
+  const buttons = workflow?.dcApiButtons;
+  if(!Array.isArray(buttons) || buttons.length === 0) {
+    return;
+  }
+
+  const seenIds = new Set();
+  buttons.forEach((button, index) => {
+    if(seenIds.has(button.id)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `dcApiButtons["${button.id}"]: duplicate id`,
+        path: ['dcApiButtons', index, 'id']
+      });
+    }
+    seenIds.add(button.id);
+
+    // profile -> the configured names that resolved to it
+    const byProtocol = new Map();
+    for(const configured of button.profiles) {
+      const {profile: resolved} = identifyProfile({
+        profile: configured,
+        workflow
+      });
+      const protocol = dcApiProtocolForProfile({profile: resolved});
+      const shown = resolved === configured ?
+        `"${configured}"` : `"${configured}" (resolved to "${resolved}")`;
+
+      if(protocol === null) {
+        ctx.addIssue({
+          code: 'custom',
+          message:
+            `dcApiButtons["${button.id}"]: profile ${shown} is not a DC API ` +
+            'profile, so it cannot be part of a DC API button. DC API ' +
+            'profiles are: ' +
+            `${Object.keys(PROFILE_DC_API_PROTOCOL).join(', ')}.`,
+          path: ['dcApiButtons', index, 'profiles']
+        });
+        continue;
+      }
+
+      const collision = byProtocol.get(protocol);
+      if(collision !== undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          message:
+            `dcApiButtons["${button.id}"]: profiles "${collision}" and ` +
+            `"${configured}" both use DC API protocol "${protocol}". A ` +
+            'button must not request the same wire format twice — one ' +
+            'request already reaches every wallet that reads that format.',
+          path: ['dcApiButtons', index, 'profiles']
+        });
+        continue;
+      }
+      byProtocol.set(protocol, configured);
+    }
+  });
+}
+
+/**
+ * Validate a workflow's `connectionOptions` against what it can statically
+ * offer, adding issues to a zod refinement context.
+ *
+ * Connection options SELECT AND ORDER the derived picker entries; they never
+ * replace derivation. So validation here catches only the static impossibility
+ * issue 003 settled on — the mistyped or incoherent declaration that could
+ * never match a derived option and would therefore silently vanish, the exact
+ * fallback-with-no-fallback failure this validation exists to prevent:
+ *
+ * 1. A profile the workflow does not enable — read as a profile the platform
+ *    does not know at all. A typo surfaces here rather than silently dropping
+ *    an option.
+ * 2. A method that profile does not offer, per
+ *    `staticInteractionMethodsForProfile`.
+ *
+ * What is NOT checked here is deliberately left to derivation (issue 003 §5),
+ * matching the same bargain the `dcApiButtons` validation struck: whether the
+ * workflow's query formats reach the profile, whether the exchange offers it,
+ * whether a wallet answers it, whether this device can run the method, whether
+ * a `walletCertificates` entry exists. A declared entry non-viable for any of
+ * those reasons is absent from what derivation produced and the next entry is
+ * promoted — no config error. Notably a coherent method/profile pair whose
+ * format the workflow's query does not request is a skip, not a failure,
+ * exactly as a `dcApiButtons` profile with no matching format is silently
+ * skipped.
+ *
+ * A `dcapi` entry may omit `profile` (it selects the DC API aggregator, whose
+ * derived entry carries `profile: null`); any other method must name one.
+ *
+ * @param {object} options - Options.
+ * @param {object} options.workflow - Workflow config being validated; supplies
+ *   `connectionOptions`.
+ * @param {object} options.ctx - Zod refinement context.
+ * @returns {void}
+ */
+export function validateConnectionOptions({workflow, ctx}) {
+  const options = workflow?.connectionOptions;
+  if(!Array.isArray(options) || options.length === 0) {
+    return;
+  }
+
+  options.forEach((option, index) => {
+    const {method, profile} = option;
+
+    // The DC API aggregator entry names no profile (its derived entry's
+    // `profile` is null). Every other method's picker entry is keyed on a
+    // profile, so it must name one.
+    if(profile === undefined) {
+      if(method !== 'dcapi') {
+        ctx.addIssue({
+          code: 'custom',
+          message:
+            `connectionOptions[${index}]: method "${method}" requires a ` +
+            '`profile`; only the `dcapi` aggregator entry may omit it.',
+          path: ['connectionOptions', index, 'profile']
+        });
+      }
+      return;
+    }
+
+    // 1. A profile no picker entry can ever key on — a typo or a profile the
+    // platform does not know.
+    if(!PROFILES_LIST.includes(profile)) {
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          `connectionOptions[${index}]: profile "${profile}" is not a known ` +
+          `profile. Known profiles are: ${PROFILES_LIST.join(', ')}.`,
+        path: ['connectionOptions', index, 'profile']
+      });
+      return;
+    }
+
+    // 2. A method the profile does not offer.
+    const methods = staticInteractionMethodsForProfile(profile);
+    if(!methods.includes(method)) {
+      const offered = methods.join(', ') || 'none';
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          `connectionOptions[${index}]: profile "${profile}" does not offer ` +
+          `the "${method}" interaction method. It offers: ${offered}.`,
+        path: ['connectionOptions', index, 'method']
+      });
+    }
+  });
+}
 
 // Native Workflow schema
 export const NativeWorkflowSchema = z.object({
@@ -242,6 +584,18 @@ export const NativeWorkflowSchema = z.object({
 }, {
   message: 'query must have at least 1 element',
   path: ['query']
+}).superRefine((data, ctx) => {
+  // Validated here rather than on BaseWorkflowSchema because the profile
+  // redirects depend on `dcApiNamespaceQuery`, which is native-only. The DC API
+  // interaction itself is native-only too (see
+  // `NativeWorkflowService.authorizationRequestMiddleware`).
+  validateDcApiButtons({workflow: data, ctx});
+  // Native-only too: the picker and its derived options — the thing a
+  // connection-options declaration selects and orders — are a native-workflow
+  // concern, and the `query` its format check reads is native-only. Validated
+  // after the transform above so a `dcApiNamespaceQuery`-derived query is in
+  // place.
+  validateConnectionOptions({workflow: data, ctx});
 });
 
 // Entra Workflow schema
@@ -302,11 +656,40 @@ export const OptionsSchema = z.object({
   // only via the advanced-settings.
   interactEnabled: z.boolean().default(true),
 
-  OID4VPdefault: z.enum([
-    'OID4VP-draft18', 'OID4VP-combined', 'OID4VP-1.0'
-  ]).default('OID4VP-combined'),
+  // Default for whether the connection-option picker entrypoint is offered.
+  // default true, which preserves today's behaviour (the entrypoint shows
+  // whenever more than one connection option exists). A workflow may override
+  // via its own `connectionPickerEnabled`.
+  connectionPickerEnabled: z.boolean().default(true),
+
+  // Show the wallet launch button on desktop qr-and-link screens. Default
+  // false: desktop users only see the QR code. Enable as a debugging
+  // affordance — the launch link exposes the openid4vp:// request URL via
+  // right-click / copy link.
+  oid4vpDisplayLinkOnDesktop: z.boolean().default(false),
+
+  OID4VPdefault: z.enum(OID4VP_PROFILE_VALUES).default('OID4VP-combined'),
   workflowListingEnabled: z.boolean().default(false),
-  debug: z.boolean().default(false)
+  // Enables the non-standard, deprecated TWDIW StatusList2021 credential-
+  // status handler (a JWT status-list envelope verified against a jku-
+  // published key). Off by default; standard flows reject a
+  // StatusList2021Entry as an unsupported status type.
+  twdiwStatusList2021Enabled: z.boolean().default(false),
+  // Deployment-wide default for accepting a holder's jwk_jcs-pub did:key whose
+  // embedded JWK is in a non-canonical member order. Off by default: strict
+  // one-key-one-DID resolution, so a non-canonically-ordered did:key is
+  // rejected. A workflow may opt in via its own acceptNonCanonicalJwkJcsPub.
+  acceptNonCanonicalJwkJcsPub: z.boolean().default(false),
+  debug: z.boolean().default(false),
+
+  // Experimental request-shaping knobs for the google-wallet (x509_hash)
+  // profile, used to debug Google Wallet DC API rejection. Defaults
+  // preserve the encrypted dc_api.jwt behavior.
+  googleWalletRequest: z.object({
+    omitState: z.boolean().default(false),
+    omitCredentialSets: z.boolean().default(false),
+    responseMode: z.enum(['dc_api.jwt', 'dc_api']).default('dc_api.jwt')
+  }).default({})
 }).transform(data => {
   // exchangeTtlSeconds cannot exceed recordExpiresDurationMs
   const maxExchangeTtl = Math.min(900, data.recordExpiresDurationMs / 1000);
@@ -440,13 +823,31 @@ export const AppleWalletCertificateSchema = WalletCertificateBase.extend({
 
 export const GoogleWalletCertificateSchema = WalletCertificateBase.extend({
   wallet: z.literal('google-wallet'),
-  google: z.object({}).optional()
+  // Google-Wallet-specific settings. `rpMetadataBytes` is the
+  // Base64URL-encoded CBOR relying-party metadata Google requires in
+  // client_metadata.gw_rp_metadata_bytes (stored verbatim).
+  google: z.object({
+    rpMetadataBytes: z.string().optional()
+  }).optional()
 });
 
 export const WalletCertificateSchema = z.discriminatedUnion('wallet', [
   AppleWalletCertificateSchema,
   GoogleWalletCertificateSchema
 ]);
+
+const FontSourceSchema = z.object({
+  woff: z.url(),
+  woff2: z.url()
+});
+
+const FontUrlsSchema = z.object({
+  regular: FontSourceSchema,
+  italic: FontSourceSchema,
+  bold: FontSourceSchema,
+  boldItalic: FontSourceSchema,
+  extraBoldItalic: FontSourceSchema
+});
 
 // Main OpenCred configuration schema
 export const OpenCredConfigSchema = z.object({
@@ -457,6 +858,7 @@ export const OpenCredConfigSchema = z.object({
     .optional(),
   customTranslateScript: z.string().optional(),
   defaultBrand: BrandSchema.default(DEFAULT_BRAND),
+  fontUrls: FontUrlsSchema.optional(),
   didWeb: DidWebSchema.default({mainEnabled: true, linkageEnabled: false}),
   signingKeys: z.array(SigningKeySchema).default([]),
   trustedCredentialIssuers: z.array(z.string()).optional(),
@@ -469,7 +871,7 @@ export const OpenCredConfigSchema = z.object({
   }),
   audit: AuditSchema.default({enable: false})
 }).transform(data => {
-  validateWalletCertificates(data.walletCertificates, {logger});
+  validateWalletCertificates(data.walletCertificates);
   // Ensure options is populated with field-level defaults from OptionsSchema
   // Parse through OptionsSchema to apply defaults for any missing fields
   return {
@@ -492,12 +894,19 @@ export const INHERITABLE_FIELDS = [
   'caStore',
   'dcApiEnabled',
   'interactEnabled',
+  'connectionPickerEnabled',
+  'acceptNonCanonicalJwkJcsPub',
+  'oid4vpProfile',
   'wallets',
+  'dcApiButtons',
+  'connectionOptions',
+  'promotedWallets',
   'oidc',
   'callback',
   'translations',
   'trustedCredentialIssuers',
   'untrustedVariableAllowList',
+  'successViewFields',
   'public',
   'clientSecret'
 ];
@@ -656,9 +1065,8 @@ export const applyWorkflowDefaults = ({opencred, workflows, workflow}) => {
  * - private key does not match the leaf cert's public key.
  *
  * @param {Array} entries - Parsed walletCertificates entries.
- * @param {{logger: object}} deps - Logger with `.warn` / `.error`.
  */
-export function validateWalletCertificates(entries, {logger: log}) {
+export function validateWalletCertificates(entries) {
   const seenIds = new Set();
   for(const entry of entries) {
     if(seenIds.has(entry.id)) {
@@ -698,14 +1106,14 @@ export function validateWalletCertificates(entries, {logger: log}) {
         type: 'spki', format: 'der'
       });
       if(!certSpkiDer.equals(providedSpkiDer)) {
-        log.warn(
+        logger.warning(
           `walletCertificates[${entry.id}]: leaf cert SPKI does not ` +
           `match publicKeyPem; wallets that verify the signature ` +
           `against the cert public key will reject signed requests`
         );
       }
     } catch(err) {
-      log.warn(
+      logger.warning(
         `walletCertificates[${entry.id}]: unable to compare SPKI ` +
         `vs publicKeyPem: ${err.message}`
       );
@@ -716,13 +1124,13 @@ export function validateWalletCertificates(entries, {logger: log}) {
     const notBefore = Date.parse(cert.validFrom);
     const notAfter = Date.parse(cert.validTo);
     if(Number.isFinite(notBefore) && notBefore > now) {
-      log.warn(
+      logger.warning(
         `walletCertificates[${entry.id}]: notBefore ` +
         `${cert.validFrom} is in the future`
       );
     }
     if(Number.isFinite(notAfter) && notAfter < now) {
-      log.warn(
+      logger.warning(
         `walletCertificates[${entry.id}]: notAfter ` +
         `${cert.validTo} is in the past; wallet will reject the cert`
       );
@@ -740,17 +1148,47 @@ export function validateWalletCertificates(entries, {logger: log}) {
         {type: 'spki', format: 'der'}
       );
       if(!derivedPublicDer.equals(certPublicDer)) {
-        log.warn(
+        logger.warning(
           `walletCertificates[${entry.id}]: privateKeyPem does not ` +
           `correspond to the leaf cert's public key; ReaderAuth ` +
           `signatures produced with this entry will not verify`
         );
       }
     } catch(err) {
-      log.warn(
+      logger.warning(
         `walletCertificates[${entry.id}]: unable to derive public ` +
         `key from privateKeyPem: ${err.message}`
       );
     }
+
+    // Google Wallet requires relying-party branding metadata in the
+    // authorization request (client_metadata.gw_rp_metadata_bytes).
+    // Warn-only: a missing/invalid value should not block startup.
+    if(entry.wallet === 'google-wallet') {
+      const rpMetadataBytes = entry.google?.rpMetadataBytes;
+      if(!rpMetadataBytes) {
+        logger.warning(
+          `walletCertificates[${entry.id}]: google.rpMetadataBytes is ` +
+          `not set; Google Wallet requires client_metadata.` +
+          `gw_rp_metadata_bytes and may reject requests without it`
+        );
+      } else if(!_isBase64Url(rpMetadataBytes)) {
+        logger.warning(
+          `walletCertificates[${entry.id}]: google.rpMetadataBytes is ` +
+          `not valid Base64URL; Google Wallet will reject the request`
+        );
+      }
+    }
   }
+}
+
+/**
+ * Lightweight Base64URL check (no padding). Does not decode CBOR.
+ *
+ * @param {string} value - Candidate Base64URL string.
+ * @returns {boolean} True when the value is a non-empty Base64URL string.
+ */
+function _isBase64Url(value) {
+  return typeof value === 'string' && value.length > 0 &&
+    /^[A-Za-z0-9_-]+$/.test(value);
 }

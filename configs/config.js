@@ -7,6 +7,7 @@
 
 import * as bedrock from '@bedrock/core';
 import {applyWorkflowDefaults, OpenCredConfigSchema} from './config-utils.js';
+import {buildAuthorizationConfig} from './authorization.js';
 import {combineTranslations} from './translation.js';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
@@ -37,7 +38,6 @@ bedrock.events.on('bedrock.configure', async () => {
   await import(path.join(config.paths.config, 'server.js'));
   await import(path.join(config.paths.config, 'database.js'));
   await import(path.join(config.paths.config, 'https-agent.js'));
-  await import(path.join(config.paths.config, 'authorization.js'));
 });
 
 config.views.bundle.packages.push({
@@ -209,6 +209,11 @@ bedrock.events.on('bedrock.init', async () => {
     ensureAccessTokenKey(opencred);
 
     config.opencred = OpenCredConfigSchema.parse(opencred);
+    // schema parsing replaces `config.opencred` with a new object that only
+    // has schema-declared fields; derived config must be reattached here
+    config.opencred.authorization = buildAuthorizationConfig({
+      workflows: config.opencred.workflows
+    });
     validateWorkflowIdentifiers(config.opencred);
     logger.info('OpenCred Config Successfully Validated.');
 

@@ -1,7 +1,9 @@
-import * as bedrock from '@bedrock/core';
-const {config} = bedrock;
-const c = bedrock.util.config.main;
-const cc = c.computer();
+/*!
+ * Copyright 2024 - 2026 California Department of Motor Vehicles
+ * Copyright 2024 - 2026 Digital Bazaar, Inc.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 
 const getOAuthConfigs = workflow => {
   const configs = [];
@@ -23,6 +25,13 @@ const getOAuthConfigs = workflow => {
   return configs;
 };
 
-cc('opencred.authorization', () => config.opencred.workflows.flatMap(
-  rp => getOAuthConfigs(rp)
-).filter(c => c));
+/**
+ * Derive OAuth client authorization entries from workflow callback config.
+ * Used by `lib/callback.js` to refresh access tokens for callback delivery.
+ *
+ * @param {object} options - Options object.
+ * @param {Array} options.workflows - Resolved workflow configurations.
+ * @returns {Array} - Authorization entries, one per `callback.oauth` block.
+ */
+export const buildAuthorizationConfig = ({workflows}) =>
+  workflows.flatMap(workflow => getOAuthConfigs(workflow));

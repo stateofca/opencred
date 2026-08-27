@@ -146,6 +146,210 @@ describe('continuationContext', () => {
       expect(oidc.redirectUri).to.equal('https://example.com');
       expect(translations.en.test).to.equal('test_translation');
 
+      // An unconfigured deployment defaults to showing the picker: the flag
+      // reaches the browser as true so behaviour is unchanged.
+      expect(workflow.connectionPickerEnabled).to.equal(true);
+
+      await database.collections.Exchanges.deleteOne({id: exchangeId});
+    });
+
+  it('should carry connectionPickerEnabled=false into the workflow context',
+    async () => {
+      const exchangeId = 'ex-picker-disabled-test';
+      const disabledWorkflow = {
+        ...exampleWorkflow,
+        clientId: 'test-picker-disabled',
+        connectionPickerEnabled: false
+      };
+      const disabledStub = sinon.stub(config.opencred, 'workflows')
+        .value([disabledWorkflow]);
+      try {
+        await database.collections.Exchanges.insertOne({
+          id: exchangeId,
+          workflowId: 'test-picker-disabled',
+          state: 'complete',
+          step: 'default',
+          sequence: 1,
+          ttl: 3600,
+          createdAt: new Date(),
+          variables: {procedurePath: 'verification'},
+          oidc: {code: 'code', state: 'state'}
+        });
+
+        const token = await buildExchangeResultToken({
+          exchangeId,
+          workflowId: 'test-picker-disabled',
+          procedurePath: 'verification'
+        });
+
+        const res = await client.get(
+          `${baseUrl}/context/continue?exchange_token=${
+            encodeURIComponent(token)}`
+        );
+
+        expect(res.status).to.equal(200);
+        expect(res.data.workflow.connectionPickerEnabled).to.equal(false);
+
+        await database.collections.Exchanges.deleteOne({id: exchangeId});
+      } finally {
+        disabledStub.restore();
+      }
+    });
+
+  it('should carry connectionOptions into the workflow context',
+    async () => {
+      const exchangeId = 'ex-connection-options-test';
+      const optionsWorkflow = {
+        ...exampleWorkflow,
+        clientId: 'test-connection-options',
+        connectionOptions: [
+          {method: 'dcapi'},
+          {method: 'qr-and-link', profile: 'OID4VP-combined'}
+        ]
+      };
+      const optionsStub = sinon.stub(config.opencred, 'workflows')
+        .value([optionsWorkflow]);
+      try {
+        await database.collections.Exchanges.insertOne({
+          id: exchangeId,
+          workflowId: 'test-connection-options',
+          state: 'complete',
+          step: 'default',
+          sequence: 1,
+          ttl: 3600,
+          createdAt: new Date(),
+          variables: {procedurePath: 'verification'},
+          oidc: {code: 'code', state: 'state'}
+        });
+
+        const token = await buildExchangeResultToken({
+          exchangeId,
+          workflowId: 'test-connection-options',
+          procedurePath: 'verification'
+        });
+
+        const res = await client.get(
+          `${baseUrl}/context/continue?exchange_token=${
+            encodeURIComponent(token)}`
+        );
+
+        expect(res.status).to.equal(200);
+        expect(res.data.workflow.connectionOptions).to.eql([
+          {method: 'dcapi'},
+          {method: 'qr-and-link', profile: 'OID4VP-combined'}
+        ]);
+
+        await database.collections.Exchanges.deleteOne({id: exchangeId});
+      } finally {
+        optionsStub.restore();
+      }
+    });
+
+  it('should omit connectionOptions when the workflow declares none',
+    async () => {
+      const exchangeId = 'ex-no-connection-options-test';
+      await database.collections.Exchanges.insertOne({
+        id: exchangeId,
+        workflowId: 'test',
+        state: 'complete',
+        step: 'default',
+        sequence: 1,
+        ttl: 3600,
+        createdAt: new Date(),
+        variables: {procedurePath: 'verification'},
+        oidc: {code: 'code', state: 'state'}
+      });
+
+      const token = await buildExchangeResultToken({
+        exchangeId,
+        workflowId: 'test',
+        procedurePath: 'verification'
+      });
+
+      const res = await client.get(
+        `${baseUrl}/context/continue?exchange_token=${
+          encodeURIComponent(token)}`
+      );
+
+      expect(res.status).to.equal(200);
+      expect(res.data.workflow).to.not.have.property('connectionOptions');
+
+      await database.collections.Exchanges.deleteOne({id: exchangeId});
+    });
+
+  it('should carry promotedWallets into the workflow context',
+    async () => {
+      const exchangeId = 'ex-promoted-wallets-test';
+      const promotedWorkflow = {
+        ...exampleWorkflow,
+        clientId: 'test-promoted-wallets',
+        promotedWallets: ['cadmv-ios', 'cadmv-android']
+      };
+      const promotedStub = sinon.stub(config.opencred, 'workflows')
+        .value([promotedWorkflow]);
+      try {
+        await database.collections.Exchanges.insertOne({
+          id: exchangeId,
+          workflowId: 'test-promoted-wallets',
+          state: 'complete',
+          step: 'default',
+          sequence: 1,
+          ttl: 3600,
+          createdAt: new Date(),
+          variables: {procedurePath: 'verification'},
+          oidc: {code: 'code', state: 'state'}
+        });
+
+        const token = await buildExchangeResultToken({
+          exchangeId,
+          workflowId: 'test-promoted-wallets',
+          procedurePath: 'verification'
+        });
+
+        const res = await client.get(
+          `${baseUrl}/context/continue?exchange_token=${
+            encodeURIComponent(token)}`
+        );
+
+        expect(res.status).to.equal(200);
+        expect(res.data.workflow.promotedWallets).to.eql(
+          ['cadmv-ios', 'cadmv-android']);
+
+        await database.collections.Exchanges.deleteOne({id: exchangeId});
+      } finally {
+        promotedStub.restore();
+      }
+    });
+
+  it('should omit promotedWallets when the workflow declares none',
+    async () => {
+      const exchangeId = 'ex-no-promoted-wallets-test';
+      await database.collections.Exchanges.insertOne({
+        id: exchangeId,
+        workflowId: 'test',
+        state: 'complete',
+        step: 'default',
+        sequence: 1,
+        ttl: 3600,
+        createdAt: new Date(),
+        variables: {procedurePath: 'verification'},
+        oidc: {code: 'code', state: 'state'}
+      });
+
+      const token = await buildExchangeResultToken({
+        exchangeId,
+        workflowId: 'test',
+        procedurePath: 'verification'
+      });
+
+      const res = await client.get(
+        `${baseUrl}/context/continue?exchange_token=${
+          encodeURIComponent(token)}`
+      );
+
+      expect(res.status).to.equal(200);
+      expect(res.data.workflow).to.not.have.property('promotedWallets');
+
       await database.collections.Exchanges.deleteOne({id: exchangeId});
     });
 

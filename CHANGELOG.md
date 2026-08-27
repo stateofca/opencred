@@ -1,5 +1,296 @@
 # opencred-platform Changelog
 
+## 10.4.1 - 2026-08-18
+
+### Added
+- Workflow `acceptNonCanonicalJwkJcsPub`: an inheritable boolean (global default
+  in `options`, default `false`) that lets a workflow accept a holder's
+  `jwk_jcs-pub` did:key whose embedded JWK is in a non-canonical member order,
+  resolving it from whatever order it uses while still requiring valid canonical
+  P-256 coordinates. Default stays strict (one key, one DID). Scoped to
+  holder-key resolution during presentation verification, not issuer trust. See
+  `docs/00-configure-workflow.md`.
+
+### Changed
+- Make `oid4vpProfile` an inheritable OID4VP workflow override 
+
+### Fixed
+- A non-DC-API (draft-18) fallback served on an exchange with a failed DC API
+  attempt now clears the stale pending-request array on persist, and a
+  `direct_post` response with no DC API protocol marker resolves against the
+  flat request state rather than a spent DC API offer.
+
+## 10.4.0 - 2026-08-10
+
+### Added
+- Workflow `promotedWallets`: an inheritable list of wallet identifiers the
+  install invitation promotes, independent of the enabled `wallets` set — a
+  workflow may enable a preinstalled wallet without advertising it. Defaults to
+  promoting every enabled wallet with a storefront. See
+  `docs/00-configure-workflow.md`.
+- Workflow `connectionOptions`: an ordered, inheritable declaration that selects
+  and orders the connection options shown, each naming a `method` (`dcapi` |
+  `qr-and-link` | `qr-and-copy` | `chapi`) and, except for the `dcapi`
+  aggregator, a `profile`, with optional label and switch-link-destination
+  overrides. See `docs/00-configure-workflow.md`.
+- Workflow `connectionPickerEnabled`: an inheritable boolean (default `true`)
+  that selects the persistent switch control's behaviour — the picker modal when
+  `true`, direct switching when `false`. Independent of `connectionOptions` and
+  does not affect the error-recovery "try another way" fallback. See
+  `docs/00-configure-workflow.md`.
+- Multi-profile DC API wallet buttons. A workflow may configure
+  `dcApiButtons: [{id, label?, labelKey?, profiles: [...]}]` so that one button
+  requests several authorization-request profiles together in a single
+  `navigator.credentials.get()` call — Google Wallet answering the
+  `google-wallet` request, Apple Wallet the `apple-wallet` one, and the CA DMV
+  wallet (which reads either format) able to answer either. `dcApiButtons` is
+  optional: without it the UI still derives one button per enabled compatible
+  wallet, exactly as before. Profile order within a button is significant, since
+  it is the order the requests are offered to the platform. Config loading
+  rejects a button whose profiles emit the same DC API protocol identifier,
+  because such a button asks twice for the same wire format and would leave the
+  response ambiguous. See `docs/00-configure-workflow.md` and
+  `docs/adr/2026-07-29-multi-profile-dc-api-requests.md`.
+- The authorization request endpoint
+  `GET /workflows/:workflowId/exchanges/:exchangeId/openid/client/authorization/request`
+  accepts a repeated `profile` parameter and returns
+  `{dcApiRequests: [{profile, dcApiRequest}, ...]}`. A single-profile request
+  additionally returns the unchanged `{dcApiRequest}`, so existing clients are
+  unaffected. A multi-profile request must name only DC API profiles, and fails
+  as a whole if any of them cannot be served.
+- Exchanges now publish `dcApi.authorizationRequestUrl`, the DC API
+  authorization request endpoint. The browser previously recovered this by
+  parsing `request_uri` back out of an `openid4vp://` deep link, which cannot
+  express more than one profile.
+- DC API observability: a `requestGroupId` correlates the requests issued by one
+  button press with the response that answers one of them.
+  `presentation_response_received` now carries the response `protocol`;
+  `presentation_success` / `presentation_error` carry the profile that actually
+  answered. Outcomes with no answering wallet (`dcapi_cancelled`,
+  `dcapi_timeout`, `dcapi_error`) report `profiles`, the whole offered set,
+  rather than attributing the outcome to one profile. A new
+  `presentation_dc_api_unresolved` event covers a response that matches no
+  pending request, carrying the arriving protocol and the candidate profiles.
+- Wallet registry entries may declare a `productName` (and `productNameKey`)
+  distinct from the launch-surface `name`/`nameKey`. The product name is the
+  wallet's app-store identity, shown by the install invitation and the
+  app-settings wallet list. Override in i18n.
+
+### Changed
+- Restore Apple Wallet's registry `name` to its canonical vendor name.
+- Every launch surface now resolves a wallet's device-context name through
+  `resolveDeviceContextName` (key-first, then the literal `name`, then the id),
+  instead of an inline `nameKey ? t(key) : name` that rendered the raw key when a
+  `nameKey` was set but unresolved. The `cadmv-android`, `cadmv-ios`, and
+  `apple-wallet` registry entries carry a neutral `nameKey`
+  (`wallet_<id>_name`) with no shipped translation, so a deployment can override
+  the launch-surface name in i18n while the branded literal stays the default.
+- **NOTE**: Node.js 26.x testing is temporarily disabled. Node 26's bundled
+  undici rejects the dispatcher handler shape used by `undici@6`, which arrives
+  as a transitive dependency via `@digitalbazaar/http-client`, so every test
+  that makes an HTTP request fails with `InvalidArgumentError: invalid onError
+  method`. Re-enable once `http-client` depends on `undici@7`. Node.js 20.x
+  remains unsupported.
+- **Data model:** pending DC API authorization requests are stored per profile
+  in `exchange.variables.dcApiRequests` rather than a single flat slot on
+  `exchange.variables`, so one exchange can hold a pending request per profile.
+  A wallet response is routed to its request by DC API protocol identifier and
+  restored into the shape the profile handlers expect, so profile
+  request/response handling is unchanged. Completed exchanges keep the same
+  document shape as before. Exchanges created before this release still
+  complete; the compatibility read is removable one release after rollout.
+  `variables.dcApiRequests` is scrubbed from any exchange returned to a client.
+- `presentation_start` always carries the `profiles` collection (empty when
+  none), never a singular `profile`; the Entra workflow reports `['entra']`.
+- Report client-observed exchange expiry via the exchange event endpoint. When
+  the browser's status-check timer sees the exchange TTL has elapsed and shows
+  the expiry notice, it posts an `exchange_expired` event `type` that maps to
+  the log event `exchange_expired`. Expiry previously produced no log entry at
+  all, leaving an expired exchange indistinguishable from an abandoned one.
+  Client-reported and therefore best-effort: an exchange that expires after the
+  user closes the tab produces no event. Named `exchange_expired` rather than
+  taking the `presentation_` prefix of the surrounding events, since what
+  expired is the exchange and no presentation was involved.
+- Update `@bedrock/config-yaml` to `^4.5.0`, which adds support for loading the
+  config from a `BEDROCK_CONFIG_GZIP` environment variable holding
+  base64-encoded gzipped YAML. This is a prerequisite for moving the deployed
+  config to a compressed secret; deployments that do not set the new variable
+  are unaffected and continue to read `BEDROCK_CONFIG` as before.
+- De-jargoned the main connection-flow copy defaults.
+- The former "other ways to connect" link is now a single persistent switch
+  control with two behaviours, selected by `connectionPickerEnabled`. With the
+  picker visible it opens the modal (generic label) as before; with the picker
+  hidden it switches directly to the next connection option.
+- The install invitation ("suggested apps") now promotes the wallets a workflow
+  names in `promotedWallets`.
+
+### Fixed
+- The install invitation now renders the wallet's product name directly instead
+  of stripping a parenthesised platform suffix ("(Android)"/"(iOS)") off the
+  launch name. That workaround was the direct cause of the install row showing
+  the wrong string; the `groupId` that collapses the two CA DMV platform entries
+  into one install row is retained and now dedupes on a shared product name.
+- Return immediately after handling client-side exchange expiry in the status
+  check, rather than relying on a later guard to stop the poll.
+
+## 10.3.0 - 2026-07-27
+
+### Added
+- Report "Other ways to connect" interaction-picker funnel events via the
+  exchange event endpoint. The browser posts `interaction_picker_opened`,
+  `interaction_method_selected` (carrying `fromMethod`/`toMethod` so an actual
+  method switch is distinguishable from re-selecting the current one), and
+  `interaction_picker_dismissed` (picker abandoned without selecting), mapping
+  to the log events `presentation_interaction_picker_opened`,
+  `presentation_interaction_method_selected`, and
+  `presentation_interaction_picker_dismissed`. The interaction method is a
+  UI-choice enum, not personal data.
+- Report DC API errors caught in the browser via a new
+  exchange event endpoint `POST /workflows/:workflowId/exchanges/:exchangeId/events`
+  beacon. The browser posts `dcapi_cancelled` / `dcapi_timeout` /
+  `dcapi_error` event `type`s that map to the log events
+  `presentation_dc_api_cancelled` (user dismissed the OS wallet
+  picker), `presentation_dc_api_error` (a `navigator.credentials.get`
+  rejection other than cancellation, carrying the DOMException `name`), and
+  `presentation_dc_api_timeout` (the picker never responded within a 30s
+  client-side window).
+- `callback.headers` sends static headers with the callback request.
+- `callback.body` curates the callback POST body. When unset the full set of
+  exchange variables is sent (unchanged behavior). When set, `body.variables`
+  is an allowlist of exchange variables to include (omitted or empty sends
+  none), and `body.vpToken`, `body.verifiablePresentation`, and
+  `body.verifiableCredential` opt in to including those presentation artifacts
+  at the top level of the body.
+- A JSON callback response body is stored on the exchange under
+  `variables.callbackResponse`, making it available to later steps and the
+  success view.
+- `successViewFields` renders selected exchange-variable values (e.g. from the
+  stored `callbackResponse`) on the `/verification` and `/login` success views.
+  Each entry has a JSONPath `path` and a literal `label` and/or i18n `labelKey`
+  (present-only rendering). The general success message
+  (`verificationSuccessMessage`) and field labels are customizable via
+  `translations`.
+- Add `walletCertificates[].google.rpMetadataBytes` config and emit it as
+  `client_metadata.gw_rp_metadata_bytes` in google-wallet authorization
+  requests. Startup validation warns when a google-wallet certificate has
+  no (or an invalid) `rpMetadataBytes`.
+- Startup validation warns when a google-wallet certificate's
+  `google.rpMetadataBytes` does not match the leaf certificate's Google
+  binding extension `1.3.6.1.4.1.11129.10.1` (SHA-256), or when that
+  extension is absent.
+
+### Changed
+- **NOTE**: Testing and support dropped for Node.js 20.x.
+- The DC API flow now aborts `navigator.credentials.get` after 30 seconds
+  when no wallet/credential provider responds, replacing an indefinite
+  loading state with a clear "Your wallet app did not respond" message.
+- Bump `@digitalbazaar/cadmv-ui` to `^2.7.0`. Site-wide typography was updated.
+
+### Fixed
+- Compute the DC API session-transcript JWK thumbprint per RFC 7638 (via
+  `jose`) instead of hashing a non-canonical JWK. The previous
+  implementation included `use`/`alg`/`kid` and relied on JSON key insertion
+  order, so Google Wallet `dc_api.jwt` (encrypted) responses failed device
+  signature verification (`DEVICE_SIGNATURE_VALIDITY`).
+- Only check SAN DNS names for Apple Wallet reader auth.
+
+### Security
+- The new exchange `events` endpoint requires the exchange's bearer access
+  token, matching the auth tier of the exchange reset and detail endpoints; a
+  request without the correct token is rejected before any event is logged.
+
+## 10.2.0 - 2026-07-13
+
+### Added
+- Presentation log events include `browser` and `deviceType` fields classified
+  from the User-Agent of the triggering request. Only coarse buckets are
+  logged, never the raw User-Agent string.
+- Three new presentation-funnel log events: `presentation_initiated`
+  (exchange created, QR/link about to display), `presentation_request_served`
+  (authorization request generated and sent to the wallet, with `profile`,
+  `responseMode`, and `wire` fields), and `presentation_response_received`
+  (wallet POSTed a response, before verification). Together with the existing
+  events these make each funnel gap unambiguous, distinguishing user drop-off
+  from wallet-side failure.
+- `presentation_success` and `presentation_error` events include the resolved
+  OID4VP `profile` where available, so terminal events no longer require a
+  join back to `presentation_start`.
+
+### Changed
+- Wallet launch buttons no longer display a wallet icon (or the generic
+  wallet glyph fallback); the label is now centered in the button.
+- The DC API is treated as unavailable on Samsung Internet, whose Digital
+  Credentials API implementation is not interoperable. Interaction falls back
+  to the configured OID4VP default presented over QR/link.
+- Callback failures are logged with their cause: OAuth token refresh failures
+  are distinguished from callback POST failures, and POST failures report an
+  HTTP status vs. a network-level error.
+
+### Fixed
+- Restore `opencred.authorization` after config schema validation. Since
+  v10.0.0, validation replaced `config.opencred` with a new object, orphaning
+  the computed `authorization` entries derived from workflow `callback.oauth`
+  blocks. Every OAuth-authenticated callback then failed with a `TypeError`
+  before requesting a token, logging `Callback failed to send.` The derived
+  entries are now attached explicitly during `bedrock.init`, and a missing
+  issuer entry now produces a clear error instead of a `TypeError`.
+- Add left padding to the "Current" badge in the interaction picker so it is no
+  longer flush against the method label next to it.
+- Hide the wallet deep-link launch button on the QR-and-link fallback screen
+  for desktop browsers, where the wallet app link cannot be handled; desktop
+  users now only see the QR code. A new
+  `opencred.options.oid4vpDisplayLinkOnDesktop` option (default `false`)
+  restores the button as a debugging affordance for copying the
+  `openid4vp://` request URL.
+- Show a specific "Timer expired." message when the exchange TTL elapses,
+  instead of the generic exchange-failure title and "The following error was
+  encountered:" subtitle. New translation keys `exchangeErrorTtlExpiredTitle`
+  and `exchangeErrorTtlExpiredSubtitle` are overridable per workflow.
+## 10.1.4 - 2026-07-XX
+
+### Added
+- Added a `twdiwStatusList2021Enabled` option (global `opencred.options` and
+  per-workflow override, default `false`) that gates the non-standard,
+  deprecated TWDIW `StatusList2021Entry` credential-status handler. With it off,
+  a `StatusList2021Entry` is rejected as an unsupported status entry type
+  (fail-closed), protecting standard flows from the TWDIW-specific trust model.
+- Accept JWT `iss` if `issuer` is missing from JWT token, as long as value matches.
+- Accept nested `.vp` in `path_nested` for OID4VP-draft18 submissions to handle
+  wallets that inject an extra `.vp` wrapper in their query.
+- Moved credential status checking into a dedicated `lib/credential-status/`
+  module (`StatusList2021Entry` handler plus the `checkStatus` router);
+  `verifyUtils.checkStatus` behavior is unchanged.
+- Hardened `StatusList2021Entry` credential status checks: fail closed on an
+  invalid or out-of-range `statusListIndex` (previously read as "not
+  revoked"), cap status-list decompression to guard against gzip bombs, pin
+  `ES256` when verifying the status-list JWT, require an exact signing-key
+  `kid` match, require an `https` status-list URL and an `https` same-origin
+  `jku`, require a credential issuer for the status-list issuer binding, and
+  assert the status list's purpose matches the credential status entry's
+  purpose.
+- Added `jwk_jcs-pub` `did:key` resolution (including multicodec `0xeb51` P-256
+  support) to support EBSI/EUDI identifiers into a dedicated `lib/did/` module.
+  Hardened `jwk_jcs-pub` resolution: a `jwk_jcs-pub` `did:key` is accepted only
+  only in canonical form. 
+
+## 10.1.3 - 2026-07-03
+
+### Fixed
+- Fix `generate:config` emitting the removed `cadmv-wallet` option, which caused
+  the generated config to fail schema validation on startup. Emit the current
+  `cadmv-android` and `cadmv-ios` wallet options instead.
+
+## 10.1.2 - 2026-06-22
+
+### Changed
+- Update label for `apple-wallet` and `cadmv-android`.
+
+## 10.1.1 - 2026-06-17
+
+### Fixed
+- Upgrade `credential-handler-polyfill` to `4.0.3` to fix browser restriction in
+  iOS Chrome.
+
 ## 10.1.0 - 2026-06-09
 
 ### Added

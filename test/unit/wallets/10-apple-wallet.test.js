@@ -27,6 +27,11 @@ describe('Apple Wallet Configuration', () => {
       expect(appleWallet.name).to.be('Apple Wallet');
     });
 
+    it('should carry a device-context nameKey hook for deployment ' +
+      'override', () => {
+      expect(appleWallet.nameKey).to.be('wallet_apple-wallet_name');
+    });
+
     it('should have description', () => {
       expect(appleWallet.description).to.be.a('string');
       expect(appleWallet.description.length).to.be.greaterThan(0);

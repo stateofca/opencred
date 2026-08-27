@@ -37,7 +37,7 @@ SPDX-License-Identifier: BSD-3-Clause
       v-if="compatibleWallets.length > 0"
       class="flex flex-col gap-3 w-full max-w-md mx-auto my-6">
       <a
-        v-if="selectedWalletForLaunch"
+        v-if="showWalletLaunchLink"
         :href="getWalletDeepLinkUrl(selectedWalletForLaunch.walletId,
                                     selectedWalletForLaunch.profile)"
         target="_blank"
@@ -106,7 +106,8 @@ import {computed, onUnmounted, ref, watch} from 'vue';
 import {copyToClipboard, useQuasar} from 'quasar';
 import {
   extractCredentialFormats,
-  getProtocolInteractionMethods
+  getProtocolInteractionMethods,
+  resolveDeviceContextName
 } from '../../../common/wallets/index.js';
 import {CadmvButton} from '@digitalbazaar/cadmv-ui';
 import CountdownDisplay from '../CountdownDisplay.vue';
@@ -149,7 +150,10 @@ const props = defineProps({
 const emit = defineEmits(['launch']);
 
 const {t, te} = useReactiveI18n();
-const {exchangeTtlDisplayThresholdSeconds} = useExchangeOptions();
+const {
+  exchangeTtlDisplayThresholdSeconds,
+  oid4vpDisplayLinkOnDesktop
+} = useExchangeOptions();
 const $q = useQuasar();
 const isMobile = computed(() =>
   ($q.platform?.is?.ios ?? false) || ($q.platform?.is?.android ?? false)
@@ -189,11 +193,16 @@ const walletNames = computed(() => {
   }
   return props.compatibleWallets.map(({walletId}) => {
     const wallet = props.walletsRegistry[walletId];
-    return wallet?.nameKey ? t(wallet.nameKey) : (wallet?.name || walletId);
+    return resolveDeviceContextName({wallet, t, fallbackId: walletId});
   }).filter(Boolean).join(', ');
 });
 
 const isLaunchLoading = computed(() => loadingWalletId.value !== null);
+
+const showWalletLaunchLink = computed(() =>
+  (isMobile.value || oid4vpDisplayLinkOnDesktop.value) &&
+  !!selectedWalletForLaunch.value
+);
 
 const getWalletQrUrl = async (walletId, profile) => {
   if(!walletId || !profile || !props.workflow) {

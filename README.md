@@ -146,6 +146,22 @@ file. The environment variable may be set with the following command:
 export BEDROCK_CONFIG=$(cat combined.yaml | base64)
 ```
 
+The config may also be supplied compressed, via `BEDROCK_CONFIG_GZIP`, whose
+value is the YAML config gzipped and then Base64 encoded:
+```
+export BEDROCK_CONFIG_GZIP=$(gzip -c combined.yaml | base64)
+```
+This is useful when the config is stored somewhere with a size limit, such as
+an AWS Secrets Manager secret, which caps a stored value at 64 KB; YAML and PEM
+text typically compress by roughly 3-4x. To inspect a compressed value:
+```
+echo "$BEDROCK_CONFIG_GZIP" | base64 -d | gunzip
+```
+
+Set **exactly one** of the two variables. Setting both is ambiguous and fails
+at startup. A `BEDROCK_CONFIG_GZIP` value that is not valid gzip also fails at
+startup rather than falling back to `BEDROCK_CONFIG`.
+
 #### Configuring a Native workflow
 
 Update the `workflows` section of the config file to include a relying
@@ -400,6 +416,78 @@ callback:
       - default
 ```
 
+The callback can be further customized with optional properties, each of which
+is a no op when unset. `headers` sends static headers with the request, useful
+for values that should not live in an exchange variable, such as an API key.
+
+By default (when `body` is unset) the callback POST body is
+`{id, variables, step}`, where `variables` is the full set of exchange
+variables (including the verified presentation under `results`). To curate the
+body for data minimization, add a `body` block. When `body` is present:
+
+- `variables` is an allowlist of exchange variable names to include. If it is
+  omitted or empty, no plain exchange variables are sent.
+- `vpToken` includes the raw submitted `vp_token` at the top level of the body.
+- `verifiablePresentation` includes the verified presentation object at the top
+  level of the body.
+- `verifiableCredential` includes the credential(s) extracted from the verified
+  presentation at the top level of the body.
+
+The presentation artifacts (`vpToken`, `verifiablePresentation`,
+`verifiableCredential`) are only added when their flag is `true`, so a callback
+configurator receives exactly what they opt into.
+
+```yaml
+callback:
+  url: http://localhost:9000/callback
+  headers:
+    callbackHeader: callbackValue
+  body:
+    variables:
+      - caseId
+      - color
+    vpToken: false
+    verifiablePresentation: true
+    verifiableCredential: true
+```
+
+When the callback returns a JSON response body, it is stored on the exchange
+under `variables.callbackResponse` (the whole response object, no configuration
+required). This makes the response available to later steps and to the success
+view.
+
+##### Displaying values on the success view
+
+`successViewFields` renders selected exchange-variable values on the
+`/verification` and `/login` success screens (present-only: a field is shown
+only when its path resolves). Each entry has a `path` (a JSONPath into the
+exchange variables, e.g. into the stored `callbackResponse`) and a label:
+provide a literal `label` (simplest, for a single language) and/or an i18n
+`labelKey` (at least one is required). The view prefers `labelKey` when it
+resolves in the current locale, otherwise the literal `label`.
+
+The general success message shown above the fields is the `verificationSuccessMessage`
+translation (empty by default, so it only appears when set). Both it and any
+field label keys are customizable through the workflow `translations`.
+
+```yaml
+workflows:
+  - clientId: example
+    clientSecret: example
+    type: native
+    successViewFields:
+      # single language: a literal label
+      - path: $.callbackResponse.message
+        label: Status
+      # multi-language: a key resolved via translations
+      - path: $.callbackResponse.zone.name
+        labelKey: successField_zone
+    translations:
+      en:
+        verificationSuccessMessage: "Parking verified."
+        successField_zone: "Zone"
+```
+
 #### Configuring Exchange UX Methods
 
 OpenCred supports two methods for initiating an exchange with a wallet app,
@@ -418,6 +506,31 @@ options:
 
 If this section is omitted, both protocols (`openid4vp` and `chapi`)
 will be offered, with an OID4VP QR code offered to the user first.
+
+##### Wallet buttons for the DC API
+
+A workflow may configure `dcApiButtons` so that a single button requests several
+authorization-request profiles together in one browser Digital Credentials API
+call, letting one button reach wallets that read different credential formats.
+It is optional: without it, one button per enabled compatible wallet is shown,
+which is the pre-existing behavior.
+
+```yaml
+workflows:
+  - clientId: example
+    type: native
+    dcApiButtons:
+      - id: mdl
+        label: Present your mobile ID
+        profiles:
+          - apple-wallet
+          - google-wallet
+```
+
+Profile order is significant, and two profiles that produce the same DC API wire
+format may not share a button. See
+[docs/00-configure-workflow.md](docs/00-configure-workflow.md) for the full
+reference, prerequisites, and rationale.
 
 #### Public Workflow Listing
 

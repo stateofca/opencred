@@ -82,15 +82,41 @@ describe('client-metadata', () => {
       expect(md).to.not.have.key('vp_formats_supported');
     });
 
-    it('cadmv-android: vp_formats with legacy alg, no vp_formats_supported',
+    it('cadmv-android: OID4VP 1.0 vp_formats_supported, no legacy vp_formats',
       () => {
         const md = buildClientMetadata({profile: 'cadmv-android'});
         expect(Object.isFrozen(md)).to.be(true);
-        expect(md.vp_formats.mso_mdoc.alg).to.eql(['ES256']);
-        expect(md.vp_formats.mso_mdoc).to.not.have.key(
-          'issuerauth_alg_values');
-        expect(md).to.not.have.key('vp_formats_supported');
+        expect(md.vp_formats_supported.mso_mdoc.issuerauth_alg_values).to.eql(
+          [-7]);
+        expect(md.vp_formats_supported.mso_mdoc.deviceauth_alg_values).to.eql(
+          [-7]);
+        expect(md).to.not.have.key('vp_formats');
       });
+
+    it('google-wallet: emits gw_rp_metadata_bytes when supplied', () => {
+      const md = buildClientMetadata({
+        profile: 'google-wallet',
+        rpMetadataBytes: 'AbC-_123'
+      });
+      expect(Object.isFrozen(md)).to.be(true);
+      expect(md.gw_rp_metadata_bytes).to.equal('AbC-_123');
+    });
+
+    it('google-wallet: omits gw_rp_metadata_bytes when not supplied', () => {
+      const md = buildClientMetadata({profile: 'google-wallet'});
+      expect(md).to.not.have.key('gw_rp_metadata_bytes');
+    });
+
+    it('google-wallet: emits both jwks and gw_rp_metadata_bytes', () => {
+      const jwk = {kty: 'EC', crv: 'P-256', x: 'abc', y: 'def'};
+      const md = buildClientMetadata({
+        profile: 'google-wallet',
+        encryptionJwks: jwk,
+        rpMetadataBytes: 'AbC-_123'
+      });
+      expect(md.jwks.keys).to.eql([jwk]);
+      expect(md.gw_rp_metadata_bytes).to.equal('AbC-_123');
+    });
 
     it('sets client_name when clientName is a string', () => {
       const md = buildClientMetadata({
