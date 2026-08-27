@@ -88,29 +88,32 @@ describe('startDcApiFlow', () => {
     expect(opts.json.profile).to.equal('OID4VP-1.0');
   });
 
-  it('reports presentation_dc_api_error on other rejections', async () => {
-    const error = new Error('aborted');
-    error.name = 'AbortError';
-    globalThis.navigator.credentials = {get: sinon.stub().rejects(error)};
-    const httpClient = mockHttpClient();
+  it('reports presentation_dc_api_error on a genuine non-cancel rejection',
+    async () => {
+      // Not a user-dismissal name (NotAllowedError / AbortError) and not our
+      // own timeout, so it must remain a delivery error.
+      const error = new Error('network failure');
+      error.name = 'NetworkError';
+      globalThis.navigator.credentials = {get: sinon.stub().rejects(error)};
+      const httpClient = mockHttpClient();
 
-    let thrown;
-    try {
-      await startDcApiFlow({
-        exchangeData, httpClient, profiles: ['OID4VP-1.0']
-      });
-    } catch(e) {
-      thrown = e;
-    }
+      let thrown;
+      try {
+        await startDcApiFlow({
+          exchangeData, httpClient, profiles: ['OID4VP-1.0']
+        });
+      } catch(e) {
+        thrown = e;
+      }
 
-    expect(thrown).to.be.ok();
-    expect(httpClient.post.calledOnce).to.be(true);
-    const [url, opts] = httpClient.post.firstCall.args;
-    expect(url).to.equal(
-      '/workflows/workflow-1/exchanges/exchange-1/events');
-    expect(opts.json.type).to.equal('dcapi_error');
-    expect(opts.json.errorName).to.equal('AbortError');
-  });
+      expect(thrown).to.be.ok();
+      expect(httpClient.post.calledOnce).to.be(true);
+      const [url, opts] = httpClient.post.firstCall.args;
+      expect(url).to.equal(
+        '/workflows/workflow-1/exchanges/exchange-1/events');
+      expect(opts.json.type).to.equal('dcapi_error');
+      expect(opts.json.errorName).to.equal('NetworkError');
+    });
 
   it('does not report a beacon on successful completion', async () => {
     const credentialResponse = {some: 'response'};
@@ -234,8 +237,8 @@ describe('startDcApiFlow', () => {
       expect(opts.json.timeoutMs).to.equal(30000);
     });
 
-    it('reports presentation_dc_api_error, not timeout, for a genuine ' +
-      'AbortError that occurs before the timeout fires', async () => {
+    it('reports dcapi_cancelled, not timeout, for a non-timeout AbortError ' +
+      '(Safari/iOS reports a user dismissal this way)', async () => {
       const error = new Error('aborted');
       error.name = 'AbortError';
       globalThis.navigator.credentials = {get: sinon.stub().rejects(error)};
@@ -252,9 +255,14 @@ describe('startDcApiFlow', () => {
 
       expect(thrown).to.be.ok();
       expect(thrown.message).to.equal(
-        'The credential request was aborted.');
+        'The credential request was denied or cancelled.');
       const [, opts] = httpClient.post.firstCall.args;
-      expect(opts.json.type).to.equal('dcapi_error');
+      // A non-timeout AbortError is a browser/OS dismissal, normalized to the
+      // same cancellation outcome as NotAllowedError so reporting is
+      // consistent across browsers.
+      expect(opts.json.type).to.equal('dcapi_cancelled');
+      // The original DOMException name is preserved for diagnostics.
+      expect(opts.json.errorName).to.equal('AbortError');
     });
 
     it('clears the timeout on successful completion (no stray abort)',

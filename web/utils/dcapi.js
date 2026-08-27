@@ -194,8 +194,19 @@ async function reportDcApiOutcome({
       `/workflows/${exchangeData.workflowId}` +
       `/exchanges/${exchangeData.id}` +
       `/events`;
+    // A user dismissing the platform wallet sheet is one behavior, but
+    // browsers disagree on the DOMException name for it: Chromium follows the
+    // W3C Digital Credentials spec and rejects with `NotAllowedError`, while
+    // Safari/iOS rejects with `AbortError`. Our own timeout is already stripped
+    // out above (`timedOut`), so any remaining `AbortError` here is a
+    // browser/OS-level abort, which for Safari is a user cancellation. Treat
+    // both names as `dcapi_cancelled` so the outcome is reported consistently
+    // across browsers. `errorName` is still sent below, so the original
+    // DOMException name is preserved in the log for diagnostics.
+    const userCancelled =
+      error.name === 'NotAllowedError' || error.name === 'AbortError';
     const type = timedOut ? 'dcapi_timeout' :
-      error.name === 'NotAllowedError' ? 'dcapi_cancelled' : 'dcapi_error';
+      userCancelled ? 'dcapi_cancelled' : 'dcapi_error';
     await httpClient.post(url, {
       json: {
         type,
@@ -284,12 +295,12 @@ export async function startDcApiFlow({
       throw new Error(
         'Your wallet app did not respond. Try again or use another ' +
         'connection method.', {cause: error});
-    } else if(error.name === 'NotAllowedError') {
+    } else if(error.name === 'NotAllowedError' || error.name === 'AbortError') {
+      // Both are user-dismissal names (NotAllowedError on Chromium, AbortError
+      // on Safari/iOS); our own timeout is handled by the isDcApiTimeout branch
+      // above, so a bare AbortError here is a browser/OS dismissal.
       throw new Error(
         'The credential request was denied or cancelled.', {cause: error});
-    } else if(error.name === 'AbortError') {
-      throw new Error(
-        'The credential request was aborted.', {cause: error});
     } else if(error.message) {
       throw error;
     } else {
