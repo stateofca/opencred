@@ -95,8 +95,7 @@ export function extractClaimsForIdToken(credentials, claimsConfig) {
   }
 
   const firstCred = credentials[0];
-  const credentialSubject = firstCred.credentialSubject ?? {};
-  const sub = credentialSubject.id ?? firstCred.id;
+  const sub = _extractSubject(firstCred);
   if(!sub) {
     return null;
   }
@@ -119,6 +118,32 @@ export function extractClaimsForIdToken(credentials, claimsConfig) {
   }
 
   return result;
+}
+
+// The mDL document number is the stable OIDC subject for mso_mdoc
+// presentations. The enveloped credential id is the entire base64 mDL
+// DeviceResponse — regenerated every presentation — so using it as `sub`
+// yields a non-deterministic identifier that also leaks the whole mDL.
+const MDOC_DOCUMENT_NUMBER_KEY = 'org.iso.18013.5.1.document_number';
+
+/**
+ * Determines the OIDC `sub` for a credential. For an mso_mdoc (mDL) credential
+ * the subject is the document number. When the document number was not
+ * disclosed, or for a non-mdoc credential, falls back to the W3C
+ * `credentialSubject.id` and then the credential id (the prior behavior).
+ *
+ * @param {object} credential - Verifiable credential.
+ * @returns {string|null} Subject identifier, or null when none is available.
+ */
+function _extractSubject(credential) {
+  const credentialSubject = credential?.credentialSubject ?? {};
+  if(_getCredentialFormat(credential) === 'mso_mdoc') {
+    const documentNumber = credentialSubject[MDOC_DOCUMENT_NUMBER_KEY];
+    if(documentNumber) {
+      return documentNumber;
+    }
+  }
+  return credentialSubject.id ?? credential?.id ?? null;
 }
 
 /**
