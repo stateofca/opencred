@@ -243,4 +243,50 @@ describe('extractClaimsForIdToken', () => {
     const result = extractClaimsForIdToken(credentials, claimsConfig);
     expect(result.given_name).to.equal('Test');
   });
+
+  it('should use the mDL document_number as sub for mso_mdoc, ' +
+    'not the base64 id', () => {
+    const credentials = [{
+      id: 'data:application/mdl;base64,AAA',
+      type: 'EnvelopedVerifiableCredential',
+      credentialSubject: {
+        id: 'data:application/mdl;base64,AAA',
+        'org.iso.18013.5.1.document_number': 'D1234567',
+        'org.iso.18013.5.1.given_name': 'John'
+      }
+    }];
+    const result = extractClaimsForIdToken(credentials, []);
+    expect(result.sub).to.equal('D1234567');
+  });
+
+  it('should fall back to credentialSubject.id for mso_mdoc when ' +
+    'document_number is not disclosed', () => {
+    const credentials = [{
+      id: 'data:application/mdl;base64,AAA',
+      type: 'EnvelopedVerifiableCredential',
+      credentialSubject: {
+        id: 'data:application/mdl;base64,AAA',
+        'org.iso.18013.5.1.given_name': 'John'
+      }
+    }];
+    const result = extractClaimsForIdToken(credentials, []);
+    expect(result.sub).to.equal('data:application/mdl;base64,AAA');
+  });
+
+  it('should use the first credential (VC) sub in a hybrid flow, ' +
+    'not the mdoc document_number', () => {
+    const credentials = [
+      {id: 'did:example:vc', credentialSubject: {id: 'did:example:vc'}},
+      {
+        id: 'data:application/mdl;base64,AAA',
+        type: 'EnvelopedVerifiableCredential',
+        credentialSubject: {
+          id: 'data:application/mdl;base64,AAA',
+          'org.iso.18013.5.1.document_number': 'D1234567'
+        }
+      }
+    ];
+    const result = extractClaimsForIdToken(credentials, []);
+    expect(result.sub).to.equal('did:example:vc');
+  });
 });
