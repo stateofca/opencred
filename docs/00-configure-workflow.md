@@ -24,14 +24,14 @@ Ensure you have:
 Copy the example configuration file to the required location:
 
 ```sh
-cp configs/config.example.yaml configs/config.yaml
+cp configs/combined.example.yaml configs/combined.yaml
 ```
 
-Whenever changes are made to the `config.yaml` you will need to export an
+Whenever changes are made to the `combined.yaml` you will need to export an
 environment variable:
 
 ```sh
-export BEDROCK_CONFIG=$(cat configs/config.yaml | base64)
+export BEDROCK_CONFIG=$(cat configs/combined.yaml | base64)
 ```
 
 ### 2. Run a Local Tunnel
@@ -46,7 +46,7 @@ npm run tunnel
 
 ### 3. Update the Configuration File
 
-Edit the `configs/config.yaml` file and update the details of the
+Edit the `configs/combined.yaml` file and update the details of the
 OpenCred deployment.
 
 - Input the full local tunnel URI as the `app.server.baseUri` property.
