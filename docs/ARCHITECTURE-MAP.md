@@ -16,7 +16,7 @@ config, and backend — plus the request lifecycle that connects them.
 > to an inventory below, a new route, config key, workflow, interaction
 > component, or composable, or a change to the request lifecycle or to which
 > file owns a behavior. Bump the date below when you do, and add a Change log
-> entry. Last verified against `main` on 2026-08-20.
+> entry. Last verified against `main` on 2026-08-30.
 >
 > **Scope:** this repo is the product. Per-deployment config — workflows,
 > branding, copy overrides — is not here; see
@@ -55,7 +55,7 @@ src/
 ├── common/       code shared between web and lib (wallets, profiles, i18n, utils)
 ├── configs/      config schema (Zod), loading, and bedrock wiring
 ├── docs/         these docs (00-configure-workflow.md, etc.)
-├── test/         unit (test/unit/**, 80 files) + bedrock integration (test/bedrock/**, 39)
+├── test/         unit (test/unit/**, 82 files) + bedrock integration (test/bedrock/**, 39)
 ├── scripts/      generate:config, key/cert generators, sample-oidc-rp.js
 ├── dev.js        local entry point (loads configs/combined.yaml → BEDROCK_CONFIG)
 └── test.js       test entry point
@@ -264,8 +264,14 @@ Translations merge per-locale via `mergeTranslations`. A field only inherits if
 its name is in `INHERITABLE_FIELDS`.
 
 ### Validation helpers
-`validateDcApiButtons`, `validateConnectionOptions` (config-utils.js);
-`validateWorkflowIdentifiers` (config.js).
+`validateDcApiButtons`, `validateConnectionOptions`, `validateSigningKeys`,
+`validateWalletCertificates`, `fillPublicKeysFromCertificates`
+(config-utils.js); `validateWorkflowIdentifiers` (config.js).
+
+`publicKeyPem` is optional wherever a `certificatePem` is supplied — it is
+derived from the certificate — and a key that does not match its certificate
+warns at startup. A wallet certificate that fails to parse **throws**, so a
+config with an unusable wallet key does not start.
 
 ---
 
@@ -422,4 +428,8 @@ separate repository; the rendered result is what this application consumes.
 
 ## Change log
 
+- 2026-08-30 — Verified against `main`. Generalized §11 to describe how
+  config reaches the app rather than one deployment's repos; added the
+  signing-key and wallet-certificate validation helpers; corrected the
+  unit-test count and the in-page anchor links.
 - 2026-08-20 — Initial map created.
