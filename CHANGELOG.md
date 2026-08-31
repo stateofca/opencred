@@ -10,6 +10,18 @@
 - `publicKeyPem` is now optional for a signing key or wallet certificate that
   supplies a `certificatePem`; it is derived from the certificate when omitted.
 
+### Fixed
+- `/config/app.json` returns the requested workflow's resolved brand instead of
+  always returning `defaultBrand`, so a workflow's own or `configFrom`-inherited
+  brand colors now apply on first paint.
+- `brand.header` colors only the header bar instead of globally overriding
+  `brand.primary`.
+- Only the `cta`, `primary`, and `header` brand fields become `--q-*` CSS
+  variables; brand links and image URLs are no longer written as CSS variables.
+- Workflow lookup with an absent identifier no longer matches the first
+  workflow that sets no legacy `workflowId`. This affected `/config/app.json`
+  without a `client_id`, which served that workflow's translations.
+
 ## 10.4.1 - 2026-08-18
 
 ### Added

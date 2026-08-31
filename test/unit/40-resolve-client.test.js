@@ -49,6 +49,13 @@ describe('findWorkflow', function() {
     const result = findWorkflow([], 'alpha');
     expect(result).to.be(undefined);
   });
+
+  it('should return undefined for an absent identifier', function() {
+    // Most workflows set no workflowId, so an undefined identifier must not
+    // fall through to the legacy workflowId match.
+    expect(findWorkflow(workflows, undefined)).to.be(undefined);
+    expect(findWorkflow(workflows, '')).to.be(undefined);
+  });
 });
 
 describe('findWorkflowByCredentials', function() {
@@ -89,5 +96,14 @@ describe('findWorkflowByCredentials', function() {
     ];
     const result = findWorkflowByCredentials(wfs, 'shared-id', 'sec-1');
     expect(result.clientId).to.equal('shared-id');
+  });
+
+  it('should return undefined for absent credentials', function() {
+    expect(findWorkflowByCredentials(workflows, undefined, undefined))
+      .to.be(undefined);
+    expect(findWorkflowByCredentials(workflows, 'alpha', undefined))
+      .to.be(undefined);
+    expect(findWorkflowByCredentials(workflows, undefined, 'secret-a'))
+      .to.be(undefined);
   });
 });

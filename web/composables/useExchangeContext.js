@@ -8,6 +8,7 @@
 import {computed, onBeforeMount, ref, watch} from 'vue';
 import {config} from '@bedrock/web';
 import {httpClient} from '@digitalbazaar/http-client';
+import {pickBrandColors} from '../utils/brand.js';
 import {setCssVar} from 'quasar';
 import {useRoute} from 'vue-router';
 
@@ -59,15 +60,9 @@ async function _loadContext({routeName, exchangeToken}) {
     context.value.initError = null;
     _hasLoaded.value = true;
     _loadedForRouteKey.value = routeKey;
-    if(data.workflow?.brand) {
-      for(const key in data.workflow.brand) {
-        if(typeof data.workflow.brand[key] === 'string') {
-          setCssVar(key, data.workflow.brand[key]);
-        }
-      }
-      if(data.workflow.brand.header) {
-        setCssVar('primary', data.workflow.brand.header);
-      }
+    const brandColors = pickBrandColors(data.workflow?.brand);
+    for(const [name, color] of Object.entries(brandColors)) {
+      setCssVar(name, color);
     }
   } catch(e) {
     if(e.data?.message) {

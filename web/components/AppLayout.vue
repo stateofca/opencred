@@ -7,7 +7,13 @@ SPDX-License-Identifier: BSD-3-Clause
 
 <template>
   <div class="flex flex-col min-h-screen">
+    <!--
+      cadmv-header paints itself with --q-primary and exposes no color of its
+      own, so rebind that variable on the header element: brand.header colors
+      the header bar while the rest of the page keeps brand.primary.
+    -->
     <cadmv-header
+      :style="headerColorStyle"
       :ca-gov-url="brand?.primaryLogo?.href ?? brand?.primaryLink"
       :ca-gov-logo="typeof brand?.primaryLogo === 'string' ?
         brand?.primaryLogo : brand?.primaryLogo?.id"
@@ -108,7 +114,7 @@ SPDX-License-Identifier: BSD-3-Clause
 </template>
 
 <script setup>
-import {onMounted, ref, watch} from 'vue';
+import {computed, onMounted, ref, watch} from 'vue';
 import AppSettingsModal from './AppSettingsModal.vue';
 import {CadmvHeader} from '@digitalbazaar/cadmv-ui';
 import {config} from '@bedrock/web';
@@ -137,6 +143,9 @@ const {locale, availableLocales, t} = useI18n({useScope: 'global'});
 
 const {brand, workflow} = useExchange();
 const {reloadSettings} = useExchangeSettings();
+
+const headerColorStyle = computed(() => brand.value?.header ?
+  {'--q-primary': brand.value.header} : undefined);
 
 const route = useRoute();
 

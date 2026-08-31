@@ -173,7 +173,11 @@ workflows:
 **Deep-merge behavior:**
 
 - **`brand`** is deep-merged in three levels: `defaultBrand` ← parent brand ←
-  child brand. Partial overrides are additive.
+  child brand. Partial overrides are additive. The resolved brand colors the
+  UI as follows: `primary` colors interactive UI (buttons, links, banners),
+  `header` colors the header bar, and `cta` is available to custom stylesheets
+  as `--q-cta`. Only these three fields become CSS variables; the remaining
+  brand fields are read directly by the pages that use them.
 - **`translations`** is deep-merged per locale. Within each locale, the child's
   keys override the parent's; parent-only keys are preserved. Locales absent
   on the child are inherited wholesale. In the example above, the resolved

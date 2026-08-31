@@ -21,6 +21,7 @@ import HomeView from './views/HomeView.vue';
 import {httpClient} from '@digitalbazaar/http-client';
 import LoginView from './views/LoginView.vue';
 import {Notify} from 'quasar';
+import {pickBrandColors} from './utils/brand.js';
 import TranslateIcon from './components/TranslateIcon.vue';
 import VerificationView from './views/VerificationView.vue';
 import VueCookies from 'vue-cookies';
@@ -101,12 +102,7 @@ brVue.initialize({
     }
     applyTheme(); // set baseline defaults.
 
-    // Filter brand object to only string properties to set as CSS variables
-    const brandColors = Object.fromEntries(
-      // eslint-disable-next-line no-unused-vars
-      Object.entries(appConfig.brand).filter(([_, v]) =>
-        typeof v == 'string'));
-    await brQuasar.theme({brand: brandColors});
+    await brQuasar.theme({brand: pickBrandColors(appConfig.brand)});
 
     const head = createHead();
     app.use(head);
