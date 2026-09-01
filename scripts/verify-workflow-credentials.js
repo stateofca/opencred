@@ -83,7 +83,6 @@ function loadConfig(configPath) {
   try {
     parsed = parseYaml(contents);
   } catch(e) {
-    // eslint-disable-next-line preserve-caught-error
     throw new Error(`Failed to parse YAML (${absolute}): ${e.message}`);
   }
   if(!parsed || typeof parsed !== 'object') {

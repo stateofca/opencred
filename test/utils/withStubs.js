@@ -23,7 +23,7 @@
  * );
  */
 async function withStubs(setupStubs, testBody) {
-  let stubs;
+  let stubs = [];
 
   try {
     // Setup stubs safely - if setup fails, we still want to clean up

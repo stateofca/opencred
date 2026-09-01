@@ -25,13 +25,12 @@
 export function compareAudits({left, right}) {
   const matches = [];
   const differences = [];
+  let wireShapeDelta = null;
 
   _compareTopLevelKeys({left, right, matches, differences});
   _compareDocRequests({left, right, matches, differences});
   _compareDeviceRequestInfo({left, right, matches, differences});
-  const wireShapeDelta = _compareReaderAuthAll({
-    left, right, matches, differences
-  });
+  wireShapeDelta = _compareReaderAuthAll({left, right, matches, differences});
   _compareCertificates({left, right, matches, differences});
 
   return {matches, differences, wireShapeDelta};

@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.5.0 - 2026-xx.xx
+## 10.5.0 - 2026-09-dd
 
 ### Added
 - Startup warning when a signing key's private or public key does not match its
@@ -39,7 +39,11 @@
   - `vue-i18n@9.14.5`
   - `vue-json-pretty@2.6.0`
   - `zod@4.4.3`
-- Update dev dependencies.
+- Update dev dependencies, including `eslint@10` and
+  `@digitalbazaar/eslint-config@9`. Three new lint rules (`no-unassigned-vars`,
+  `no-useless-assignment`, and `preserve-caught-error`) are temporarily disabled
+  in `eslint.config.js`; enabling them and fixing the flagged sites is deferred
+  to a follow-up PR.
 - `publicKeyPem` is now optional for a signing key or wallet certificate that
   supplies a `certificatePem`; it is derived from the certificate when omitted.
 

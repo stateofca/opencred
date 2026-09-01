@@ -81,8 +81,7 @@ async function zcapWriteRequest({
       },
       capability
     });
-  } catch(err) {
-    error = err;
+  } catch(error) {
     logger.error('Error in zcapWriteRequest:', {error});
   }
   const {data, statusCode} = _getDataAndStatus({result, error});
@@ -112,8 +111,7 @@ async function zcapReadRequest({
       },
       capability
     });
-  } catch(err) {
-    error = err;
+  } catch(error) {
     logger.error('Error in zcapReadRequest:', {error});
   }
   const {data, statusCode} = _getDataAndStatus({result, error});

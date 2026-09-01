@@ -341,12 +341,15 @@ function checkVcForQuery(vc, query) {
       continue;
     }
 
+    let matches = true;
+
     // Check context if specified
     if(queryItem.context && Array.isArray(queryItem.context) &&
       queryItem.context.length > 0) {
       const expectedContext = queryItem.context;
       const vcContext = arrayOf(vc['@context']);
       if(!expectedContext.every(ctx => vcContext.includes(ctx))) {
+        matches = false;
         continue;
       }
     }
@@ -357,12 +360,15 @@ function checkVcForQuery(vc, query) {
       const expectedType = queryItem.type;
       const vcType = arrayOf(vc.type);
       if(!expectedType.every(type => vcType.includes(type))) {
+        matches = false;
         continue;
       }
     }
 
     // If we get here, this query item matches
-    return true;
+    if(matches) {
+      return true;
+    }
   }
 
   // No query items matched
@@ -829,7 +835,6 @@ const getMsalClient = workflow => {
   try {
     return new ConfidentialClientApplication(msalConfig);
   } catch(error) {
-    // eslint-disable-next-line preserve-caught-error
     throw new Error(
       'Error creating MSAL client:\n' +
       error.message
@@ -844,7 +849,6 @@ const acquireAccessToken = async msalClient => {
   try {
     return msalClient.acquireTokenByClientCredential(tokenRequest);
   } catch(error) {
-    // eslint-disable-next-line preserve-caught-error
     throw new Error(
       'Error acquiring MSAL access token:\n' +
       error.message
@@ -861,7 +865,6 @@ const makeHttpPostRequest = async ({msalClient, url, data}) => {
       url, {json: data}
     );
   } catch(error) {
-    // eslint-disable-next-line preserve-caught-error
     throw new Error(
       'Error making MSAL authenticated HTTP POST request:\n' +
       error.message
