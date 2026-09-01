@@ -16,7 +16,7 @@ config, and backend — plus the request lifecycle that connects them.
 > to an inventory below, a new route, config key, workflow, interaction
 > component, or composable, or a change to the request lifecycle or to which
 > file owns a behavior. Bump the date below when you do, and add a Change log
-> entry. Last verified against `main` on 2026-08-30.
+> entry. Last verified against `main` on 2026-09-01.
 >
 > **Scope:** this repo is the product. Per-deployment config — workflows,
 > branding, copy overrides — is not here; see
@@ -55,7 +55,7 @@ src/
 ├── common/       code shared between web and lib (wallets, profiles, i18n, utils)
 ├── configs/      config schema (Zod), loading, and bedrock wiring
 ├── docs/         these docs (00-configure-workflow.md, etc.)
-├── test/         unit (test/unit/**, 82 files) + bedrock integration (test/bedrock/**, 39)
+├── test/         unit (test/unit/**, 83 files) + bedrock integration (test/bedrock/**, 40)
 ├── scripts/      generate:config, key/cert generators, sample-oidc-rp.js
 ├── dev.js        local entry point (loads configs/combined.yaml → BEDROCK_CONFIG)
 └── test.js       test entry point
@@ -69,9 +69,10 @@ gitignored** file (it holds signing keys) — do not read or edit it via tooling
 
 ## 3. Web UI (`web/`)
 
-Vue 3 SPA. Bootstrap in `web/index.js`: fetches `/config/app.json` (line 34),
-builds the router (49–79), sets up i18n from `appConfig.translations` (83–88),
-applies theme from `appConfig.brand` (105–109).
+Vue 3 SPA. Bootstrap in `web/index.js`: fetches `/config/app.json` (line 35),
+builds the router (50–79), sets up i18n from `appConfig.translations` (84–88),
+applies theme from `appConfig.brand` (103–105) via `pickBrandColors`
+(`web/utils/brand.js`).
 
 ### Top-level
 - `web/index.js` — app bootstrap, router, i18n init, theme.
@@ -133,6 +134,8 @@ One component per connection method; `WalletInteraction.vue` picks which:
   `navigator.credentials.get(DigitalCredential)`.
 - `protocols.js` — protocol registry (names/descriptions).
 - `events.js` — `reportExchangeEvent(...)` posts funnel events.
+- `brand.js` — `pickBrandColors` selects the color fields (`BRAND_COLOR_FIELDS`:
+  cta, primary, header) from a brand into `--q-*` Quasar variables.
 - `dc-api-error-message.js`, `exchange-expiry.js`, `switch-link.js`,
   `debug-info.js`, `debug-translations.js` — helpers.
 
@@ -143,7 +146,11 @@ One component per connection method; `WalletInteraction.vue` picks which:
 - **Picker behavior**: UI in `InteractionPickerModal.vue`; entries in
   `useExchangeOptions.js` → `exchange-options.js`; visibility via
   `workflow.connectionPickerEnabled`.
-- **Routing / new view**: route table in `web/index.js` (50–76).
+- **Routing / new view**: route table in `web/index.js` (51–76).
+- **Brand color / theme**: `web/utils/brand.js` (`pickBrandColors`) feeds the
+  global theme in `web/index.js` and per-workflow colors in
+  `useExchangeContext.js`; the header rebinds `--q-primary` in `AppLayout.vue`
+  (`headerColorStyle`).
 - **Success display**: `SuccessDetails.vue` + the view (`VerificationView.vue` /
   `LoginView.vue`).
 - **Desktop vs mobile**: `usePlatform.js` (`isMobile`); example in
@@ -159,7 +166,8 @@ bedrock/Node service. **All routes are registered in `lib/http.js`** on the
 ### `lib/` (top level)
 - `http.js` — **route registration** (all endpoints) + Express setup.
 - `api.js` — frontend API handlers: `initiateExchange`, `getExchangeStatus`,
-  `getConfig` (serves `/config/app.json`).
+  `getConfig` (serves `/config/app.json`; resolves `brand` from the workflow or
+  the deployment default).
 - `oidc.js` — OIDC endpoints: `validateOidcLoginMiddleware`,
   `exchangeCodeForToken`, `jwksEndpoint`, `openIdConfiguration`.
 - `callback.js` — POSTs completed exchange data to `workflow.callback.url`.
@@ -428,6 +436,11 @@ separate repository; the rendered result is what this application consumes.
 
 ## Change log
 
+- 2026-09-01 — Verified against `main` after the brand-color fix. Added
+  `web/utils/brand.js` (`pickBrandColors`) and the brand/theme change→file
+  entry; noted the `getConfig` brand resolution and the `AppLayout.vue` header
+  color rebinding; corrected the `web/index.js` bootstrap line numbers and the
+  unit/bedrock test counts (83 / 40).
 - 2026-08-30 — Verified against `main`. Generalized §11 to describe how
   config reaches the app rather than one deployment's repos; added the
   signing-key and wallet-certificate validation helpers; corrected the
