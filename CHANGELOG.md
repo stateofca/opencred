@@ -40,14 +40,17 @@
   - `vue-json-pretty@2.6.0`
   - `zod@4.4.3`
 - Update dev dependencies, including `eslint@10` and
-  `@digitalbazaar/eslint-config@9`. Three new lint rules (`no-unassigned-vars`,
-  `no-useless-assignment`, and `preserve-caught-error`) are temporarily disabled
-  in `eslint.config.js`; enabling them and fixing the flagged sites is deferred
-  to a follow-up PR.
+  `@digitalbazaar/eslint-config@9`. Address the three new lint rules the upgrade
+  introduced (`no-unassigned-vars`, `no-useless-assignment`, and
+  `preserve-caught-error`): thrown wrapper errors now chain the caught error via
+  `{cause}`, and dead assignments are removed.
 - `publicKeyPem` is now optional for a signing key or wallet certificate that
   supplies a `certificatePem`; it is derived from the certificate when omitted.
 
 ### Fixed
+- `zcapReadRequest` and `zcapWriteRequest` now return the caught error. The
+  `catch` parameter previously shadowed the outer `error`, so a failed request
+  resolved with `error` and `statusCode` undefined; both are now populated.
 - `/config/app.json` returns the requested workflow's resolved brand instead of
   always returning `defaultBrand`, so a workflow's own or `configFrom`-inherited
   brand colors now apply on first paint.

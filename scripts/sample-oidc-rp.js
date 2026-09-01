@@ -334,7 +334,8 @@ async function exchangeCodeForToken({
     text = await response.text();
   } catch(err) {
     throw new Error(
-      `Token exchange network error for ${tokenUrl}: ${err.message}`);
+      `Token exchange network error for ${tokenUrl}: ${err.message}`,
+      {cause: err});
   }
 
   const {payload, parsedJson} = parseResponseBody(text);

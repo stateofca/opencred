@@ -1098,7 +1098,8 @@ export function fillPublicKeysFromCertificates(entries, label) {
     } catch(err) {
       throw new Error(
         `${label}[${id}]: unable to derive publicKeyPem from ` +
-        `certificatePem: ${err.message}`
+        `certificatePem: ${err.message}`,
+        {cause: err}
       );
     }
   }
@@ -1211,7 +1212,8 @@ export function validateWalletCertificates(entries) {
     } catch(err) {
       throw new Error(
         `walletCertificates[${entry.id}]: invalid privateKeyPem: ` +
-        err.message
+        err.message,
+        {cause: err}
       );
     }
 
@@ -1221,7 +1223,8 @@ export function validateWalletCertificates(entries) {
     } catch(err) {
       throw new Error(
         `walletCertificates[${entry.id}]: invalid certificatePem: ` +
-        err.message
+        err.message,
+        {cause: err}
       );
     }
 

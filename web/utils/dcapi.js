@@ -283,16 +283,19 @@ export async function startDcApiFlow({
     if(error.isDcApiTimeout) {
       throw new Error(
         'Your wallet app did not respond. Try again or use another ' +
-        'connection method.');
+        'connection method.', {cause: error});
     } else if(error.name === 'NotAllowedError') {
-      throw new Error('The credential request was denied or cancelled.');
+      throw new Error(
+        'The credential request was denied or cancelled.', {cause: error});
     } else if(error.name === 'AbortError') {
-      throw new Error('The credential request was aborted.');
+      throw new Error(
+        'The credential request was aborted.', {cause: error});
     } else if(error.message) {
       throw error;
     } else {
       throw new Error(
-        'An error occurred during credential presentation.'
+        'An error occurred during credential presentation.',
+        {cause: error}
       );
     }
   }

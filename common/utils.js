@@ -341,15 +341,12 @@ function checkVcForQuery(vc, query) {
       continue;
     }
 
-    let matches = true;
-
     // Check context if specified
     if(queryItem.context && Array.isArray(queryItem.context) &&
       queryItem.context.length > 0) {
       const expectedContext = queryItem.context;
       const vcContext = arrayOf(vc['@context']);
       if(!expectedContext.every(ctx => vcContext.includes(ctx))) {
-        matches = false;
         continue;
       }
     }
@@ -360,15 +357,12 @@ function checkVcForQuery(vc, query) {
       const expectedType = queryItem.type;
       const vcType = arrayOf(vc.type);
       if(!expectedType.every(type => vcType.includes(type))) {
-        matches = false;
         continue;
       }
     }
 
     // If we get here, this query item matches
-    if(matches) {
-      return true;
-    }
+    return true;
   }
 
   // No query items matched
@@ -837,7 +831,8 @@ const getMsalClient = workflow => {
   } catch(error) {
     throw new Error(
       'Error creating MSAL client:\n' +
-      error.message
+      error.message,
+      {cause: error}
     );
   }
 };
@@ -851,7 +846,8 @@ const acquireAccessToken = async msalClient => {
   } catch(error) {
     throw new Error(
       'Error acquiring MSAL access token:\n' +
-      error.message
+      error.message,
+      {cause: error}
     );
   }
 };
@@ -867,7 +863,8 @@ const makeHttpPostRequest = async ({msalClient, url, data}) => {
   } catch(error) {
     throw new Error(
       'Error making MSAL authenticated HTTP POST request:\n' +
-      error.message
+      error.message,
+      {cause: error}
     );
   }
 };

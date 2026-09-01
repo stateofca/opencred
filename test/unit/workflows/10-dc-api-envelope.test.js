@@ -38,7 +38,7 @@ describe('dc-api-envelope', () => {
           } catch(e) {
             throw new Error(
               `buildDcApiRequest threw for protocol "${protocol}": ` +
-              e.message);
+              e.message, {cause: e});
           }
           expect(result).to.eql(
             {protocol, data: sampleData},

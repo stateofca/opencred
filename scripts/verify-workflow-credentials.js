@@ -83,7 +83,8 @@ function loadConfig(configPath) {
   try {
     parsed = parseYaml(contents);
   } catch(e) {
-    throw new Error(`Failed to parse YAML (${absolute}): ${e.message}`);
+    throw new Error(
+      `Failed to parse YAML (${absolute}): ${e.message}`, {cause: e});
   }
   if(!parsed || typeof parsed !== 'object') {
     throw new Error(`Config did not parse to an object: ${absolute}`);

@@ -15,13 +15,7 @@ export default [
   {
     rules: {
       'vue/no-v-html': 'off',
-      'jsdoc/check-tag-names': ['error', {definedTags: ['openapi']}],
-      // Temporarily disabled: new rules from the eslint 10 upgrade flag
-      // pre-existing code. Enabling them and fixing the flagged sites is
-      // deferred to a follow-up PR so this dependency update can merge first.
-      'no-unassigned-vars': 'off',
-      'no-useless-assignment': 'off',
-      'preserve-caught-error': 'off'
+      'jsdoc/check-tag-names': ['error', {definedTags: ['openapi']}]
     }
   },
   // Disable jsdoc/require-description-complete-sentence for files with

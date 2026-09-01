@@ -383,6 +383,10 @@ describe('fetchDcApiRequests', () => {
 describe('requestDigitalCredential', () => {
   let originalCredentials;
 
+  before(() => {
+    originalCredentials = globalThis.navigator?.credentials;
+  });
+
   afterEach(() => {
     globalThis.navigator.credentials = originalCredentials;
   });
