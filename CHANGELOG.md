@@ -58,6 +58,10 @@
 - Workflow lookup with an absent identifier no longer matches the first
   workflow that sets no legacy `workflowId`. This affected `/config/app.json`
   without a `client_id`, which served that workflow's translations.
+- Docker build base image updated from `node:22-alpine` to `node:24-alpine`.
+  The image now ships npm 11, matching the resolver that generated
+  `package-lock.json`, so `npm ci` no longer fails with `Missing: yaml@2.9.0
+  from lock file`.
 
 ## 10.4.1 - 2026-08-18
 
