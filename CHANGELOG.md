@@ -3,6 +3,10 @@
 ## 10.5.0 - 2026-09-dd
 
 ### Added
+- Public `GET /version` endpoint returning `{name, version}` as JSON, so
+  operators and automated clients can determine which release is running
+  without executing the web app. The footer also shows the build's version
+  (e.g. `v10.5.0`) below the copyright notice.
 - Startup warning when a signing key's private or public key does not match its
   `certificatePem` (wallet certificates already carried this check).
 

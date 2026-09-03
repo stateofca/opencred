@@ -16,7 +16,7 @@ config, and backend — plus the request lifecycle that connects them.
 > to an inventory below, a new route, config key, workflow, interaction
 > component, or composable, or a change to the request lifecycle or to which
 > file owns a behavior. Bump the date below when you do, and add a Change log
-> entry. Last verified against `main` on 2026-09-01.
+> entry. Last verified against `main` on 2026-09-03.
 >
 > **Scope:** this repo is the product. Per-deployment config — workflows,
 > branding, copy overrides — is not here; see
@@ -380,6 +380,8 @@ Registered in `lib/http.js`. Key groups:
 - **Frontend API**: `/config/app.json`, `/context/login`,
   `/context/verification`, `/context/continue`,
   `/workflows/:workflowId/exchanges` (POST create, GET detail, POST reset).
+- **Meta**: `GET /version` (public; `{name, version}` from `package.json` via
+  `buildVersionInfo` in `lib/api.js`).
 - **OID4VP**: `…/openid/client/authorization/request` (GET/POST),
   `…/authorization/response` (POST).
 - **OIDC**: `POST /token`.

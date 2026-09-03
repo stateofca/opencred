@@ -94,9 +94,14 @@ SPDX-License-Identifier: BSD-3-Clause
     <footer
       class="flex flex-col md:flex-row items-center md:items-center
              justify-center md:justify-between gap-2 md:gap-0 p-3">
-      <div
-        class="text-left"
-        v-html="$t('copyright')" />
+      <div class="text-left">
+        <div v-html="$t('copyright')" />
+        <div
+          v-if="versionLabel"
+          class="text-xs text-gray-500 mt-1">
+          {{versionLabel}}
+        </div>
+      </div>
       <q-btn
         flat
         round
@@ -118,6 +123,7 @@ import {computed, onMounted, ref, watch} from 'vue';
 import AppSettingsModal from './AppSettingsModal.vue';
 import {CadmvHeader} from '@digitalbazaar/cadmv-ui';
 import {config} from '@bedrock/web';
+import {formatVersion} from './../utils/version.js';
 import {useExchange} from './../composables/useExchange.js';
 import {useExchangeSettings} from './../composables/useExchangeSettings.js';
 import {useHead} from '@unhead/vue';
@@ -146,6 +152,8 @@ const {reloadSettings} = useExchangeSettings();
 
 const headerColorStyle = computed(() => brand.value?.header ?
   {'--q-primary': brand.value.header} : undefined);
+
+const versionLabel = computed(() => formatVersion(config.appVersion));
 
 const route = useRoute();
 
