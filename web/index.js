@@ -22,9 +22,9 @@ import {httpClient} from '@digitalbazaar/http-client';
 import LoginView from './views/LoginView.vue';
 import {Notify} from 'quasar';
 import {pickBrandColors} from './utils/brand.js';
+import pkg from '../package.json' with {type: 'json'};
 import TranslateIcon from './components/TranslateIcon.vue';
 import VerificationView from './views/VerificationView.vue';
-import {version} from '../package.json' with {type: 'json'};
 import VueCookies from 'vue-cookies';
 import YouTubeVideo from './components/YouTubeVideo.vue';
 import '@quasar/extras/material-icons/material-icons.css';
@@ -37,7 +37,7 @@ brVue.initialize({
     extend({target: config, source: appConfig, deep: true});
     // build-time application version; set after the server config so a
     // deployment cannot override the running build's version
-    config.appVersion = version;
+    config.appVersion = pkg.version;
 
     app.component('HomeView', HomeView);
     app.component('LoginView', LoginView);
