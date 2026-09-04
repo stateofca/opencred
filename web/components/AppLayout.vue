@@ -96,21 +96,23 @@ SPDX-License-Identifier: BSD-3-Clause
              justify-center md:justify-between gap-2 md:gap-0 p-3">
       <div class="text-left">
         <div v-html="$t('copyright')" />
-        <div
-          v-if="versionLabel"
-          class="text-xs text-gray-500 mt-1">
-          {{versionLabel}}
-        </div>
       </div>
-      <q-btn
-        flat
-        round
-        dense
-        size="sm"
-        icon="settings"
-        :aria-label="$t('settings_ariaLabel')"
-        class="text-gray-600"
-        @click="toggleSettingsModal()" />
+      <div class="flex items-center gap-2">
+        <span
+          v-if="versionLabel"
+          class="text-xs text-gray-500">
+          {{versionLabel}}
+        </span>
+        <q-btn
+          flat
+          round
+          dense
+          size="sm"
+          icon="settings"
+          :aria-label="$t('settings_ariaLabel')"
+          class="text-gray-600"
+          @click="toggleSettingsModal()" />
+      </div>
     </footer>
     <AppSettingsModal
       v-model="showSettingsModal"
