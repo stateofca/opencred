@@ -78,7 +78,7 @@
   whose claims span every requested namespace, with `doctype_value` derived from
   the base namespace.
 
-## 10.4.2 - 2026-08-dd
+## 10.4.2 - 2026-08-26
 
 ### Changed
 - Normalize DC API user-cancellation reporting across browsers. A non-timeout
