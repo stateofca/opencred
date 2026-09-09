@@ -17,9 +17,9 @@ flowchart TD
     plat -- Android --> android["Google lane only\nprofile: google-wallet (Annex D)\nApple lane hidden"]
     plat -- "Desktop" --> desktop["Both lanes shown\n(each launch = cross-device QR,\ndesktopLabelKey)"]
 
-    ios --> oneBtnIos["ONE button:\n'Digital Wallet on iOS'"]
-    android --> oneBtnAnd["ONE button:\n'Digital Wallet on Android'"]
-    desktop --> twoBtn["TWO buttons\n(Apple + Google),\neach opens a QR"]
+    ios --> oneBtnIos["ONE button, label = labelKey\n(CA DMV: dcApiButton_openWallet_label\n= 'Open Wallet')"]
+    android --> oneBtnAnd["ONE button, label = labelKey\n(CA DMV: dcApiButton_openWallet_label\n= 'Open Wallet')"]
+    desktop --> twoBtn["TWO buttons, label = desktopLabelKey\n(CA DMV: dcApiButton_iosWallet_label\n'Continue with Apple Device' /\ndcApiButton_androidWallet_label\n'Continue with Android Device'),\neach opens a QR"]
 
     oneBtnIos --> hint["Compatibility hint shown\nONCE below the button group"]
     oneBtnAnd --> hint
@@ -40,6 +40,34 @@ flowchart TD
 - **Each lane sends one profile.** No signed+unsigned bundling and no iOS version
   tiers — so the "older iOS can't carry multiple protocols in one request"
   concern does not arise. See the ADR's "Decisions → 2" for why.
+
+## Where button labels come from
+
+Labels are **config-driven**, not code defaults. `resolveLabel()` in
+`DcApiInteraction.vue` picks, in order:
+
+1. `desktopLabelKey` — used only on **desktop** (the launch is a cross-device QR
+   flow), when the key resolves in the current locale.
+2. `labelKey` — the button's `labelKey`, when it resolves. This is the mobile
+   label (and the desktop label if no `desktopLabelKey`).
+3. literal `label` on the button.
+4. `dcApiSingleProfile_buttonLabel` — the only code-side fallback ("Open in
+   wallet"), used when nothing above resolves.
+
+`isMobile` there is iOS OR Android; "desktop" is anything else.
+
+The CA DMV deployed config (workflows.tf / config.tftpl) sets, per lane:
+
+| Key | Value | Shown when |
+|---|---|---|
+| `dcApiButton_openWallet_label` | "Open Wallet" | mobile (both lanes' `labelKey`) |
+| `dcApiButton_iosWallet_label` | "Continue with Apple Device" | desktop, Apple lane (`desktopLabelKey`) |
+| `dcApiButton_androidWallet_label` | "Continue with Android Device" | desktop, Android lane (`desktopLabelKey`) |
+
+So on mobile the single visible button reads **"Open Wallet"**; on desktop the
+two buttons read "Continue with Apple Device" / "Continue with Android Device".
+These strings live in config and can change without a code change — the diagram
+names the keys, not fixed text.
 
 ## Profile → wire protocol reference
 
