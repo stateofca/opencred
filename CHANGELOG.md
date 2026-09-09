@@ -76,6 +76,10 @@
   `AbortError` now matches the cancellation message.
 
 ### Fixed
+- Center the store badges in the install invitation when a wallet suppresses its
+  name label (`hideProductName`). Without a name the badges were still pushed to
+  the right; a nameless row now centers them, while a named row keeps the name
+  left and badges right.
 - `zcapReadRequest` and `zcapWriteRequest` now return the caught error. The
   `catch` parameter previously shadowed the outer `error`, so a failed request
   resolved with `error` and `statusCode` undefined; both are now populated.

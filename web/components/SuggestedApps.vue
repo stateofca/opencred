@@ -17,13 +17,14 @@ SPDX-License-Identifier: BSD-3-Clause
       <div
         v-for="(row, idx) in visibleRows"
         :key="idx"
-        class="wallet-row row items-center q-gutter-x-sm">
+        class="wallet-row row items-center q-gutter-x-sm"
+        :class="row.displayName ? 'justify-between' : 'justify-center'">
         <span
           v-if="row.displayName"
           class="wallet-name text-body2 text-weight-medium">
           {{row.displayName}}
         </span>
-        <div class="row items-center q-gutter-x-xs q-ml-auto">
+        <div class="row items-center q-gutter-x-xs">
           <a
             v-for="(sf, sfIdx) in row.storefronts"
             :key="sfIdx"
