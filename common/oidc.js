@@ -72,6 +72,7 @@ export const jwtFromExchange = async (exchange, workflow) => {
     sub,
     iat: now,
     exp: now + (workflow.oidc?.idTokenExpirySeconds ?? 3600),
+    ...(exchange.oidc?.nonce ? {nonce: exchange.oidc.nonce} : {}),
     ...claims
   };
 
