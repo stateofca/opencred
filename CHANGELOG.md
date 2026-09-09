@@ -50,6 +50,15 @@
   `{cause}`, and dead assignments are removed.
 - `publicKeyPem` is now optional for a signing key or wallet certificate that
   supplies a `certificatePem`; it is derived from the certificate when omitted.
+- Normalize DC API user-cancellation reporting across browsers. A non-timeout
+  `AbortError` from `navigator.credentials.get` is now reported as
+  `presentation_dc_api_cancelled`, the same outcome as `NotAllowedError`.
+  Chromium follows the W3C Digital Credentials spec and rejects a dismissed
+  wallet sheet with `NotAllowedError`, while Safari/iOS rejects with
+  `AbortError`; both are now classified as a cancellation so the outcome is
+  consistent across browsers. The original DOMException name is preserved on the
+  event as `errorName` for diagnostics, and the user-facing message for an
+  `AbortError` now matches the cancellation message.
 
 ### Fixed
 - `zcapReadRequest` and `zcapWriteRequest` now return the caught error. The
@@ -77,19 +86,6 @@
   belong to the same mDL doctype, so the query now emits a single credential
   whose claims span every requested namespace, with `doctype_value` derived from
   the base namespace.
-
-## 10.4.2 - 2026-08-26
-
-### Changed
-- Normalize DC API user-cancellation reporting across browsers. A non-timeout
-  `AbortError` from `navigator.credentials.get` is now reported as
-  `presentation_dc_api_cancelled`, the same outcome as `NotAllowedError`.
-  Chromium follows the W3C Digital Credentials spec and rejects a dismissed
-  wallet sheet with `NotAllowedError`, while Safari/iOS rejects with
-  `AbortError`; both are now classified as a cancellation so the outcome is
-  consistent across browsers. The original DOMException name is preserved on the
-  event as `errorName` for diagnostics, and the user-facing message for an
-  `AbortError` now matches the cancellation message.
 
 ## 10.4.1 - 2026-08-18
 
