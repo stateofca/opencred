@@ -919,4 +919,81 @@ describe('computeExchangeOptions', () => {
       expect(result.pickerEntries[0].profile).to.be(null);
     });
   });
+
+  describe('configured dcApiButtons: platform gating', () => {
+    const gatingRegistry = {
+      ...miniRegistry,
+      'apple-wallet': {
+        id: 'apple-wallet',
+        name: 'Apple Wallet',
+        icon: '/wallets/apple-wallet-icon.png',
+        platform: ['ios'],
+        supportedFormats: ['mso_mdoc'],
+        supportedProfiles: {
+          'apple-wallet': {dcapi: {formats: ['mso_mdoc']}}
+        }
+      }
+    };
+
+    // The CA DMV login shape: an Apple lane and a Google lane, each a single
+    // signed profile (the deployed config; no signed+unsigned bundling).
+    const twoLaneInput = platform => ({
+      ...baseInput,
+      workflow: {
+        query: [{format: ['mso_mdoc']}],
+        dcApiButtons: [
+          {
+            id: 'apple-wallet',
+            labelKey: 'dcApiButton_iosWallet_label',
+            profiles: ['apple-wallet']
+          },
+          {
+            id: 'google-wallet',
+            labelKey: 'dcApiButton_androidWallet_label',
+            profiles: ['google-wallet']
+          }
+        ]
+      },
+      exchange: {
+        protocols: {
+          'apple-wallet': 'https://x/apple',
+          'google-wallet': 'https://x/google'
+        }
+      },
+      systemWallets: ['apple-wallet', 'google-wallet'],
+      dcApiSystemAvailable: true,
+      registry: gatingRegistry,
+      platform
+    });
+
+    const dcApiButtons = result => {
+      const entry = result.pickerEntries.find(
+        e => e.method === 'dcapi' && e.profile === null);
+      return entry ? entry.buttons : [];
+    };
+
+    it('shows only the Apple lane on iOS', () => {
+      const result = computeExchangeOptions(twoLaneInput(
+        {isIOS: true, isAndroid: false, isMobile: true, iosAtLeast264: true}));
+      const ids = dcApiButtons(result).map(b => b.id);
+      expect(ids).to.contain('apple-wallet');
+      expect(ids).to.not.contain('google-wallet');
+    });
+
+    it('shows only the Google lane on Android', () => {
+      const result = computeExchangeOptions(twoLaneInput(
+        {isIOS: false, isAndroid: true, isMobile: true}));
+      const ids = dcApiButtons(result).map(b => b.id);
+      expect(ids).to.contain('google-wallet');
+      expect(ids).to.not.contain('apple-wallet');
+    });
+
+    it('shows BOTH lanes on desktop', () => {
+      const result = computeExchangeOptions(twoLaneInput(
+        {isIOS: false, isAndroid: false, isMobile: false}));
+      const ids = dcApiButtons(result).map(b => b.id);
+      expect(ids).to.contain('apple-wallet');
+      expect(ids).to.contain('google-wallet');
+    });
+  });
 });

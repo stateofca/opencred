@@ -15,6 +15,13 @@
   invitation for the CA DMV wallets, where the invitation heading already names
   the wallet. Wallet definitions may set `hideProductName: true` to opt in; other
   wallets are unaffected.
+- Platform-gate configured `dcApiButtons`: a DC API launch button now shows only
+  on the mobile platform(s) its handling wallets support (iOS shows the Apple
+  lane, Android the Google lane), derived from the wallet registry with no new
+  config field. Desktop still shows every button (cross-device QR flow). See
+  `docs/adr/2026-09-09-platform-gated-dc-api-buttons.md`.
+- Render the DC API "handled by" compatibility hint once below the button group
+  instead of once per button, so a two-lane layout no longer duplicates the line.
 - Update dependencies.
   - `@bedrock/express@8.8.0`
   - `@bedrock/server@5.2.0`

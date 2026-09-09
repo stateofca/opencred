@@ -223,7 +223,7 @@ export function computeExchangeOptions(input) {
   const derivedEntries = _buildPickerEntries({
     enabledWalletIds, enabledProfileIds, availableProfiles,
     formats, exchange, dcApiOk, registry,
-    dcApiButtons: workflow?.dcApiButtons
+    dcApiButtons: workflow?.dcApiButtons, platform
   });
 
   // A workflow's `connectionOptions` declaration selects and orders the derived
@@ -485,9 +485,13 @@ function _singleProfileDescriptor({profile, walletIds, registry}) {
  * @param {Array<object>} options.dcApiButtons - Configured buttons.
  * @param {Array<string>} options.availableProfiles - `exchange.protocols` keys.
  * @param {object} options.registry - Wallet registry.
+ * @param {object} [options.platform] - `{isIOS, isAndroid}`; gates buttons by
+ *   the platforms their handling wallets support (desktop shows all).
  * @returns {Array<object>} Descriptors, in configured order.
  */
-function _configuredDescriptors({dcApiButtons, availableProfiles, registry}) {
+function _configuredDescriptors({
+  dcApiButtons, availableProfiles, registry, platform = {}
+}) {
   const descriptors = [];
   for(const button of dcApiButtons) {
     const profiles = (button.profiles ?? [])
@@ -500,6 +504,15 @@ function _configuredDescriptors({dcApiButtons, availableProfiles, registry}) {
     const walletIds = Object.keys(registry).filter(walletId =>
       profiles.some(
         profile => registry[walletId]?.supportedProfiles?.[profile]?.dcapi));
+
+    // Platform gating (ADR 2026-09-09): a button shows only on the platform(s)
+    // its handling wallets support, derived from the registry — no config
+    // field. Desktop (neither isIOS nor isAndroid) is never gated: the DC API
+    // launch there becomes a cross-device QR flow that any lane can drive.
+    if(!_buttonRunsOnPlatform({walletIds, registry, platform})) {
+      continue;
+    }
+
     descriptors.push({
       id: button.id,
       profiles,
@@ -513,9 +526,32 @@ function _configuredDescriptors({dcApiButtons, availableProfiles, registry}) {
   return descriptors;
 }
 
+/**
+ * Whether a configured button should show on the current platform, derived from
+ * the platforms its handling wallets declare. On desktop (neither iOS nor
+ * Android) every button shows.
+ *
+ * @param {object} options - Options.
+ * @param {Array<string>} options.walletIds - Wallets handling the button.
+ * @param {object} options.registry - Wallet registry.
+ * @param {object} options.platform - `{isIOS, isAndroid}`.
+ * @returns {boolean} True when the button runs on the current platform.
+ */
+function _buttonRunsOnPlatform({walletIds, registry, platform}) {
+  if(!platform.isIOS && !platform.isAndroid) {
+    return true;
+  }
+  const want = platform.isIOS ? 'ios' : 'android';
+  return walletIds.some(walletId => {
+    const platforms = registry[walletId]?.platform;
+    // A wallet with no declared platforms is treated as universal.
+    return !Array.isArray(platforms) || platforms.includes(want);
+  });
+}
+
 function _buildPickerEntries({
   enabledWalletIds, enabledProfileIds, availableProfiles,
-  formats, exchange, dcApiOk, registry, dcApiButtons
+  formats, exchange, dcApiOk, registry, dcApiButtons, platform
 }) {
   const entries = [];
 
@@ -525,7 +561,9 @@ function _buildPickerEntries({
   // picker offers a choice of *connection method* and these are all the same
   // method.
   const configured = Array.isArray(dcApiButtons) && dcApiButtons.length > 0 ?
-    _configuredDescriptors({dcApiButtons, availableProfiles, registry}) : null;
+    _configuredDescriptors({
+      dcApiButtons, availableProfiles, registry, platform
+    }) : null;
   if(dcApiOk && configured && configured.length > 0) {
     entries.push({
       method: 'dcapi',

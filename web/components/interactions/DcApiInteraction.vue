@@ -36,27 +36,27 @@ SPDX-License-Identifier: BSD-3-Clause
     <div
       v-else
       class="flex flex-col gap-3 max-w-md mx-auto">
-      <template
+      <WalletLaunchButton
         v-for="descriptor in descriptors"
-        :key="descriptor.id">
-        <WalletLaunchButton
-          :label="resolveLabel(descriptor)"
-          :loading="activeDescriptorId === descriptor.id"
-          :disabled="activeDescriptorId !== null"
-          @launch="handleLaunch(descriptor)" />
-        <p
-          v-if="!descriptor.walletBranded"
-          class="text-xs text-gray-600 text-center mb-0">
-          <template v-if="handlingWalletNames(descriptor).length > 0">
-            {{$t('dcApiSingleProfile_handledBy', {
-              names: handlingWalletNames(descriptor).join(', ')
-            })}}
-          </template>
-          <template v-else>
-            {{$t('dcApiSingleProfile_handledByNone')}}
-          </template>
-        </p>
-      </template>
+        :key="descriptor.id"
+        :label="resolveLabel(descriptor)"
+        :loading="activeDescriptorId === descriptor.id"
+        :disabled="activeDescriptorId !== null"
+        @launch="handleLaunch(descriptor)" />
+      <!-- One compatibility hint below the whole button group, not per button:
+           with two lanes a per-button line duplicated the same text. -->
+      <p
+        v-if="showHandledBy"
+        class="text-xs text-gray-600 text-center mb-0">
+        <template v-if="handledByNames.length > 0">
+          {{$t('dcApiSingleProfile_handledBy', {
+            names: handledByNames.join(', ')
+          })}}
+        </template>
+        <template v-else>
+          {{$t('dcApiSingleProfile_handledByNone')}}
+        </template>
+      </p>
       <p v-if="descriptors.length === 0">
         {{$t('noCompatibleWalletMessage')}}
       </p>
@@ -162,6 +162,19 @@ const handlingWalletNames = descriptor =>
   (descriptor.handledBy ?? []).map(
     handled => handled.nameKey && te(handled.nameKey) ?
       t(handled.nameKey) : (handled.name || handled.walletId));
+
+// The compatibility hint is shown once below the whole button group when any
+// descriptor is not wallet-branded. Names are the deduplicated union across
+// those descriptors, so a two-lane layout reads one line, not one per button.
+const showHandledBy = computed(() =>
+  props.descriptors.some(d => !d.walletBranded));
+
+const handledByNames = computed(() => {
+  const names = props.descriptors
+    .filter(d => !d.walletBranded)
+    .flatMap(d => handlingWalletNames(d));
+  return [...new Set(names)];
+});
 
 const handleLaunch = descriptor => {
   emit('launch', descriptor);
