@@ -69,6 +69,16 @@ two buttons read "Continue with Apple Device" / "Continue with Android Device".
 These strings live in config and can change without a code change — the diagram
 names the keys, not fixed text.
 
+## Page subtitle (desktop vs mobile)
+
+The subtitle under the page title uses `exchangePageExplain` on desktop. A
+deployment may set `exchangePageExplainMobile` to show different copy on mobile
+(iOS/Android); when it is absent or empty, the base `exchangePageExplain` is
+used. Resolved by `resolveExchangeSubtitle` (`web/utils/exchange-subtitle.js`),
+same base-plus-mobile-override shape as the button labels, inverted from the
+button `desktopLabelKey` (there the base key is the mobile label and desktop is
+the override).
+
 ## Profile → wire protocol reference
 
 | Lane | Button profile | Wire protocol | Wallet |

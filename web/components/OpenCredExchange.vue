@@ -8,7 +8,7 @@ SPDX-License-Identifier: BSD-3-Clause
 <template>
   <CadmvMainCard
     :title="t('exchangePageTitle', context.workflow.name)"
-    :subtitle="t('exchangePageExplain', undefined)"
+    :subtitle="subtitle"
     class="opencred-main-card column items-center q-pb-md">
     <div v-if="context.exchangeData?.state === 'complete'" />
     <div
@@ -121,9 +121,11 @@ import {httpClient} from '@digitalbazaar/http-client';
 import InteractionPickerModal from './InteractionPickerModal.vue';
 import QRCode from 'qrcode';
 import {reportExchangeEvent} from '../utils/events.js';
+import {resolveExchangeSubtitle} from '../utils/exchange-subtitle.js';
 import SuggestedApps from './SuggestedApps.vue';
 import {useExchange} from '../composables/useExchange.js';
 import {usePickerReporting} from '../composables/usePickerReporting.js';
+import {usePlatform} from '../composables/usePlatform.js';
 import {useReactiveI18n} from '../composables/useReactiveI18n.js';
 import {useWalletInteraction} from '../composables/useWalletInteraction.js';
 import WalletInteraction from './WalletInteraction.vue';
@@ -147,6 +149,13 @@ if(!context) {
 }
 
 const {t, te} = useReactiveI18n();
+const {platform} = usePlatform();
+
+// The page subtitle uses `exchangePageExplain` on desktop and the optional
+// `exchangePageExplainMobile` on mobile when a deployment sets it.
+const subtitle = computed(() => resolveExchangeSubtitle({
+  t, isMobile: platform.value?.isMobile === true
+}));
 
 const {
   pickerEntries, activePickerEntry, handlePickerSelect

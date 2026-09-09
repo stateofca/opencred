@@ -22,6 +22,10 @@
   `docs/adr/2026-09-09-platform-gated-dc-api-buttons.md`.
 - Render the DC API "handled by" compatibility hint once below the button group
   instead of once per button, so a two-lane layout no longer duplicates the line.
+- Add an optional `exchangePageExplainMobile` translation key. When set, it
+  supplies the exchange-page subtitle on mobile (iOS/Android); desktop and the
+  no-mobile-key case continue to use `exchangePageExplain`. Existing configs are
+  unaffected.
 - Update dependencies.
   - `@bedrock/express@8.8.0`
   - `@bedrock/server@5.2.0`
