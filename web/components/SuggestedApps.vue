@@ -18,7 +18,9 @@ SPDX-License-Identifier: BSD-3-Clause
         v-for="(row, idx) in visibleRows"
         :key="idx"
         class="wallet-row row items-center q-gutter-x-sm">
-        <span class="wallet-name text-body2 text-weight-medium">
+        <span
+          v-if="row.displayName"
+          class="wallet-name text-body2 text-weight-medium">
           {{row.displayName}}
         </span>
         <div class="row items-center q-gutter-x-xs q-ml-auto">
@@ -104,7 +106,9 @@ const walletRows = computed(() => {
     entries.push({
       walletId,
       groupId: reg.groupId || reg.id,
-      productName: resolveProductName({
+      // A wallet may suppress its name beside the store badges when the
+      // install-invitation heading already names it (avoids the repeat).
+      productName: reg.hideProductName ? '' : resolveProductName({
         wallet: reg, t, fallbackId: walletId
       }),
       storefronts: filtered

@@ -11,6 +11,9 @@ export const cadmvIosWallet = {
   name: 'CA DMV Wallet on iOS',
   nameKey: 'wallet_cadmv-ios_name',
   productName: 'CA DMV Wallet',
+  // The install invitation's heading already names the wallet, so the label
+  // beside the store badges is redundant; suppress it in SuggestedApps.
+  hideProductName: true,
   description: 'The CA DMV Wallet app is a free, secure, and convenient ' +
     'mobile application that allows California residents to store and ' +
     'present their mobile driver\'s license (mDL), identification card, ' +

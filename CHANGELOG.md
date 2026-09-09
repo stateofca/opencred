@@ -11,6 +11,10 @@
   `certificatePem` (wallet certificates already carried this check).
 
 ### Changed
+- Suppress the wallet-name label beside the store badges in the install
+  invitation for the CA DMV wallets, where the invitation heading already names
+  the wallet. Wallet definitions may set `hideProductName: true` to opt in; other
+  wallets are unaffected.
 - Update dependencies.
   - `@bedrock/express@8.8.0`
   - `@bedrock/server@5.2.0`
