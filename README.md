@@ -530,9 +530,13 @@ workflows:
 ```
 
 Profile order is significant, and two profiles that produce the same DC API wire
-format may not share a button. See
+format may not share a button. On a mobile device, a button shows only when one
+of its wallets supports that platform (for example, an Apple-Wallet button is
+hidden on Android); desktop shows every button. See
 [docs/00-configure-workflow.md](docs/00-configure-workflow.md) for the full
-reference, prerequisites, and rationale.
+reference, prerequisites, and rationale, and
+[docs/adr/2026-09-09-platform-gated-dc-api-buttons.md](docs/adr/2026-09-09-platform-gated-dc-api-buttons.md)
+for the platform-gating design.
 
 #### Public Workflow Listing
 
