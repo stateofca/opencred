@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.5.0 - 2026-09-dd
+## 10.5.0 - 2026-09-10
 
 ### Added
 - Public `GET /version` endpoint returning `{name, version}` as JSON, so
