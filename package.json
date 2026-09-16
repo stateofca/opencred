@@ -138,5 +138,34 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "overrides": {
+    "@apidevtools/json-schema-ref-parser": {
+      "js-yaml": "4.3.2"
+    },
+    "@apidevtools/swagger-parser": {
+      "js-yaml": "4.3.2"
+    },
+    "@bedrock/config-yaml": {
+      "js-yaml": "4.3.2"
+    },
+    "@bedrock/test": {
+      "js-yaml": "4.3.2"
+    },
+    "cosmiconfig": {
+      "js-yaml": "4.3.2"
+    },
+    "js-yaml": {
+      "js-yaml": "4.3.2"
+    },
+    "mocha": {
+      "js-yaml": "4.3.2"
+    },
+    "postcss-loader": {
+      "js-yaml": "4.3.2"
+    },
+    "swagger-jsdoc": {
+      "js-yaml": "4.3.2"
+    }
   }
 }
