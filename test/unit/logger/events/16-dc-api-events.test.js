@@ -79,6 +79,34 @@ describe('logger/events DC API builders', () => {
     expect(event).not.to.have.key('errorName');
   });
 
+  it('presentationDcApiError includes dcApiErrorReason when provided', () => {
+    const {event} = presentationDcApiError({
+      clientId: 'c1',
+      exchangeId: 'e1',
+      dcApiErrorReason: 'no-provider'
+    });
+    expect(event.dcApiErrorReason).to.equal('no-provider');
+  });
+
+  it('presentationDcApiError omits dcApiErrorReason when absent', () => {
+    const {event} = presentationDcApiError({
+      clientId: 'c1',
+      exchangeId: 'e1'
+    });
+    expect(event).not.to.have.key('dcApiErrorReason');
+  });
+
+  it('presentationDcApiError never logs a raw errorMessage', () => {
+    const {event} = presentationDcApiError({
+      clientId: 'c1',
+      exchangeId: 'e1',
+      errorMessage: 'raw wallet-implementation text',
+      dcApiErrorReason: 'transport'
+    });
+    expect(event).not.to.have.key('errorMessage');
+    expect(event.dcApiErrorReason).to.equal('transport');
+  });
+
   it('presentationDcApiTimeout builds expected payload', () => {
     const {logName, event} = presentationDcApiTimeout({
       clientId: 'c1',

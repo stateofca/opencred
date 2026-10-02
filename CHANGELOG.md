@@ -1,5 +1,17 @@
 # opencred-platform Changelog
 
+## 10.6.0 - 2026-10-dd
+
+### Added
+- Classify a DC API `NetworkError` into a coarse, log-safe `dcApiErrorReason`
+  bucket (`no-provider`, `transport`, `request-fetch`, `other`) on
+  `presentation_dc_api_error`, so the sub-cause of a failed
+  `navigator.credentials.get` is diagnosable without logging raw client text.
+  The `dcapi_error` beacon now forwards a 200-character-capped raw error
+  message, which the server maps to the bucket and discards; the raw text is
+  never logged. The classifier's substring map ships empty and is seeded from
+  strings observed in UAT.
+
 ## 10.5.1 - 2026-10-dd
 
 ### Fixed

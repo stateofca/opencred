@@ -9,6 +9,7 @@ import * as sinon from 'sinon';
 import expect from 'expect.js';
 
 import {
+  _buildDcApiOutcomeEvent,
   fetchDcApiRequests,
   requestDigitalCredential,
   startDcApiFlow,
@@ -113,6 +114,9 @@ describe('startDcApiFlow', () => {
         '/workflows/workflow-1/exchanges/exchange-1/events');
       expect(opts.json.type).to.equal('dcapi_error');
       expect(opts.json.errorName).to.equal('NetworkError');
+      // The raw message rides along only on dcapi_error, for server-side
+      // classification into a coarse reason bucket (never logged raw).
+      expect(opts.json.errorMessage).to.equal('network failure');
     });
 
   it('does not report a beacon on successful completion', async () => {
@@ -567,5 +571,79 @@ describe('startDcApiFlow with several profiles', () => {
     const [, opts] = httpClient.post.firstCall.args;
     expect(opts.json.profile).to.equal('OID4VP-1.0');
     expect(opts.json.profiles).to.eql(['OID4VP-1.0']);
+  });
+});
+
+describe('_buildDcApiOutcomeEvent', () => {
+  function networkError(message = 'network failure') {
+    const error = new Error(message);
+    error.name = 'NetworkError';
+    return error;
+  }
+
+  it('builds a dcapi_error event with errorName and a raw errorMessage',
+    () => {
+      const event = _buildDcApiOutcomeEvent({
+        error: networkError(), timedOut: false, profiles: ['OID4VP-1.0']
+      });
+      expect(event.type).to.equal('dcapi_error');
+      expect(event.errorName).to.equal('NetworkError');
+      expect(event.errorMessage).to.equal('network failure');
+    });
+
+  it('builds a dcapi_cancelled event with no errorMessage for NotAllowedError',
+    () => {
+      const error = new Error('denied');
+      error.name = 'NotAllowedError';
+      const event = _buildDcApiOutcomeEvent({
+        error, timedOut: false, profiles: ['OID4VP-1.0']
+      });
+      expect(event.type).to.equal('dcapi_cancelled');
+      expect(event.errorName).to.equal('NotAllowedError');
+      expect(event).not.to.have.key('errorMessage');
+    });
+
+  it('builds a dcapi_cancelled event with no errorMessage for AbortError',
+    () => {
+      const error = new Error('aborted');
+      error.name = 'AbortError';
+      const event = _buildDcApiOutcomeEvent({
+        error, timedOut: false, profiles: ['OID4VP-1.0']
+      });
+      expect(event.type).to.equal('dcapi_cancelled');
+      expect(event).not.to.have.key('errorMessage');
+    });
+
+  it('builds a dcapi_timeout event with timeoutMs and no errorName or ' +
+    'errorMessage', () => {
+    const event = _buildDcApiOutcomeEvent({
+      error: networkError(), timedOut: true, profiles: ['OID4VP-1.0']
+    });
+    expect(event.type).to.equal('dcapi_timeout');
+    expect(event.timeoutMs).to.equal(30000);
+    expect(event).not.to.have.key('errorName');
+    expect(event).not.to.have.key('errorMessage');
+  });
+
+  it('caps a long errorMessage at 200 characters', () => {
+    const long = 'x'.repeat(500);
+    const event = _buildDcApiOutcomeEvent({
+      error: networkError(long), timedOut: false, profiles: ['OID4VP-1.0']
+    });
+    expect(event.errorMessage.length).to.equal(200);
+  });
+
+  it('includes the singular profile only when exactly one was offered', () => {
+    const one = _buildDcApiOutcomeEvent({
+      error: networkError(), timedOut: false, profiles: ['OID4VP-1.0']
+    });
+    expect(one.profile).to.equal('OID4VP-1.0');
+
+    const many = _buildDcApiOutcomeEvent({
+      error: networkError(), timedOut: false,
+      profiles: ['OID4VP-1.0', 'apple-wallet']
+    });
+    expect(many).not.to.have.key('profile');
+    expect(many.profiles).to.eql(['OID4VP-1.0', 'apple-wallet']);
   });
 });

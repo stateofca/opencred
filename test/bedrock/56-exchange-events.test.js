@@ -105,6 +105,33 @@ describe('POST /workflows/:workflowId/exchanges/:exchangeId/events',
       expect(res.statusCode).to.equal(204);
     });
 
+    it('classifies errorMessage into dcApiErrorReason and never logs the ' +
+      'raw message for type "dcapi_error"', () => {
+      const req = {
+        workflow,
+        exchange,
+        body: {
+          type: 'dcapi_error',
+          profile: 'OID4VP-1.0',
+          errorName: 'NetworkError',
+          errorMessage: 'some raw wallet transport detail'
+        },
+        headers: {'user-agent': 'test-agent'}
+      };
+      const res = mockRes();
+
+      exchangeEventMiddleware(req, res);
+
+      const errored = findEvent(loggerInfoStub, 'presentation_dc_api_error');
+      expect(errored).to.be.ok();
+      // The raw client message must never reach the logs.
+      expect(errored[1]).not.to.have.key('errorMessage');
+      // Under the empty seed rules an unmapped message classifies as 'other';
+      // the UAT-learned strings (spec Phase 1) refine this later.
+      expect(errored[1].dcApiErrorReason).to.equal('other');
+      expect(res.statusCode).to.equal(204);
+    });
+
     it('logs presentation_dc_api_timeout for type "dcapi_timeout"', () => {
       const req = {
         workflow,

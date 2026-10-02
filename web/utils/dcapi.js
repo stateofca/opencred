@@ -10,6 +10,12 @@
 // provider ever answered) rather than an in-progress user interaction.
 const DC_API_TIMEOUT_MS = 30000;
 
+// Cap on the raw DC API error message forwarded for server-side
+// classification. The server maps it to a coarse reason bucket and never logs
+// the raw text (see common/dcApiErrorReason.js); the cap bounds a malformed or
+// hostile message rather than trusting its length.
+const MAX_DC_API_ERROR_MESSAGE_LENGTH = 200;
+
 /**
  * Fetch a ready-to-send DC API wire envelope for each requested profile.
  *
@@ -194,26 +200,8 @@ async function reportDcApiOutcome({
       `/workflows/${exchangeData.workflowId}` +
       `/exchanges/${exchangeData.id}` +
       `/events`;
-    // A user dismissing the platform wallet sheet is one behavior, but
-    // browsers disagree on the DOMException name for it: Chromium follows the
-    // W3C Digital Credentials spec and rejects with `NotAllowedError`, while
-    // Safari/iOS rejects with `AbortError`. Our own timeout is already stripped
-    // out above (`timedOut`), so any remaining `AbortError` here is a
-    // browser/OS-level abort, which for Safari is a user cancellation. Treat
-    // both names as `dcapi_cancelled` so the outcome is reported consistently
-    // across browsers. `errorName` is still sent below, so the original
-    // DOMException name is preserved in the log for diagnostics.
-    const userCancelled =
-      error.name === 'NotAllowedError' || error.name === 'AbortError';
-    const type = timedOut ? 'dcapi_timeout' :
-      userCancelled ? 'dcapi_cancelled' : 'dcapi_error';
     await httpClient.post(url, {
-      json: {
-        type,
-        profiles,
-        ...(profiles.length === 1 ? {profile: profiles[0]} : {}),
-        ...(timedOut ? {timeoutMs: DC_API_TIMEOUT_MS} : {errorName: error.name})
-      },
+      json: _buildDcApiOutcomeEvent({error, timedOut, profiles}),
       headers: {
         Authorization: `Bearer ${exchangeData.accessToken}`
       }
@@ -221,6 +209,53 @@ async function reportDcApiOutcome({
   } catch {
     // best-effort telemetry; never surface a beacon failure to the user
   }
+}
+
+/**
+ * Build the best-effort beacon body for a DC API outcome. Pure (no IO) so it
+ * can be unit-tested without a network stub; `reportDcApiOutcome` wires it to
+ * the POST. Exported only for testing.
+ *
+ * A raw, length-capped `errorMessage` is included only on the `dcapi_error`
+ * type — never on a cancellation or timeout. The server classifies it into a
+ * coarse `dcApiErrorReason` bucket and discards the raw text; it is never
+ * logged.
+ *
+ * A user dismissing the platform wallet sheet is one behavior, but browsers
+ * disagree on the DOMException name for it: Chromium follows the W3C Digital
+ * Credentials spec and rejects with `NotAllowedError`, while Safari/iOS rejects
+ * with `AbortError`. Our own timeout is already separated out by `timedOut`, so
+ * any remaining `AbortError` is a browser/OS-level abort, which for Safari is a
+ * user cancellation. Both names collapse to `dcapi_cancelled` so the outcome is
+ * reported consistently across browsers; `errorName` still carries the original
+ * DOMException name for diagnostics.
+ *
+ * @param {object} options - Options.
+ * @param {Error} [options.error] - The rejection from
+ *   `navigator.credentials.get`.
+ * @param {boolean} [options.timedOut] - True if our own timeout aborted the
+ *   call rather than a browser/OS cancellation or error.
+ * @param {Array<string>} options.profiles - The profiles that were offered.
+ * @returns {object} The beacon body to POST.
+ */
+export function _buildDcApiOutcomeEvent({error, timedOut, profiles} = {}) {
+  const userCancelled =
+    error?.name === 'NotAllowedError' || error?.name === 'AbortError';
+  const type = timedOut ? 'dcapi_timeout' :
+    userCancelled ? 'dcapi_cancelled' : 'dcapi_error';
+  const includeErrorMessage =
+    type === 'dcapi_error' && typeof error?.message === 'string';
+  return {
+    type,
+    profiles,
+    ...(Array.isArray(profiles) && profiles.length === 1 ?
+      {profile: profiles[0]} : {}),
+    ...(timedOut ?
+      {timeoutMs: DC_API_TIMEOUT_MS} : {errorName: error?.name}),
+    ...(includeErrorMessage ?
+      {errorMessage: error.message.slice(0, MAX_DC_API_ERROR_MESSAGE_LENGTH)} :
+      {})
+  };
 }
 
 /**
