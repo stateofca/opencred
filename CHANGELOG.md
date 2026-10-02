@@ -1,5 +1,13 @@
 # opencred-platform Changelog
 
+## 10.5.1 - 2026-10-dd
+
+### Fixed
+- Resolve five high-severity npm advisories (`undici`, `fastify`, `fast-uri`,
+  `js-yaml`, `brace-expansion`) via a non-breaking lockfile update. No source
+  or `package.json` changes. The remaining `serialize-javascript` advisory
+  requires a breaking `@bedrock/test` upgrade and is deferred.
+
 ## 10.5.0 - 2026-09-10
 
 ### Added
