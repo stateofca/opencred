@@ -3,14 +3,31 @@
 ## 10.6.0 - 2026-10-dd
 
 ### Added
-- Classify a DC API `NetworkError` into a coarse, log-safe `dcApiErrorReason`
+- Classify a DC API error message into a coarse, log-safe `dcApiErrorReason`
   bucket (`no-provider`, `transport`, `request-fetch`, `other`) on
-  `presentation_dc_api_error`, so the sub-cause of a failed
-  `navigator.credentials.get` is diagnosable without logging raw client text.
-  The `dcapi_error` beacon now forwards a 200-character-capped raw error
-  message, which the server maps to the bucket and discards; the raw text is
-  never logged. The classifier's substring map ships empty and is seeded from
-  strings observed in UAT.
+  `presentation_dc_api_error`. The classifier's substring map ships empty and
+  is seeded from strings observed in UAT.
+- Add diagnosis fields to the DC API outcome events
+  (`presentation_dc_api_cancelled`, `_error`, `_timeout`): `elapsedMs` from the
+  `navigator.credentials.get` call to its outcome, the DOMException
+  `errorCode`, a 16-hex-character `errorMessageHash` so distinct unmapped
+  messages can be counted, `os` and `browserMajorVersion` buckets, and a
+  validated `context` (user activation, visibility, focus, iframe, and
+  per-protocol `DigitalCredential.userAgentAllowsProtocol` results). None
+  of these carry raw client text.
+- Add a `presentation_dc_api_flow_error` event (`dcapi_flow_error` beacon) for
+  a failed envelope fetch or response submit, with `phase` and `httpStatus`.
+  These failures were previously not reported.
+- Add `options.dcApiDiagnostics` (default `false`). When `true`, DC API
+  outcome events also log the raw error message, error cause, and User-Agent
+  under a `diagnostics` key, each capped at 1000 characters, and the server
+  logs a startup warning. Intended for a diagnostic deployment such as UAT;
+  do not enable in production.
+
+### Fixed
+- Log `errorName` on `presentation_dc_api_cancelled`; it was sent by the
+  client but dropped before logging, so `NotAllowedError` and `AbortError`
+  cancellations could not be told apart.
 
 ## 10.5.1 - 2026-10-dd
 

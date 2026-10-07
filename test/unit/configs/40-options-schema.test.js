@@ -25,3 +25,20 @@ describe('OptionsSchema - oid4vpDisplayLinkOnDesktop', () => {
     expect(result.success).to.be(false);
   });
 });
+
+describe('OptionsSchema - dcApiDiagnostics', () => {
+  it('should default to false (raw DC API client text never logged)', () => {
+    const options = OptionsSchema.parse({});
+    expect(options.dcApiDiagnostics).to.be(false);
+  });
+
+  it('should allow enabling for a diagnostic deployment', () => {
+    const options = OptionsSchema.parse({dcApiDiagnostics: true});
+    expect(options.dcApiDiagnostics).to.be(true);
+  });
+
+  it('should reject non-boolean values', () => {
+    const result = OptionsSchema.safeParse({dcApiDiagnostics: 'yes'});
+    expect(result.success).to.be(false);
+  });
+});

@@ -16,7 +16,7 @@ config, and backend — plus the request lifecycle that connects them.
 > to an inventory below, a new route, config key, workflow, interaction
 > component, or composable, or a change to the request lifecycle or to which
 > file owns a behavior. Bump the date below when you do, and add a Change log
-> entry. Last verified against `main` on 2026-09-03.
+> entry. Last verified against `main` on 2026-10-07.
 >
 > **Scope:** this repo is the product. Per-deployment config — workflows,
 > branding, copy overrides — is not here; see
@@ -131,7 +131,9 @@ One component per connection method; `WalletInteraction.vue` picks which:
 
 ### Utils (`web/utils/`)
 - `dcapi.js` — DC API orchestration; `startDcApiFlow` calls
-  `navigator.credentials.get(DigitalCredential)`.
+  `navigator.credentials.get(DigitalCredential)` and posts outcome beacons
+  (`_buildDcApiOutcomeEvent`, `_buildDcApiFlowErrorEvent`) with timing and the
+  browser context from `_captureDcApiContext`.
 - `protocols.js` — protocol registry (names/descriptions).
 - `events.js` — `reportExchangeEvent(...)` posts funnel events.
 - `brand.js` — `pickBrandColors` selects the color fields (`BRAND_COLOR_FIELDS`:
@@ -180,6 +182,9 @@ bedrock/Node service. **All routes are registered in `lib/http.js`** on the
   `RootCertificates`) + indexes.
 - `index.js` — module entry; starts bedrock + sanity checks.
 - `logger.js` / `logger/events/*` — structured logging + per-event builders.
+- `dcApiOutcomeFields.js` — `sanitizeDcApiOutcome`: validates DC API beacon
+  fields (timing, context, message hash, OS/version buckets); adds raw client
+  text under `diagnostics` only when `options.dcApiDiagnostics` is on.
 - `wallet-cert-sanity-startup.js` — startup wallet-cert check.
 
 ### `lib/workflows/`
@@ -258,7 +263,8 @@ Register a new one in `oid4vp-dispatcher.js`.
   `dcApiButtons`, `connectionOptions`, `oid4vpProfile`,
   `acceptNonCanonicalJwkJcsPub`, translations, `successViewFields`, …).
 - `OptionsSchema` — global `options` (exchangeProtocols, wallets,
-  `OID4VPdefault`, TTLs, `acceptNonCanonicalJwkJcsPub`, …).
+  `OID4VPdefault`, TTLs, `acceptNonCanonicalJwkJcsPub`, `dcApiDiagnostics`,
+  …).
 - Per type: `NativeWorkflowSchema`, `VcApiWorkflowSchema`, `EntraWorkflowSchema`,
   `PresetWorkflowSchema`.
 - `OpenCredConfigSchema` — top-level (options, workflows, signingKeys, didWeb,
@@ -314,7 +320,8 @@ Imported by both web and lib.
   did:key/jwk/web); `getDocumentLoader()`.
 - `oidc.js` — `jwtFromExchange` (builds the id_token).
 - `mdoc.js`, `classifyOid4vpSubmission.js`, `oid4vp-utils.js`, `vcalm.js`,
-  `suites.js`, `audit.js`, `dcapi.js`, `userAgent.js`, `zcap.js`,
+  `suites.js`, `audit.js`, `dcapi.js`, `dcApiErrorReason.js`, `userAgent.js`,
+  `zcap.js`,
   `presets/Iso18013DriversLicenseCredential.js`.
 
 ### Common config/i18n change → file(s)
@@ -386,7 +393,9 @@ Registered in `lib/http.js`. Key groups:
   `…/authorization/response` (POST).
 - **OIDC**: `POST /token`.
 - **Events**: `…/exchanges/:exchangeId/events` (POST; client-reported DC API
-  outcomes).
+  outcomes, including `dcapi_flow_error` for a failed envelope fetch or
+  response submit). Handlers live in `EXCHANGE_EVENT_HANDLERS` in
+  `lib/http.js`; DC API fields pass through `sanitizeDcApiOutcome`.
 - **Entra**: `/verification/callback` (POST).
 - **Audit**: `/audit-presentation` (POST).
 
@@ -438,6 +447,10 @@ separate repository; the rendered result is what this application consumes.
 
 ## Change log
 
+- 2026-10-07 — Added DC API outcome diagnostics: `lib/dcApiOutcomeFields.js`,
+  the `options.dcApiDiagnostics` flag, the `dcapi_flow_error` event type, and
+  the beacon builders in `web/utils/dcapi.js`. Listed the previously
+  unlisted `common/dcApiErrorReason.js`.
 - 2026-09-01 — Verified against `main` after the brand-color fix. Added
   `web/utils/brand.js` (`pickBrandColors`) and the brand/theme change→file
   entry; noted the `getConfig` brand resolution and the `AppLayout.vue` header

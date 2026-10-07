@@ -682,6 +682,13 @@ export const OptionsSchema = z.object({
   acceptNonCanonicalJwkJcsPub: z.boolean().default(false),
   debug: z.boolean().default(false),
 
+  // Log raw client text on DC API outcome events: the platform error message
+  // and cause, and the full User-Agent, under a `diagnostics` key. Default
+  // false, which logs only bucketed, hashed, and validated fields. Enable only
+  // on a diagnostic deployment (e.g. UAT) that must see unmapped platform
+  // error strings; never in production.
+  dcApiDiagnostics: z.boolean().default(false),
+
   // Experimental request-shaping knobs for the google-wallet (x509_hash)
   // profile, used to debug Google Wallet DC API rejection. Defaults
   // preserve the encrypted dc_api.jwt behavior.

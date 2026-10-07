@@ -9,7 +9,9 @@ import * as sinon from 'sinon';
 import expect from 'expect.js';
 
 import {
+  _buildDcApiFlowErrorEvent,
   _buildDcApiOutcomeEvent,
+  _captureDcApiContext,
   fetchDcApiRequests,
   requestDigitalCredential,
   startDcApiFlow,
@@ -114,8 +116,8 @@ describe('startDcApiFlow', () => {
         '/workflows/workflow-1/exchanges/exchange-1/events');
       expect(opts.json.type).to.equal('dcapi_error');
       expect(opts.json.errorName).to.equal('NetworkError');
-      // The raw message rides along only on dcapi_error, for server-side
-      // classification into a coarse reason bucket (never logged raw).
+      // The raw message rides along for server-side classification; the
+      // server logs it only when `options.dcApiDiagnostics` is on.
       expect(opts.json.errorMessage).to.equal('network failure');
     });
 
@@ -140,7 +142,8 @@ describe('startDcApiFlow', () => {
       'authorization/response');
   });
 
-  it('does not report a beacon for pre-navigator setup failures', async () => {
+  it('reports dcapi_flow_error with phase "fetch" when the envelope fetch ' +
+    'fails', async () => {
     globalThis.navigator.credentials = {get: sinon.stub()};
     const httpClient = mockHttpClient({
       getResponse: {data: {}} // missing dcApiRequest envelope
@@ -156,9 +159,117 @@ describe('startDcApiFlow', () => {
     }
 
     expect(thrown).to.be.ok();
-    expect(httpClient.post.called).to.be(false);
+    expect(thrown.message).to.contain('missing `dcApiRequests`');
     expect(globalThis.navigator.credentials.get.called).to.be(false);
+    expect(httpClient.post.calledOnce).to.be(true);
+    const [url, opts] = httpClient.post.firstCall.args;
+    expect(url).to.equal(
+      '/workflows/workflow-1/exchanges/exchange-1/events');
+    expect(opts.json.type).to.equal('dcapi_flow_error');
+    expect(opts.json.phase).to.equal('fetch');
+    // No envelope came back, so the offered set is the requested profiles.
+    expect(opts.json.profiles).to.eql(['OID4VP-1.0']);
   });
+
+  it('reports the HTTP status of a failed envelope fetch', async () => {
+    globalThis.navigator.credentials = {get: sinon.stub()};
+    const httpError = new Error('Unauthorized');
+    httpError.name = 'HTTPError';
+    httpError.status = 401;
+    const httpClient = mockHttpClient();
+    httpClient.get = sinon.stub().rejects(httpError);
+
+    try {
+      await startDcApiFlow({
+        exchangeData, httpClient, profiles: ['OID4VP-1.0']
+      });
+    } catch {
+      // the flow rethrows; only the beacon is under test
+    }
+
+    const [, opts] = httpClient.post.firstCall.args;
+    expect(opts.json.type).to.equal('dcapi_flow_error');
+    expect(opts.json.phase).to.equal('fetch');
+    expect(opts.json.httpStatus).to.equal(401);
+    expect(opts.json.errorName).to.equal('HTTPError');
+    expect(opts.json.errorMessage).to.equal('Unauthorized');
+  });
+
+  it('reports dcapi_flow_error with phase "submit" when posting the wallet ' +
+    'response fails', async () => {
+    globalThis.navigator.credentials = {
+      get: sinon.stub().resolves({protocol: 'p', data: {}})
+    };
+    const submitError = new Error('Internal Server Error');
+    submitError.name = 'HTTPError';
+    submitError.status = 500;
+    const httpClient = mockHttpClient();
+    httpClient.post.onFirstCall().rejects(submitError);
+    httpClient.post.onSecondCall().resolves({data: {}});
+
+    let thrown;
+    try {
+      await startDcApiFlow({
+        exchangeData, httpClient, profiles: ['OID4VP-1.0']
+      });
+    } catch(e) {
+      thrown = e;
+    }
+
+    // The user-facing error is the submit error, unchanged.
+    expect(thrown).to.be(submitError);
+    expect(httpClient.post.calledTwice).to.be(true);
+    const [url, opts] = httpClient.post.secondCall.args;
+    expect(url).to.equal(
+      '/workflows/workflow-1/exchanges/exchange-1/events');
+    expect(opts.json.type).to.equal('dcapi_flow_error');
+    expect(opts.json.phase).to.equal('submit');
+    expect(opts.json.httpStatus).to.equal(500);
+    expect(opts.json.profile).to.equal('OID4VP-1.0');
+  });
+
+  it('reports a navigator rejection once, not again as a flow error',
+    async () => {
+      const error = new Error('network failure');
+      error.name = 'NetworkError';
+      globalThis.navigator.credentials = {get: sinon.stub().rejects(error)};
+      const httpClient = mockHttpClient();
+
+      try {
+        await startDcApiFlow({
+          exchangeData, httpClient, profiles: ['OID4VP-1.0']
+        });
+      } catch {
+        // the flow rethrows; only the beacon is under test
+      }
+
+      expect(httpClient.post.calledOnce).to.be(true);
+      expect(httpClient.post.firstCall.args[1].json.type)
+        .to.equal('dcapi_error');
+    });
+
+  it('sends elapsedMs and the captured context with a navigator rejection',
+    async () => {
+      const error = new Error('network failure');
+      error.name = 'NetworkError';
+      globalThis.navigator.credentials = {get: sinon.stub().rejects(error)};
+      const httpClient = mockHttpClient();
+
+      try {
+        await startDcApiFlow({
+          exchangeData, httpClient, profiles: ['OID4VP-1.0']
+        });
+      } catch {
+        // the flow rethrows; only the beacon is under test
+      }
+
+      const [, opts] = httpClient.post.firstCall.args;
+      expect(opts.json.elapsedMs).to.be.a('number');
+      expect(opts.json.elapsedMs).to.be.greaterThan(-1);
+      expect(opts.json.context).to.be.an('object');
+      expect(opts.json.context.protocolSupport).to.eql(
+        [{protocol: 'p', allowed: null}]);
+    });
 
   it('beacon failures do not throw or change the user-facing error',
     async () => {
@@ -591,7 +702,10 @@ describe('_buildDcApiOutcomeEvent', () => {
       expect(event.errorMessage).to.equal('network failure');
     });
 
-  it('builds a dcapi_cancelled event with no errorMessage for NotAllowedError',
+  // NotAllowedError also covers a missing user activation and a
+  // permissions-policy denial, not only a user dismissal, so the raw message
+  // is sent on cancellations too.
+  it('builds a dcapi_cancelled event with errorMessage for NotAllowedError',
     () => {
       const error = new Error('denied');
       error.name = 'NotAllowedError';
@@ -600,10 +714,10 @@ describe('_buildDcApiOutcomeEvent', () => {
       });
       expect(event.type).to.equal('dcapi_cancelled');
       expect(event.errorName).to.equal('NotAllowedError');
-      expect(event).not.to.have.key('errorMessage');
+      expect(event.errorMessage).to.equal('denied');
     });
 
-  it('builds a dcapi_cancelled event with no errorMessage for AbortError',
+  it('builds a dcapi_cancelled event with errorMessage for AbortError',
     () => {
       const error = new Error('aborted');
       error.name = 'AbortError';
@@ -611,7 +725,7 @@ describe('_buildDcApiOutcomeEvent', () => {
         error, timedOut: false, profiles: ['OID4VP-1.0']
       });
       expect(event.type).to.equal('dcapi_cancelled');
-      expect(event).not.to.have.key('errorMessage');
+      expect(event.errorMessage).to.equal('aborted');
     });
 
   it('builds a dcapi_timeout event with timeoutMs and no errorName or ' +
@@ -625,13 +739,58 @@ describe('_buildDcApiOutcomeEvent', () => {
     expect(event).not.to.have.key('errorMessage');
   });
 
-  it('caps a long errorMessage at 200 characters', () => {
-    const long = 'x'.repeat(500);
+  it('caps a long errorMessage at 1000 characters', () => {
+    const long = 'x'.repeat(1500);
     const event = _buildDcApiOutcomeEvent({
       error: networkError(long), timedOut: false, profiles: ['OID4VP-1.0']
     });
-    expect(event.errorMessage.length).to.equal(200);
+    expect(event.errorMessage.length).to.equal(1000);
   });
+
+  it('includes the DOMException legacy code when it is an integer', () => {
+    const error = networkError();
+    Object.defineProperty(error, 'code', {value: 19});
+    const event = _buildDcApiOutcomeEvent({
+      error, timedOut: false, profiles: ['OID4VP-1.0']
+    });
+    expect(event.errorCode).to.equal(19);
+  });
+
+  it('omits errorCode when the error has none', () => {
+    const event = _buildDcApiOutcomeEvent({
+      error: networkError(), timedOut: false, profiles: ['OID4VP-1.0']
+    });
+    expect(event).not.to.have.key('errorCode');
+  });
+
+  it('includes a capped errorCause from an Error cause or a string cause',
+    () => {
+      const withError = new Error('outer', {cause: new Error('inner')});
+      withError.name = 'NetworkError';
+      expect(_buildDcApiOutcomeEvent({
+        error: withError, timedOut: false, profiles: ['OID4VP-1.0']
+      }).errorCause).to.equal('inner');
+
+      const withString = new Error('outer', {cause: 'y'.repeat(1500)});
+      withString.name = 'NetworkError';
+      expect(_buildDcApiOutcomeEvent({
+        error: withString, timedOut: false, profiles: ['OID4VP-1.0']
+      }).errorCause.length).to.equal(1000);
+    });
+
+  it('forwards elapsedMs and context annotated by requestDigitalCredential',
+    () => {
+      const error = networkError();
+      error.dcApiElapsedMs = 812;
+      error.dcApiContext = {hasFocus: true};
+      for(const timedOut of [false, true]) {
+        const event = _buildDcApiOutcomeEvent({
+          error, timedOut, profiles: ['OID4VP-1.0']
+        });
+        expect(event.elapsedMs).to.equal(812);
+        expect(event.context).to.eql({hasFocus: true});
+      }
+    });
 
   it('includes the singular profile only when exactly one was offered', () => {
     const one = _buildDcApiOutcomeEvent({
@@ -645,5 +804,130 @@ describe('_buildDcApiOutcomeEvent', () => {
     });
     expect(many).not.to.have.key('profile');
     expect(many.profiles).to.eql(['OID4VP-1.0', 'apple-wallet']);
+  });
+});
+
+describe('_buildDcApiFlowErrorEvent', () => {
+  it('builds a dcapi_flow_error event with phase, status, and raw text',
+    () => {
+      const error = new Error('Unauthorized', {cause: 'token expired'});
+      error.name = 'HTTPError';
+      error.status = 401;
+      const event = _buildDcApiFlowErrorEvent({
+        error, phase: 'fetch', profiles: ['OID4VP-1.0', 'apple-wallet']
+      });
+      expect(event).to.eql({
+        type: 'dcapi_flow_error',
+        phase: 'fetch',
+        profiles: ['OID4VP-1.0', 'apple-wallet'],
+        errorName: 'HTTPError',
+        errorMessage: 'Unauthorized',
+        errorCause: 'token expired',
+        httpStatus: 401
+      });
+    });
+
+  it('omits httpStatus for a non-HTTP failure', () => {
+    const event = _buildDcApiFlowErrorEvent({
+      error: new TypeError('Failed to fetch'), phase: 'submit',
+      profiles: ['OID4VP-1.0']
+    });
+    expect(event).not.to.have.key('httpStatus');
+    expect(event.errorName).to.equal('TypeError');
+    expect(event.profile).to.equal('OID4VP-1.0');
+  });
+});
+
+describe('_captureDcApiContext', () => {
+  const saved = {};
+
+  beforeEach(() => {
+    for(const key of ['navigator', 'document', 'window', 'DigitalCredential']) {
+      saved[key] = Object.getOwnPropertyDescriptor(globalThis, key);
+    }
+  });
+
+  afterEach(() => {
+    for(const [key, descriptor] of Object.entries(saved)) {
+      if(descriptor) {
+        Object.defineProperty(globalThis, key, descriptor);
+      } else {
+        delete globalThis[key];
+      }
+    }
+  });
+
+  function setGlobal(key, value) {
+    Object.defineProperty(
+      globalThis, key, {value, configurable: true, writable: true});
+  }
+
+  const requests = [
+    {protocol: 'openid4vp-v1-signed', data: {}},
+    {protocol: 'org-iso-mdoc', data: {}}
+  ];
+
+  it('captures activation, visibility, focus, framing, and protocol support',
+    () => {
+      setGlobal('navigator', {
+        userActivation: {isActive: true, hasBeenActive: true}
+      });
+      setGlobal('document', {visibilityState: 'visible', hasFocus: () => true});
+      const self = {};
+      self.self = self;
+      self.top = self;
+      setGlobal('window', self);
+      setGlobal('DigitalCredential', {
+        userAgentAllowsProtocol: protocol => protocol === 'org-iso-mdoc'
+      });
+
+      expect(_captureDcApiContext({requests})).to.eql({
+        userActivationIsActive: true,
+        userActivationHasBeenActive: true,
+        visibilityState: 'visible',
+        hasFocus: true,
+        inIframe: false,
+        digitalCredentialDefined: true,
+        protocolSupport: [
+          {protocol: 'openid4vp-v1-signed', allowed: false},
+          {protocol: 'org-iso-mdoc', allowed: true}
+        ]
+      });
+    });
+
+  it('reports inIframe when the page is framed', () => {
+    setGlobal('window', {self: {}, top: {}});
+    expect(_captureDcApiContext({requests}).inIframe).to.be(true);
+  });
+
+  it('reports allowed: null when userAgentAllowsProtocol is unavailable or ' +
+    'throws', () => {
+    setGlobal('DigitalCredential', undefined);
+    expect(_captureDcApiContext({requests}).protocolSupport).to.eql([
+      {protocol: 'openid4vp-v1-signed', allowed: null},
+      {protocol: 'org-iso-mdoc', allowed: null}
+    ]);
+    expect(_captureDcApiContext({requests}).digitalCredentialDefined)
+      .to.be(false);
+
+    setGlobal('DigitalCredential', {
+      userAgentAllowsProtocol: () => {
+        throw new Error('boom');
+      }
+    });
+    expect(_captureDcApiContext({requests}).protocolSupport[0].allowed)
+      .to.be(null);
+  });
+
+  it('omits fields whose browser API is missing instead of throwing', () => {
+    setGlobal('navigator', {});
+    setGlobal('document', undefined);
+    setGlobal('window', undefined);
+    setGlobal('DigitalCredential', undefined);
+    const context = _captureDcApiContext({requests: []});
+    expect(context).to.eql({
+      digitalCredentialDefined: false,
+      protocolSupport: []
+    });
   });
 });

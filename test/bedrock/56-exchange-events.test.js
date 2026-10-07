@@ -6,6 +6,7 @@
  */
 
 import * as sinon from 'sinon';
+import {config} from '@bedrock/core';
 import expect from 'expect.js';
 
 import {database} from '../../lib/database.js';
@@ -130,6 +131,118 @@ describe('POST /workflows/:workflowId/exchanges/:exchangeId/events',
       // the UAT-learned strings (spec Phase 1) refine this later.
       expect(errored[1].dcApiErrorReason).to.equal('other');
       expect(res.statusCode).to.equal(204);
+    });
+
+    describe('DC API diagnostics', () => {
+      const CHROME_ANDROID_UA =
+        'Mozilla/5.0 (Linux; Android 14; Pixel 8) ' +
+        'AppleWebKit/537.36 (KHTML, like Gecko) ' +
+        'Chrome/141.0.0.0 Mobile Safari/537.36';
+      let originalDiagnostics;
+
+      beforeEach(() => {
+        originalDiagnostics = config.opencred.options.dcApiDiagnostics;
+      });
+
+      afterEach(() => {
+        config.opencred.options.dcApiDiagnostics = originalDiagnostics;
+      });
+
+      function report(body) {
+        const req = {
+          workflow,
+          exchange,
+          body,
+          headers: {'user-agent': CHROME_ANDROID_UA}
+        };
+        const res = mockRes();
+        exchangeEventMiddleware(req, res);
+        return res;
+      }
+
+      const outcomeBody = {
+        profile: 'OID4VP-1.0',
+        errorMessage: 'raw platform text',
+        errorCause: 'raw cause text',
+        errorCode: 19,
+        elapsedMs: 850,
+        context: {hasFocus: true, injected: 'dropped'}
+      };
+
+      for(const [type, logType, extra] of [
+        ['dcapi_error', 'presentation_dc_api_error',
+          {errorName: 'NetworkError'}],
+        ['dcapi_cancelled', 'presentation_dc_api_cancelled',
+          {errorName: 'NotAllowedError'}],
+        ['dcapi_timeout', 'presentation_dc_api_timeout', {timeoutMs: 30000}],
+        ['dcapi_flow_error', 'presentation_dc_api_flow_error',
+          {errorName: 'HTTPError', phase: 'fetch', httpStatus: 401}]
+      ]) {
+        it(`logs always-on outcome fields and no raw text for "${type}" ` +
+          'when diagnostics are disabled', () => {
+          config.opencred.options.dcApiDiagnostics = false;
+          const res = report({type, ...outcomeBody, ...extra});
+
+          const [, event] = findEvent(loggerInfoStub, logType);
+          expect(event.elapsedMs).to.equal(850);
+          expect(event.errorCode).to.equal(19);
+          expect(event.errorMessageHash).to.match(/^[0-9a-f]{16}$/);
+          expect(event.os).to.equal('android');
+          expect(event.browserMajorVersion).to.equal(141);
+          expect(event.context).to.eql({hasFocus: true});
+          expect(event).not.to.have.key('diagnostics');
+          expect(event).not.to.have.key('errorMessage');
+          const serialized = JSON.stringify(event);
+          expect(serialized).not.to.contain('raw platform text');
+          expect(serialized).not.to.contain('raw cause text');
+          expect(serialized).not.to.contain('Pixel 8');
+          expect(res.statusCode).to.equal(204);
+        });
+
+        it(`logs raw diagnostics for "${type}" when diagnostics are enabled`,
+          () => {
+            config.opencred.options.dcApiDiagnostics = true;
+            report({type, ...outcomeBody, ...extra});
+
+            const [, event] = findEvent(loggerInfoStub, logType);
+            expect(event.diagnostics).to.eql({
+              errorMessage: 'raw platform text',
+              errorCause: 'raw cause text',
+              userAgent: CHROME_ANDROID_UA
+            });
+            expect(event.elapsedMs).to.equal(850);
+          });
+      }
+
+      it('logs errorName on presentation_dc_api_cancelled', () => {
+        report({type: 'dcapi_cancelled', errorName: 'AbortError'});
+        const [, event] = findEvent(
+          loggerInfoStub, 'presentation_dc_api_cancelled');
+        expect(event.errorName).to.equal('AbortError');
+      });
+
+      it('logs phase and httpStatus on presentation_dc_api_flow_error', () => {
+        report({
+          type: 'dcapi_flow_error',
+          profiles: ['google-wallet'],
+          phase: 'submit',
+          httpStatus: 500,
+          errorName: 'HTTPError'
+        });
+        const [, event] = findEvent(
+          loggerInfoStub, 'presentation_dc_api_flow_error');
+        expect(event.phase).to.equal('submit');
+        expect(event.httpStatus).to.equal(500);
+        expect(event.errorName).to.equal('HTTPError');
+        expect(event.profiles).to.eql(['google-wallet']);
+      });
+
+      it('does not add DC API outcome fields to non-DC API events', () => {
+        report({type: 'exchange_expired', elapsedMs: 5});
+        const [, event] = findEvent(loggerInfoStub, 'exchange_expired');
+        expect(event).not.to.have.key('elapsedMs');
+        expect(event).not.to.have.key('os');
+      });
     });
 
     it('logs presentation_dc_api_timeout for type "dcapi_timeout"', () => {

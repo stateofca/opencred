@@ -10,11 +10,10 @@
 // provider ever answered) rather than an in-progress user interaction.
 const DC_API_TIMEOUT_MS = 30000;
 
-// Cap on the raw DC API error message forwarded for server-side
-// classification. The server maps it to a coarse reason bucket and never logs
-// the raw text (see common/dcApiErrorReason.js); the cap bounds a malformed or
-// hostile message rather than trusting its length.
-const MAX_DC_API_ERROR_MESSAGE_LENGTH = 200;
+// Cap on each raw error text field (message, cause) forwarded in a beacon. The
+// server enforces the same cap (lib/dcApiOutcomeFields.js), hashes the message,
+// and logs the raw text only when `options.dcApiDiagnostics` is on.
+const MAX_DC_API_TEXT_LENGTH = 1000;
 
 /**
  * Fetch a ready-to-send DC API wire envelope for each requested profile.
@@ -92,7 +91,9 @@ export async function fetchDcApiRequests({
  * may answer either.
  *
  * Rejections are annotated rather than translated, so the caller can tell a
- * client-side timeout from a genuine browser or OS cancellation.
+ * client-side timeout from a genuine browser or OS cancellation. Each rejection
+ * also carries `dcApiElapsedMs` and `dcApiContext` (see `_captureDcApiContext`)
+ * for the outcome beacon.
  *
  * @param {object} options - Options.
  * @param {Array<object>} options.requests - DC API request envelopes
@@ -107,6 +108,11 @@ export async function requestDigitalCredential({
   if(!Array.isArray(requests) || requests.length === 0) {
     throw new Error('At least one DC API request is required');
   }
+
+  // Captured before the call: by the time it rejects, the activation and
+  // focus state no longer describe what the platform saw.
+  const context = _captureDcApiContext({requests});
+  const startedAt = Date.now();
 
   const controller = new AbortController();
   let timedOut = false;
@@ -130,6 +136,12 @@ export async function requestDigitalCredential({
     // caller reports differently and surfaces with different wording.
     if(timedOut) {
       error.isDcApiTimeout = true;
+    }
+    // Diagnostics for the outcome beacon. A rejection that is not an object
+    // (a bare string) cannot carry them.
+    if(error && typeof error === 'object') {
+      error.dcApiElapsedMs = Date.now() - startedAt;
+      error.dcApiContext = context;
     }
     throw error;
   } finally {
@@ -170,38 +182,28 @@ export async function submitDcApiResponse({
 }
 
 /**
- * Best-effort, non-blocking report of a DC API outcome that never reaches
- * the server through any other route (`navigator.credentials.get`
- * cancellation, error, or client-side timeout). A beacon failure must never
+ * Best-effort, non-blocking POST of a DC API beacon (`.../events`) for an
+ * outcome that never reaches the server through any other route: a
+ * `navigator.credentials.get` cancellation, error, or client-side timeout, or
+ * a failed envelope fetch or response submit. A beacon failure must never
  * throw or otherwise change the user-facing error already surfaced from the
  * calling catch block.
- *
- * Reports the whole set of profiles that were offered, not one of them: when
- * the platform sheet is dismissed, *no* profile answered, so naming one would
- * be a fabrication. The singular `profile` is included only when exactly one
- * was offered, so existing single-profile reporting is unchanged.
  *
  * @param {object} options - Options for the beacon.
  * @param {object} options.exchangeData - The exchange data object.
  * @param {object} options.httpClient - HTTP client instance.
- * @param {Array<string>} options.profiles - The profiles that were offered.
- * @param {Error} options.error - The error thrown by
- *   `navigator.credentials.get`.
- * @param {boolean} [options.timedOut] - True if this rejection was caused
- *   by our own timeout-triggered `controller.abort()`, not a genuine
- *   browser/OS-level cancellation or error.
+ * @param {object} options.event - The beacon body, from
+ *   `_buildDcApiOutcomeEvent` or `_buildDcApiFlowErrorEvent`.
  * @returns {Promise<void>}
  */
-async function reportDcApiOutcome({
-  exchangeData, httpClient, profiles, error, timedOut
-}) {
+async function postDcApiBeacon({exchangeData, httpClient, event}) {
   try {
     const url =
       `/workflows/${exchangeData.workflowId}` +
       `/exchanges/${exchangeData.id}` +
       `/events`;
     await httpClient.post(url, {
-      json: _buildDcApiOutcomeEvent({error, timedOut, profiles}),
+      json: event,
       headers: {
         Authorization: `Bearer ${exchangeData.accessToken}`
       }
@@ -212,14 +214,14 @@ async function reportDcApiOutcome({
 }
 
 /**
- * Build the best-effort beacon body for a DC API outcome. Pure (no IO) so it
- * can be unit-tested without a network stub; `reportDcApiOutcome` wires it to
- * the POST. Exported only for testing.
+ * Build the best-effort beacon body for a `navigator.credentials.get`
+ * outcome. Pure (no IO) so it can be unit-tested without a network stub;
+ * `postDcApiBeacon` wires it to the POST. Exported only for testing.
  *
- * A raw, length-capped `errorMessage` is included only on the `dcapi_error`
- * type — never on a cancellation or timeout. The server classifies it into a
- * coarse `dcApiErrorReason` bucket and discards the raw text; it is never
- * logged.
+ * Reports the whole set of profiles that were offered, not one of them: when
+ * the platform sheet is dismissed, *no* profile answered, so naming one would
+ * be a fabrication. The singular `profile` is included only when exactly one
+ * was offered, so existing single-profile reporting is unchanged.
  *
  * A user dismissing the platform wallet sheet is one behavior, but browsers
  * disagree on the DOMException name for it: Chromium follows the W3C Digital
@@ -229,6 +231,14 @@ async function reportDcApiOutcome({
  * user cancellation. Both names collapse to `dcapi_cancelled` so the outcome is
  * reported consistently across browsers; `errorName` still carries the original
  * DOMException name for diagnostics.
+ *
+ * Every type carries `elapsedMs` and `context` when `requestDigitalCredential`
+ * annotated them. Cancellations and errors also carry the length-capped raw
+ * `errorMessage`, `errorCause`, and the DOMException legacy `errorCode`:
+ * `NotAllowedError` also covers a missing user activation or a
+ * permissions-policy denial, so a "cancellation" is not always a person. The
+ * server hashes the raw text and logs it only when `options.dcApiDiagnostics`
+ * is on.
  *
  * @param {object} options - Options.
  * @param {Error} [options.error] - The rejection from
@@ -243,18 +253,114 @@ export function _buildDcApiOutcomeEvent({error, timedOut, profiles} = {}) {
     error?.name === 'NotAllowedError' || error?.name === 'AbortError';
   const type = timedOut ? 'dcapi_timeout' :
     userCancelled ? 'dcapi_cancelled' : 'dcapi_error';
-  const includeErrorMessage =
-    type === 'dcapi_error' && typeof error?.message === 'string';
   return {
     type,
+    ..._profileFields(profiles),
+    ...(timedOut ?
+      {timeoutMs: DC_API_TIMEOUT_MS} :
+      {errorName: error?.name, ..._errorTextFields(error)}),
+    ...(Number.isFinite(error?.dcApiElapsedMs) &&
+      {elapsedMs: error.dcApiElapsedMs}),
+    ...(error?.dcApiContext && {context: error.dcApiContext})
+  };
+}
+
+/**
+ * Build the best-effort beacon body for a DC API flow failure outside
+ * `navigator.credentials.get`: the envelope fetch (`phase: 'fetch'`) or the
+ * response submit (`phase: 'submit'`). Pure (no IO). Exported only for
+ * testing.
+ *
+ * @param {object} options - Options.
+ * @param {Error} options.error - The failure from the HTTP call or from
+ *   validating its response.
+ * @param {string} options.phase - `fetch` or `submit`.
+ * @param {Array<string>} options.profiles - The profiles that were offered.
+ * @returns {object} The beacon body to POST.
+ */
+export function _buildDcApiFlowErrorEvent({error, phase, profiles} = {}) {
+  return {
+    type: 'dcapi_flow_error',
+    phase,
+    ..._profileFields(profiles),
+    errorName: error?.name,
+    ..._errorTextFields(error),
+    // `@digitalbazaar/http-client` lifts the response status onto the error.
+    ...(Number.isInteger(error?.status) && {httpStatus: error.status})
+  };
+}
+
+/**
+ * Snapshot the browser state that decides whether `navigator.credentials.get`
+ * can succeed, for the outcome beacon. Exported only for testing.
+ *
+ * Every read is guarded: a missing API is omitted (or reported as
+ * `allowed: null` for protocol support) rather than thrown, because this runs
+ * inside the transient user activation the platform call needs.
+ *
+ * @param {object} options - Options.
+ * @param {Array<object>} options.requests - The DC API request envelopes about
+ *   to be offered.
+ * @returns {object} The context: activation, visibility, focus, framing, and
+ *   per-protocol `DigitalCredential.userAgentAllowsProtocol` results.
+ */
+export function _captureDcApiContext({requests = []} = {}) {
+  const context = {};
+  const userActivation = globalThis.navigator?.userActivation;
+  if(typeof userActivation?.isActive === 'boolean') {
+    context.userActivationIsActive = userActivation.isActive;
+  }
+  if(typeof userActivation?.hasBeenActive === 'boolean') {
+    context.userActivationHasBeenActive = userActivation.hasBeenActive;
+  }
+  const doc = globalThis.document;
+  if(typeof doc?.visibilityState === 'string') {
+    context.visibilityState = doc.visibilityState;
+  }
+  if(typeof doc?.hasFocus === 'function') {
+    context.hasFocus = doc.hasFocus();
+  }
+  const win = globalThis.window;
+  if(win && 'top' in win && 'self' in win) {
+    // Comparing frames is allowed cross-origin; reading their content is not.
+    context.inIframe = win.top !== win.self;
+  }
+  const allowsProtocol =
+    globalThis.DigitalCredential?.userAgentAllowsProtocol;
+  context.digitalCredentialDefined =
+    typeof globalThis.DigitalCredential !== 'undefined';
+  context.protocolSupport = requests.map(({protocol} = {}) => {
+    let allowed = null;
+    if(typeof allowsProtocol === 'function') {
+      try {
+        allowed = allowsProtocol.call(
+          globalThis.DigitalCredential, protocol) === true;
+      } catch {
+        // an unsupported or throwing check is reported as unknown
+      }
+    }
+    return {protocol, allowed};
+  });
+  return context;
+}
+
+function _profileFields(profiles) {
+  return {
     profiles,
     ...(Array.isArray(profiles) && profiles.length === 1 ?
-      {profile: profiles[0]} : {}),
-    ...(timedOut ?
-      {timeoutMs: DC_API_TIMEOUT_MS} : {errorName: error?.name}),
-    ...(includeErrorMessage ?
-      {errorMessage: error.message.slice(0, MAX_DC_API_ERROR_MESSAGE_LENGTH)} :
-      {})
+      {profile: profiles[0]} : {})
+  };
+}
+
+function _errorTextFields(error) {
+  const cause = error?.cause;
+  const causeText = typeof cause === 'string' ? cause :
+    typeof cause?.message === 'string' ? cause.message : undefined;
+  return {
+    ...(typeof error?.message === 'string' &&
+      {errorMessage: error.message.slice(0, MAX_DC_API_TEXT_LENGTH)}),
+    ...(causeText && {errorCause: causeText.slice(0, MAX_DC_API_TEXT_LENGTH)}),
+    ...(Number.isInteger(error?.code) && {errorCode: error.code})
   };
 }
 
@@ -266,9 +372,10 @@ export function _buildDcApiOutcomeEvent({error, timedOut, profiles} = {}) {
  * back for the server to verify against the request it answered.
  *
  * If `navigator.credentials.get` rejects (user cancelled or a wallet/browser
- * error), that outcome is reported to the server via a best-effort beacon
- * (`POST .../events`) before re-throwing, since otherwise it would never reach
- * the server through any other route.
+ * error), or the envelope fetch or response submit fails, that outcome is
+ * reported to the server via a best-effort beacon (`POST .../events`) before
+ * re-throwing, since a client-side failure would otherwise never reach the
+ * server through any other route.
  *
  * @param {object} options - Options for the DC API flow.
  * @param {object} options.exchangeData - The exchange data object.
@@ -286,9 +393,24 @@ export async function startDcApiFlow({
   onExchangeUpdate
 } = {}) {
   try {
-    const envelopes = await fetchDcApiRequests({
-      exchangeData, httpClient, profiles
-    });
+    let envelopes;
+    try {
+      envelopes = await fetchDcApiRequests({
+        exchangeData, httpClient, profiles
+      });
+    } catch(fetchError) {
+      // Without exchange identifiers there is nowhere to report to.
+      if(exchangeData?.id && exchangeData?.workflowId) {
+        await postDcApiBeacon({
+          exchangeData,
+          httpClient,
+          event: _buildDcApiFlowErrorEvent(
+            {error: fetchError, phase: 'fetch', profiles})
+        });
+      }
+      throw fetchError;
+    }
+    const offeredProfiles = envelopes.map(e => e.profile);
 
     let credentialResponse;
     try {
@@ -296,12 +418,14 @@ export async function startDcApiFlow({
         requests: envelopes.map(e => e.dcApiRequest)
       });
     } catch(navigatorError) {
-      await reportDcApiOutcome({
+      await postDcApiBeacon({
         exchangeData,
         httpClient,
-        profiles: envelopes.map(e => e.profile),
-        error: navigatorError,
-        timedOut: navigatorError.isDcApiTimeout === true
+        event: _buildDcApiOutcomeEvent({
+          error: navigatorError,
+          timedOut: navigatorError?.isDcApiTimeout === true,
+          profiles: offeredProfiles
+        })
       });
       throw navigatorError;
     }
@@ -313,12 +437,23 @@ export async function startDcApiFlow({
     const answered = envelopes.find(
       e => e.dcApiRequest?.protocol === credentialResponse.protocol);
 
-    const result = await submitDcApiResponse({
-      exchangeData,
-      httpClient,
-      credentialResponse,
-      profile: answered?.profile
-    });
+    let result;
+    try {
+      result = await submitDcApiResponse({
+        exchangeData,
+        httpClient,
+        credentialResponse,
+        profile: answered?.profile
+      });
+    } catch(submitError) {
+      await postDcApiBeacon({
+        exchangeData,
+        httpClient,
+        event: _buildDcApiFlowErrorEvent(
+          {error: submitError, phase: 'submit', profiles: offeredProfiles})
+      });
+      throw submitError;
+    }
 
     if(result?.exchange && onExchangeUpdate) {
       onExchangeUpdate(result.exchange);

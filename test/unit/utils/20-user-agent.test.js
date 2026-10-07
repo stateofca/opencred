@@ -7,6 +7,7 @@
 
 import {
   classifyUserAgent,
+  classifyUserAgentDetail,
   isSamsungBrowser
 } from '../../../common/userAgent.js';
 import expect from 'expect.js';
@@ -130,5 +131,86 @@ describe('classifyUserAgent', () => {
       {browser: 'unknown', deviceType: 'unknown'});
     expect(classifyUserAgent('')).to.eql(
       {browser: 'unknown', deviceType: 'unknown'});
+  });
+});
+
+const CHROME_MAC_UA =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ' +
+  'AppleWebKit/537.36 (KHTML, like Gecko) ' +
+  'Chrome/141.0.0.0 Safari/537.36';
+
+const CHROME_OS_UA =
+  'Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) ' +
+  'AppleWebKit/537.36 (KHTML, like Gecko) ' +
+  'Chrome/141.0.0.0 Safari/537.36';
+
+const CHROME_IOS_UA =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) ' +
+  'AppleWebKit/605.1.15 (KHTML, like Gecko) ' +
+  'CriOS/141.0.0.0 Mobile/15E148 Safari/604.1';
+
+const FIREFOX_LINUX_UA =
+  'Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0';
+
+describe('classifyUserAgentDetail', () => {
+  it('should report Android and the Samsung Internet major version', () => {
+    expect(classifyUserAgentDetail(SAMSUNG_INTERNET_UA)).to.eql(
+      {os: 'android', browserMajorVersion: 23});
+  });
+
+  it('should report Android and the Chrome major version', () => {
+    expect(classifyUserAgentDetail(CHROME_ANDROID_UA)).to.eql(
+      {os: 'android', browserMajorVersion: 125});
+  });
+
+  it('should report Windows and the Chrome major version', () => {
+    expect(classifyUserAgentDetail(CHROME_WINDOWS_UA)).to.eql(
+      {os: 'windows', browserMajorVersion: 125});
+  });
+
+  it('should report macOS and the Chrome major version', () => {
+    expect(classifyUserAgentDetail(CHROME_MAC_UA)).to.eql(
+      {os: 'macos', browserMajorVersion: 141});
+  });
+
+  it('should report ChromeOS rather than Linux for a CrOS UA', () => {
+    expect(classifyUserAgentDetail(CHROME_OS_UA)).to.eql(
+      {os: 'chromeos', browserMajorVersion: 141});
+  });
+
+  it('should report Linux and the Firefox major version', () => {
+    expect(classifyUserAgentDetail(FIREFOX_LINUX_UA)).to.eql(
+      {os: 'linux', browserMajorVersion: 126});
+  });
+
+  it('should report iOS and the Safari major version', () => {
+    expect(classifyUserAgentDetail(SAFARI_IOS_UA)).to.eql(
+      {os: 'ios', browserMajorVersion: 17});
+  });
+
+  it('should report iOS and the Chrome-on-iOS major version', () => {
+    expect(classifyUserAgentDetail(CHROME_IOS_UA)).to.eql(
+      {os: 'ios', browserMajorVersion: 141});
+  });
+
+  it('should report macOS and the Safari major version', () => {
+    expect(classifyUserAgentDetail(SAFARI_MAC_UA)).to.eql(
+      {os: 'macos', browserMajorVersion: 17});
+  });
+
+  it('should report the Edge version, not the embedded Chrome version', () => {
+    const ua = EDGE_WINDOWS_UA.replace('Edg/125', 'Edg/126');
+    expect(classifyUserAgentDetail(ua)).to.eql(
+      {os: 'windows', browserMajorVersion: 126});
+  });
+
+  it('should omit the version for an unrecognized browser', () => {
+    expect(classifyUserAgentDetail(WALLET_HTTP_CLIENT_UA)).to.eql(
+      {os: 'other'});
+  });
+
+  it('should classify missing input as unknown', () => {
+    expect(classifyUserAgentDetail(undefined)).to.eql({os: 'unknown'});
+    expect(classifyUserAgentDetail('')).to.eql({os: 'unknown'});
   });
 });

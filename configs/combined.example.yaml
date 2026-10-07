@@ -346,6 +346,10 @@ app:
       #   non-standard TWDIW StatusList2021 handler. Off by default so a
       #   StatusList2021Entry is rejected as an unsupported status type unless a
       #   workflow opts in. Prefer enabling it per-workflow instead.
+      # dcApiDiagnostics: false  # When true, DC API outcome events also log
+      #   the raw platform error message, error cause, and User-Agent under a
+      #   `diagnostics` key. For a diagnostic deployment (UAT) only; never
+      #   enable in production.
     defaultBrand:
       cta: "#0B669D"
       primary: "#045199"

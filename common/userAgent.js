@@ -60,3 +60,57 @@ export function classifyUserAgent(userAgent) {
   }
   return {browser, deviceType};
 }
+
+// Major-version token per `classifyUserAgent` browser bucket. Safari carries
+// its version in `Version/`, not `Safari/`, which is the WebKit build.
+const BROWSER_VERSION_PATTERNS = {
+  'samsung-internet': /SamsungBrowser\/(\d+)/i,
+  edge: /\b(?:EdgiOS|EdgA|Edge?)\/(\d+)/,
+  firefox: /\b(?:Firefox|FxiOS)\/(\d+)/,
+  chrome: /\b(?:Chrome|CriOS)\/(\d+)/,
+  safari: /\bVersion\/(\d+)/
+};
+
+/**
+ * Classifies a User-Agent string into an OS bucket and the browser's major
+ * version. Kept separate from `classifyUserAgent` so the extra detail lands
+ * only on the DC API outcome events that need it, where platform behavior
+ * varies by OS and browser release. The result is still bucketed; it never
+ * includes the device model or the full version string.
+ *
+ * An iPad in desktop mode reports a Macintosh UA, so it classifies as `macos`.
+ *
+ * @param {string} userAgent - The User-Agent string to classify.
+ * @returns {{os: string, browserMajorVersion?: number}} The buckets. The
+ *   `os` value is one of android, ios, chromeos, windows, macos, linux,
+ *   other, unknown; `browserMajorVersion` is present only for a recognized
+ *   browser.
+ */
+export function classifyUserAgentDetail(userAgent) {
+  if(typeof userAgent !== 'string' || userAgent.length === 0) {
+    return {os: 'unknown'};
+  }
+
+  // Android UAs also contain `Linux`, and ChromeOS UAs contain `X11`.
+  let os = 'other';
+  if(/Android/i.test(userAgent)) {
+    os = 'android';
+  } else if(/iPhone|iPad|iPod/.test(userAgent)) {
+    os = 'ios';
+  } else if(/\bCrOS\b/.test(userAgent)) {
+    os = 'chromeos';
+  } else if(/Windows NT/.test(userAgent)) {
+    os = 'windows';
+  } else if(/Macintosh|Mac OS X/.test(userAgent)) {
+    os = 'macos';
+  } else if(/Linux|X11/.test(userAgent)) {
+    os = 'linux';
+  }
+
+  const {browser} = classifyUserAgent(userAgent);
+  const match = BROWSER_VERSION_PATTERNS[browser]?.exec(userAgent);
+  return {
+    os,
+    ...(match && {browserMajorVersion: Number.parseInt(match[1], 10)})
+  };
+}
