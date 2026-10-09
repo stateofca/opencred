@@ -8,7 +8,10 @@
 // How long to wait for `navigator.credentials.get` to settle before
 // treating it as a non-responsive environment (no wallet/credential
 // provider ever answered) rather than an in-progress user interaction.
-const DC_API_TIMEOUT_MS = 30000;
+// Set to 60s to give same-device flows time to finish (open wallet,
+// authenticate, select a credential) before the client gives up; 30s
+// cut off users who were still mid-interaction.
+const DC_API_TIMEOUT_MS = 60000;
 
 // Cap on each raw error text field (message, cause) forwarded in a beacon. The
 // server enforces the same cap (lib/dcApiOutcomeFields.js), hashes the message,

@@ -31,6 +31,15 @@
   Wallet, Google Wallet, and the CA DMV wallet are provisioned through
   distinct signing certificates. The SpruceID profiles are not covered.
 
+### Changed
+- Raise the Digital Credentials API handoff timeout from 30s to 60s
+  (`DC_API_TIMEOUT_MS` in `web/utils/dcapi.js`). The 30s window cut off
+  same-device flows where the user was still interacting with the wallet
+  (open wallet, authenticate, select a credential), surfacing as
+  "wallet handoff timed out (DC API)" failures. The longer window does not
+  affect cross-device handoffs that never complete (e.g. an unscanned QR
+  code), which still time out.
+
 ### Fixed
 - Log `errorName` on `presentation_dc_api_cancelled`; it was sent by the
   client but dropped before logging, so `NotAllowedError` and `AbortError`
