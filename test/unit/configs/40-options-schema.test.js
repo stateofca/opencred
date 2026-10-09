@@ -42,3 +42,21 @@ describe('OptionsSchema - dcApiDiagnostics', () => {
     expect(result.success).to.be(false);
   });
 });
+
+describe('OptionsSchema - mdocIssuerCertificateLogging', () => {
+  it('should default to false', () => {
+    const options = OptionsSchema.parse({});
+    expect(options.mdocIssuerCertificateLogging).to.be(false);
+  });
+
+  it('should allow enabling', () => {
+    const options = OptionsSchema.parse({mdocIssuerCertificateLogging: true});
+    expect(options.mdocIssuerCertificateLogging).to.be(true);
+  });
+
+  it('should reject non-boolean values', () => {
+    const result = OptionsSchema.safeParse(
+      {mdocIssuerCertificateLogging: 'yes'});
+    expect(result.success).to.be(false);
+  });
+});

@@ -16,7 +16,7 @@ config, and backend — plus the request lifecycle that connects them.
 > to an inventory below, a new route, config key, workflow, interaction
 > component, or composable, or a change to the request lifecycle or to which
 > file owns a behavior. Bump the date below when you do, and add a Change log
-> entry. Last verified against `main` on 2026-10-07.
+> entry. Last verified against `main` on 2026-10-09.
 >
 > **Scope:** this repo is the product. Per-deployment config — workflows,
 > branding, copy overrides — is not here; see
@@ -185,6 +185,11 @@ bedrock/Node service. **All routes are registered in `lib/http.js`** on the
 - `dcApiOutcomeFields.js` — `sanitizeDcApiOutcome`: validates DC API beacon
   fields (timing, context, message hash, OS/version buckets); adds raw client
   text under `diagnostics` only when `options.dcApiDiagnostics` is on.
+- `mdocIssuerCertificate.js` — `describeIssuerCertificates` summarizes each
+  verified mdoc's Document Signer certificate and the `caStore` root it
+  chains to; `logIssuerCertificates` logs that as `mdoc_issuer_certificates`
+  from the Annex C, Annex D, and HAIP response handlers when
+  `options.mdocIssuerCertificateLogging` is on.
 - `wallet-cert-sanity-startup.js` — startup wallet-cert check.
 
 ### `lib/workflows/`
@@ -264,7 +269,7 @@ Register a new one in `oid4vp-dispatcher.js`.
   `acceptNonCanonicalJwkJcsPub`, translations, `successViewFields`, …).
 - `OptionsSchema` — global `options` (exchangeProtocols, wallets,
   `OID4VPdefault`, TTLs, `acceptNonCanonicalJwkJcsPub`, `dcApiDiagnostics`,
-  …).
+  `mdocIssuerCertificateLogging`, …).
 - Per type: `NativeWorkflowSchema`, `VcApiWorkflowSchema`, `EntraWorkflowSchema`,
   `PresetWorkflowSchema`.
 - `OpenCredConfigSchema` — top-level (options, workflows, signingKeys, didWeb,
@@ -447,6 +452,9 @@ separate repository; the rendered result is what this application consumes.
 
 ## Change log
 
+- 2026-10-09 — Added `lib/mdocIssuerCertificate.js`, the
+  `options.mdocIssuerCertificateLogging` flag, and the
+  `mdoc_issuer_certificates` log line.
 - 2026-10-07 — Added DC API outcome diagnostics: `lib/dcApiOutcomeFields.js`,
   the `options.dcApiDiagnostics` flag, the `dcapi_flow_error` event type, and
   the beacon builders in `web/utils/dcapi.js`. Listed the previously

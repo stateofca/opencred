@@ -681,6 +681,10 @@ export const OptionsSchema = z.object({
   // rejected. A workflow may opt in via its own acceptNonCanonicalJwkJcsPub.
   acceptNonCanonicalJwkJcsPub: z.boolean().default(false),
   debug: z.boolean().default(false),
+  // Log each verified mdoc's Document Signer certificate and the caStore root
+  // it chains to, to learn whether wallets are provisioned through distinct
+  // signing certificates. Issuer-level data only; off by default.
+  mdocIssuerCertificateLogging: z.boolean().default(false),
 
   // Log raw client text on DC API outcome events: the platform error message
   // and cause, and the full User-Agent, under a `diagnostics` key. Default

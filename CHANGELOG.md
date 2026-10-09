@@ -23,6 +23,13 @@
   under a `diagnostics` key, each capped at 1000 characters, and the server
   logs a startup warning. Intended for a diagnostic deployment such as UAT;
   do not enable in production.
+- Add `options.mdocIssuerCertificateLogging` (default `false`). When `true`,
+  log `mdoc_issuer_certificates` after an mdoc verifies in the Annex C,
+  Annex D, and HAIP profiles. Each entry gives the Document Signer
+  certificate's subject, issuer, serial number, and SHA-256 fingerprint, plus
+  the `caStore` root it chains to. The data is issuer-level, not
+  holder-level. It shows whether Apple Wallet, Google Wallet, and the CA DMV
+  wallet are provisioned through distinct signing certificates.
 
 ### Fixed
 - Log `errorName` on `presentation_dc_api_cancelled`; it was sent by the
