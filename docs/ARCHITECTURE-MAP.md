@@ -187,8 +187,10 @@ bedrock/Node service. **All routes are registered in `lib/http.js`** on the
   text under `diagnostics` only when `options.dcApiDiagnostics` is on.
 - `mdocIssuerCertificate.js` — `describeIssuerCertificates` summarizes each
   verified mdoc's Document Signer certificate and the `caStore` root it
-  chains to; `logIssuerCertificates` logs that as `mdoc_issuer_certificates`
-  from the Annex C, Annex D, and HAIP response handlers when
+  chains to; `logIssuerCertificates` emits that as the
+  `mdoc_issuer_certificates` presentation event
+  (`logger/events/mdocIssuerCertificates.js`) from the Annex C, Annex D, and
+  HAIP response handlers when
   `options.mdocIssuerCertificateLogging` is on.
 - `wallet-cert-sanity-startup.js` — startup wallet-cert check.
 

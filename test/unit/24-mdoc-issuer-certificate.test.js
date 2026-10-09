@@ -203,6 +203,7 @@ describe('logIssuerCertificates', () => {
     logIssuerCertificates({
       verifiedMdoc: mdocWith([new Uint8Array(leaf.rawData)]),
       trustedCertificates: [root.cert.toString('pem')],
+      workflow: {clientId: 'c1'},
       exchange: {id: 'e1', variables: {profile: 'cadmv-ios'}}
     });
     expect(logged).to.eql([]);
@@ -213,10 +214,13 @@ describe('logIssuerCertificates', () => {
     logIssuerCertificates({
       verifiedMdoc: mdocWith([new Uint8Array(leaf.rawData)]),
       trustedCertificates: [root.cert.toString('pem')],
+      workflow: {clientId: 'c1'},
       exchange: {id: 'e1', variables: {profile: 'cadmv-ios'}}
     });
     expect(logged).to.have.length(1);
-    expect(logged[0].message).to.be('mdoc_issuer_certificates');
+    expect(logged[0].message).to.be('presentation_event');
+    expect(logged[0].meta.type).to.be('mdoc_issuer_certificates');
+    expect(logged[0].meta.clientId).to.be('c1');
     expect(logged[0].meta.exchangeId).to.be('e1');
     expect(logged[0].meta.profile).to.be('cadmv-ios');
     expect(logged[0].meta.documents[0].root.subject)
@@ -231,6 +235,26 @@ describe('logIssuerCertificates', () => {
       exchange: {id: 'e1'}
     })).to.not.throwError();
     expect(logged).to.eql([]);
+  });
+
+  it('does not throw when the warning itself throws', () => {
+    config.opencred.options.mdocIssuerCertificateLogging = true;
+    const originalWarning = logger.warning;
+    logger.info = () => {
+      throw new Error('transport down');
+    };
+    logger.warning = () => {
+      throw new Error('transport down');
+    };
+    try {
+      expect(() => logIssuerCertificates({
+        verifiedMdoc: mdocWith([new Uint8Array(leaf.rawData)]),
+        trustedCertificates: [],
+        exchange: {id: 'e1'}
+      })).to.not.throwError();
+    } finally {
+      logger.warning = originalWarning;
+    }
   });
 
   it('warns instead of throwing when the mdoc is malformed', () => {

@@ -683,7 +683,8 @@ export const OptionsSchema = z.object({
   debug: z.boolean().default(false),
   // Log each verified mdoc's Document Signer certificate and the caStore root
   // it chains to, to learn whether wallets are provisioned through distinct
-  // signing certificates. Issuer-level data only; off by default.
+  // signing certificates. Off by default. A Document Signer certificate
+  // normally covers many holders; confirm that per issuer before enabling.
   mdocIssuerCertificateLogging: z.boolean().default(false),
 
   // Log raw client text on DC API outcome events: the platform error message

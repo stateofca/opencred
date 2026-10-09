@@ -352,7 +352,8 @@ app:
       #   enable in production.
       # mdocIssuerCertificateLogging: false  # Log each verified mdoc's
       #   Document Signer certificate and the caStore root it chains to.
-      #   Issuer-level data only; safe to enable in production.
+      #   A Document Signer certificate normally covers many holders;
+      #   confirm that holds for each issuer before enabling in production.
     defaultBrand:
       cta: "#0B669D"
       primary: "#045199"
