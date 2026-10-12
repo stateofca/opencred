@@ -331,7 +331,7 @@ describe('startDcApiFlow', () => {
       await Promise.resolve();
       expect(signalRef).to.be.ok();
 
-      await clock.tickAsync(60000);
+      await clock.tickAsync(120000);
 
       let thrown;
       try {
@@ -349,7 +349,7 @@ describe('startDcApiFlow', () => {
       expect(url).to.equal(
         '/workflows/workflow-1/exchanges/exchange-1/events');
       expect(opts.json.type).to.equal('dcapi_timeout');
-      expect(opts.json.timeoutMs).to.equal(60000);
+      expect(opts.json.timeoutMs).to.equal(120000);
     });
 
     it('reports dcapi_cancelled, not timeout, for a non-timeout AbortError ' +
@@ -395,7 +395,7 @@ describe('startDcApiFlow', () => {
 
         // advancing the clock past the timeout window after completion
         // must not trigger any further beacon call
-        await clock.tickAsync(60000);
+        await clock.tickAsync(120000);
         expect(httpClient.post.calledOnce).to.be(true);
       });
   });

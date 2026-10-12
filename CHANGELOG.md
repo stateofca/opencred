@@ -32,7 +32,7 @@
   distinct signing certificates. The SpruceID profiles are not covered.
 
 ### Changed
-- Raise the Digital Credentials API handoff timeout from 30s to 60s
+- Raise the Digital Credentials API handoff timeout from 30s to 120s
   (`DC_API_TIMEOUT_MS` in `web/utils/dcapi.js`). The 30s window cut off
   same-device flows where the user was still interacting with the wallet
   (open wallet, authenticate, select a credential), surfacing as
