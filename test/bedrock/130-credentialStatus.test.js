@@ -33,7 +33,7 @@ const testWorkflow = {
       'https://www.w3.org/ns/credentials/examples/v2'
     ]
   }],
-  domain: 'http://example.test.com',
+  domain: 'https://example.test.com',
   trustedCredentialIssuers: []
 };
 

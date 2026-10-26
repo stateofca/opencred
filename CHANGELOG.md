@@ -7,6 +7,11 @@
   `js-yaml`, `brace-expansion`) via a non-breaking lockfile update. No source
   or `package.json` changes. The remaining `serialize-javascript` advisory
   requires a breaking `@bedrock/test` upgrade and is deferred.
+- `domainToDidWeb()` now percent-encodes the port colon and converts path
+  segments to colons, per the did:web spec. A base URI of
+  `https://localhost:22443` now yields `did:web:localhost%3A22443` instead of
+  `did:web:localhost:22443`. Base URIs on the default port with no path are
+  unchanged.
 
 ## 10.5.0 - 2026-09-10
 
