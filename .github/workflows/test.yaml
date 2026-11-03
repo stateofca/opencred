@@ -10,7 +10,10 @@ on: [push]
 jobs:
   test:
     if: ${{ vars.WORKFLOW_TEST_ENABLED == 'true' }}
-    runs-on: ubuntu-latest
+    # The `ubuntu-24.04` image's kernel trips MongoDB 8's startup kernel
+    # check (actions/runner-images#15005). Return to `ubuntu-latest` once a
+    # `mongo:8` image with the fix (8.0.35 or 8.3.14) is released.
+    runs-on: ubuntu-22.04
     timeout-minutes: 10
     strategy:
       matrix:
