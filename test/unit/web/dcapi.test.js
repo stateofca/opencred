@@ -734,7 +734,7 @@ describe('_buildDcApiOutcomeEvent', () => {
       error: networkError(), timedOut: true, profiles: ['OID4VP-1.0']
     });
     expect(event.type).to.equal('dcapi_timeout');
-    expect(event.timeoutMs).to.equal(30000);
+    expect(event.timeoutMs).to.equal(120000);
     expect(event).not.to.have.key('errorName');
     expect(event).not.to.have.key('errorMessage');
   });
