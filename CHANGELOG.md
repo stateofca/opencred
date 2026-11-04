@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.6.0 - 2026-11-dd
+## 10.6.0 - 2026-11-04
 
 ### Added
 - Classify a DC API error message into a coarse, log-safe `dcApiErrorReason`
