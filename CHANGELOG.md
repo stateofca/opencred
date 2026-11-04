@@ -1,6 +1,6 @@
 # opencred-platform Changelog
 
-## 10.6.0 - 2026-10-dd
+## 10.6.0 - 2026-11-dd
 
 ### Added
 - Classify a DC API error message into a coarse, log-safe `dcApiErrorReason`
@@ -39,15 +39,13 @@
   "wallet handoff timed out (DC API)" failures. The longer window does not
   affect cross-device handoffs that never complete (e.g. an unscanned QR
   code), which still time out.
+- Update `postcss` to `^8.5.29` and `vue` to `^3.5.43`, and refresh the
+  lockfile.
 
 ### Fixed
 - Log `errorName` on `presentation_dc_api_cancelled`; it was sent by the
   client but dropped before logging, so `NotAllowedError` and `AbortError`
   cancellations could not be told apart.
-
-## 10.5.1 - 2026-10-dd
-
-### Fixed
 - Resolve five high-severity npm advisories (`undici`, `fastify`, `fast-uri`,
   `js-yaml`, `brace-expansion`) via a non-breaking lockfile update. No source
   or `package.json` changes. The remaining `serialize-javascript` advisory
